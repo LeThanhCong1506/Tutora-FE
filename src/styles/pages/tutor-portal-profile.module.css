@@ -1,0 +1,1906 @@
+/* ===== TUTOR PORTAL PROFILE PAGE - FIGMA DESIGN ===== */
+/* Color palette:
+   - Background: #f2f0e4 (cream)
+   - Primary dark: #1a2238 (navy)
+   - Secondary text: #3e2f28 (brown)
+   - Accent red: #631b1b
+   - Accent green: #3d4a3e
+*/
+
+/* Profile Page Container */
+.profilePage {
+    background-color: #f2f0e4;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: 'IBM Plex Sans', sans-serif;
+}
+
+/* Main Content Area */
+.mainContent {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 70px;
+}
+
+.contentWrapper {
+    max-width: min(1120px, 90vw);
+    margin: 0 auto;
+    padding: clamp(1.5rem, 1rem + 1vw, 2.5rem);
+    display: flex;
+    gap: clamp(1.5rem, 1rem + 1vw, 2.5rem);
+}
+
+/* Left Column */
+.leftColumn {
+    flex: 1;
+    max-width: 700px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+/* Right Column - Sidebar */
+.rightColumn {
+    flex: 0 0 336px;
+    max-width: 336px;
+    display: flex;
+    flex-direction: column;
+    gap: 21px;
+}
+
+/* ===== INTRO VIDEO SECTION ===== */
+.introVideoSection {
+    position: relative;
+    height: 320px;
+    border-radius: 21px;
+    background: linear-gradient(135deg, #1a2238, #0d1220);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0px 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.introVideoSection::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('/intro-bg.jpg') center/cover no-repeat;
+    opacity: 0.4;
+}
+
+.introVideoLabel {
+    position: absolute;
+    top: 21px;
+    left: 21px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5.25px 10.5px;
+    border-radius: 9999px;
+    background-color: rgba(26, 34, 56, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    z-index: 2;
+}
+
+.editVideoBtn {
+    position: absolute;
+    top: 28px;
+    right: 28px;
+    width: 38px;
+    height: 38px;
+    border-radius: 9999px;
+    background-color: #fff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1), 0px 4px 6px -4px rgba(0, 0, 0, 0.1);
+    z-index: 2;
+    transition: all 0.2s ease;
+}
+
+.editVideoBtn:hover {
+    transform: scale(1.05);
+}
+
+.playButtonWrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    z-index: 1;
+}
+
+.playButton {
+    width: 70px;
+    height: 70px;
+    border-radius: 9999px;
+    background-color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-left: 4px;
+    box-shadow: 0px 25px 50px -12px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.playButton:hover {
+    transform: scale(1.05);
+}
+
+.playButton svg path {
+    fill: #1a2238;
+}
+
+.videoText {
+    font-family: 'Bricolage Grotesque', serif;
+    font-size: 15.75px;
+    font-weight: 700;
+    line-height: 24.5px;
+    color: #fff;
+}
+
+/* ===== SECTION CARD ===== */
+.sectionCard {
+    position: relative;
+    background-color: #fff;
+    border-radius: 21px;
+    border: 1px dashed rgba(62, 47, 40, 0.1);
+    padding: 35px;
+    box-shadow: 0px 0px 0px 2px rgba(26, 34, 56, 0.05), 0px 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.sectionBadge {
+    position: absolute;
+    top: -9px;
+    left: 29px;
+    padding: 3.5px 14px;
+    border-radius: 9999px;
+    background-color: #1a2238;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    line-height: 15px;
+    text-transform: uppercase;
+}
+
+.sectionHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+}
+
+.sectionTitle {
+    font-family: 'Bricolage Grotesque', serif;
+    font-size: 26.25px;
+    font-weight: 700;
+    line-height: 31.5px;
+    color: #1a2238;
+    margin: 0;
+}
+
+.editingBadge {
+    padding: 3.5px 10.5px;
+    border-radius: 9999px;
+    background-color: #f2f0e4;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    line-height: 15px;
+    text-transform: uppercase;
+    color: #1a2238;
+}
+
+/* ===== HERO CONTENT ===== */
+.heroContent {
+    display: flex;
+    gap: 28px;
+    padding-top: 20px;
+}
+
+.avatarContainer {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.avatar {
+    width: 112px;
+    height: 112px;
+    border-radius: 50%;
+    background-color: #e5e5e5;
+    box-shadow: 0px 20px 25px -5px rgba(0, 0, 0, 0.1), 0px 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.avatarOverlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 10.5px;
+    height: 10.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(26, 34, 56, 0.4);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.avatarContainer:hover .avatarOverlay {
+    opacity: 1;
+}
+
+.heroInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.nameRow {
+    display: flex;
+    align-items: center;
+    gap: 10.5px;
+}
+
+.nameInput {
+    font-family: 'Bricolage Grotesque', serif;
+    font-size: 31.5px;
+    font-weight: 400;
+    line-height: 35px;
+    letter-spacing: -0.79px;
+    color: #1a2238;
+    background-color: rgba(242, 240, 228, 0.3);
+    border: none;
+    border-bottom: 1px solid #1a2238;
+    padding: 3.5px;
+    width: 100%;
+    max-width: 392px;
+    outline: none;
+}
+
+.nameInput:focus {
+    background-color: rgba(242, 240, 228, 0.5);
+}
+
+.verifiedBadge {
+    width: 21px;
+    height: 21px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.verifiedBadge svg {
+    width: 21px;
+    height: 21px;
+}
+
+.headlineInput {
+    font-family: 'IBM Plex Serif', serif;
+    font-size: 17.5px;
+    font-style: italic;
+    line-height: 24.5px;
+    color: #3e2f28;
+    background-color: rgba(242, 240, 228, 0.3);
+    border: none;
+    border-bottom: 1px solid rgba(62, 47, 40, 0.2);
+    padding: 0 3.5px;
+    width: 100%;
+    outline: none;
+}
+
+.headlineInput:focus {
+    background-color: rgba(242, 240, 228, 0.5);
+}
+
+/* Meta Row */
+.metaRow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 21px;
+}
+
+.metaItem {
+    display: flex;
+    align-items: center;
+    gap: 3.5px;
+}
+
+.metaItemEditable {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 3.5px 7px;
+    border-radius: 7px;
+    background-color: rgba(242, 240, 228, 0.3);
+}
+
+.metaValue {
+    font-size: 12.25px;
+    font-weight: 700;
+    line-height: 17.5px;
+    color: rgba(62, 47, 40, 0.6);
+}
+
+/* Subject Tags */
+.subjectTags {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tagsRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.subjectTag {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4.75px 14px;
+    border-radius: 9999px;
+    background-color: #f2f0e4;
+    border: 1px solid rgba(62, 47, 40, 0.05);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    line-height: 15px;
+    text-transform: uppercase;
+    color: #1a2238;
+}
+
+.customTag {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4.75px 14px;
+    border-radius: 9999px;
+    background-color: #1a2238;
+    border: 1px solid rgba(26, 34, 56, 0.1);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    line-height: 15px;
+    text-transform: uppercase;
+    color: #fff;
+}
+
+.removeTagBtn {
+    width: 10.5px;
+    height: 10.5px;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.removeTagBtn:hover {
+    opacity: 1;
+}
+
+.removeTagBtn svg {
+    width: 8px;
+    height: 8px;
+}
+
+.addTagBtn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5.25px 14px;
+    border-radius: 9999px;
+    background-color: #fff;
+    border: 1px dashed rgba(26, 34, 56, 0.2);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 15px;
+    color: rgba(26, 34, 56, 0.4);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.addTagBtn:hover {
+    border-color: rgba(26, 34, 56, 0.4);
+    color: rgba(26, 34, 56, 0.6);
+}
+
+/* ===== ABOUT ME TEXTAREA ===== */
+.aboutTextarea {
+    width: 100%;
+    min-height: 224px;
+    padding: 20px 21px;
+    border-radius: 14px;
+    background-color: rgba(242, 240, 228, 0.2);
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    font-family: 'IBM Plex Serif', serif;
+    font-size: 15.75px;
+    font-style: italic;
+    line-height: 25.5px;
+    color: #3e2f28;
+    resize: vertical;
+    outline: none;
+}
+
+.aboutTextarea:focus {
+    border-color: rgba(62, 47, 40, 0.2);
+}
+
+/* ===== ADD BUTTON ===== */
+.addBtn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    border-radius: 10.5px;
+    background-color: #1a2238;
+    border: none;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 14px;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.addBtn:hover {
+    background-color: #2a3248;
+}
+
+.addBtn svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* ===== CREDENTIALS LIST ===== */
+.credentialsList {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    margin-bottom: 28px;
+}
+
+.credentialItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 21px;
+}
+
+.credentialIcon {
+    width: 49px;
+    height: 49px;
+    border-radius: 14px;
+    background-color: #f2f0e4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.credentialInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3.5px;
+}
+
+.credentialTitle {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 15.75px;
+    font-weight: 700;
+    line-height: 24.5px;
+    color: #1a2238;
+    margin: 0;
+}
+
+.credentialInstitution {
+    font-family: 'IBM Plex Serif', serif;
+    font-size: 12.25px;
+    font-style: italic;
+    line-height: 17.5px;
+    color: rgba(62, 47, 40, 0.6);
+    margin: 0;
+}
+
+.credentialDate {
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 15px;
+    color: rgba(62, 47, 40, 0.4);
+}
+
+.credentialType {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    line-height: 14px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background-color: rgba(26, 34, 56, 0.08);
+    color: #1a2238;
+}
+
+.credentialNote {
+    font-size: 11px;
+    font-style: italic;
+    line-height: 16px;
+    color: rgba(62, 47, 40, 0.7);
+    margin: 4px 0 0 0;
+    padding: 6px 10px;
+    background-color: rgba(251, 191, 36, 0.1);
+    border-left: 2px solid #fbbf24;
+    border-radius: 0 4px 4px 0;
+}
+
+.credentialNote strong {
+    font-weight: 600;
+    color: rgba(62, 47, 40, 0.8);
+}
+
+.credentialLink {
+    font-size: 11px;
+    font-weight: 600;
+    color: #4f8cff;
+    text-decoration: none;
+    margin-top: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s ease;
+}
+
+.credentialLink:hover {
+    color: #3b7dff;
+    text-decoration: underline;
+}
+
+.emptyCredentials {
+    padding: 24px;
+    text-align: center;
+    color: rgba(62, 47, 40, 0.5);
+    font-size: 13px;
+    font-style: italic;
+}
+
+.deleteCredentialBtn {
+    padding: 7px;
+    border-radius: 7px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    color: rgba(62, 47, 40, 0.4);
+}
+
+.credentialItem:hover .deleteCredentialBtn {
+    opacity: 1;
+}
+
+.deleteCredentialBtn:hover {
+    color: #631b1b;
+}
+
+/* ===== ADD CREDENTIAL FORM ===== */
+.addCredentialForm {
+    padding: 34px 28px 42px;
+    border-radius: 14px;
+    background-color: rgba(242, 240, 228, 0.2);
+    border: 1px solid rgba(26, 34, 56, 0.1);
+}
+
+.formHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.formTitle {
+    font-family: 'Bricolage Grotesque', serif;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 21px;
+    color: #1a2238;
+    margin: 0;
+}
+
+.closeFormBtn {
+    width: 17.5px;
+    height: 17.5px;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.closeFormBtn:hover {
+    opacity: 1;
+}
+
+.formFields {
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+}
+
+.formRow {
+    display: flex;
+    gap: 14px;
+}
+
+.formGroup {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.formLabel {
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 15px;
+    text-transform: uppercase;
+    color: rgba(62, 47, 40, 0.6);
+}
+
+.formInput {
+    padding: 10.5px;
+    border-radius: 10.5px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12.25px;
+    line-height: 17.5px;
+    color: #3e2f28;
+    outline: none;
+}
+
+.formInput::placeholder {
+    color: #9ca3af;
+}
+
+.formInput:focus {
+    border-color: rgba(62, 47, 40, 0.2);
+}
+
+/* Upload Area */
+.uploadArea {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px;
+    border-radius: 10.5px;
+    border: 1px dashed rgba(62, 47, 40, 0.1);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.uploadArea:hover {
+    border-color: rgba(62, 47, 40, 0.3);
+    background-color: rgba(242, 240, 228, 0.3);
+}
+
+.uploadArea span {
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 15px;
+    color: rgba(62, 47, 40, 0.6);
+}
+
+/* Form Actions */
+.formActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10.5px;
+    padding-top: 14px;
+}
+
+.cancelBtn {
+    padding: 7px 21px;
+    border-radius: 10.5px;
+    background: none;
+    border: none;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 14px;
+    color: #3e2f28;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cancelBtn:hover {
+    background-color: rgba(242, 240, 228, 0.5);
+}
+
+.submitBtn {
+    padding: 7px 28px;
+    border-radius: 10.5px;
+    background-color: #1a2238;
+    border: none;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 14px;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1), 0px 4px 6px -4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.submitBtn:hover {
+    background-color: #2a3248;
+}
+
+/* ===== STUDENT OUTCOMES ===== */
+.outcomeActions {
+    display: flex;
+    gap: 10.5px;
+}
+
+.addOutcomeBtn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    border-radius: 10.5px;
+    background-color: #f2f0e4;
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 14px;
+    color: #1a2238;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.addOutcomeBtn:hover {
+    background-color: #e5e3d8;
+}
+
+.aiGenerateBtn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    border-radius: 10.5px;
+    background-color: #631b1b;
+    border: none;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 14px;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.aiGenerateBtn:hover {
+    background-color: #7a2222;
+}
+
+.outcomesGrid {
+    display: flex;
+    gap: 21px;
+}
+
+.outcomeCard,
+.outcomeCardFilled {
+    flex: 1;
+    position: relative;
+    padding: 28px;
+    border-radius: 14px;
+    background-color: rgba(242, 240, 228, 0.3);
+    border: 1px solid rgba(26, 34, 56, 0.05);
+    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.outcomeInput {
+    text-align: center;
+}
+
+.outcomePlaceholder {
+    font-family: 'IBM Plex Serif', serif;
+    font-size: 15.75px;
+    font-style: italic;
+    line-height: 24.5px;
+    color: #9ca3af;
+}
+
+.outcomeText {
+    font-family: 'IBM Plex Serif', serif;
+    font-size: 15.75px;
+    font-style: italic;
+    line-height: 24.5px;
+    color: #1a2238;
+    text-align: center;
+}
+
+.outcomeDeleteBtn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(62, 47, 40, 0.4);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.outcomeCard:hover .outcomeDeleteBtn,
+.outcomeCardFilled:hover .outcomeDeleteBtn {
+    opacity: 1;
+}
+
+.outcomeDeleteBtn:hover {
+    color: #631b1b;
+}
+
+/* ===== PRICING CARD ===== */
+.pricingCard {
+    padding: 29px;
+    border-radius: 21px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    box-shadow: 0px 20px 25px -5px rgba(0, 0, 0, 0.1), 0px 8px 10px -6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.priceRow {
+    display: flex;
+    align-items: baseline;
+}
+
+.priceAmount {
+    font-family: 'Bricolage Grotesque', serif;
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 42px;
+    color: #1a2238;
+}
+
+.priceUnit {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 1.05px;
+    line-height: 14px;
+    text-transform: uppercase;
+    color: rgba(62, 47, 40, 0.6);
+    margin-left: 7px;
+}
+
+.priceNote {
+    margin-top: 7px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(62, 47, 40, 0.05);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 10px;
+    font-style: italic;
+    font-weight: 700;
+    letter-spacing: 1px;
+    line-height: 16.25px;
+    text-transform: uppercase;
+    color: #631b1b;
+}
+
+.trialPrice {
+    padding-top: 14px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 1.05px;
+    line-height: 14px;
+    text-transform: uppercase;
+    color: rgba(62, 47, 40, 0.4);
+}
+
+/* Availability Section */
+.availabilitySection {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 13px 0 21px;
+}
+
+.availabilityLabel {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    line-height: 15px;
+    text-transform: uppercase;
+    color: #1a2238;
+}
+
+.slotRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 7px 7px;
+    border-radius: 7px;
+}
+
+.slotRow:hover {
+    background-color: rgba(242, 240, 228, 0.5);
+}
+
+.slotTime {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12.25px;
+    font-weight: 700;
+    line-height: 17.5px;
+    color: #3e2f28;
+}
+
+.slotSelect {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 17.5px;
+    text-decoration: underline;
+    text-transform: uppercase;
+    color: #1a2238;
+    background: none;
+    border: none;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.slotRow:hover .slotSelect {
+    opacity: 1;
+}
+
+/* Book Trial Button */
+.bookTrialBtn {
+    padding: 14px 0;
+    border-radius: 14px;
+    background-color: #1a2238;
+    border: none;
+    font-family: 'Bricolage Grotesque', serif;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 21px;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0px 10px 15px -3px rgba(26, 34, 56, 0.2), 0px 4px 6px -4px rgba(26, 34, 56, 0.2);
+    transition: all 0.2s ease;
+}
+
+.bookTrialBtn:hover {
+    background-color: #2a3248;
+}
+
+/* Send Message Button */
+.sendMessageBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    margin-top: 14px;
+    padding: 14px 0;
+    border-radius: 14px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    font-family: 'Bricolage Grotesque', serif;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 21px;
+    color: #1a2238;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sendMessageBtn:hover {
+    background-color: rgba(242, 240, 228, 0.5);
+}
+
+/* Cancellation Note */
+.cancellationNote {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    margin-top: 21px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    line-height: 15px;
+    text-transform: uppercase;
+    color: rgba(62, 47, 40, 0.4);
+}
+
+/* ===== PROFILE COMPLETENESS CARD ===== */
+.completenessCard {
+    padding: 27px 28px 28px;
+    border-radius: 21px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 21px;
+}
+
+.completenessHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.completenessLabel {
+    font-family: 'Bricolage Grotesque', serif;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 21px;
+    color: #1a2238;
+}
+
+.completenessPercent {
+    font-family: 'Bricolage Grotesque', serif;
+    font-size: 15.75px;
+    font-weight: 700;
+    line-height: 24.5px;
+    color: #1a2238;
+}
+
+/* Progress Bar */
+.progressBar {
+    height: 7px;
+    border-radius: 9999px;
+    background-color: #f2f0e4;
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 100%;
+    border-radius: 9999px;
+    background-color: #1a2238;
+    box-shadow: 0px 0px 10px rgba(26, 34, 56, 0.3);
+    transition: width 0.3s ease;
+}
+
+/* Checklist Items */
+.checklistItems {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 7px 0;
+}
+
+.checklistItem {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12.25px;
+    font-weight: 700;
+    line-height: 17.5px;
+    color: #1a2238;
+}
+
+.checklistItem.completed {
+    color: rgba(26, 34, 56, 0.5);
+}
+
+.checklistItem svg {
+    width: 14px;
+    height: 14px;
+    color: #1a2238;
+}
+
+.checklistItem.completed svg {
+    color: #3d4a3e;
+}
+
+/* Complete Profile Button */
+.completeProfileBtn {
+    padding: 10.5px 0;
+    border-radius: 10.5px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 14px;
+    color: #3e2f28;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.completeProfileBtn:hover {
+    background-color: rgba(242, 240, 228, 0.5);
+}
+
+/* ===== EDIT BAR - STICKY BOTTOM ===== */
+.editBar {
+    position: fixed;
+    bottom: 0;
+    left: var(--sidebar-width, 68px);
+    right: 0;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(62, 47, 40, 0.1);
+    z-index: 50;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.editBarLeft {
+    display: flex;
+    align-items: center;
+}
+
+.editBarRight {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+/* Toggle Group */
+.toggleGroup {
+    display: flex;
+    padding: 3.5px;
+    border-radius: 10.5px;
+    background-color: #f2f0e4;
+    border: 1px solid rgba(62, 47, 40, 0.05);
+}
+
+.toggleBtn {
+    padding: 5.25px 21px;
+    border-radius: 7px;
+    border: none;
+    background: none;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12.25px;
+    font-weight: 700;
+    line-height: 17.5px;
+    color: rgba(62, 47, 40, 0.6);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.toggleBtn.active {
+    background-color: #fff;
+    color: #1a2238;
+    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Saved Status */
+.savedStatus {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding-right: 14px;
+}
+
+.savedDot {
+    width: 7px;
+    height: 7px;
+    border-radius: 9999px;
+    background-color: #3d4a3e;
+}
+
+.savedText {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    line-height: 15px;
+    text-transform: uppercase;
+    color: rgba(62, 47, 40, 0.4);
+}
+
+/* Share Button */
+.shareBtn {
+    width: 31.5px;
+    height: 31.5px;
+    padding: 7px;
+    border-radius: 9999px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(62, 47, 40, 0.6);
+    transition: all 0.2s ease;
+}
+
+.shareBtn:hover {
+    background-color: rgba(242, 240, 228, 0.5);
+    color: #1a2238;
+}
+
+/* Save Draft Button */
+.saveDraftBtn {
+    padding: 7px 21px;
+    border-radius: 10.5px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12.25px;
+    font-weight: 700;
+    line-height: 17.5px;
+    color: #1a2238;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.saveDraftBtn:hover {
+    background-color: rgba(242, 240, 228, 0.5);
+}
+
+/* Publish Button */
+.publishBtn {
+    padding: 7px 21px;
+    border-radius: 10.5px;
+    background-color: #1a2238;
+    border: none;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12.25px;
+    font-weight: 700;
+    line-height: 17.5px;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0px 10px 15px -3px rgba(26, 34, 56, 0.2), 0px 4px 6px -4px rgba(26, 34, 56, 0.2);
+    transition: all 0.2s ease;
+}
+
+.publishBtn:hover {
+    background-color: #2a3248;
+}
+
+/* ===== NEW STYLES FOR UPDATED PROFILE ===== */
+
+/* Edit Section Button */
+.editSectionBtn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    background-color: rgba(242, 240, 228, 0.8);
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    font-size: 12px;
+    font-weight: 600;
+    color: #1a2238;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.editSectionBtn:hover {
+    background-color: #f2f0e4;
+}
+
+.editBtnSmall {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: none;
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    font-size: 11px;
+    font-weight: 600;
+    color: #1a2238;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.editBtnSmall:hover {
+    background-color: rgba(242, 240, 228, 0.5);
+}
+
+/* Edit Icon Button (icon only, no text) */
+.editIconBtn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 8px;
+    background-color: rgba(242, 240, 228, 0.8);
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #1a2238;
+    transition: all 0.2s ease;
+}
+
+.editIconBtn:hover {
+    background-color: #f2f0e4;
+}
+
+/* Tutor Name (h1) */
+.tutorName {
+    font-family: 'Bricolage Grotesque', serif;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 32px;
+    letter-spacing: -0.5px;
+    color: #1a2238;
+    margin: 0;
+}
+
+/* Headline (p) */
+.headline {
+    font-family: 'IBM Plex Serif', serif;
+    font-size: 16px;
+    font-style: italic;
+    line-height: 24px;
+    color: #3e2f28;
+    margin: 0;
+}
+
+/* Custom Tag */
+.customTag {
+    display: flex;
+    align-items: center;
+    padding: 4.75px 14px;
+    border-radius: 9999px;
+    background-color: rgba(99, 27, 27, 0.08);
+    border: 1px solid rgba(99, 27, 27, 0.1);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    line-height: 15px;
+    text-transform: uppercase;
+    color: #631b1b;
+}
+
+/* About Content */
+.aboutContent {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.bioText {
+    font-family: 'IBM Plex Serif', serif;
+    font-size: 15px;
+    font-style: italic;
+    line-height: 24px;
+    color: #3e2f28;
+    margin: 0;
+    white-space: pre-line;
+}
+
+.aboutDetails {
+    display: flex;
+    gap: 24px;
+    padding: 16px 0;
+    border-top: 1px solid rgba(62, 47, 40, 0.05);
+    border-bottom: 1px solid rgba(62, 47, 40, 0.05);
+}
+
+.detailItem {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.detailLabel {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(62, 47, 40, 0.5);
+}
+
+.detailValue {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a2238;
+}
+
+.experienceSection {
+    padding-top: 8px;
+}
+
+.subTitle {
+    font-family: 'Bricolage Grotesque', serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a2238;
+    margin: 0 0 12px 0;
+}
+
+.experienceText {
+    font-family: 'IBM Plex Serif', serif;
+    font-size: 14px;
+    font-style: italic;
+    line-height: 22px;
+    color: #3e2f28;
+    margin: 0;
+}
+
+/* Credential Meta */
+.credentialMeta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.verificationBadge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.verificationBadge.verified {
+    background-color: rgba(61, 74, 62, 0.1);
+    color: #3d4a3e;
+}
+
+.verificationBadge.pending {
+    background-color: rgba(251, 191, 36, 0.1);
+    color: #92700c;
+}
+
+.verificationBadge.rejected {
+    background-color: rgba(99, 27, 27, 0.1);
+    color: #631b1b;
+}
+
+/* Credential Actions */
+.credentialActions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.credentialItem:hover .credentialActions {
+    opacity: 1;
+}
+
+.editCredentialBtn,
+.deleteCredentialBtn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: 6px;
+    background: none;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: rgba(62, 47, 40, 0.4);
+    transition: all 0.2s ease;
+}
+
+.editCredentialBtn:hover {
+    background-color: rgba(242, 240, 228, 0.5);
+    color: #1a2238;
+}
+
+.deleteCredentialBtn:hover {
+    background-color: rgba(99, 27, 27, 0.1);
+    color: #631b1b;
+}
+
+/* Edit Price Button */
+.editPriceBtn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 8px;
+    background-color: rgba(242, 240, 228, 0.8);
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #1a2238;
+    transition: all 0.2s ease;
+}
+
+.editPriceBtn:hover {
+    background-color: #f2f0e4;
+}
+
+/* Negotiation Note */
+.negotiationNote {
+    padding: 8px 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: #3d4a3e;
+}
+
+/* Unsaved Dot */
+.unsavedDot {
+    width: 7px;
+    height: 7px;
+    border-radius: 9999px;
+    background-color: #fbbf24;
+}
+
+/* Avatar Image */
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+/* Pricing Card Position */
+.pricingCard {
+    position: relative;
+}
+
+/* No Schedule State in Pricing Card */
+.noScheduleSection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 20px 0;
+    margin: 14px 0;
+    border-top: 1px solid rgba(62, 47, 40, 0.05);
+    border-bottom: 1px solid rgba(62, 47, 40, 0.05);
+}
+
+.noScheduleMessage {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(62, 47, 40, 0.5);
+    margin: 0 0 12px 0;
+}
+
+.updateScheduleLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 10px;
+    background-color: #f2f0e4;
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1a2238;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.updateScheduleLink:hover {
+    background-color: #e5e3d8;
+}
+
+/* Disabled Book Trial Button */
+.bookTrialBtn:disabled {
+    background-color: rgba(26, 34, 56, 0.3);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.bookTrialBtn:disabled:hover {
+    background-color: rgba(26, 34, 56, 0.3);
+}
+
+/* ===== IDENTITY VERIFICATION SECTION ===== */
+.identityContent {
+    padding-top: 8px;
+}
+
+.identityStatus {
+    /* Container */
+}
+
+.identityBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.identityBadge.verified {
+    background-color: rgba(61, 74, 62, 0.1);
+    color: #3d4a3e;
+}
+
+.identityBadge.pending {
+    background-color: rgba(251, 191, 36, 0.1);
+    color: #92700c;
+}
+
+.identityBadge.rejected {
+    background-color: rgba(99, 27, 27, 0.1);
+    color: #631b1b;
+}
+
+.identityNotSubmitted {
+    padding: 20px;
+    border-radius: 14px;
+    background-color: rgba(242, 240, 228, 0.5);
+    border: 1px dashed rgba(62, 47, 40, 0.2);
+    text-align: center;
+}
+
+.identityNotSubmitted p {
+    margin: 0 0 16px 0;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    line-height: 20px;
+    color: rgba(62, 47, 40, 0.7);
+}
+
+.verifyNowBtn {
+    padding: 10px 24px;
+    border-radius: 10px;
+    background-color: #1a2238;
+    border: none;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.verifyNowBtn:hover {
+    background-color: #2a3248;
+}
+
+/* Identity Verification Status Containers */
+.identityVerified,
+.identityPending,
+.identityRejected {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.identityVerifiedText,
+.identityPendingText,
+.identityRejectedText {
+    margin: 0;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    line-height: 20px;
+    color: rgba(62, 47, 40, 0.7);
+}
+
+.identityBadge.verified {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background-color: rgba(61, 74, 62, 0.1);
+    color: #3d4a3e;
+    font-size: 12px;
+    font-weight: 600;
+    width: fit-content;
+}
+
+.identityBadge.verified svg {
+    width: 14px;
+    height: 14px;
+}
+
+.resubmitBtn {
+    margin-top: 8px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    background-color: #631b1b;
+    border: none;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    width: fit-content;
+}
+
+.resubmitBtn:hover {
+    background-color: #7a2222;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+/* Large screens */
+@media (min-width: 1920px) {
+    .contentWrapper {
+        max-width: min(1400px, 90vw);
+    }
+
+    .leftColumn {
+        max-width: 900px;
+    }
+
+    .rightColumn {
+        flex: 0 0 400px;
+        max-width: 400px;
+    }
+
+    .editBar {
+        left: var(--sidebar-width, 68px);
+    }
+}
+
+@media (min-width: 2560px) {
+    .contentWrapper {
+        max-width: min(1800px, 92vw);
+    }
+
+    .leftColumn {
+        max-width: 1150px;
+    }
+
+    .rightColumn {
+        flex: 0 0 480px;
+        max-width: 480px;
+    }
+
+    .editBar {
+        left: var(--sidebar-width, 68px);
+    }
+}
+
+@media (max-width: 1400px) {
+    .contentWrapper {
+        padding: 21px;
+    }
+
+    .leftColumn {
+        max-width: 600px;
+    }
+
+    .rightColumn {
+        flex: 0 0 300px;
+        max-width: 300px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .contentWrapper {
+        flex-direction: column;
+    }
+
+    .leftColumn {
+        max-width: 100%;
+    }
+
+    .rightColumn {
+        width: 100%;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .pricingCard,
+    .completenessCard {
+        flex: 1;
+        min-width: 300px;
+    }
+
+    .editBar {
+        left: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .contentWrapper {
+        padding: 14px;
+        gap: 14px;
+    }
+
+    .leftColumn {
+        gap: 14px;
+    }
+
+    .rightColumn {
+        flex-direction: column;
+    }
+
+    .pricingCard,
+    .completenessCard {
+        min-width: auto;
+    }
+
+    .sectionCard {
+        padding: 21px;
+    }
+
+    .heroContent {
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .avatarContainer {
+        align-self: center;
+    }
+
+    .nameInput {
+        font-size: 24px;
+        max-width: 100%;
+    }
+
+    .metaRow {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .formRow {
+        flex-direction: column;
+    }
+
+    .outcomesGrid {
+        flex-direction: column;
+    }
+
+    .editBar {
+        padding: 0 14px;
+    }
+
+    .editBarRight {
+        gap: 7px;
+    }
+
+    .savedStatus {
+        display: none;
+    }
+
+    .saveDraftBtn,
+    .publishBtn {
+        padding: 7px 14px;
+        font-size: 11px;
+    }
+}

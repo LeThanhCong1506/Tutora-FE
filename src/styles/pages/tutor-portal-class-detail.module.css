@@ -1,0 +1,947 @@
+.classDetail {
+    display: flex;
+    width: 100%;
+    height: calc(100vh - 56px); /* Subtract header height */
+    background-color: #f2f0e4;
+    overflow: hidden;
+    position: relative;
+}
+
+.mainContent {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: margin-right 0.3s ease;
+}
+
+.mainContent.withSidebar {
+    margin-right: 0; /* Sidebar overlays on smaller screens by default */
+}
+
+/* Header */
+.header {
+    background-color: #fff;
+    border-bottom: 1.1px solid rgba(62, 47, 40, 0.1);
+    padding: clamp(1.25rem, 1rem + 0.5vw, 2rem) clamp(1.5rem, 1rem + 1vw, 2.5rem);
+    display: flex;
+    flex-direction: column;
+    gap: 21px;
+}
+
+.headerTop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.headerLeft {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.backBtn {
+    width: 35px;
+    height: 35px;
+    border-radius: 9999px;
+    border: none;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #1a2238;
+    transition: background-color 0.2s;
+}
+
+.backBtn:hover {
+    background-color: rgba(26, 34, 56, 0.1);
+}
+
+.backBtn svg {
+    width: 21px;
+    height: 21px;
+}
+
+.classInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 3.5px;
+}
+
+.classHeader {
+    display: flex;
+    align-items: center;
+    gap: 10.5px;
+    padding: 5px 0;
+}
+
+.className {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 26.3px;
+    font-weight: 700;
+    letter-spacing: -0.66px;
+    line-height: 31.5px;
+    color: #1a2238;
+    margin: 0;
+}
+
+.subjectTag,
+.gradeTag {
+    padding: 3.5px 7px;
+    border-radius: 9999px;
+    background-color: #f2f0e4;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    line-height: 15px;
+    text-transform: uppercase;
+    color: #1a2238;
+}
+
+.nextLesson {
+    font-family: 'IBM Plex Serif', serif;
+    font-size: 12.3px;
+    font-style: italic;
+    line-height: 17.5px;
+    color: rgba(62, 47, 40, 0.6);
+    margin: 0;
+}
+
+.headerActions {
+    display: flex;
+    align-items: center;
+    gap: 10.5px;
+}
+
+.actionBtn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8.8px 21.1px;
+    border-radius: 10.5px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #1a2238;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.actionBtn:hover {
+    background-color: #f9f8f4;
+    border-color: #1a2238;
+}
+
+.actionBtn svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    align-items: flex-start;
+    gap: 35px;
+}
+
+.tab {
+    position: relative;
+    padding: 0 3.5px 14px;
+    border: none;
+    background: transparent;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 1.05px;
+    line-height: 14px;
+    text-transform: uppercase;
+    color: rgba(62, 47, 40, 0.4);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.tab:hover {
+    color: #1a2238;
+}
+
+.tab.active {
+    color: #1a2238;
+    border-bottom: 1.1px solid #1a2238;
+}
+
+/* Content */
+.content {
+    flex: 1;
+    overflow: auto;
+    padding: 28px;
+}
+
+.contentContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 21px;
+}
+
+/* Toolbar */
+.toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 14.1px;
+    border-radius: 14px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(62, 47, 40, 0.05);
+}
+
+.searchWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 280px;
+}
+
+.searchWrapper svg {
+    position: absolute;
+    left: 14px;
+    width: 14px;
+    height: 14px;
+    color: #9ca3af;
+}
+
+.searchInput {
+    width: 100%;
+    padding: 7.1px 14.1px 8.6px 42.1px;
+    border-radius: 10.5px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12.3px;
+    color: #9ca3af;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.searchInput:focus {
+    border-color: #1a2238;
+}
+
+.toolbarActions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.toolbarBtn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7.1px 14.1px;
+    border-radius: 10.5px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #1a2238;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.toolbarBtn:hover {
+    background-color: #f9f8f4;
+    border-color: #1a2238;
+}
+
+.toolbarBtn svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Table */
+.tableContainer {
+    border-radius: 21px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    overflow: hidden;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table thead {
+    background-color: rgba(242, 240, 228, 0.2);
+    border-bottom: 1.1px solid rgba(62, 47, 40, 0.05);
+}
+
+.table thead th {
+    padding: 21.5px 21px 22px;
+    text-align: left;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+    color: rgba(62, 47, 40, 0.4);
+    white-space: pre-line;
+}
+
+.table thead th:first-child {
+    width: 55px;
+}
+
+.table thead th:last-child {
+    width: 98px;
+}
+
+.table thead input[type="checkbox"] {
+    width: 13px;
+    height: 13px;
+    border-radius: 2.5px;
+    border: 1px solid #767676;
+    cursor: pointer;
+}
+
+.table tbody tr {
+    border-top: 1.1px solid rgba(62, 47, 40, 0.05);
+    transition: background-color 0.2s;
+    cursor: pointer;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(242, 240, 228, 0.1);
+}
+
+.table tbody tr.selected {
+    background-color: rgba(26, 34, 56, 0.05);
+}
+
+.table tbody td {
+    padding: 18px 21px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 16px;
+    color: #1a2238;
+}
+
+.table tbody input[type="checkbox"] {
+    width: 13px;
+    height: 13px;
+    border-radius: 2.5px;
+    border: 1px solid #767676;
+    cursor: pointer;
+}
+
+/* Student Cell */
+.studentCell {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 10.5px;
+    object-fit: cover;
+}
+
+.studentInfo {
+    display: flex;
+    flex-direction: column;
+}
+
+.studentName {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a2238;
+}
+
+.studentEmail {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: rgba(62, 47, 40, 0.4);
+}
+
+/* Status Badges */
+.statusBadge {
+    display: inline-block;
+    padding: 1.8px 7px;
+    border-radius: 9999px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.statusBadge.active {
+    background-color: rgba(61, 74, 62, 0.1);
+    color: #3d4a3e;
+}
+
+.statusBadge.paused {
+    background-color: rgba(62, 47, 40, 0.1);
+    color: rgba(62, 47, 40, 0.7);
+}
+
+.statusBadge.ontrack {
+    background-color: rgba(61, 74, 62, 0.1);
+    color: #3d4a3e;
+}
+
+/* Homework Status Badge */
+.hwStatusBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 4px;
+    border-radius: 9999px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.hwStatusBadge.overdue {
+    background-color: rgba(99, 27, 27, 0.1);
+    color: #631b1b;
+}
+
+.hwCount,
+.hwLabel {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* Lesson Date */
+.lessonDate {
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    color: rgba(62, 47, 40, 0.6) !important;
+}
+
+/* Average Score */
+.avgScore {
+    font-family: 'Bricolage Grotesque', sans-serif !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: #1a2238 !important;
+}
+
+/* Row Actions */
+.rowActions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 7px;
+}
+
+.iconBtn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 7px;
+    transition: background-color 0.2s;
+    color: #1a2238;
+}
+
+.iconBtn:hover {
+    background-color: rgba(26, 34, 56, 0.1);
+}
+
+/* Sidebar Overlay */
+.sidebarOverlay {
+    display: none;
+    position: fixed;
+    top: 56px; /* Header height */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(26, 34, 56, 0.3);
+    z-index: 99;
+}
+
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    top: 56px; /* Header height */
+    right: 0;
+    bottom: 0;
+    width: 350px;
+    background-color: #fff;
+    border-left: 1.1px solid rgba(62, 47, 40, 0.1);
+    box-shadow: 0px 25px 50px -12px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+}
+
+.sidebar.open {
+    transform: translateX(0);
+}
+
+.sidebarHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 21px;
+    border-bottom: 1.1px solid rgba(62, 47, 40, 0.1);
+}
+
+.sidebarAvatar {
+    width: 37.7px;
+    height: 37.7px;
+    border-radius: 10.76px;
+    box-shadow: 0px 7.69px 11.53px -2.31px rgba(0, 0, 0, 0.1), 0px 3.07px 4.61px -3.07px rgba(0, 0, 0, 0.1);
+    object-fit: cover;
+}
+
+.sidebarStudentInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sidebarStudentName {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 13.45px;
+    font-weight: 700;
+    line-height: 18.83px;
+    color: #1a2238;
+    margin: 0;
+}
+
+.sidebarStudentTags {
+    display: flex;
+    align-items: center;
+    gap: 5.4px;
+}
+
+.sidebarTag {
+    padding: 0.9px 5.4px 1.8px;
+    border-radius: 7685.83px;
+    background-color: #f2f0e4;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 7.69px;
+    font-weight: 700;
+    letter-spacing: 0.38px;
+    line-height: 11.53px;
+    text-transform: uppercase;
+    color: #1a2238;
+}
+
+.sidebarTag.statusTag {
+    background-color: #3d4a3e;
+    color: #fff;
+}
+
+.sidebarCloseBtn {
+    width: 24px;
+    height: 24px;
+    border-radius: 9999px;
+    border: none;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #1a2238;
+    transition: background-color 0.2s;
+}
+
+.sidebarCloseBtn:hover {
+    background-color: rgba(26, 34, 56, 0.1);
+}
+
+.sidebarCloseBtn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.sidebarContent {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 27px;
+}
+
+/* Custom scrollbar for sidebar content */
+.sidebarContent::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebarContent::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebarContent::-webkit-scrollbar-thumb {
+    background: rgba(62, 47, 40, 0.15);
+    border-radius: 3px;
+}
+
+.sidebarContent::-webkit-scrollbar-thumb:hover {
+    background: rgba(62, 47, 40, 0.25);
+}
+
+/* Quick Actions */
+.quickActions {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.quickActionBtn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 7px 10px;
+    border-radius: 14px;
+    background-color: #f2f0e4;
+    border: none;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 15px;
+    text-transform: uppercase;
+    color: #1a2238;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.quickActionBtn:hover {
+    background-color: #e5e3d7;
+}
+
+.quickActionBtn svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Section */
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.sectionTitle {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.1px;
+    line-height: 16.5px;
+    text-transform: uppercase;
+    color: rgba(62, 47, 40, 0.4);
+    margin: 0;
+}
+
+/* Overview */
+.overviewCard {
+    border-radius: 14px;
+    background-color: rgba(255, 255, 255, 0);
+    border: 1px solid rgba(62, 47, 40, 0.05);
+    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.overviewRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 11.3px 17.5px 12.3px;
+    background-color: rgba(242, 240, 228, 0.1);
+}
+
+.overviewRow:not(:last-child) {
+    border-bottom: 1.1px solid rgba(62, 47, 40, 0.05);
+}
+
+.overviewLabel {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12.3px;
+    font-weight: 700;
+    line-height: 17.5px;
+    color: rgba(62, 47, 40, 0.5);
+}
+
+.overviewValue {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12.3px;
+    font-weight: 700;
+    line-height: 17.5px;
+    color: #1a2238;
+}
+
+/* Attendance */
+.attendanceGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 7px;
+}
+
+.attendanceItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2.9px;
+    padding: 9.4px 0 10.6px;
+    border-radius: 10.5px;
+    border: 1px solid rgba(61, 74, 62, 0.1);
+}
+
+.attendanceItem.absent {
+    border-color: rgba(99, 27, 27, 0.1);
+}
+
+.attendanceDate {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 13.5px;
+    text-transform: uppercase;
+    color: rgba(62, 47, 40, 0.6);
+}
+
+.attendanceStatus {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 15px;
+    text-transform: uppercase;
+}
+
+.attendanceStatus.present {
+    color: #3d4a3e;
+    background-color: rgba(61, 74, 62, 0.05);
+    padding: 1.8px 7px;
+    border-radius: 9999px;
+}
+
+.attendanceStatus.absent {
+    color: #631b1b;
+    background-color: rgba(99, 27, 27, 0.05);
+    padding: 1.8px 7px;
+    border-radius: 9999px;
+}
+
+/* Homework List */
+.homeworkList {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.homeworkItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 13px 14px 14px;
+    border-radius: 10.5px;
+    background-color: rgba(242, 240, 228, 0.2);
+}
+
+.homeworkInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.homeworkTitle {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12.3px;
+    font-weight: 700;
+    color: #1a2238;
+}
+
+.homeworkDue {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: rgba(62, 47, 40, 0.4);
+}
+
+.homeworkBadge {
+    padding: 1.8px 7px;
+    border-radius: 9999px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.9px;
+    line-height: 13.5px;
+    text-transform: uppercase;
+}
+
+.homeworkBadge.overdueBadge {
+    background-color: #631b1b;
+    color: #fff;
+}
+
+.homeworkBadge.inProgressBadge {
+    background-color: rgba(26, 34, 56, 0.1);
+    color: #1a2238;
+}
+
+/* View Profile Button */
+.viewProfileBtn {
+    width: 100%;
+    padding: 10px 0;
+    border-radius: 12px;
+    background-color: #1a2238;
+    border: 1px solid #1a2238;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    line-height: 15px;
+    text-transform: uppercase;
+    color: #f2f0e4;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.viewProfileBtn:hover {
+    background-color: #2a3448;
+    border-color: #2a3448;
+}
+
+/* Responsive Design */
+
+/* Large screens - sidebar doesn't need overlay, pushes content aside */
+@media (min-width: 1281px) {
+    .mainContent.withSidebar {
+        margin-right: 350px;
+    }
+
+    .sidebar {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+    }
+}
+
+/* Medium screens - sidebar overlays */
+@media (max-width: 1280px) {
+    .sidebarOverlay {
+        display: block;
+    }
+
+    .sidebar {
+        width: 340px;
+    }
+}
+
+/* Tablet and smaller */
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 340px;
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .classDetail {
+        height: calc(100vh - 56px);
+    }
+
+    .header {
+        padding: 20px;
+    }
+
+    .headerTop {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .headerActions {
+        width: 100%;
+    }
+
+    .actionBtn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .content {
+        padding: 20px;
+    }
+
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .searchWrapper {
+        width: 100%;
+    }
+
+    .toolbarActions {
+        width: 100%;
+    }
+
+    .toolbarBtn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .tableContainer {
+        overflow-x: auto;
+    }
+
+    .table {
+        min-width: 800px;
+    }
+
+    /* Full width sidebar on mobile */
+    .sidebar {
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .sidebarContent {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .className {
+        font-size: 20px;
+        line-height: 26px;
+    }
+
+    .classHeader {
+        flex-wrap: wrap;
+    }
+
+    .attendanceGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

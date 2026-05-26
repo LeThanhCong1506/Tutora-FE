@@ -1,0 +1,1111 @@
+/* Scrollable Content Area */
+.scrollableContentArea {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: clamp(1.5rem, 1rem + 1vw, 3rem) clamp(1.5rem, 1rem + 1vw, 3rem) clamp(2rem, 1.5rem + 1.5vw, 4rem);
+    box-sizing: border-box;
+    gap: clamp(1.5rem, 1rem + 1vw, 3rem);
+    background-color: #f2f0e4;
+    text-align: left;
+    font-size: 12px;
+    color: #1a2238;
+    font-family: Inter;
+}
+
+/* Student Header Section */
+.sectionStudentHeader {
+    align-self: stretch;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.container13 {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.buttonmarginIcon {
+    height: 36px;
+    width: 32px;
+    cursor: pointer;
+}
+
+.container14 {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.container15 {
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.heading1 {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 30px;
+}
+
+.emmaJohnson {
+    width: 278px;
+    height: 36px;
+    position: relative;
+    letter-spacing: -0.75px;
+    line-height: 36px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.overlayborder {
+    border-radius: 4px;
+    background-color: rgba(62, 47, 40, 0.05);
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 2px 8px;
+    color: #3e2f28;
+}
+
+.grade11 {
+    width: 51.4px;
+    height: 16px;
+    position: relative;
+    line-height: 16px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.overlayborder2 {
+    border-radius: 4px;
+    background-color: rgba(61, 74, 62, 0.1);
+    border: 1px solid rgba(61, 74, 62, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 2px 8px;
+    color: #3d4a3e;
+}
+
+.active {
+    width: 46px;
+    height: 16px;
+    position: relative;
+    line-height: 16px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.container16 {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 16px;
+    color: rgba(62, 47, 40, 0.7);
+    font-family: 'Liberation Serif';
+}
+
+.text9 {
+    width: 375px;
+    height: 24px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.textTxt {
+    width: 100%;
+}
+
+.apMathematicsA {
+    line-height: 24px;
+}
+
+.nextLesson {
+    color: rgba(62, 47, 40, 0.5);
+}
+
+.container17 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.button {
+    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    background-color: #1a2238;
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    gap: 8px;
+    color: #f2f0e4;
+    cursor: pointer;
+}
+
+.message {
+    height: 20px;
+    width: 73px;
+    position: relative;
+    line-height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.button2 {
+    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.assignHw {
+    height: 20px;
+    width: 86px;
+    position: relative;
+    line-height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.buttonIcon {
+    height: 36px;
+    width: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* Main Container */
+.container18 {
+    align-self: stretch;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 32px;
+    font-size: 18px;
+    flex-wrap: wrap;
+}
+
+/* Left Column */
+.leftColumnMain {
+    align-self: stretch;
+    flex: 2;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+}
+
+/* Overview Stats Section */
+.sectionOverviewStats {
+    align-self: stretch;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 16px;
+    font-size: 14px;
+    color: rgba(62, 47, 40, 0.6);
+}
+
+.backgroundbordershadow {
+    align-self: stretch;
+    flex: 1;
+    min-width: 180px;
+    box-shadow: 0px 4px 6px -1px rgba(62, 47, 40, 0.05), 0px 2px 4px -1px rgba(62, 47, 40, 0.03);
+    border-radius: 12px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.05);
+    box-sizing: border-box;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+    gap: 4px;
+}
+
+.heading3 {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.averageScore,
+.attendanceRate,
+.overdueHw {
+    width: 110px;
+    height: 20px;
+    position: relative;
+    line-height: 20px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.container19 {
+    width: 100%;
+    height: 40px;
+    position: relative;
+    font-size: 36px;
+    color: #1a2238;
+}
+
+.b,
+.b2 {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    line-height: 40px;
+    display: flex;
+    align-items: center;
+    width: 93px;
+    height: 40px;
+}
+
+.container20 {
+    position: absolute;
+    top: 19.5px;
+    left: 80.06px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #3d4a3e;
+}
+
+.container22 {
+    position: absolute;
+    top: 19.5px;
+    left: 80.06px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #631b1b;
+}
+
+.div {
+    height: 16px;
+    width: 44px;
+    position: relative;
+    line-height: 16px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.div2 {
+    height: 16px;
+    width: 41px;
+    position: relative;
+    line-height: 16px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.paragraph {
+    width: 100%;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 36px;
+    color: #1a2238;
+}
+
+.b3 {
+    height: 40px;
+    width: 20px;
+    position: relative;
+    line-height: 40px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.items {
+    height: 16px;
+    width: 43px;
+    position: relative;
+    font-size: 12px;
+    line-height: 16px;
+    color: rgba(62, 47, 40, 0.4);
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* Attendance History Section */
+.sectionAttendanceHistory {
+    align-self: stretch;
+    box-shadow: 0px 4px 6px -1px rgba(62, 47, 40, 0.05), 0px 2px 4px -1px rgba(62, 47, 40, 0.03);
+    border-radius: 12px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.05);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.overlayhorizontalborder {
+    width: 100%;
+    background-color: rgba(242, 240, 228, 0.3);
+    border-bottom: 1px solid rgba(62, 47, 40, 0.05);
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+    gap: 20px;
+}
+
+.overlayhorizontalborder3 {
+    width: 100%;
+    background-color: rgba(242, 240, 228, 0.3);
+    border-bottom: 1px solid rgba(62, 47, 40, 0.05);
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+}
+
+.container10 {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.attendanceHistory,
+.scoreHistory {
+    position: relative;
+    line-height: 28px;
+}
+
+.options {
+    border-radius: 4px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 4px 24px 4px 12px;
+    font-size: 12px;
+    color: #3e2f28;
+}
+
+.container23 {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1px 7.9px 1px 0px;
+}
+
+.seniorTutor {
+    position: relative;
+    line-height: 14px;
+}
+
+.container24 {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 8px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+.item1 {
+    align-self: stretch;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    gap: 20px;
+}
+
+.container25 {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.background2 {
+    height: 8px;
+    width: 8px;
+    position: relative;
+    border-radius: 9999px;
+    background-color: #3d4a3e;
+}
+
+.overlay {
+    height: 8px;
+    width: 8px;
+    position: relative;
+    border-radius: 9999px;
+    background-color: rgba(99, 27, 27, 0.4);
+}
+
+.container27 {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.masterCalculusFundamentals {
+    position: relative;
+    line-height: 20px;
+}
+
+.container28 {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 12px;
+    color: rgba(62, 47, 40, 0.5);
+    font-family: 'Liberation Serif';
+}
+
+.min {
+    position: relative;
+    line-height: 16px;
+}
+
+.overlayborder3 {
+    border-radius: 9999px;
+    background-color: rgba(61, 74, 62, 0.1);
+    border: 1px solid rgba(61, 74, 62, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: #3d4a3e;
+}
+
+.backgroundborder {
+    border-radius: 9999px;
+    background-color: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* Homework Section */
+.sectionHomework {
+    align-self: stretch;
+    box-shadow: 0px 4px 6px -1px rgba(62, 47, 40, 0.05), 0px 2px 4px -1px rgba(62, 47, 40, 0.03);
+    border-radius: 12px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.05);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    font-family: 'Segoe UI';
+}
+
+.homeworkAssignments {
+    position: relative;
+    line-height: 28px;
+    font-weight: 600;
+}
+
+.button4 {
+    border-radius: 4px;
+    background-color: #1a2238;
+    display: flex;
+    align-items: center;
+    padding: 6px 12px;
+    gap: 8px;
+    text-align: center;
+    font-size: 12px;
+    color: #fff;
+    cursor: pointer;
+}
+
+.assignHomework {
+    position: relative;
+    line-height: 16px;
+    font-weight: 600;
+}
+
+.container41 {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 14px;
+}
+
+.hwItem1 {
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+    gap: 20px;
+}
+
+.hwItem2 {
+    align-self: stretch;
+    border-top: 1px solid rgba(62, 47, 40, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+    gap: 20px;
+}
+
+.chapter5Practice {
+    position: relative;
+    line-height: 20px;
+    font-weight: 600;
+}
+
+.container43 {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 12px;
+    color: rgba(62, 47, 40, 0.6);
+}
+
+.assignedJan10Container {
+    position: relative;
+}
+
+.assignedJan10 {
+    line-height: 16px;
+}
+
+.dueJan16 {
+    color: #631b1b;
+}
+
+.container44,
+.container50 {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 12px;
+}
+
+.container44 {
+    color: #631b1b;
+}
+
+.container50 {
+    color: #6b7280;
+}
+
+.overlayborder6 {
+    border-radius: 4px;
+    background-color: rgba(99, 27, 27, 0.1);
+    border: 1px solid rgba(99, 27, 27, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 4px 10px;
+}
+
+.backgroundborder2 {
+    border-radius: 4px;
+    background-color: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 4px 10px;
+}
+
+.link {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 14px;
+    color: #1a2238;
+}
+
+.review {
+    position: relative;
+    text-decoration: underline;
+    line-height: 20px;
+    cursor: pointer;
+}
+
+/* Score History */
+.midTermExam,
+.chapter4Quiz,
+.practiceTest2 {
+    width: 133px;
+    height: 20px;
+    position: relative;
+    line-height: 20px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.text12,
+.text13 {
+    width: 82.3px;
+    height: 16px;
+    position: relative;
+    line-height: 16px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.container55 {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 20px;
+}
+
+.b4 {
+    width: 53px;
+    height: 28px;
+    position: relative;
+    line-height: 28px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.container57 {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 12px;
+    color: rgba(62, 47, 40, 0.5);
+}
+
+/* Right Column */
+.rightColumnSidebarWidgets {
+    align-self: stretch;
+    flex: 1;
+    min-width: 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+}
+
+/* Contact Info Section */
+.sectionContactInfo {
+    align-self: stretch;
+    box-shadow: 0px 4px 6px -1px rgba(62, 47, 40, 0.05), 0px 2px 4px -1px rgba(62, 47, 40, 0.03);
+    border-radius: 12px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.05);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 24px;
+    gap: 16px;
+}
+
+.heading24 {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.container62 {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    font-size: 14px;
+    color: rgba(62, 47, 40, 0.6);
+}
+
+.email,
+.phone,
+.parent,
+.parentEmail {
+    height: 20px;
+    position: relative;
+    line-height: 20px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.container64 {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+    color: #1a2238;
+}
+
+.emmajohnsonemailcom,
+.div3,
+.robertJohnson,
+.robertjemailcom {
+    height: 20px;
+    position: relative;
+    line-height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-shrink: 0;
+}
+
+.horizontalDivider {
+    align-self: stretch;
+    height: 1px;
+    position: relative;
+    border-top: 1px solid rgba(62, 47, 40, 0.05);
+    box-sizing: border-box;
+}
+
+/* Learning Goals */
+.container71 {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+    font-size: 14px;
+}
+
+.container72 {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.backgroundborder3 {
+    align-self: stretch;
+    height: 6px;
+    position: relative;
+    border-radius: 9999px;
+    background-color: #f2f0e4;
+    border: 1px solid rgba(62, 47, 40, 0.05);
+    box-sizing: border-box;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.background5 {
+    position: absolute;
+    height: calc(100% - 2px);
+    width: 74.5%;
+    top: 1px;
+    right: 25.17%;
+    bottom: 1px;
+    left: 0.33%;
+    border-radius: 9999px;
+    background-color: #3d4a3e;
+}
+
+.background6 {
+    position: absolute;
+    height: calc(100% - 2px);
+    width: 59.6%;
+    top: 1px;
+    right: 40.07%;
+    bottom: 1px;
+    left: 0.33%;
+    border-radius: 9999px;
+    background-color: #1a2238;
+}
+
+.overlay2 {
+    position: absolute;
+    height: calc(100% - 2px);
+    width: 44.7%;
+    top: 1px;
+    right: 54.97%;
+    bottom: 1px;
+    left: 0.33%;
+    border-radius: 9999px;
+    background-color: rgba(99, 27, 27, 0.8);
+}
+
+/* Notes Section */
+.sectionNotes {
+    align-self: stretch;
+    box-shadow: 0px 4px 6px -1px rgba(62, 47, 40, 0.05), 0px 2px 4px -1px rgba(62, 47, 40, 0.03);
+    border-radius: 12px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.05);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 24px;
+    gap: 16px;
+    font-size: 14px;
+    font-family: 'IBM Plex Sans';
+}
+
+.heading26 {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 18px;
+    font-family: Inter;
+}
+
+.notes {
+    width: 68px;
+    height: 28px;
+    position: relative;
+    line-height: 28px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.container84 {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    color: #3e2f28;
+}
+
+.overlayborder8 {
+    align-self: stretch;
+    border-radius: 8px;
+    background-color: rgba(242, 240, 228, 0.4);
+    border: 1px solid rgba(62, 47, 40, 0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 11.4px 12px 12px;
+    gap: 8px;
+}
+
+.container85 {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.excellentProgressOn {
+    width: 363px;
+    height: 46px;
+    position: relative;
+    line-height: 22.75px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.container86 {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 12px;
+    color: rgba(62, 47, 40, 0.4);
+    font-family: 'Liberation Serif';
+}
+
+.text14 {
+    width: 61px;
+    height: 16px;
+    position: relative;
+    line-height: 16px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.container89 {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    color: rgba(62, 47, 40, 0.3);
+}
+
+.textarea {
+    align-self: stretch;
+    height: 80px;
+    border-radius: 8px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    box-sizing: border-box;
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 12px;
+}
+
+.container90 {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    max-width: 100%;
+}
+
+.addANew {
+    width: 146px;
+    position: relative;
+    line-height: 20px;
+    display: flex;
+    align-items: center;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-family: 'IBM Plex Sans';
+    font-size: 14px;
+    color: rgba(62, 47, 40, 0.3);
+}
+
+.button5 {
+    align-self: stretch;
+    border-radius: 8px;
+    background-color: #1a2238;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 0px;
+    text-align: center;
+    color: #fff;
+    cursor: pointer;
+}
+
+.saveNote {
+    height: 20px;
+    width: 88px;
+    position: relative;
+    line-height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+    .container18 {
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .leftColumnMain {
+        width: 100%;
+    }
+
+    .rightColumnSidebarWidgets {
+        width: 100%;
+        min-width: unset;
+    }
+
+    .sectionOverviewStats {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 768px) {
+    .scrollableContentArea {
+        padding: 16px;
+    }
+
+    .sectionStudentHeader {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .container17 {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .heading1 {
+        font-size: 24px;
+    }
+
+    .emmaJohnson {
+        width: 100%;
+    }
+
+    .text9 {
+        width: 100%;
+    }
+
+    .sectionOverviewStats {
+        flex-direction: column;
+    }
+
+    .backgroundbordershadow {
+        min-width: unset;
+        width: 100%;
+    }
+
+    .item1,
+    .hwItem1,
+    .hwItem2 {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .excellentProgressOn {
+        width: 100%;
+        height: auto;
+    }
+}

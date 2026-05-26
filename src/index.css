@@ -1,0 +1,36 @@
+/* ===== TAILWIND CSS ===== */
+@import "tailwindcss";
+
+/* ===== BASE STYLES ===== */
+@import "./styles/base/variables.css";
+@import "./styles/base/global.css";
+
+/* ===== LAYOUT STYLES ===== */
+
+/* ===== COMPONENT STYLES ===== */
+/* Header and Footer are imported directly in their components */
+@import "./styles/components/buttons.css";
+@import "./styles/components/trusted-banner.css";
+@import "./styles/components/testimonials.css";
+@import "./styles/components/statistics.css";
+@import "./styles/components/features.css";
+
+/* ===== PAGE STYLES ===== */
+@import "./styles/pages/home.css";
+@import "./styles/pages/tutor-search.css";
+@import "./styles/pages/register.css";
+@import "./styles/pages/tutor-detail.css";
+@import "./styles/pages/admin-vetting.css";
+@import "./styles/pages/admin-dispute.css";
+@import "./styles/pages/admin-dispute-detail.css";
+@import "./styles/pages/error-pages.css";
+
+/* ===== TUTOR SEARCH COMPONENTS ===== */
+@import "./styles/components/search-bar.css";
+@import "./styles/components/category-tabs.css";
+@import "./styles/components/filter-bar.css";
+@import "./styles/components/active-filters.css";
+@import "./styles/components/tutor-card.css";
+
+/* ===== MOBILE PERFORMANCE ===== */
+@import "./styles/base/mobile-performance.css";

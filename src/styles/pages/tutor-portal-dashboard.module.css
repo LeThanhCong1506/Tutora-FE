@@ -1,0 +1,1258 @@
+/* ===== TUTOR PORTAL DASHBOARD PAGE ===== */
+/* CSS Module matching Figma design exactly */
+
+/* Dashboard Container */
+.dashboard {
+    padding: clamp(1.5rem, 1rem + 1vw, 2.5rem);
+    display: flex;
+    flex-direction: column;
+    gap: 21px;
+    background-color: #f2f0e4;
+    min-height: calc(100vh - 56px);
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.title {
+    font-size: 31.5px;
+    line-height: 35px;
+    font-weight: 700;
+    color: #1a2238;
+    margin: 0;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    letter-spacing: -0.79px;
+}
+
+.date {
+    font-size: 15.8px;
+    line-height: 24px;
+    font-style: italic;
+    color: #3e2f28;
+    font-family: 'IBM Plex Serif', serif;
+}
+
+/* Profile Under Review Banner */
+.reviewBanner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 17.7px;
+    background-color: rgba(26, 34, 56, 0.05);
+    border: 1.2px solid rgba(26, 34, 56, 0.1);
+    border-radius: 14px;
+    gap: 20px;
+}
+
+.bannerContent {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.bannerIcon {
+    width: 38.6px;
+    height: 38.6px;
+    border-radius: 10.5px;
+    background-color: rgba(26, 34, 56, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1a2238;
+    flex-shrink: 0;
+}
+
+.bannerIcon svg {
+    width: 21px;
+    height: 21px;
+}
+
+.bannerText {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5px;
+}
+
+.bannerTitleRow {
+    display: flex;
+    align-items: flex-end;
+    gap: 7px;
+    padding-bottom: 0.9px;
+}
+
+.bannerTitle {
+    font-size: 14px;
+    line-height: 21px;
+    font-weight: 700;
+    color: #1a2238;
+    font-family: 'Bricolage Grotesque', sans-serif;
+}
+
+.pendingBadge {
+    padding: 1.8px 7px;
+    background-color: #1a2238;
+    border-radius: 9999px;
+    font-size: 10px;
+    line-height: 15px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.bannerDescription {
+    font-size: 12.3px;
+    line-height: 17.5px;
+    font-style: italic;
+    color: rgba(62, 47, 40, 0.7);
+    margin: 0;
+    font-family: 'IBM Plex Serif', serif;
+}
+
+.viewDetailsBtn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8.8px 21px;
+    background-color: #1a2238;
+    border: none;
+    border-radius: 10.5px;
+    font-size: 10.5px;
+    line-height: 14px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    flex-shrink: 0;
+}
+
+.viewDetailsBtn:hover {
+    opacity: 0.9;
+}
+
+.viewDetailsBtn svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Stats Grid */
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+}
+
+.statCard {
+    min-width: 0;
+    position: relative;
+    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+    border-radius: 14px;
+    background-color: #fff;
+    border: 1.2px solid rgba(62, 47, 40, 0.1);
+    padding: 18.7px;
+    display: flex;
+    flex-direction: column;
+}
+
+.statHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 10.5px;
+}
+
+.statIcon {
+    width: 17.5px;
+    height: 17.5px;
+    opacity: 0.8;
+    color: #1a2238;
+}
+
+.statIcon svg {
+    width: 17.5px;
+    height: 17.5px;
+}
+
+.statChange {
+    padding: 1.8px 7px;
+    background-color: rgba(61, 74, 62, 0.1);
+    border-radius: 9999px;
+    font-size: 10px;
+    line-height: 15px;
+    font-weight: 700;
+    color: #3d4a3e;
+}
+
+.statValue {
+    font-size: 24px;
+    line-height: 30px;
+    font-weight: 700;
+    color: #1a2238;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    letter-spacing: -0.5px;
+    margin-bottom: 3.5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.statLabel {
+    font-size: 10.5px;
+    line-height: 14px;
+    font-weight: 600;
+    color: rgba(62, 47, 40, 0.6);
+    letter-spacing: 0.26px;
+    text-transform: uppercase;
+}
+
+/* Quick Actions */
+.quickActions {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 10.5px;
+}
+
+.actionBtn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8.9px 14.2px;
+    background-color: #fff;
+    border: 1.2px solid rgba(62, 47, 40, 0.1);
+    border-radius: 10.5px;
+    font-size: 12.3px;
+    line-height: 17.5px;
+    font-weight: 700;
+    color: #1a2238;
+    cursor: pointer;
+    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
+
+.actionBtn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.actionBtn:first-child {
+    background-color: #1a2238;
+    color: #fff;
+    border-color: #1a2238;
+    box-shadow: 0px 10px 15px -3px rgba(26, 34, 56, 0.2), 0px 4px 6px -4px rgba(26, 34, 56, 0.2);
+}
+
+.actionBtn:first-child:hover {
+    opacity: 0.9;
+}
+
+.actionBtn:not(:first-child):hover {
+    background-color: #f2f0e4;
+}
+
+/* Content Grid - 3 columns layout */
+.contentGrid {
+    display: flex;
+    align-items: flex-start;
+    gap: 21px;
+}
+
+.leftColumn {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 21px;
+}
+
+.middleColumn {
+    flex: 0 0 280px;
+    max-width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 21px;
+}
+
+.rightColumn {
+    flex: 0 0 280px;
+    max-width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 21px;
+}
+
+/* Section Card */
+.sectionCard {
+    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+    border-radius: 14px;
+    background-color: #fff;
+    border: 1.2px solid rgba(62, 47, 40, 0.1);
+    overflow: hidden;
+}
+
+/* Section Header with border */
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 21px;
+    border-bottom: 1.2px solid rgba(62, 47, 40, 0.1);
+}
+
+.sectionTitle {
+    font-size: 17.5px;
+    line-height: 24.5px;
+    font-weight: 700;
+    color: #1a2238;
+    margin: 0;
+    font-family: 'Bricolage Grotesque', sans-serif;
+}
+
+/* Tab Group */
+.tabGroup {
+    display: flex;
+    background-color: #f2f0e4;
+    border-radius: 7px;
+    padding: 3.5px;
+}
+
+.tabBtn {
+    padding: 5.3px 14px;
+    background: none;
+    border: none;
+    border-radius: 5.25px;
+    font-size: 10.5px;
+    line-height: 14px;
+    font-weight: 700;
+    color: rgba(62, 47, 40, 0.6);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tabBtn.active {
+    background-color: #fff;
+    color: #1a2238;
+    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.tabBtn:not(.active):hover {
+    color: #1a2238;
+}
+
+/* Lessons List */
+.lessonsList {
+    display: flex;
+    flex-direction: column;
+}
+
+.lessonItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 21px;
+    border-top: 1.2px solid rgba(62, 47, 40, 0.05);
+}
+
+.lessonItem:first-child {
+    border-top: none;
+    background-color: rgba(242, 240, 228, 0.3);
+    border-left: 3.6px solid #1a2238;
+}
+
+.lessonInfo {
+    display: flex;
+    gap: 21px;
+}
+
+.lessonTime {
+    font-size: 14px;
+    line-height: 21px;
+    font-weight: 700;
+    color: #1a2238;
+    min-width: 63px;
+    padding-top: 3.5px;
+    font-family: 'Bricolage Grotesque', sans-serif;
+}
+
+.lessonDate {
+    font-size: 10px;
+    line-height: 14px;
+    color: rgba(62, 47, 40, 0.5);
+    font-weight: 500;
+    margin-top: 2px;
+}
+
+.lessonDetails {
+    display: flex;
+    flex-direction: column;
+    gap: 2.3px;
+}
+
+.lessonSubject {
+    font-size: 14px;
+    line-height: 21px;
+    font-weight: 700;
+    color: #1a2238;
+    margin: 0;
+    font-family: 'Bricolage Grotesque', sans-serif;
+}
+
+.lessonStudent {
+    font-size: 12.3px;
+    line-height: 17.5px;
+    font-style: italic;
+    color: rgba(62, 47, 40, 0.7);
+    margin: 0;
+    font-family: 'IBM Plex Serif', serif;
+}
+
+.lessonStatus {
+    display: inline-block;
+    padding: 1.8px 7px;
+    border-radius: 9999px;
+    font-size: 10px;
+    line-height: 15px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    width: fit-content;
+    margin-top: 4.7px;
+}
+
+.statusStartingSoon {
+    background-color: rgba(99, 27, 27, 0.1);
+    color: #631b1b;
+}
+
+.statusOngoing {
+    background-color: rgba(61, 74, 62, 0.1);
+    color: #3d4a3e;
+}
+
+.statusCompleted {
+    background-color: rgba(62, 47, 40, 0.1);
+    color: rgba(62, 47, 40, 0.6);
+}
+
+/* Lesson Actions */
+.lessonActions {
+    display: flex;
+    gap: 10.5px;
+}
+
+.primaryBtn {
+    padding: 7px 17.5px;
+    background-color: #631b1b;
+    border: none;
+    border-radius: 7px;
+    font-size: 10.5px;
+    line-height: 14px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.primaryBtn:hover {
+    opacity: 0.9;
+}
+
+.secondaryBtn {
+    padding: 7px 17.5px;
+    background-color: #1a2238;
+    border: none;
+    border-radius: 7px;
+    font-size: 10.5px;
+    line-height: 14px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.secondaryBtn:hover {
+    opacity: 0.9;
+}
+
+.outlineBtn {
+    padding: 7.2px 14.2px;
+    background-color: #fff;
+    border: 1.2px solid rgba(62, 47, 40, 0.2);
+    border-radius: 7px;
+    font-size: 10.5px;
+    line-height: 14px;
+    font-weight: 700;
+    color: #1a2238;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.outlineBtn:hover {
+    background-color: #f2f0e4;
+}
+
+/* Action Queue Section */
+.actionQueueSection {
+    padding: 21px;
+}
+
+.actionQueueSection .sectionTitle {
+    margin-bottom: 14px;
+}
+
+/* Action Queue */
+.actionQueueList {
+    display: flex;
+    flex-direction: column;
+    gap: 10.5px;
+}
+
+.actionQueueItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 17.7px;
+    background-color: #fff;
+    border: 1.2px solid rgba(62, 47, 40, 0.1);
+    border-radius: 14px;
+}
+
+.actionQueueInfo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.actionIndicator {
+    width: 5.3px;
+    height: 35px;
+    border-radius: 9999px;
+    flex-shrink: 0;
+}
+
+.actionIndicator.warning {
+    background-color: #631b1b;
+}
+
+.actionIndicator.info {
+    background-color: rgba(61, 74, 62, 0.4);
+}
+
+.actionQueueText {
+    display: flex;
+    flex-direction: column;
+}
+
+.actionQueueTitle {
+    font-size: 14px;
+    line-height: 21px;
+    font-weight: 700;
+    color: #1a2238;
+    margin: 0;
+    font-family: 'Bricolage Grotesque', sans-serif;
+}
+
+.actionQueueDesc {
+    font-size: 12.3px;
+    line-height: 17.5px;
+    color: rgba(62, 47, 40, 0.6);
+    margin: 0;
+    margin-top: -1.2px;
+}
+
+.actionQueueBtn {
+    display: flex;
+    align-items: center;
+    gap: 3.5px;
+    padding: 7px 14px;
+    background-color: #1a2238;
+    border: none;
+    border-radius: 10.5px;
+    font-size: 10.5px;
+    line-height: 14px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    flex-shrink: 0;
+}
+
+.actionQueueBtn:hover {
+    opacity: 0.9;
+}
+
+.actionQueueBtn svg {
+    width: 10.5px;
+    height: 10.5px;
+}
+
+/* Requests Section */
+.requestsSection {
+    padding: 21px;
+}
+
+.requestsSection .sectionTitle {
+    margin-bottom: 14px;
+}
+
+/* Requests Card */
+.requestsCard {
+    border: 1.2px solid rgba(62, 47, 40, 0.1);
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.requestsList {
+    display: flex;
+    flex-direction: column;
+}
+
+.requestItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 17.49px;
+    border-top: 1.2px solid rgba(62, 47, 40, 0.05);
+}
+
+.requestItem:first-child {
+    border-top: none;
+}
+
+.requestInfo {
+    display: flex;
+    flex-direction: column;
+}
+
+.requestTitle {
+    font-size: 12.3px;
+    line-height: 17.5px;
+    font-weight: 700;
+    color: #1a2238;
+}
+
+.requestCount {
+    font-size: 10.5px;
+    line-height: 14px;
+    font-style: italic;
+    color: rgba(62, 47, 40, 0.6);
+    font-family: 'IBM Plex Serif', serif;
+}
+
+.reviewBtn {
+    padding: 7.2px 14.2px;
+    background: none;
+    border: 1.2px solid rgba(62, 47, 40, 0.1);
+    border-radius: 7px;
+    font-size: 10.5px;
+    line-height: 14px;
+    font-weight: 700;
+    color: #1a2238;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.reviewBtn:hover {
+    background-color: #f2f0e4;
+}
+
+/* Calendar Section */
+.calendarSection {
+    padding: 0;
+}
+
+.calendarHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 21.3px 22.2px;
+}
+
+.calendarMonth {
+    font-size: 14px;
+    line-height: 21px;
+    font-weight: 700;
+    color: #1a2238;
+    margin: 0;
+    font-family: 'Bricolage Grotesque', sans-serif;
+}
+
+.calendarNav {
+    display: flex;
+    gap: 7px;
+}
+
+.calendarNavBtn {
+    padding: 3.5px;
+    border-radius: 3.5px;
+    background: none;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1a2238;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.calendarNavBtn:hover {
+    background-color: #f2f0e4;
+}
+
+.calendarNavBtn svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Calendar Week Days Header */
+.calendarWeekDays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 0 22.2px;
+    gap: 3.5px;
+}
+
+.calendarWeekDay {
+    text-align: center;
+    font-size: 10px;
+    line-height: 15px;
+    font-weight: 700;
+    color: rgba(62, 47, 40, 0.4);
+    padding: 8px 0;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* Calendar Grid */
+.calendarGrid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 0 22.2px 22.2px;
+    gap: 3.5px;
+}
+
+.calendarDay {
+    position: relative;
+    text-align: center;
+    font-size: 12.3px;
+    line-height: 18px;
+    color: #1a2238;
+    padding: 5.8px 0 7.7px;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    height: 31.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.calendarDay:hover {
+    background-color: rgba(61, 74, 62, 0.1);
+}
+
+.calendarDay.otherMonth {
+    color: rgba(62, 47, 40, 0.2);
+}
+
+.calendarDay.today {
+    background-color: #1a2238;
+    color: #fff;
+}
+
+.calendarDay.today:hover {
+    background-color: #1a2238;
+}
+
+.calendarDay.hasSession {
+    background-color: rgba(61, 74, 62, 0.1);
+    color: #3d4a3e;
+}
+
+.sessionDot {
+    position: absolute;
+    bottom: 3.47px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 3.5px;
+    height: 3.5px;
+    border-radius: 50%;
+    background-color: #3d4a3e;
+}
+
+.calendarDay.today .sessionDot {
+    background-color: #fff;
+    opacity: 0.6;
+}
+
+.calendarDay.selected {
+    background-color: transparent;
+    box-shadow: inset 0 0 0 2px #d97706;
+    color: #d97706;
+    font-weight: 700;
+}
+
+.calendarDay.selected.hasSession {
+    background-color: rgba(217, 119, 6, 0.08);
+}
+
+.calendarDay.selected .sessionDot {
+    background-color: #d97706;
+}
+
+/* Calendar Legend */
+.calendarLegend {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 22.2px;
+    border-top: 1.2px solid rgba(62, 47, 40, 0.05);
+}
+
+.legendItem {
+    display: flex;
+    align-items: center;
+    gap: 5.25px;
+}
+
+.legendDot {
+    width: 8.7px;
+    height: 8.7px;
+    border-radius: 9999px;
+}
+
+.legendDot.classDay {
+    background-color: rgba(61, 74, 62, 0.2);
+    border: 1px solid rgba(61, 74, 62, 0.3);
+}
+
+.legendDot.todayDot {
+    background-color: #1a2238;
+}
+
+.legendDot.selectedDot {
+    background-color: transparent;
+    border: 2px solid #d97706;
+}
+
+.legendText {
+    font-size: 10px;
+    line-height: 15px;
+    color: rgba(62, 47, 40, 0.6);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* Notes & Tasks Section */
+.notesSection {
+    padding: 21px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.notesSectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.notesSectionHeader .sectionTitle {
+    margin: 0;
+}
+
+.addTaskBtn {
+    display: flex;
+    align-items: center;
+    gap: 3.5px;
+    padding: 5.3px 10.5px;
+    background: none;
+    border: 1.2px solid rgba(62, 47, 40, 0.1);
+    border-radius: 7px;
+    font-size: 10.5px;
+    line-height: 14px;
+    font-weight: 700;
+    color: #1a2238;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.addTaskBtn:hover {
+    background-color: #f2f0e4;
+}
+
+.addTaskBtn svg {
+    width: 10.5px;
+    height: 10.5px;
+}
+
+/* Tasks List */
+.tasksList {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.taskItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 10.5px;
+}
+
+.taskCheckbox {
+    width: 17.5px;
+    height: 17.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 0;
+    color: rgba(62, 47, 40, 0.3);
+    transition: color 0.2s ease;
+    flex-shrink: 0;
+}
+
+.taskCheckbox:hover {
+    color: #1a2238;
+}
+
+.taskCheckbox svg {
+    width: 17.5px;
+    height: 17.5px;
+}
+
+.taskContent {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75px;
+    flex: 1;
+}
+
+.taskTitle {
+    font-size: 12.3px;
+    line-height: 17.5px;
+    font-weight: 700;
+    color: #1a2238;
+}
+
+.taskTitle.completed {
+    text-decoration: line-through;
+    color: rgba(62, 47, 40, 0.4);
+}
+
+.taskDate {
+    font-size: 10.5px;
+    line-height: 14px;
+    color: rgba(62, 47, 40, 0.6);
+    letter-spacing: 0.5px;
+}
+
+/* Personal Note */
+.personalNoteSection {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 14px;
+    background-color: rgba(242, 240, 228, 0.4);
+    border-radius: 10.5px;
+    margin-top: 7px;
+}
+
+.personalNoteLabel {
+    font-size: 10px;
+    line-height: 15px;
+    font-weight: 700;
+    color: rgba(62, 47, 40, 0.6);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.personalNoteText {
+    font-size: 12.3px;
+    line-height: 17.5px;
+    font-style: italic;
+    color: #3e2f28;
+    margin: 0;
+    font-family: 'IBM Plex Serif', serif;
+}
+
+.personalNoteDate {
+    font-size: 10.5px;
+    line-height: 14px;
+    color: rgba(62, 47, 40, 0.6);
+}
+
+/* View All Records Button */
+.viewAllRecordsBtn {
+    width: 100%;
+    padding: 10.5px;
+    background: none;
+    border: 1.2px solid rgba(62, 47, 40, 0.1);
+    border-radius: 10.5px;
+    font-size: 10.5px;
+    line-height: 14px;
+    font-weight: 700;
+    color: #1a2238;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 7px;
+}
+
+.viewAllRecordsBtn:hover {
+    background-color: #f2f0e4;
+}
+
+/* Responsive */
+/* Large screens */
+@media (min-width: 1920px) {
+    .middleColumn {
+        flex: 0 0 340px;
+        max-width: 340px;
+    }
+
+    .rightColumn {
+        flex: 0 0 340px;
+        max-width: 340px;
+    }
+}
+
+@media (min-width: 2560px) {
+    .middleColumn {
+        flex: 0 0 400px;
+        max-width: 400px;
+    }
+
+    .rightColumn {
+        flex: 0 0 400px;
+        max-width: 400px;
+    }
+}
+
+@media (max-width: 1400px) {
+    .contentGrid {
+        flex-direction: column;
+    }
+
+    .leftColumn,
+    .middleColumn,
+    .rightColumn {
+        flex: 1;
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 1024px) {
+    .statsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard {
+        padding: 16px;
+        gap: 16px;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .title {
+        font-size: 24px;
+        line-height: 30px;
+    }
+
+    .date {
+        font-size: 13px;
+    }
+
+    /* Stats: 2 columns on mobile */
+    .statsGrid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .statCard {
+        min-width: 0;
+        padding: 14px;
+    }
+
+    .statValue {
+        font-size: 20px;
+        line-height: 26px;
+    }
+
+    .statLabel {
+        font-size: 9.5px;
+        line-height: 13px;
+    }
+
+    /* Banner */
+    .reviewBanner {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 14px;
+    }
+
+    .viewDetailsBtn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Quick actions: 2x2 grid */
+    .quickActions {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .actionBtn {
+        width: 100%;
+        justify-content: center;
+        font-size: 11px;
+        padding: 8px 10px;
+    }
+
+    /* Content grid: stack vertically, full width */
+    .contentGrid {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .leftColumn,
+    .middleColumn,
+    .rightColumn {
+        flex: 1 1 auto;
+        max-width: 100%;
+        width: 100%;
+    }
+
+    /* Right column: display as row on mobile (calendar + reviews side by side) if wide enough, else stack */
+    .rightColumn {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    /* Lessons */
+    .lessonItem {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px;
+    }
+
+    .lessonInfo {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .lessonTime {
+        padding-top: 0;
+    }
+
+    .lessonActions {
+        width: 100%;
+    }
+
+    .lessonActions button {
+        flex: 1;
+    }
+
+    .sectionHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 16px;
+    }
+
+    .sectionTitle {
+        font-size: 16px;
+    }
+
+    /* Calendar */
+    .calendarHeader {
+        padding: 16px;
+    }
+
+    .calendarWeekDays {
+        padding: 0 16px;
+    }
+
+    .calendarGrid {
+        padding: 0 16px 16px;
+    }
+
+    .calendarDay {
+        font-size: 13px;
+        height: 36px;
+    }
+
+    .calendarMonth {
+        font-size: 15px;
+    }
+
+    /* Calendar legend */
+    .calendarLegend {
+        padding: 12px 16px;
+    }
+
+    /* Action queue */
+    .actionQueueItem {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .actionQueueBtn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Extra small screens */
+@media (max-width: 400px) {
+    .dashboard {
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .statsGrid {
+        gap: 8px;
+    }
+
+    .statCard {
+        padding: 10px;
+    }
+
+    .statValue {
+        font-size: 18px;
+        line-height: 22px;
+    }
+
+    .quickActions {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+    }
+
+    .actionBtn {
+        font-size: 10px;
+        padding: 7px 6px;
+        gap: 4px;
+    }
+
+    .calendarDay {
+        font-size: 12px;
+        height: 32px;
+    }
+}

@@ -1,0 +1,2728 @@
+/* ===== TUTOR DETAIL PAGE STYLES ===== */
+
+/* Page Container */
+.tutor-detail-page {
+    width: 100%;
+    min-height: 100vh;
+    background-color: var(--color-cream);
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-primary);
+}
+
+.tutor-detail-page .tutor-detail-main {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    padding-top: 122px;
+    padding-bottom: 100px;
+}
+
+.tutor-detail-page .tutor-detail-container {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 42px;
+    max-width: 1400px;
+    padding: 0 35px;
+}
+
+.tutor-detail-page .tutor-detail-content {
+    width: 824px;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+}
+
+/* ===== HERO SECTION ===== */
+.tutor-detail-page .tutor-hero-section {
+    display: flex;
+    flex-direction: column;
+    gap: 27.9px;
+}
+
+.tutor-detail-page .component-2 {
+    width: 824.2px;
+    box-shadow: 0px 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border-radius: 40px;
+    background-color: rgba(255, 255, 255, 0);
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    overflow: hidden;
+    position: relative;
+    isolation: isolate;
+}
+
+.tutor-detail-page .interview-thumbnail {
+    width: 100%;
+    height: 351.4px;
+    object-fit: cover;
+}
+
+.tutor-detail-page .gradient-overlay {
+    position: absolute;
+    inset: 1px;
+    background: linear-gradient(0deg, #1a2238, rgba(26, 34, 56, 0.4) 50%, rgba(26, 34, 56, 0));
+    z-index: 1;
+}
+
+/* Play Button */
+.tutor-detail-page .play-button-container {
+    position: absolute;
+    inset: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.tutor-detail-page .play-button {
+    width: 70px;
+    height: 70px;
+    box-shadow: 0px 25px 50px -12px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(24px);
+    border-radius: 9999px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tutor-detail-page .play-button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+.tutor-detail-page .click-to-view {
+    position: absolute;
+    top: 27.38px;
+    right: 29px;
+    font-size: 9px;
+    letter-spacing: 3.6px;
+    line-height: 13.5px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* TUTORA Badge */
+.tutor-detail-page .TUTORA-badge-container {
+    position: absolute;
+    top: 29px;
+    left: 29px;
+    z-index: 3;
+}
+
+.tutor-detail-page .TUTORA-badge {
+    backdrop-filter: blur(12px);
+    border-radius: 10.5px;
+    background-color: rgba(26, 34, 56, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    padding: 6.9px 13.9px;
+    gap: 7px;
+}
+
+.tutor-detail-page .TUTORA-badge-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 9999px;
+    background-color: var(--color-gold);
+}
+
+.tutor-detail-page .TUTORA-badge-text {
+    font-size: 9px;
+    letter-spacing: 0.9px;
+    line-height: 13.5px;
+    text-transform: uppercase;
+    color: var(--color-gold);
+}
+
+/* Tutor Info Card */
+.tutor-detail-page .tutor-info-card {
+    position: absolute;
+    bottom: 31px;
+    left: 36.3px;
+    z-index: 4;
+    max-width: 448px;
+}
+
+.tutor-detail-page .tutor-info-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tutor-detail-page .tutor-mini-avatar {
+    width: 90px;
+    height: 90px;
+    box-shadow: 0px 6px 17px -3px rgba(26, 34, 56, 0.15);
+    border-radius: 50%;
+    background-color: #f3f4f6;
+    border: 3px solid #fff;
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.tutor-detail-page .tutor-mini-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tutor-detail-page .tutor-mini-avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--color-green), var(--color-navy));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.tutor-detail-page .mini-avatar-gradient {
+    position: absolute;
+    inset: 2px;
+    background: linear-gradient(0deg, rgba(26, 34, 56, 0.8), rgba(26, 34, 56, 0) 50%, rgba(26, 34, 56, 0));
+    opacity: 0.6;
+}
+
+.tutor-detail-page .tutor-info-text {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+}
+
+.tutor-detail-page .university-badge {
+    backdrop-filter: blur(12px);
+    border-radius: 9999px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 3.4px 10.4px;
+    font-size: 9px;
+    letter-spacing: 0.9px;
+    line-height: 13.5px;
+    text-transform: uppercase;
+    color: #fff;
+    width: fit-content;
+}
+
+.tutor-detail-page .tutor-name {
+    font-size: 36px;
+    letter-spacing: -2.1px;
+    line-height: 42px;
+    color: #fff;
+    font-weight: 400;
+    margin: 0;
+}
+
+.tutor-detail-page .tutor-credential {
+    font-size: 17.5px;
+    line-height: 24.5px;
+    color: var(--color-gold);
+    margin: 0;
+}
+
+/* Rating Card */
+.tutor-detail-page .rating-card-container {
+    position: absolute;
+    right: 36.44px;
+    bottom: 36.02px;
+    z-index: 5;
+}
+
+.tutor-detail-page .rating-card {
+    box-shadow: 0px 20px 25px -5px rgba(0, 0, 0, 0.1), 0px 8px 10px -6px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(12px);
+    border-radius: 21px;
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1px solid #fff;
+    display: flex;
+    align-items: center;
+    padding: 17.4px;
+    gap: 14px;
+}
+
+.tutor-detail-page .rating-stars {
+    display: flex;
+    flex-direction: column;
+    gap: 3.5px;
+}
+
+.tutor-detail-page .stars-row {
+    display: flex;
+    gap: 3.5px;
+}
+
+.tutor-detail-page .rating-text {
+    font-size: 9px;
+    letter-spacing: 0.9px;
+    line-height: 13.5px;
+    text-transform: uppercase;
+    color: var(--color-navy);
+}
+
+.tutor-detail-page .rating-divider {
+    width: 1px;
+    height: 28px;
+    background-color: #e4ded5;
+}
+
+.tutor-detail-page .favorite-button {
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.05) inset;
+    border-radius: 14px;
+    background-color: var(--color-green);
+    padding: 8.8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tutor-detail-page .favorite-button:hover {
+    transform: scale(1.05);
+}
+
+/* Subject Tags */
+.tutor-detail-page .subject-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 0 7px;
+}
+
+.tutor-detail-page .subject-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 1px dashed rgba(62, 47, 40, 0.2);
+    padding: 6px;
+    border-radius: 20px;
+}
+
+.tutor-detail-page .subject-tag {
+    border-radius: 14px;
+    padding: 9.6px 20.9px 11.2px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    line-height: 15px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.tutor-detail-page .subject-name-tag {
+    box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1), 0px 4px 6px -4px rgba(0, 0, 0, 0.1);
+    background-color: var(--color-navy);
+    border: 1px solid var(--color-navy);
+    color: var(--color-gold);
+}
+
+.tutor-detail-page .child-tag {
+    background-color: rgba(26, 34, 56, 0.06);
+    border: 1px solid rgba(26, 34, 56, 0.12);
+    color: var(--color-navy);
+    letter-spacing: 1.5px;
+    padding: 7px 16px 8px;
+    font-size: 9px;
+}
+
+.tutor-detail-page .grade-level-tag {
+    background-color: rgba(61, 74, 62, 0.08);
+    border: 1px solid rgba(61, 74, 62, 0.18);
+    color: #3d4a3e;
+    letter-spacing: 1.5px;
+    padding: 7px 16px 8px;
+    font-size: 9px;
+}
+
+.tutor-detail-page .grade-levels-section {
+    padding: 12px 7px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tutor-detail-page .grade-levels-label {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: rgba(62, 47, 40, 0.4);
+}
+
+.tutor-detail-page .grade-levels-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.tutor-detail-page .grade-level-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.tutor-detail-page .grade-level-subject {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: #1a2238;
+    letter-spacing: 0.5px;
+}
+
+/* ===== ABOUT SECTION ===== */
+.tutor-detail-page .about-section {
+    box-shadow: 0px 10px 30px -10px rgba(26, 34, 56, 0.08);
+    border-radius: 20px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    padding: 34.9px;
+    display: flex;
+    flex-direction: column;
+    gap: 26.9px;
+}
+
+.tutor-detail-page .section-title {
+    font-size: 26.3px;
+    letter-spacing: -0.52px;
+    line-height: 31.5px;
+    color: var(--color-navy);
+    font-weight: 400;
+    margin: 0;
+}
+
+.tutor-detail-page .about-content {
+    display: flex;
+    gap: 42px;
+    overflow: hidden;
+}
+
+.tutor-detail-page .about-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20.3px;
+}
+
+.tutor-detail-page .about-intro {
+    font-size: 15.8px;
+    line-height: 25.59px;
+    font-weight: 500;
+    color: rgba(62, 47, 40, 0.8);
+    margin: 0;
+}
+
+.tutor-detail-page .about-experience {
+    font-size: 14px;
+    line-height: 21px;
+    color: rgba(62, 47, 40, 0.6);
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+/* Credentials Card */
+.tutor-detail-page .credentials-card {
+    width: 260px;
+    min-width: 0;
+    flex-shrink: 0;
+    border-radius: 20px;
+    background: linear-gradient(145deg, #faf9f6 0%, #f5f2ec 100%);
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    padding: 24px;
+    box-sizing: border-box;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    box-shadow: 0 4px 16px -6px rgba(26, 34, 56, 0.08);
+}
+
+.tutor-detail-page .credential-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    padding: 4px 0;
+}
+
+.tutor-detail-page .credential-icon-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tutor-detail-page .credential-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--color-navy, #1a2238);
+    color: #f2f0e4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.tutor-detail-page .credential-label {
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    line-height: 14px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: rgba(62, 47, 40, 0.45);
+    white-space: nowrap;
+}
+
+.tutor-detail-page .credential-institution {
+    font-size: 14px;
+    line-height: 19px;
+    color: var(--color-navy);
+    font-weight: 700;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    max-width: 100%;
+}
+
+.tutor-detail-page .credential-detail {
+    font-size: 11px;
+    line-height: 15px;
+    color: rgba(62, 47, 40, 0.5);
+    font-style: normal;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    max-width: 100%;
+}
+
+.tutor-detail-page .credential-divider {
+    height: 1px;
+    background: rgba(62, 47, 40, 0.1);
+    margin: 16px 0;
+}
+
+/* ===== PORTFOLIO SECTION ===== */
+.tutor-detail-page .portfolio-stats-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 55.2px;
+}
+
+.tutor-detail-page .portfolio-section {
+    box-shadow: 0px 10px 30px -10px rgba(26, 34, 56, 0.08);
+    border-radius: 20px;
+    background-color: #fff;
+    border: 1px solid #e4ded5;
+    overflow: hidden;
+}
+
+.tutor-detail-page .portfolio-header {
+    background-color: rgba(250, 245, 238, 0.3);
+    border-bottom: 0.9px solid #f2f0e4;
+    padding: 27.3px 35px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.tutor-detail-page .portfolio-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2.7px;
+}
+
+.tutor-detail-page .portfolio-subtitle {
+    font-size: 10px;
+    letter-spacing: 3px;
+    line-height: 15px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: rgba(62, 47, 40, 0.4);
+}
+
+.tutor-detail-page .verified-badge-green {
+    border-radius: 15px;
+    background-color: var(--color-green);
+    padding: 8px 16px;
+    font-size: 12.15px;
+    letter-spacing: 1.21px;
+    line-height: 18.22px;
+    text-transform: uppercase;
+    color: #fff;
+}
+
+.tutor-detail-page .portfolio-content {
+    padding: 35px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Category Headers */
+.tutor-detail-page .portfolio-category {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.tutor-detail-page .category-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.tutor-detail-page .category-indicator {
+    width: 5.3px;
+    height: 21px;
+    border-radius: 9999px;
+}
+
+.tutor-detail-page .category-indicator.navy {
+    background-color: var(--color-navy);
+}
+
+.tutor-detail-page .category-indicator.gold {
+    background-color: var(--color-gold);
+}
+
+.tutor-detail-page .category-title {
+    font-size: 11px;
+    letter-spacing: 4.4px;
+    line-height: 16.5px;
+    text-transform: uppercase;
+    color: var(--color-navy);
+}
+
+.tutor-detail-page .category-divider {
+    flex: 1;
+    height: 1px;
+    background-color: #f2f0e4;
+}
+
+.tutor-detail-page .view-more-btn {
+    font-size: 11px;
+    letter-spacing: 4.4px;
+    line-height: 16.5px;
+    text-transform: uppercase;
+    text-decoration: underline;
+    color: var(--color-navy);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+
+.tutor-detail-page .view-more-btn:hover {
+    opacity: 0.7;
+}
+
+/* Degrees Grid */
+.tutor-detail-page .degrees-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+}
+
+.tutor-detail-page .degree-card {
+    border-radius: 20px;
+    background-color: rgba(250, 245, 238, 0.4);
+    border: 1px solid #e4ded5;
+    padding: 17.4px;
+    display: flex;
+    gap: 14px;
+}
+
+.tutor-detail-page .degree-icon {
+    width: 42px;
+    height: 42px;
+    box-shadow: 0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -2px rgba(0, 0, 0, 0.1);
+    border-radius: 10.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+}
+
+.tutor-detail-page .degree-icon.navy {
+    background-color: var(--color-navy);
+}
+
+.tutor-detail-page .degree-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3.5px;
+}
+
+.tutor-detail-page .degree-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.tutor-detail-page .degree-title {
+    font-size: 12.3px;
+    line-height: 16.84px;
+    color: var(--color-navy);
+    font-family: var(--font-serif);
+}
+
+.tutor-detail-page .verified-check {
+    width: 14px;
+    height: 14px;
+    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+    border-radius: 9999px;
+    background-color: var(--color-green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.tutor-detail-page .degree-institution {
+    font-size: 10px;
+    letter-spacing: 1px;
+    line-height: 15px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: rgba(62, 47, 40, 0.5);
+}
+
+/* Certificates Grid */
+.tutor-detail-page .certificates-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+}
+
+.tutor-detail-page .certificate-card {
+    border-radius: 20px;
+    background-color: rgba(250, 245, 238, 0.4);
+    border: 1px solid #e4ded5;
+    padding: 17.4px;
+    display: flex;
+    gap: 14px;
+}
+
+.tutor-detail-page .certificate-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10.5px;
+    background-color: #fff;
+    border: 1px solid #e4ded5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-navy);
+}
+
+.tutor-detail-page .certificate-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3.5px;
+}
+
+.tutor-detail-page .certificate-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.tutor-detail-page .certificate-title {
+    font-size: 12.3px;
+    line-height: 16.84px;
+    color: var(--color-navy);
+}
+
+.tutor-detail-page .certificate-institution {
+    font-size: 10px;
+    letter-spacing: 1px;
+    line-height: 15px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: rgba(62, 47, 40, 0.5);
+}
+
+.tutor-detail-page .certificate-score {
+    font-size: 15.8px;
+    line-height: 24.5px;
+    color: var(--color-navy);
+    margin-top: 3px;
+}
+
+/* Portfolio Footer */
+.tutor-detail-page .portfolio-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 28px;
+    padding-top: 14px;
+}
+
+.tutor-detail-page .portfolio-note {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 9px;
+    letter-spacing: 0.9px;
+    line-height: 13.5px;
+    text-transform: uppercase;
+    color: rgba(62, 47, 40, 0.4);
+}
+
+.tutor-detail-page .note-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 9999px;
+}
+
+.tutor-detail-page .note-dot.green {
+    background-color: var(--color-green);
+}
+
+/* ===== STATS SECTION ===== */
+.tutor-detail-page .stats-section {
+    display: flex;
+    flex-direction: column;
+    gap: 21px;
+}
+
+.tutor-detail-page .stats-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.tutor-detail-page .stats-badge {
+    border-radius: 9999px;
+    border: 1px solid rgba(61, 74, 62, 0.3);
+    padding: 4px 16px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    line-height: 15px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--color-green);
+}
+
+.tutor-detail-page .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+}
+
+.tutor-detail-page .stat-card {
+    border-radius: 20px;
+    background-color: #fff;
+    border: 1px solid #e4ded5;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.tutor-detail-page .stat-value {
+    font-size: 31.5px;
+    line-height: 35px;
+    color: var(--color-navy);
+}
+
+.tutor-detail-page .stat-label {
+    font-size: 10px;
+    letter-spacing: 1px;
+    line-height: 15px;
+    text-transform: uppercase;
+    color: rgba(62, 47, 40, 0.6);
+    margin-top: 10px;
+}
+
+.tutor-detail-page .stat-sublabel {
+    font-size: 9px;
+    line-height: 13.5px;
+    font-weight: 700;
+    color: rgba(62, 47, 40, 0.3);
+    margin-top: 4px;
+}
+
+/* ===== TESTIMONIALS SECTION (Figma: section5) ===== */
+.tutor-detail-page .section5 {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 28px;
+}
+
+.tutor-detail-page .heading-24 {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0px 0px 0.7px;
+    font-family: var(--font-primary);
+}
+
+.tutor-detail-page .nht-k-thnh {
+    align-self: stretch;
+    position: relative;
+    font-size: 21px;
+    letter-spacing: 2.1px;
+    line-height: 28px;
+    text-transform: uppercase;
+    color: var(--color-navy);
+    font-weight: 400;
+    margin: 0;
+}
+
+.tutor-detail-page .container84 {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 21px;
+    font-size: 14px;
+    color: #fff;
+}
+
+.tutor-detail-page .component-8 {
+    align-self: stretch;
+    border-radius: 20px;
+    background-color: #fff;
+    border: 1px solid #e4ded5;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 34.2px 34.9px 34.9px;
+    position: relative;
+    isolation: isolate;
+}
+
+.tutor-detail-page .container85 {
+    margin: 0 !important;
+    position: absolute;
+    top: 0.89px;
+    right: 0.89px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px;
+    z-index: 0;
+    flex-shrink: 0;
+}
+
+.tutor-detail-page .component-122 {
+    width: 42px;
+    height: 42px;
+    position: relative;
+}
+
+.tutor-detail-page .container86 {
+    width: 752.2px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 42px;
+    z-index: 1;
+    flex-shrink: 0;
+}
+
+.tutor-detail-page .container87 {
+    align-self: stretch;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 19.8px;
+}
+
+.tutor-detail-page .container88 {
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    gap: 10.5px;
+    text-align: center;
+}
+
+.tutor-detail-page .background7 {
+    height: 35px;
+    width: 35px;
+    border-radius: 9999px;
+    background-color: var(--color-navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6.3px 0px 7.7px;
+    box-sizing: border-box;
+}
+
+.tutor-detail-page .l {
+    position: relative;
+    line-height: 21px;
+    color: #fff;
+}
+
+.tutor-detail-page .container89 {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    color: var(--color-navy);
+}
+
+.tutor-detail-page .heading-47 {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0px 0px 0.7px;
+}
+
+.tutor-detail-page .l-minh-anh {
+    font-size: 14px;
+    line-height: 21px;
+    color: var(--color-navy);
+}
+
+.tutor-detail-page .container90 {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0px 0px 0.8px;
+    margin-top: -0.8px;
+    position: relative;
+    font-size: 10px;
+    color: rgba(62, 47, 40, 0.4);
+}
+
+.tutor-detail-page .hc-sinh-year {
+    font-size: 10px;
+    letter-spacing: 1px;
+    line-height: 15px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: rgba(62, 47, 40, 0.4);
+}
+
+.tutor-detail-page .container91 {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0px 0px 0.5px;
+    font-size: 17.5px;
+    color: #3e2f28;
+    font-family: var(--font-serif);
+}
+
+.tutor-detail-page .chuyn-mn-ca {
+    align-self: stretch;
+    position: relative;
+    line-height: 28.44px;
+}
+
+.tutor-detail-page .container92 {
+    align-self: stretch;
+    display: flex;
+    align-items: flex-start;
+    padding: 1.2px 0px 0px;
+    gap: 14px;
+    font-size: 9px;
+    color: var(--color-green);
+}
+
+.tutor-detail-page .border2 {
+    align-self: stretch;
+    border-radius: 9999px;
+    border: 1px solid rgba(61, 74, 62, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 3.4px 10.4px;
+}
+
+.tutor-detail-page .xc-thc-bi {
+    font-size: 9px;
+    letter-spacing: 0.9px;
+    line-height: 13.5px;
+    text-transform: uppercase;
+    color: var(--color-green);
+}
+
+.tutor-detail-page .background8 {
+    height: 185.6px;
+    width: 200px;
+    border-radius: 14px;
+    background-color: #faf5ee;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 21px;
+    box-sizing: border-box;
+    gap: 14px;
+    font-size: 8px;
+    color: rgba(62, 47, 40, 0.4);
+}
+
+.tutor-detail-page .container93 {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3.5px;
+}
+
+.tutor-detail-page .mc-tiu-ban {
+    align-self: stretch;
+    position: relative;
+    font-size: 8px;
+    line-height: 12px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: rgba(62, 47, 40, 0.4);
+}
+
+.tutor-detail-page .container95 {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 10.5px;
+    color: #3e2f28;
+}
+
+.tutor-detail-page .thi-y {
+    align-self: stretch;
+    position: relative;
+    line-height: 14px;
+}
+
+.tutor-detail-page .horizontal-divider3 {
+    align-self: stretch;
+    height: 1px;
+    position: relative;
+    background-color: #e4ded5;
+}
+
+.tutor-detail-page .container96 {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2.8px;
+}
+
+.tutor-detail-page .container98 {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0px 0px 0.8px;
+    font-size: 12.1px;
+    color: var(--color-green);
+}
+
+.tutor-detail-page .t-a-biology {
+    align-self: stretch;
+    position: relative;
+    line-height: 17.5px;
+}
+
+/* View All Button */
+.tutor-detail-page .component-9 {
+    align-self: stretch;
+    border-radius: 32px;
+    background-color: #fff;
+    border: 1px solid var(--color-navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 21.8px 0.8px;
+    text-align: center;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tutor-detail-page .component-9:hover {
+    background-color: var(--color-navy);
+    color: #fff;
+}
+
+.tutor-detail-page .component-9:hover .xem-tt-c {
+    color: #fff;
+}
+
+.tutor-detail-page .xem-tt-c {
+    position: relative;
+    letter-spacing: 4px;
+    line-height: 15px;
+    text-transform: uppercase;
+    color: var(--color-navy);
+}
+
+/* ===== BOOKING SIDEBAR ===== */
+.tutor-detail-page .booking-sidebar {
+    width: 412px;
+    display: flex;
+    flex-direction: column;
+    gap: 21px;
+    position: sticky;
+    top: 122px;
+    max-height: calc(100vh - 144px);
+}
+
+.tutor-detail-page .booking-card {
+    box-shadow: 0px 10px 30px -10px rgba(26, 34, 56, 0.08);
+    border-radius: 20px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.2);
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.tutor-detail-page .booking-header {
+    border-bottom: 0.9px solid #f2f0e4;
+    padding: 27.9px 27.9px 21px;
+    flex-shrink: 0;
+}
+
+/* Scrollable body */
+.tutor-detail-page .booking-card-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0 27.9px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 21px;
+}
+
+/* Custom scrollbar */
+.tutor-detail-page .booking-card-body::-webkit-scrollbar {
+    width: 4px;
+}
+
+.tutor-detail-page .booking-card-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.tutor-detail-page .booking-card-body::-webkit-scrollbar-thumb {
+    background: rgba(62, 47, 40, 0.15);
+    border-radius: 4px;
+}
+
+.tutor-detail-page .booking-card-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(62, 47, 40, 0.3);
+}
+
+/* Firefox scrollbar */
+.tutor-detail-page .booking-card-body {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(62, 47, 40, 0.15) transparent;
+}
+
+/* Schedule styles (moved from inline) */
+.tutor-detail-page .schedule-label {
+    font-size: 11px;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: rgba(26, 34, 56, 0.4);
+    margin-bottom: 14px;
+}
+
+.tutor-detail-page .schedule-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tutor-detail-page .schedule-day-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background-color: rgba(242, 240, 228, 0.5);
+    border-radius: 12px;
+    border: 1px solid rgba(62, 47, 40, 0.08);
+}
+
+.tutor-detail-page .schedule-day-name {
+    min-width: 70px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a2238;
+}
+
+.tutor-detail-page .schedule-slots {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.tutor-detail-page .schedule-time-chip {
+    padding: 4px 10px;
+    background-color: #fff;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(62, 47, 40, 0.7);
+    border: 1px solid rgba(62, 47, 40, 0.1);
+}
+
+.tutor-detail-page .empty-availability {
+    padding: 20px 14px;
+    background-color: rgba(242, 240, 228, 0.5);
+    border-radius: 12px;
+    text-align: center;
+    color: rgba(62, 47, 40, 0.5);
+    font-size: 12px;
+    font-style: italic;
+}
+
+.tutor-detail-page .trial-price-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, rgba(212, 180, 131, 0.15) 0%, rgba(212, 180, 131, 0.05) 100%);
+    border: 1px solid rgba(212, 180, 131, 0.4);
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #9c7127;
+}
+
+.tutor-detail-page .booking-label {
+    font-size: 10.95px;
+    letter-spacing: 2.19px;
+    line-height: 16.42px;
+    text-transform: uppercase;
+    font-weight: 900;
+    color: rgba(26, 34, 56, 0.8);
+}
+
+.tutor-detail-page .price-display {
+    display: flex;
+    align-items: baseline;
+    gap: 2.9px;
+    margin-top: 5.9px;
+}
+
+.tutor-detail-page .price-amount {
+    font-size: 25.27px;
+    letter-spacing: -1.77px;
+    line-height: 35.37px;
+    color: var(--color-navy);
+}
+
+.tutor-detail-page .price-unit {
+    font-size: 10.36px;
+    line-height: 14.74px;
+    color: rgba(62, 47, 40, 0.4);
+}
+
+/* Date Picker */
+.tutor-detail-page .date-picker {
+    margin-top: 6px;
+}
+
+.tutor-detail-page .date-grid {
+    display: flex;
+    gap: 5.3px;
+    border-radius: 14px;
+    background-color: rgba(242, 240, 228, 0.3);
+    padding: 5.3px;
+}
+
+.tutor-detail-page .date-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10.5px 0;
+    border-radius: 10.5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tutor-detail-page .date-item:hover {
+    background-color: rgba(26, 34, 56, 0.05);
+}
+
+.tutor-detail-page .date-item.selected {
+    box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1), 0px 4px 6px -4px rgba(0, 0, 0, 0.1);
+    background-color: var(--color-navy);
+    color: #fff;
+}
+
+.tutor-detail-page .day-label {
+    font-size: 8px;
+    line-height: 12px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: rgba(62, 47, 40, 0.4);
+}
+
+.tutor-detail-page .date-item.selected .day-label {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.tutor-detail-page .date-number {
+    font-size: 12.3px;
+    line-height: 17.5px;
+    color: var(--color-navy);
+}
+
+.tutor-detail-page .date-item.selected .date-number {
+    color: #fff;
+}
+
+/* Time Picker */
+.tutor-detail-page .time-picker-section {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.tutor-detail-page .picker-label {
+    font-size: 11px;
+    letter-spacing: 1.1px;
+    line-height: 16.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: rgba(26, 34, 56, 0.4);
+}
+
+.tutor-detail-page .time-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.tutor-detail-page .time-slot {
+    border-radius: 10.5px;
+    padding: 12.1px 0;
+    font-size: 11px;
+    line-height: 16.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    color: #3e2f28;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tutor-detail-page .time-slot:hover:not(.disabled):not(.selected) {
+    border-color: var(--color-navy);
+}
+
+.tutor-detail-page .time-slot.selected {
+    background-color: var(--color-navy);
+    border-color: var(--color-green);
+    color: #fff;
+}
+
+.tutor-detail-page .time-slot.disabled {
+    background-color: #f9fafb;
+    color: #e5e7eb;
+    cursor: not-allowed;
+}
+
+/* Booking Actions — fixed at bottom */
+.tutor-detail-page .booking-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 14px 27.9px 27.9px;
+    flex-shrink: 0;
+    border-top: 0.9px solid #f2f0e4;
+}
+
+.tutor-detail-page .btn-start {
+    box-shadow: 0px 17.44px 21.8px -4.36px rgba(0, 0, 0, 0.1), 0px 6.98px 8.72px -5.23px rgba(0, 0, 0, 0.1);
+    border-radius: 9999px;
+    background-color: var(--color-burgundy);
+    padding: 15.3px 0;
+    font-size: 9.59px;
+    letter-spacing: 1.92px;
+    line-height: 14.39px;
+    text-transform: uppercase;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tutor-detail-page .btn-start:hover {
+    transform: translateY(-2px);
+    box-shadow: 0px 20px 25px -5px rgba(0, 0, 0, 0.15), 0px 8px 10px -6px rgba(0, 0, 0, 0.15);
+}
+
+.tutor-detail-page .btn-chat {
+    border-radius: 9999px;
+    border: 1px solid rgba(26, 34, 56, 0.2);
+    padding: 13.9px 0;
+    font-size: 11px;
+    letter-spacing: 1.1px;
+    line-height: 16.5px;
+    text-transform: uppercase;
+    color: var(--color-green);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: transparent;
+}
+
+.tutor-detail-page .btn-chat:hover {
+    background-color: var(--color-green);
+    color: #fff;
+    border-color: var(--color-green);
+}
+
+/* Verification Note */
+.tutor-detail-page .verification-note {
+    border-radius: 24px;
+    background-color: rgba(26, 34, 56, 0.05);
+    border: 1px solid rgba(26, 34, 56, 0.1);
+    padding: 20.1px 20.9px 20.9px;
+    display: flex;
+    flex-direction: column;
+    gap: 9.4px;
+}
+
+.tutor-detail-page .note-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10.5px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    line-height: 15px;
+    text-transform: uppercase;
+    color: rgba(62, 47, 40, 0.6);
+}
+
+.tutor-detail-page .note-text {
+    font-size: 9px;
+    line-height: 11.25px;
+    font-weight: 700;
+    text-align: center;
+    color: rgba(62, 47, 40, 0.4);
+}
+
+/* ===== RESPONSIVE STYLES ===== */
+@media (max-width: 1400px) {
+    .tutor-detail-page .tutor-detail-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .tutor-detail-page .booking-sidebar {
+        width: 100%;
+        max-width: 824px;
+        position: static;
+        max-height: none;
+    }
+}
+
+@media (max-width: 900px) {
+    .tutor-detail-page .tutor-detail-content {
+        width: 100%;
+    }
+
+    .tutor-detail-page .component-2 {
+        width: 100%;
+    }
+
+    .tutor-detail-page .about-content {
+        flex-direction: column;
+    }
+
+    .tutor-detail-page .credentials-card {
+        width: 100%;
+    }
+
+    .tutor-detail-page .degrees-grid,
+    .tutor-detail-page .certificates-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .tutor-detail-page .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .tutor-detail-page .testimonial-content {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .tutor-detail-page .testimonial-main {
+        width: 100%;
+    }
+
+    .tutor-detail-page .result-card {
+        width: 100%;
+        height: auto;
+    }
+}
+
+/* ============================================
+   MOBILE RESPONSIVE REDESIGN (≤ 600px)
+   ============================================ */
+@media (max-width: 600px) {
+
+    /* --- Page Layout --- */
+    .tutor-detail-page .tutor-detail-main {
+        padding-top: 100px;
+        padding-bottom: 80px;
+        /* space for sticky CTA */
+    }
+
+    .tutor-detail-page .tutor-detail-container {
+        padding: 0 16px;
+        gap: 20px;
+    }
+
+    .tutor-detail-page .tutor-detail-content {
+        gap: 24px;
+    }
+
+    /* --- HERO SECTION --- */
+    .tutor-detail-page .tutor-hero-section {
+        gap: 16px;
+    }
+
+    .tutor-detail-page .component-2 {
+        width: 100%;
+        border-radius: 20px;
+        box-shadow: 0px 12px 30px -8px rgba(0, 0, 0, 0.18);
+    }
+
+    .tutor-detail-page .interview-thumbnail {
+        height: 240px !important;
+    }
+
+    /* Play Button - smaller on mobile */
+    .tutor-detail-page .play-button {
+        width: 52px;
+        height: 52px;
+    }
+
+    .tutor-detail-page .click-to-view {
+        display: none;
+        /* hide on mobile for cleanliness */
+    }
+
+    /* TUTORA Badge - compact */
+    .tutor-detail-page .TUTORA-badge-container {
+        top: 14px;
+        left: 14px;
+    }
+
+    .tutor-detail-page .TUTORA-badge {
+        padding: 5px 10px;
+        border-radius: 8px;
+        gap: 5px;
+    }
+
+    .tutor-detail-page .TUTORA-badge-text {
+        font-size: 7px;
+        letter-spacing: 0.6px;
+    }
+
+    .tutor-detail-page .TUTORA-badge-dot {
+        width: 5px;
+        height: 5px;
+    }
+
+    /* Tutor Info Card - repositioned for mobile */
+    .tutor-detail-page .tutor-info-card {
+        position: absolute;
+        bottom: 14px;
+        left: 14px;
+        right: 14px;
+        max-width: none;
+    }
+
+    .tutor-detail-page .tutor-info-content {
+        gap: 10px;
+    }
+
+    .tutor-detail-page .tutor-mini-avatar {
+        width: 65px;
+        height: 65px;
+        border-radius: 50%;
+        border-width: 2px;
+    }
+
+    .tutor-detail-page .tutor-mini-avatar img {
+        width: 100%;
+        height: 100%;
+    }
+
+    .tutor-detail-page .tutor-mini-avatar-placeholder {
+        font-size: 24px;
+    }
+
+    .tutor-detail-page .tutor-name {
+        font-size: 22px;
+        letter-spacing: -1px;
+        line-height: 26px;
+    }
+
+    .tutor-detail-page .tutor-credential {
+        font-size: 12px;
+        line-height: 18px;
+        margin-top: 2px;
+        display: block;
+    }
+
+    .tutor-detail-page .university-badge {
+        padding: 2px 8px;
+        font-size: 7px;
+        letter-spacing: 0.5px;
+    }
+
+    .tutor-detail-page .tutor-info-text {
+        gap: 5px;
+    }
+
+    /* Rating Card - hidden on small screens (replaced by inline rating) */
+    .tutor-detail-page .rating-card-container {
+        display: none;
+    }
+
+    /* Mobile Rating Inline - shown below hero */
+    .tutor-detail-page .mobile-rating-bar {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        background: #fff;
+        border-radius: 14px;
+        border: 1px solid rgba(62, 47, 40, 0.1);
+        box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.06);
+    }
+
+    .tutor-detail-page .mobile-rating-bar .rating-stars {
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .tutor-detail-page .mobile-rating-bar .stars-row {
+        gap: 2px;
+    }
+
+    .tutor-detail-page .mobile-rating-bar .rating-text {
+        font-size: 10px;
+        color: rgba(62, 47, 40, 0.5);
+    }
+
+    .tutor-detail-page .mobile-rating-bar .favorite-button {
+        padding: 6px;
+        border-radius: 10px;
+    }
+
+    /* Subject Tags - horizontal scroll on mobile */
+    .tutor-detail-page .subject-tags {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding: 0 2px 4px;
+        gap: 6px;
+    }
+
+    .tutor-detail-page .subject-tags::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tutor-detail-page .subject-tag {
+        padding: 7px 14px;
+        font-size: 8px;
+        letter-spacing: 1.5px;
+        border-radius: 10px;
+        flex-shrink: 0;
+        box-shadow: 0px 4px 8px -2px rgba(0, 0, 0, 0.08);
+    }
+
+    /* --- ABOUT SECTION --- */
+    .tutor-detail-page .about-section {
+        padding: 20px;
+        border-radius: 16px;
+        gap: 16px;
+        box-shadow: 0px 6px 16px -6px rgba(26, 34, 56, 0.06);
+    }
+
+    .tutor-detail-page .section-title {
+        font-size: 18px;
+        line-height: 24px;
+        letter-spacing: -0.3px;
+    }
+
+    .tutor-detail-page .about-content {
+        gap: 16px;
+    }
+
+    .tutor-detail-page .about-text {
+        gap: 12px;
+    }
+
+    .tutor-detail-page .about-intro {
+        font-size: 13.5px;
+        line-height: 22px;
+        display: -webkit-box;
+        -webkit-line-clamp: 5;
+        line-clamp: 5;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .tutor-detail-page .about-intro.expanded {
+        -webkit-line-clamp: unset;
+        line-clamp: unset;
+        display: block;
+    }
+
+    .tutor-detail-page .about-experience {
+        font-size: 12.5px;
+        line-height: 19px;
+    }
+
+    /* Credentials Card - horizontal layout on mobile */
+    .tutor-detail-page .credentials-card {
+        width: 100%;
+        border-radius: 14px;
+        padding: 14px;
+        flex-direction: row;
+        gap: 0;
+        border-color: rgba(62, 47, 40, 0.15);
+    }
+
+    .tutor-detail-page .credential-item {
+        flex: 1;
+        padding: 0 10px;
+        gap: 3px;
+    }
+
+    .tutor-detail-page .credential-item:first-child {
+        padding-left: 0;
+        border-right: 1px solid rgba(62, 47, 40, 0.1);
+    }
+
+    .tutor-detail-page .credential-item:last-child {
+        padding-right: 0;
+    }
+
+    .tutor-detail-page .credential-label {
+        font-size: 7px;
+        letter-spacing: 0.7px;
+    }
+
+    .tutor-detail-page .credential-institution {
+        font-size: 12px;
+        line-height: 16px;
+    }
+
+    .tutor-detail-page .credential-detail {
+        font-size: 9.5px;
+        line-height: 13px;
+    }
+
+    /* --- PORTFOLIO SECTION --- */
+    .tutor-detail-page .portfolio-stats-wrapper {
+        gap: 24px;
+    }
+
+    .tutor-detail-page .portfolio-section {
+        border-radius: 16px;
+        box-shadow: 0px 6px 16px -6px rgba(26, 34, 56, 0.06);
+    }
+
+    .tutor-detail-page .portfolio-header {
+        padding: 16px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .tutor-detail-page .portfolio-title-group {
+        gap: 2px;
+    }
+
+    .tutor-detail-page .portfolio-title-group .section-title {
+        font-size: 16px;
+        line-height: 22px;
+    }
+
+    .tutor-detail-page .portfolio-subtitle {
+        font-size: 8px;
+        letter-spacing: 2px;
+    }
+
+    .tutor-detail-page .verified-badge-green {
+        padding: 5px 12px;
+        font-size: 9px;
+        letter-spacing: 0.8px;
+        border-radius: 10px;
+    }
+
+    .tutor-detail-page .portfolio-content {
+        padding: 16px;
+        gap: 16px;
+    }
+
+    .tutor-detail-page .category-header {
+        gap: 8px;
+    }
+
+    .tutor-detail-page .category-title {
+        font-size: 9px;
+        letter-spacing: 2.5px;
+    }
+
+    .tutor-detail-page .category-indicator {
+        width: 4px;
+        height: 16px;
+    }
+
+    /* Certificate Cards - stacked, compact */
+    .tutor-detail-page .certificates-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .tutor-detail-page .certificate-card {
+        border-radius: 14px;
+        padding: 12px;
+        gap: 10px;
+    }
+
+    .tutor-detail-page .certificate-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 9px;
+    }
+
+    .tutor-detail-page .certificate-title {
+        font-size: 11.5px;
+        line-height: 15px;
+    }
+
+    .tutor-detail-page .certificate-institution {
+        font-size: 8.5px;
+    }
+
+    .tutor-detail-page .certificate-score {
+        font-size: 13px;
+    }
+
+    .tutor-detail-page .degrees-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .tutor-detail-page .degree-card {
+        border-radius: 14px;
+        padding: 12px;
+        gap: 10px;
+    }
+
+    .tutor-detail-page .degree-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 9px;
+    }
+
+    .tutor-detail-page .degree-title {
+        font-size: 11.5px;
+    }
+
+    .tutor-detail-page .degree-institution {
+        font-size: 8.5px;
+    }
+
+    /* Portfolio Footer */
+    .tutor-detail-page .portfolio-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding-top: 10px;
+    }
+
+    .tutor-detail-page .portfolio-note {
+        font-size: 8px;
+        gap: 5px;
+    }
+
+    /* --- STATS SECTION --- */
+    .tutor-detail-page .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .tutor-detail-page .stat-card {
+        padding: 16px 12px;
+        border-radius: 14px;
+    }
+
+    .tutor-detail-page .stat-value {
+        font-size: 24px;
+        line-height: 28px;
+    }
+
+    .tutor-detail-page .stat-label {
+        font-size: 8px;
+        margin-top: 6px;
+    }
+
+    /* --- TESTIMONIALS SECTION --- */
+    .tutor-detail-page .section5 {
+        gap: 16px;
+    }
+
+    .tutor-detail-page .nht-k-thnh {
+        font-size: 16px;
+        letter-spacing: 1.5px;
+        line-height: 22px;
+    }
+
+    .tutor-detail-page .component-8 {
+        padding: 20px 16px;
+        border-radius: 16px;
+    }
+
+    .tutor-detail-page .container86 {
+        width: 100%;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .tutor-detail-page .container87 {
+        gap: 12px;
+    }
+
+    .tutor-detail-page .container88 {
+        gap: 8px;
+    }
+
+    .tutor-detail-page .background7 {
+        width: 32px;
+        height: 32px;
+    }
+
+    .tutor-detail-page .l-minh-anh {
+        font-size: 13px;
+    }
+
+    .tutor-detail-page .hc-sinh-year {
+        font-size: 9px;
+    }
+
+    .tutor-detail-page .container91 {
+        font-size: 14px;
+    }
+
+    .tutor-detail-page .chuyn-mn-ca {
+        line-height: 22px;
+        font-size: 14px;
+    }
+
+    .tutor-detail-page .container92 {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .tutor-detail-page .border2 {
+        padding: 2.5px 8px;
+    }
+
+    .tutor-detail-page .xc-thc-bi {
+        font-size: 7.5px;
+    }
+
+    /* Result Card in Testimonial */
+    .tutor-detail-page .background8 {
+        width: 100%;
+        height: auto;
+        padding: 14px;
+        border-radius: 12px;
+        gap: 10px;
+    }
+
+    .tutor-detail-page .mc-tiu-ban {
+        font-size: 7px;
+    }
+
+    .tutor-detail-page .thi-y {
+        font-size: 10px;
+        line-height: 14px;
+    }
+
+    .tutor-detail-page .t-a-biology {
+        font-size: 11px;
+        line-height: 15px;
+    }
+
+    /* View All Button */
+    .tutor-detail-page .component-9 {
+        padding: 16px;
+        border-radius: 24px;
+    }
+
+    .tutor-detail-page .xem-tt-c {
+        font-size: 8px;
+        letter-spacing: 3px;
+    }
+
+    /* Quote Icon */
+    .tutor-detail-page .container85 {
+        padding: 8px;
+    }
+
+    .tutor-detail-page .component-122 {
+        width: 28px;
+        height: 28px;
+    }
+
+    /* --- BOOKING SIDEBAR (Mobile Redesign) --- */
+    .tutor-detail-page .booking-sidebar {
+        width: 100%;
+        position: static;
+        max-height: none;
+        gap: 14px;
+    }
+
+    .tutor-detail-page .booking-card {
+        border-radius: 16px;
+        box-shadow: 0px 6px 16px -6px rgba(26, 34, 56, 0.06);
+    }
+
+    .tutor-detail-page .booking-header {
+        padding: 16px;
+    }
+
+    .tutor-detail-page .booking-label {
+        font-size: 9px;
+        letter-spacing: 1.8px;
+    }
+
+    .tutor-detail-page .price-display {
+        margin-top: 4px;
+    }
+
+    .tutor-detail-page .price-amount {
+        font-size: 22px;
+        letter-spacing: -1.2px;
+    }
+
+    .tutor-detail-page .price-unit {
+        font-size: 9px;
+    }
+
+    .tutor-detail-page .booking-card-body {
+        padding: 0 16px 16px;
+        margin-top: 14px;
+        gap: 10px;
+    }
+
+    .tutor-detail-page .schedule-label {
+        font-size: 9px;
+        letter-spacing: 0.9px;
+        margin-bottom: 10px;
+    }
+
+    .tutor-detail-page .schedule-list {
+        gap: 6px;
+    }
+
+    .tutor-detail-page .schedule-day-row {
+        padding: 10px 12px;
+        border-radius: 10px;
+        gap: 8px;
+    }
+
+    .tutor-detail-page .schedule-day-name {
+        min-width: 54px;
+        font-size: 11.5px;
+    }
+
+    .tutor-detail-page .schedule-time-chip {
+        padding: 3px 8px;
+        font-size: 10px;
+        border-radius: 5px;
+    }
+
+    .tutor-detail-page .trial-price-label {
+        font-size: 9px;
+    }
+
+    /* Booking Actions - HIDDEN on mobile (sticky CTA replaces these) */
+    .tutor-detail-page .booking-actions {
+        display: none;
+    }
+
+    /* Verification Note */
+    .tutor-detail-page .verification-note {
+        border-radius: 16px;
+        padding: 14px 16px;
+        gap: 6px;
+    }
+
+    .tutor-detail-page .note-header {
+        gap: 8px;
+        font-size: 9px;
+    }
+
+    .tutor-detail-page .note-text {
+        font-size: 8px;
+        line-height: 11px;
+    }
+
+    /* --- MOBILE STICKY BOTTOM CTA BAR --- */
+    .tutor-detail-page .mobile-sticky-cta {
+        display: flex !important;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        padding: 12px 16px;
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(62, 47, 40, 0.08);
+        box-shadow: 0 -4px 20px -4px rgba(0, 0, 0, 0.08);
+        gap: 10px;
+        align-items: center;
+    }
+
+    .tutor-detail-page .mobile-sticky-cta .mobile-cta-price {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        flex-shrink: 0;
+    }
+
+    .tutor-detail-page .mobile-sticky-cta .mobile-cta-price-amount {
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.8px;
+        color: var(--color-navy);
+        white-space: nowrap;
+    }
+
+    .tutor-detail-page .mobile-sticky-cta .mobile-cta-price-unit {
+        font-size: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: rgba(62, 47, 40, 0.4);
+        font-weight: 700;
+    }
+
+    .tutor-detail-page .mobile-sticky-cta .mobile-cta-book {
+        flex: 1;
+        padding: 12px 16px;
+        border-radius: 9999px;
+        background-color: var(--color-burgundy);
+        border: none;
+        color: #fff;
+        font-size: 9px;
+        letter-spacing: 1.8px;
+        line-height: 14px;
+        text-transform: uppercase;
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: 0px 8px 16px -4px rgba(0, 0, 0, 0.15);
+        transition: all 0.3s ease;
+    }
+
+    .tutor-detail-page .mobile-sticky-cta .mobile-cta-book:active {
+        transform: scale(0.97);
+    }
+
+
+}
+
+/* Hide mobile-only elements on desktop */
+.tutor-detail-page .mobile-rating-bar {
+    display: none;
+}
+
+.tutor-detail-page .mobile-sticky-cta {
+    display: none;
+}
+
+/* ===== ACTIVE CLASSES SECTION ===== */
+
+.tutor-detail-page .active-classes-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 28px;
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid rgba(62, 47, 40, 0.08);
+    box-shadow: 0px 8px 24px -8px rgba(26, 34, 56, 0.06);
+}
+
+.tutor-detail-page .active-classes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tutor-detail-page .active-classes-count {
+    padding: 5px 14px;
+    background: rgba(61, 74, 62, 0.08);
+    border-radius: 20px;
+    font-size: 11px;
+    color: #3d4a3e;
+    letter-spacing: 0.3px;
+}
+
+.tutor-detail-page .active-classes-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+}
+
+.tutor-detail-page .active-class-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px;
+    background: rgba(242, 240, 228, 0.35);
+    border-radius: 14px;
+    border: 1px solid rgba(62, 47, 40, 0.06);
+    transition: all 0.2s ease;
+}
+
+.tutor-detail-page .active-class-card:hover {
+    background: rgba(242, 240, 228, 0.6);
+    box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.06);
+}
+
+.tutor-detail-page .active-class-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.tutor-detail-page .active-class-subject b {
+    font-size: 14px;
+    color: #1a2238;
+    letter-spacing: -0.2px;
+}
+
+.tutor-detail-page .active-class-status {
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.tutor-detail-page .active-class-status.status-ongoing {
+    background: rgba(76, 175, 80, 0.12);
+    color: #2e7d32;
+}
+
+.tutor-detail-page .active-class-status.status-paid {
+    background: rgba(33, 150, 243, 0.12);
+    color: #1565c0;
+}
+
+.tutor-detail-page .active-class-status.status-deposit {
+    background: rgba(255, 152, 0, 0.12);
+    color: #e65100;
+}
+
+.tutor-detail-page .active-class-status.status-default {
+    background: rgba(62, 47, 40, 0.08);
+    color: rgba(62, 47, 40, 0.6);
+}
+
+.tutor-detail-page .active-class-student {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+}
+
+.tutor-detail-page .active-class-student .student-label {
+    color: rgba(62, 47, 40, 0.5);
+}
+
+.tutor-detail-page .active-class-student .student-name {
+    color: #3e2f28;
+    font-weight: 500;
+}
+
+.tutor-detail-page .active-class-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.tutor-detail-page .active-class-progress .progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+}
+
+.tutor-detail-page .active-class-progress .progress-info span {
+    color: rgba(62, 47, 40, 0.5);
+}
+
+.tutor-detail-page .active-class-progress .progress-info b {
+    color: #1a2238;
+    font-size: 11px;
+}
+
+.tutor-detail-page .progress-bar-bg {
+    width: 100%;
+    height: 5px;
+    background: rgba(62, 47, 40, 0.08);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.tutor-detail-page .progress-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #3d4a3e, #6b8f71);
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 2px;
+}
+
+/* Mobile responsive for active classes */
+@media (max-width: 768px) {
+    .tutor-detail-page .active-classes-section {
+        padding: 20px;
+        border-radius: 16px;
+        gap: 16px;
+    }
+
+    .tutor-detail-page .active-classes-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .tutor-detail-page .active-class-card {
+        padding: 14px;
+        gap: 10px;
+    }
+
+    .tutor-detail-page .active-class-subject b {
+        font-size: 13px;
+    }
+}
+
+/* ===== SKELETON LOADING ===== */
+
+@keyframes skeleton-shimmer {
+    0% {
+        background-position: -600px 0;
+    }
+
+    100% {
+        background-position: 600px 0;
+    }
+}
+
+.skeleton-box {
+    background: linear-gradient(90deg,
+            #ede8df 0px,
+            #e0d9ce 150px,
+            #ede8df 300px);
+    background-size: 600px 100%;
+    animation: skeleton-shimmer 1.6s infinite linear;
+    border-radius: 6px;
+}
+
+/* Hero Skeleton */
+.skeleton-hero-img {
+    width: 100%;
+    height: 460px;
+    border-radius: 0;
+}
+
+.skeleton-hero-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 24px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.skeleton-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.skeleton-tags-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* About Skeleton */
+.skeleton-about-grid {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+}
+
+.skeleton-about-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.skeleton-creds {
+    width: 280px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Portfolio / Certificate grid */
+.skeleton-cert-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+/* Sidebar skeleton */
+.skeleton-sidebar {
+    width: 340px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+@media (max-width: 900px) {
+    .skeleton-about-grid {
+        flex-direction: column;
+    }
+
+    .skeleton-creds {
+        width: 100%;
+    }
+
+    .skeleton-sidebar {
+        width: 100%;
+    }
+}
+
+@media (max-width: 600px) {
+    .skeleton-cert-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .skeleton-hero-img {
+        height: 240px;
+    }
+}
+
+/* ============================================
+   Active Classes Section
+   ============================================ */
+.active-classes-section {
+    margin: 40px 0;
+    padding: 32px;
+    background: #faf9f6;
+    border-radius: 16px;
+    border: 1px solid rgba(62, 47, 40, 0.08);
+}
+
+.active-classes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.active-classes-header .section-title {
+    margin: 0;
+}
+
+.active-classes-count {
+    padding: 6px 16px;
+    background: #3d4a3e;
+    color: #f2f0e4;
+    border-radius: 20px;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+
+.active-classes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.active-class-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 20px;
+    border: 1px solid rgba(62, 47, 40, 0.06);
+    transition: box-shadow 0.2s ease;
+}
+
+.active-class-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.active-class-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.active-class-subject b {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a2238;
+}
+
+.active-class-status {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.status-ongoing {
+    background: rgba(34, 139, 34, 0.1);
+    color: #228b22;
+}
+
+.status-paid {
+    background: rgba(26, 34, 56, 0.1);
+    color: #1a2238;
+}
+
+.status-deposit {
+    background: rgba(212, 180, 131, 0.2);
+    color: #8b6914;
+}
+
+.status-default {
+    background: rgba(62, 47, 40, 0.08);
+    color: rgba(62, 47, 40, 0.7);
+}
+
+.active-class-student {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 16px;
+    font-size: 13px;
+}
+
+.student-label {
+    color: rgba(62, 47, 40, 0.5);
+}
+
+.student-name {
+    color: #1a2238;
+    font-weight: 600;
+}
+
+.active-class-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: rgba(62, 47, 40, 0.6);
+}
+
+.progress-info b {
+    color: #1a2238;
+    font-weight: 700;
+}
+
+.progress-bar-bg {
+    height: 6px;
+    background: #f0ece3;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: #3d4a3e;
+    border-radius: 3px;
+    transition: width 0.4s ease;
+}
+
+@media (max-width: 768px) {
+    .active-classes-section {
+        padding: 20px 16px;
+        margin: 24px 0;
+    }
+
+    .active-classes-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .active-classes-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+}

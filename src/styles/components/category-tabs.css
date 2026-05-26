@@ -1,0 +1,195 @@
+/* ===== CATEGORY SECTION — Expandable Subject Selector ===== */
+
+.tutor-search-page .category-section {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px 35px 20px 0;
+    position: relative;
+}
+
+/* Toggle Button */
+.tutor-search-page .category-header {
+    display: flex;
+    align-items: center;
+}
+
+.tutor-search-page .category-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    border-radius: 14px;
+    border: 1.5px solid rgba(62, 47, 40, 0.1);
+    background: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    font-family: var(--font-primary);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.tutor-search-page .category-toggle-btn:hover {
+    border-color: rgba(62, 47, 40, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.tutor-search-page .category-toggle-btn.open {
+    border-color: var(--color-navy);
+    background: rgba(26, 34, 56, 0.03);
+}
+
+.tutor-search-page .category-toggle-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    color: var(--color-navy);
+}
+
+.tutor-search-page .category-toggle-label {
+    font-size: 14px;
+    color: rgba(62, 47, 40, 0.7);
+    letter-spacing: 0.5px;
+}
+
+.tutor-search-page .category-toggle-label strong {
+    color: var(--color-navy);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-size: 13px;
+}
+
+.tutor-search-page .category-toggle-arrow {
+    color: rgba(62, 47, 40, 0.5);
+    flex-shrink: 0;
+}
+
+/* Dropdown Grid */
+.tutor-search-page .category-dropdown {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding: 16px 0 8px;
+    animation: categorySlideDown 0.25s ease;
+}
+
+@keyframes categorySlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Subject Option Buttons */
+.tutor-search-page .category-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(62, 47, 40, 0.08);
+    background: rgba(255, 255, 255, 0.85);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: var(--font-primary);
+}
+
+.tutor-search-page .category-option:hover {
+    border-color: var(--color-navy);
+    background: rgba(26, 34, 56, 0.03);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(26, 34, 56, 0.08);
+}
+
+.tutor-search-page .category-option.active {
+    background: var(--color-navy);
+    border-color: var(--color-navy);
+    box-shadow: 0 2px 10px rgba(26, 34, 56, 0.2);
+}
+
+.tutor-search-page .category-option-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    color: rgba(62, 47, 40, 0.6);
+    flex-shrink: 0;
+}
+
+.tutor-search-page .category-option-text {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: rgba(62, 47, 40, 0.8);
+    white-space: nowrap;
+}
+
+.tutor-search-page .category-option.active .category-option-text {
+    color: #fff;
+}
+
+.tutor-search-page .category-option.active .category-option-icon {
+    color: #fff;
+}
+
+/* ===== RESPONSIVE — TABLET ===== */
+@media (max-width: 1200px) {
+    .tutor-search-page .category-dropdown {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    }
+}
+
+/* ===== RESPONSIVE — MOBILE ===== */
+@media (max-width: 768px) {
+    .tutor-search-page .category-section {
+        padding: 12px 16px 0;
+    }
+
+    .tutor-search-page .category-toggle-btn {
+        padding: 10px 14px;
+        border-radius: 10px;
+        gap: 8px;
+    }
+
+    .tutor-search-page .category-toggle-label {
+        font-size: 13px;
+    }
+
+    .tutor-search-page .category-toggle-label strong {
+        font-size: 12px;
+    }
+
+    .tutor-search-page .category-dropdown {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .tutor-search-page .category-option {
+        padding: 10px 12px;
+        border-radius: 10px;
+        gap: 6px;
+    }
+
+    .tutor-search-page .category-option-text {
+        font-size: 11px;
+        white-space: normal;
+    }
+
+    .tutor-search-page .category-option-icon {
+        width: 16px;
+        height: 16px;
+    }
+}
+
+/* ===== SMALL MOBILE ===== */
+@media (max-width: 400px) {
+    .tutor-search-page .category-dropdown {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

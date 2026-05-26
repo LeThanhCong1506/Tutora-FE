@@ -1,0 +1,294 @@
+.container {
+    padding: 24px;
+    background: #f9fafb;
+    min-height: calc(100vh - 64px);
+}
+
+.header {
+    margin-bottom: 24px;
+}
+
+.headerTitle h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 4px;
+}
+
+.headerTitle p {
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.content {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 24px;
+}
+
+.tabs {
+    margin-bottom: 24px;
+}
+
+.bookingList {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.bookingCard {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.2s;
+}
+
+.bookingCard:hover {
+    border-color: #4f46e5;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.05);
+}
+
+.cardMain {
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.studentInfo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.avatar {
+    width: 48px;
+    height: 48px;
+    background: #f3f4f6;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+}
+
+.studentInfo h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.studentInfo span {
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.detailsGrid {
+    display: flex;
+    gap: 24px;
+}
+
+.detailItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #374151;
+    font-size: 14px;
+}
+
+.detailItem svg {
+    color: #9ca3af;
+}
+
+.scheduleTags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.scheduleTag {
+    background: #f3f4f6;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.cardFooter {
+    padding: 16px 20px;
+    background: #f9fafb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.priceInfo {
+    display: flex;
+    flex-direction: column;
+}
+
+.priceInfo .label {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.totalPrice {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.feeNote {
+    font-size: 11px;
+    color: #059669;
+}
+
+.actions {
+    display: flex;
+    gap: 12px;
+}
+
+.acceptBtn,
+.declineBtn,
+.chatBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.acceptBtn {
+    background: #4f46e5;
+    color: #ffffff;
+    border: none;
+}
+
+.acceptBtn:hover {
+    background: #4338ca;
+}
+
+.declineBtn {
+    background: #ffffff;
+    color: #dc2626;
+    border: 1px solid #dc2626;
+}
+
+.declineBtn:hover {
+    background: #fef2f2;
+}
+
+.chatBtn {
+    background: transparent;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+}
+
+.chatBtn:hover {
+    background: #ffffff;
+    border-color: #4f46e5;
+    color: #4f46e5;
+}
+
+.loadingContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 0;
+    gap: 16px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e5e7eb;
+    border-top-color: #4f46e5;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 0;
+    color: #9ca3af;
+    text-align: center;
+}
+
+.emptyState h3 {
+    margin-top: 16px;
+    color: #4b5563;
+    margin-bottom: 8px;
+}
+
+@media (max-width: 1024px) {
+    .cardMain {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .cardFooter {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+    }
+
+    .actions {
+        width: 100%;
+    }
+
+    .actions button {
+        flex: 1;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 16px;
+    }
+
+    .content {
+        padding: 16px;
+    }
+
+    .detailsGrid {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .cardMain {
+        padding: 16px;
+    }
+
+    .cardFooter {
+        padding: 12px 16px;
+    }
+
+    .actions {
+        flex-direction: column;
+    }
+
+    .acceptBtn,
+    .declineBtn,
+    .chatBtn {
+        justify-content: center;
+        width: 100%;
+    }
+}
