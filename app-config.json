@@ -1,0 +1,23 @@
+{
+  "app": {
+    "title": "Tutora",
+    "headerColor": "#1A2238",
+    "headerTitle": {
+      "vi": "Tutora — Gia sư thông minh",
+      "en": "Tutora — Smart Tutoring"
+    },
+    "textColor": "white",
+    "leftButton": "back",
+    "statusBar": "normal",
+    "actionBarHidden": false,
+    "hideAndroidBottomNavigationBar": true,
+    "hideIOSSafeAreaBottom": false
+  },
+  "listCSS": [
+    "assets/index-CKuXpRwY.css"
+  ],
+  "listSyncJS": [
+    "assets/bootstrap.js"
+  ],
+  "listAsyncJS": []
+}
