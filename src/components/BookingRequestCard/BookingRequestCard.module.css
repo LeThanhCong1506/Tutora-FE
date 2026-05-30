@@ -1,0 +1,317 @@
+.card {
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    padding: 16px;
+    max-width: 320px;
+    margin: 8px 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    font-family: inherit;
+    position: relative;
+    overflow: hidden;
+}
+
+.cardHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.headerIcon {
+    color: #4f46e5;
+    background: rgba(79, 70, 229, 0.1);
+    padding: 4px;
+    border-radius: 6px;
+    display: flex;
+}
+
+.headerTitle {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: #4f46e5;
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.infoRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.icon {
+    color: #9ca3af;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.label {
+    color: #6b7280;
+    min-width: 70px;
+}
+
+.value {
+    color: #111827;
+    font-weight: 500;
+}
+
+.scheduleList {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.scheduleItem {
+    color: #111827;
+    font-weight: 500;
+}
+
+.priceSection {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed #e5e7eb;
+}
+
+.priceRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.priceRow span:first-child {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.totalPrice {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.receivableRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.receivableRow span:first-child {
+    font-size: 11px;
+    color: #059669;
+}
+
+.receivableValue {
+    font-size: 13px;
+    font-weight: 600;
+    color: #059669;
+}
+
+.actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.acceptBtn,
+.declineBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.acceptBtn {
+    background: #4f46e5;
+    color: #ffffff;
+}
+
+.acceptBtn:hover {
+    background: #4338ca;
+}
+
+.declineBtn {
+    background: #ffffff;
+    color: #dc2626;
+    border: 1px solid #dc2626;
+}
+
+.declineBtn:hover {
+    background: #fef2f2;
+}
+
+.statusBadge {
+    margin-top: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.pending_tutor {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.accepted {
+    background: #ecfdf5;
+    color: #059669;
+}
+
+.paid {
+    background: #4f46e5;
+    color: #ffffff;
+}
+
+.cancelled {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.errorCard {
+    background: #fef2f2;
+    color: #dc2626;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.paymentPrompt {
+    margin-top: 16px;
+    padding: 12px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.paymentText {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12.5px;
+    color: #166534;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.successIcon {
+    color: #22c55e;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.paymentBtn {
+    background: #059669;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.paymentBtn:hover {
+    background: #047857;
+}
+
+/* ===== RESPONSIVE — MOBILE ===== */
+@media (max-width: 768px) {
+    .card {
+        max-width: 100%;
+        width: 100%;
+        padding: 14px;
+        border-radius: 14px;
+    }
+
+    .infoRow {
+        font-size: 13px;
+    }
+
+    .label {
+        min-width: 60px;
+        font-size: 12px;
+    }
+
+    .value {
+        font-size: 13px;
+    }
+
+    /* Touch-friendly action buttons */
+    .acceptBtn,
+    .declineBtn {
+        padding: 12px;
+        font-size: 13px;
+        min-height: 44px;
+        border-radius: 10px;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+
+    .paymentBtn {
+        padding: 12px;
+        font-size: 14px;
+        min-height: 44px;
+        border-radius: 10px;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+
+    .statusBadge {
+        padding: 6px 10px;
+        font-size: 11px;
+        border-radius: 6px;
+    }
+
+    .paymentPrompt {
+        padding: 12px;
+        border-radius: 10px;
+    }
+}
+
+/* ===== SMALL MOBILE ===== */
+@media (max-width: 400px) {
+    .card {
+        padding: 12px;
+    }
+
+    .actions {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    .totalPrice {
+        font-size: 14px;
+    }
+
+    .headerTitle {
+        font-size: 10px;
+    }
+}
