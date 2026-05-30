@@ -1,0 +1,250 @@
+/* ===== TUTOR TOUR - Guided Tutorial Overlay ===== */
+
+/* Full-screen overlay container */
+.tutor-tour-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 99999;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.tutor-tour-overlay.tutor-tour-visible {
+    opacity: 1;
+}
+
+/* SVG mask covers full screen */
+.tutor-tour-mask {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: all;
+}
+
+/* Spotlight border glow around highlighted element */
+.tutor-tour-spotlight {
+    position: fixed;
+    border-radius: 12px;
+    border: 2px solid rgba(79, 140, 255, 0.8);
+    box-shadow:
+        0 0 0 4px rgba(79, 140, 255, 0.15),
+        0 0 24px rgba(79, 140, 255, 0.25),
+        inset 0 0 0 0 transparent;
+    pointer-events: none;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 100000;
+}
+
+/* Tooltip card */
+.tutor-tour-tooltip {
+    position: fixed;
+    z-index: 100001;
+    pointer-events: all;
+    background: #1a2238;
+    border-radius: 16px;
+    padding: 24px;
+    min-width: 300px;
+    max-width: 380px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+        0 24px 64px rgba(0, 0, 0, 0.4),
+        0 8px 24px rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.3s ease 0.15s, transform 0.3s ease 0.15s;
+}
+
+.tutor-tour-tooltip.tutor-tour-tooltip-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Final farewell modal — centered like the welcome prompt */
+.tutor-tour-final-modal {
+    position: fixed;
+    z-index: 100001;
+    pointer-events: all;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 40px 36px 32px;
+    min-width: 340px;
+    max-width: 440px;
+    text-align: center;
+    box-shadow:
+        0 24px 64px rgba(0, 0, 0, 0.2),
+        0 8px 24px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    transition: opacity 0.35s ease 0.1s, transform 0.35s ease 0.1s;
+}
+
+.tutor-tour-final-modal-visible {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.tutor-tour-final-modal .tutor-tour-title {
+    color: #1a2238;
+}
+
+.tutor-tour-final-modal .tutor-tour-description {
+    color: rgba(62, 47, 40, 0.7);
+}
+
+.tutor-tour-final-modal .tutor-tour-next-btn {
+    background: #1a2238;
+    color: #ffffff;
+    width: 100%;
+}
+
+.tutor-tour-final-modal .tutor-tour-next-btn:hover {
+    background: #2d3a56;
+}
+
+.tutor-tour-final-emoji {
+    display: block;
+    font-size: 48px;
+    margin-bottom: 16px;
+    line-height: 1;
+}
+
+/* Step counter pill */
+.tutor-tour-step-counter {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(79, 140, 255, 0.2);
+    color: #7db4ff;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+}
+
+/* Title */
+.tutor-tour-title {
+    margin: 0 0 8px 0;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.3;
+}
+
+/* Description */
+.tutor-tour-description {
+    margin: 0 0 20px 0;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.6;
+}
+
+/* "Tiếp tục" button */
+.tutor-tour-next-btn {
+    display: block;
+    width: 100%;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #1a2238;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tutor-tour-next-btn:hover {
+    background: #e8e8e8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(26, 34, 56, 0.3);
+}
+
+.tutor-tour-next-btn:active {
+    transform: translateY(0);
+}
+
+/* Light variant — used on sidebar steps where background is dark */
+.tutor-tour-tooltip-light {
+    background: #ffffff;
+    border: 2px solid rgba(26, 34, 56, 0.12);
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.2),
+        0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.tutor-tour-tooltip-light .tutor-tour-step-counter {
+    background: rgba(79, 140, 255, 0.1);
+    color: #4f8cff;
+}
+
+.tutor-tour-tooltip-light .tutor-tour-title {
+    color: #1a2238;
+}
+
+.tutor-tour-tooltip-light .tutor-tour-description {
+    color: rgba(62, 47, 40, 0.7);
+}
+
+.tutor-tour-tooltip-light .tutor-tour-next-btn {
+    background: #1a2238;
+    color: #ffffff;
+}
+
+.tutor-tour-tooltip-light .tutor-tour-next-btn:hover {
+    background: #2d3a56;
+}
+
+/* Pulse animation on spotlight */
+@keyframes tutor-tour-pulse {
+    0%, 100% {
+        box-shadow:
+            0 0 0 4px rgba(79, 140, 255, 0.15),
+            0 0 24px rgba(79, 140, 255, 0.25);
+    }
+    50% {
+        box-shadow:
+            0 0 0 6px rgba(79, 140, 255, 0.2),
+            0 0 32px rgba(79, 140, 255, 0.35);
+    }
+}
+
+.tutor-tour-overlay.tutor-tour-visible .tutor-tour-spotlight {
+    animation: tutor-tour-pulse 2s ease-in-out infinite;
+}
+
+/* Mobile: shrink tooltip to fit screen */
+@media (max-width: 1024px) {
+    .tutor-tour-tooltip {
+        min-width: 0;
+        max-width: calc(100vw - 20px);
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    .tutor-tour-title {
+        font-size: 16px;
+    }
+
+    .tutor-tour-description {
+        font-size: 13px;
+        margin-bottom: 16px;
+    }
+
+    .tutor-tour-next-btn {
+        padding: 11px 16px;
+    }
+}
