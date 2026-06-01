@@ -1,0 +1,78 @@
+/* ── Tutor Account – Mobile Responsive Overrides ── */
+
+/* Text overflow prevention for all field values */
+.tutor-account-page .field-value {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+/* ── Mobile: ≤ 600px ── */
+@media (max-width: 600px) {
+    /* Page padding */
+    .tutor-account-page {
+        padding: 16px 16px 32px !important;
+    }
+
+    /* Profile header card → stack vertically */
+    .tutor-account-page .profile-card {
+        flex-direction: column !important;
+        text-align: center;
+        padding: 20px 16px !important;
+    }
+
+    .tutor-account-page .profile-meta {
+        align-items: center;
+    }
+
+    .tutor-account-page .edit-btn {
+        width: 100%;
+    }
+
+    /* Section cards padding */
+    .tutor-account-page .section-card {
+        padding: 16px !important;
+    }
+
+    /* Field grid → single column */
+    .tutor-account-page .field-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+
+    /* Page title smaller */
+    .tutor-account-page .page-title {
+        font-size: 20px !important;
+    }
+
+    /* Action row → full width buttons */
+    .tutor-account-page .action-row {
+        flex-direction: column;
+    }
+
+    .tutor-account-page .action-row button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Security section flex → stack */
+    .tutor-account-page .security-header {
+        flex-direction: column !important;
+        gap: 12px;
+        align-items: flex-start !important;
+    }
+}
+
+/* ── Tablet: ≤ 768px ── */
+@media (max-width: 768px) {
+    .tutor-account-page {
+        padding: 20px 20px 40px !important;
+    }
+
+    .tutor-account-page .profile-card {
+        padding: 20px !important;
+    }
+
+    .tutor-account-page .section-card {
+        padding: 20px !important;
+    }
+}

@@ -1,0 +1,404 @@
+/* ===== IDENTITY VERIFICATION MODAL ===== */
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Section Label */
+.sectionLabel {
+    display: block;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(62, 47, 40, 0.8);
+    margin-bottom: 8px;
+}
+
+.required {
+    color: #631b1b;
+    margin-left: 2px;
+}
+
+.optional {
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+    color: rgba(62, 47, 40, 0.5);
+}
+
+/* Status Section */
+.statusSection {
+    margin-bottom: 8px;
+}
+
+.statusBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.statusBadge svg {
+    width: 16px;
+    height: 16px;
+}
+
+.statusBadge.verified {
+    background-color: rgba(34, 197, 94, 0.15);
+    color: #16a34a;
+}
+
+.statusBadge.pending {
+    background-color: rgba(251, 191, 36, 0.1);
+    color: #92700c;
+}
+
+.statusBadge.rejected {
+    background-color: rgba(99, 27, 27, 0.1);
+    color: #631b1b;
+}
+
+.statusBadge.notSubmitted {
+    background-color: rgba(62, 47, 40, 0.1);
+    color: rgba(62, 47, 40, 0.6);
+}
+
+.rejectionReason {
+    margin-top: 12px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    background-color: rgba(99, 27, 27, 0.05);
+    border-left: 3px solid #631b1b;
+    font-size: 13px;
+    color: #631b1b;
+}
+
+/* Instructions */
+.instructions {
+    padding: 16px;
+    border-radius: 12px;
+    background-color: rgba(26, 34, 56, 0.03);
+    border: 1px solid rgba(26, 34, 56, 0.08);
+}
+
+.instructions h4 {
+    margin: 0 0 12px 0;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a2238;
+}
+
+.instructions ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.instructions li {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    line-height: 20px;
+    color: rgba(62, 47, 40, 0.7);
+}
+
+.instructions li + li {
+    margin-top: 4px;
+}
+
+/* Image Uploads Grid */
+.imageUploads {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+/* Upload Section */
+.uploadSection {
+    display: flex;
+    flex-direction: column;
+}
+
+.uploadArea {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 32px 24px;
+    border-radius: 12px;
+    border: 2px dashed rgba(62, 47, 40, 0.2);
+    background-color: rgba(242, 240, 228, 0.3);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: rgba(62, 47, 40, 0.5);
+}
+
+.uploadArea:hover {
+    border-color: rgba(62, 47, 40, 0.4);
+    background-color: rgba(242, 240, 228, 0.5);
+}
+
+.uploadArea svg {
+    width: 32px;
+    height: 32px;
+}
+
+.uploadArea span {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.uploadHint {
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    color: rgba(62, 47, 40, 0.4) !important;
+}
+
+.fileInput {
+    display: none;
+}
+
+/* Image Preview */
+.imagePreview {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: rgba(242, 240, 228, 0.3);
+    border: 1px solid rgba(62, 47, 40, 0.1);
+}
+
+.imagePreview img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+}
+
+.removeBtn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: rgba(62, 47, 40, 0.6);
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.removeBtn:hover {
+    background-color: #631b1b;
+    border-color: #631b1b;
+    color: #fff;
+}
+
+/* Upload Overlay (loading state) */
+.uploadOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #1a2238;
+}
+
+.uploadOverlay span {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Upload Success Badge */
+.uploadSuccess {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: #3d4a3e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.uploadSuccess svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Verified Badge on Image */
+.verifiedBadgeOnImage {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    right: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background-color: rgba(34, 197, 94, 0.95);
+    color: #fff;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.verifiedBadgeOnImage svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Spinner Animation */
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Selfie Hint */
+.selfieHint {
+    margin: 0 0 12px 0;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-style: italic;
+    color: rgba(62, 47, 40, 0.5);
+}
+
+/* Error */
+.error {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    line-height: 16px;
+    color: #631b1b;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.error::before {
+    content: '';
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: #631b1b;
+}
+
+/* Privacy Note */
+.privacyNote {
+    padding: 12px 16px;
+    border-radius: 10px;
+    background-color: rgba(61, 74, 62, 0.05);
+    border-left: 3px solid #3d4a3e;
+}
+
+.privacyNote p {
+    margin: 0;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 11px;
+    line-height: 18px;
+    color: rgba(62, 47, 40, 0.6);
+}
+
+/* eKYC Data Section */
+.ekycDataSection {
+    padding: 20px;
+    border-radius: 12px;
+    background-color: rgba(34, 197, 94, 0.08);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.ekycTitle {
+    margin: 0 0 16px 0;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #16a34a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ekycTitle svg {
+    width: 18px;
+    height: 18px;
+}
+
+.ekycGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.ekycItem {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.ekycLabel {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(62, 47, 40, 0.5);
+}
+
+.ekycValue {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #3e2f28;
+}
+
+/* Full width for address */
+.ekycItem:nth-child(5),
+.ekycItem:nth-child(6) {
+    grid-column: span 2;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .imageUploads {
+        grid-template-columns: 1fr;
+    }
+
+    .imagePreview img {
+        height: 150px;
+    }
+}

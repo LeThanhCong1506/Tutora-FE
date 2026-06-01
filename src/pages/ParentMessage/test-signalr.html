@@ -1,0 +1,165 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>M2-T3 SignalR Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      h1 {
+        color: #333;
+        margin-bottom: 20px;
+      }
+      input {
+        width: 300px;
+        padding: 10px;
+        margin: 5px 0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      button {
+        padding: 10px 20px;
+        margin: 5px;
+        cursor: pointer;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      #logs {
+        font-family: monospace;
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 4px;
+        max-height: 400px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        font-size: 12px;
+      }
+      .section {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🧪 M2-T3 SignalR Test Console</h1>
+
+    <div class="section">
+      <h3>🔑 Authentication</h3>
+      <input id="token" placeholder="Paste Supabase token here" />
+    </div>
+
+    <div class="section">
+      <h3>📋 Chat Operations</h3>
+      <input id="bookingId" placeholder="Booking ID (actual from DB)" value="1" />
+      <input id="channelId" placeholder="Channel ID" value="456" />
+      <input id="message" placeholder="Message content" value="Hello from parent" />
+      <br /><br />
+      <button onclick="connect()">1. Connect</button>
+      <button onclick="joinChannel()">2. Join Channel</button>
+      <button onclick="sendMessage()">3. Send Message</button>
+      <button onclick="leaveChannel()">4. Leave Channel</button>
+    </div>
+
+    <div class="section">
+      <h3>📜 Logs</h3>
+      <div id="logs"></div>
+    </div>
+
+    <script>
+      let connection;
+
+      function log(msg, type = 'info') {
+        const div = document.getElementById('logs');
+        const time = new Date().toLocaleTimeString();
+        const color = type === 'error' ? '#dc3545' : type === 'success' ? '#198754' : '#1a73e8';
+        div.innerHTML += `<span style="color:${color}">[${time}] ${msg}</span>\n`;
+        div.scrollTop = div.scrollHeight;
+      }
+
+      async function connect() {
+        const jwt = document.getElementById('token').value.trim();
+        if (!jwt) {
+          log('❌ Please enter Supabase token', 'error');
+          return;
+        }
+
+        connection = new signalR.HubConnectionBuilder()
+          .withUrl('https://d4sv20gb-5166.asse.devtunnels.ms/hubs/chat', {
+            accessTokenFactory: () => jwt,
+          })
+          .withAutomaticReconnect()
+          .build();
+
+        connection.on('messageReceived', (message) => {
+          log(`📩 Received: "${message.content}" from ${message.senderId}`, 'success');
+        });
+
+        connection.onclose(() => {
+          log('❌ SignalR Disconnected', 'error');
+        });
+
+        connection.onreconnecting(() => {
+          log('🔄 Reconnecting...', 'info');
+        });
+
+        connection.onreconnected(() => {
+          log('✅ Reconnected', 'success');
+        });
+
+        try {
+          await connection.start();
+          log('✅ SignalR Connected', 'success');
+          log(`Connection ID: ${connection.connectionId}`, 'info');
+        } catch (err) {
+          log(`❌ Connection failed: ${err}`, 'error');
+        }
+      }
+
+      async function joinChannel() {
+        if (!connection) {
+          log('❌ Please connect first', 'error');
+          return;
+        }
+
+        const channelId = parseInt(document.getElementById('channelId').value);
+        await connection.invoke('JoinChannel', channelId);
+        log(`✅ Joined channel ${channelId}`, 'success');
+      }
+
+      async function sendMessage() {
+        if (!connection) {
+          log('❌ Please connect first', 'error');
+          return;
+        }
+
+        const channelId = parseInt(document.getElementById('channelId').value);
+        const content = document.getElementById('message').value;
+
+        await connection.invoke('SendMessage', channelId, content);
+        log(`✅ Sent message to channel ${channelId}`, 'success');
+      }
+
+      async function leaveChannel() {
+        if (!connection) {
+          log('❌ Please connect first', 'error');
+          return;
+        }
+
+        const channelId = parseInt(document.getElementById('channelId').value);
+        await connection.invoke('LeaveChannel', channelId);
+        log(`✅ Left channel ${channelId}`, 'success');
+      }
+    </script>
+  </body>
+</html>

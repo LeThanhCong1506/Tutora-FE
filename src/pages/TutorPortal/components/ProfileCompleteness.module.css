@@ -1,0 +1,150 @@
+/* ===== PROFILE COMPLETENESS CARD ===== */
+
+.card {
+    padding: 27px 28px 28px;
+    border-radius: 21px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.label {
+    font-family: 'Bricolage Grotesque', serif;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 21px;
+    color: #1a2238;
+}
+
+.percent {
+    font-family: 'Bricolage Grotesque', serif;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 24px;
+    color: #1a2238;
+}
+
+/* Progress Bar */
+.progressBar {
+    height: 8px;
+    border-radius: 9999px;
+    background-color: #f2f0e4;
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 100%;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, #1a2238 0%, #3d4a3e 100%);
+    box-shadow: 0px 0px 10px rgba(26, 34, 56, 0.3);
+    transition: width 0.5s ease;
+}
+
+/* Status Message */
+.statusMessage {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
+}
+
+.complete {
+    color: #3d4a3e;
+}
+
+.good {
+    color: #1a2238;
+}
+
+.needsWork {
+    color: #92700c;
+}
+
+/* Checklist */
+.checklist {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 0;
+}
+
+.checklistItem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.checklistItem:hover {
+    background-color: rgba(242, 240, 228, 0.5);
+}
+
+.checklistItem svg {
+    width: 14px;
+    height: 14px;
+    color: rgba(62, 47, 40, 0.3);
+    flex-shrink: 0;
+}
+
+.checklistItem.completed svg {
+    color: #3d4a3e;
+}
+
+.itemLabel {
+    flex: 1;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
+    color: #1a2238;
+}
+
+.checklistItem.completed .itemLabel {
+    color: rgba(26, 34, 56, 0.5);
+    text-decoration: line-through;
+}
+
+.itemPercent {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 14px;
+    color: rgba(62, 47, 40, 0.4);
+}
+
+.checklistItem.completed .itemPercent {
+    color: #3d4a3e;
+}
+
+/* Action Button */
+.actionBtn {
+    width: 100%;
+    padding: 12px 0;
+    border-radius: 10px;
+    background-color: #1a2238;
+    border: none;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 16px;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.actionBtn:hover {
+    background-color: #2a3248;
+}

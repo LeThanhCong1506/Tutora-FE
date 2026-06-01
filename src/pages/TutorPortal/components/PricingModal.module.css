@@ -1,0 +1,44 @@
+/* ===== PRICING MODAL ===== */
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.priceField {
+    /* Price field container */
+}
+
+/* Tips Section */
+.tips {
+    margin-top: 8px;
+    padding: 16px;
+    border-radius: 12px;
+    background-color: rgba(242, 240, 228, 0.5);
+    border: 1px solid rgba(62, 47, 40, 0.05);
+}
+
+.tips h4 {
+    margin: 0 0 12px 0;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a2238;
+}
+
+.tips ul {
+    margin: 0;
+    padding-left: 16px;
+}
+
+.tips li {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    line-height: 20px;
+    color: rgba(62, 47, 40, 0.7);
+}
+
+.tips li + li {
+    margin-top: 4px;
+}

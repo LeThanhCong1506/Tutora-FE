@@ -1,0 +1,479 @@
+/* ===== PARENT LESSONS PAGE ===== */
+/* Uses global design system: cream bg, navy text, gold accents */
+
+.page {
+  padding: 28px 32px 40px;
+  min-height: 100%;
+  font-family: var(--font-primary);
+  animation: fadeIn 0.35s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== HEADER ===== */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-navy);
+  margin: 0;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--color-navy-40);
+  margin: 0;
+  font-weight: 400;
+}
+
+/* ===== STATS GRID ===== */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  background: var(--color-white);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border: 1px solid rgba(26, 34, 56, 0.06);
+  transition: all 0.2s ease;
+}
+
+.statCard:hover {
+  box-shadow: 0 4px 16px rgba(26, 34, 56, 0.08);
+  transform: translateY(-2px);
+}
+
+.statIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.statIconBlue {
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563eb;
+}
+
+.statIconPurple {
+  background: rgba(114, 46, 209, 0.1);
+  color: #722ed1;
+}
+
+.statIconGreen {
+  background: rgba(22, 163, 74, 0.1);
+  color: #16a34a;
+}
+
+.statIconAmber {
+  background: rgba(217, 119, 6, 0.1);
+  color: #d97706;
+}
+
+.statValue {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-navy);
+  line-height: 1;
+  font-family: var(--font-primary);
+}
+
+.statLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-navy-40);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-top: 2px;
+}
+
+/* ===== FILTER SECTION ===== */
+.filterSection {
+  margin-bottom: 24px;
+}
+
+/* ===== LESSON LIST ===== */
+.lessonList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ===== LESSON CARD ===== */
+.lessonCard {
+  background: var(--color-white);
+  border-radius: 14px;
+  padding: 18px 22px;
+  border: 1px solid rgba(26, 34, 56, 0.06);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.lessonCard:hover {
+  border-color: var(--color-gold);
+  box-shadow: 0 6px 20px rgba(26, 34, 56, 0.08);
+  transform: translateY(-1px);
+}
+
+.lessonCard:focus-visible {
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 3px rgba(212, 180, 131, 0.2);
+}
+
+.lessonCardLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  flex: 1;
+}
+
+/* Date Block */
+.dateBlock {
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
+  background: var(--color-cream);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(26, 34, 56, 0.04);
+}
+
+.dateDay {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-navy);
+  line-height: 1;
+}
+
+.dateMonth {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-navy-40);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Lesson Info */
+.lessonInfo {
+  min-width: 0;
+}
+
+.lessonTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-navy);
+  margin: 0 0 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lessonTitle span {
+  font-weight: 400;
+  color: var(--color-navy-40);
+}
+
+.lessonTime {
+  font-size: 13px;
+  color: var(--color-navy-40);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lessonTime svg {
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+/* Card Right */
+.lessonCardRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Status Badges */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+.statusScheduled {
+  background: rgba(37, 99, 235, 0.08);
+  color: #2563eb;
+}
+
+.statusCheckedIn {
+  background: rgba(22, 163, 74, 0.08);
+  color: #16a34a;
+}
+
+.statusCheckedOut {
+  background: rgba(250, 173, 20, 0.1);
+  color: #d48806;
+}
+
+.statusPending {
+  background: rgba(114, 46, 209, 0.08);
+  color: #722ed1;
+}
+
+.statusCompleted {
+  background: rgba(22, 163, 74, 0.08);
+  color: #16a34a;
+}
+
+.statusDisputed {
+  background: rgba(255, 77, 79, 0.08);
+  color: #dc2626;
+}
+
+.statusCancelled {
+  background: rgba(107, 114, 128, 0.08);
+  color: #6b7280;
+}
+
+.statusNoShow {
+  background: rgba(255, 77, 79, 0.08);
+  color: #dc2626;
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.chevron {
+  color: var(--color-navy-40);
+  opacity: 0.4;
+  transition: all 0.2s ease;
+}
+
+.lessonCard:hover .chevron {
+  opacity: 0.8;
+  transform: translateX(2px);
+}
+
+/* ===== EMPTY STATE ===== */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  text-align: center;
+  animation: fadeIn 0.4s ease;
+}
+
+.emptyIcon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-navy) 0%, #3d4a3e 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  color: var(--color-cream);
+}
+
+.emptyTitle {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--color-navy);
+  margin: 0 0 8px;
+  letter-spacing: -0.3px;
+}
+
+.emptyText {
+  font-size: 14px;
+  color: var(--color-navy-40);
+  margin: 0 0 28px;
+  max-width: 340px;
+  line-height: 1.6;
+}
+
+.emptyBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--color-navy);
+  color: var(--color-cream);
+  border: none;
+  border-radius: 10px;
+  font-family: var(--font-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.emptyBtn:hover {
+  background: #2a3452;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(26, 34, 56, 0.2);
+}
+
+/* ===== LOADING ===== */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+}
+
+/* ===== PAGINATION ===== */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.pageBtn {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-white);
+  border: 1px solid rgba(26, 34, 56, 0.1);
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--color-navy);
+  transition: all 0.15s ease;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: var(--color-navy);
+  color: var(--color-cream);
+  border-color: var(--color-navy);
+}
+
+.pageBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.pageInfo {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-navy-40);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .page {
+    padding: 20px 16px 32px;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .title {
+    font-size: 22px;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .statCard {
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .statIcon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .statValue {
+    font-size: 20px;
+  }
+
+  .lessonCard {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px 16px;
+    gap: 12px;
+  }
+
+  .lessonCardLeft {
+    width: 100%;
+  }
+
+  .lessonCardRight {
+    width: 100%;
+    justify-content: space-between;
+    padding-top: 10px;
+    border-top: 1px solid rgba(26, 34, 56, 0.04);
+  }
+
+  .chevron {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+}
