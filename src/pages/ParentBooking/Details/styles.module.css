@@ -1,0 +1,626 @@
+/* ===== FONT & CSS VARIABLES ===== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap');
+
+:root {
+    --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-display: 'Playfair Display', Georgia, serif;
+    --color-bg: #fafafa;
+    --color-white: #ffffff;
+    --color-text-primary: #171717;
+    --color-text-secondary: #525252;
+    --color-text-muted: #a3a3a3;
+    --color-border: #e5e5e5;
+    --color-border-light: #f5f5f5;
+    --color-accent: #4f46e5;
+    --color-accent-hover: #4338ca;
+    --color-accent-light: rgba(79, 70, 229, 0.08);
+    --color-danger: #dc2626;
+    --color-danger-hover: #b91c1c;
+    --color-success: #16a34a;
+    --color-amber: #d97706;
+    --color-blue: #2563eb;
+    --shadow-sm: 0 1px 2px rgba(23, 23, 23, 0.04);
+    --shadow-md: 0 4px 12px rgba(23, 23, 23, 0.06);
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.25s ease;
+}
+
+/* ===== PAGE ===== */
+.page {
+    font-family: var(--font-primary);
+    background: var(--color-bg);
+    min-height: 100vh;
+    width: 100%;
+}
+
+/* ===== TOP BAR ===== */
+.topBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 32px;
+    background: var(--color-white);
+    border-bottom: 1px solid var(--color-border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.backBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-family: var(--font-primary);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.backBtn:hover {
+    background: var(--color-white);
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+}
+
+.topBarRight {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.bookingCode {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    background: var(--color-bg);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+
+.bookingCode:hover {
+    color: var(--color-accent);
+}
+
+.statusBadgeLg {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 7px 16px;
+    border-radius: 20px;
+}
+
+.statusPending {
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--color-blue);
+}
+
+.statusWarning {
+    background: rgba(217, 119, 6, 0.1);
+    color: var(--color-amber);
+}
+
+.statusActive {
+    background: rgba(22, 163, 74, 0.1);
+    color: var(--color-success);
+}
+
+.statusCompleted {
+    background: rgba(107, 114, 128, 0.1);
+    color: #6b7280;
+}
+
+.statusCancelled {
+    background: rgba(220, 38, 38, 0.08);
+    color: var(--color-danger);
+}
+
+/* ===== DETAIL GRID ===== */
+.detailGrid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 24px;
+    padding: 24px 32px 40px;
+    animation: fadeIn var(--transition-normal);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== CARD ===== */
+.card {
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 16px;
+}
+
+.cardHead {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.cardHeadIcon {
+    color: var(--color-accent);
+}
+
+.cardHeadTitle {
+    font-family: var(--font-primary);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+/* ===== TUTOR ROW ===== */
+.tutorRow {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.tutorAvatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.tutorAvatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tutorAvatar span {
+    color: var(--color-white);
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.tutorInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.tutorName {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.tutorRate {
+    font-size: 13px;
+    color: var(--color-accent);
+    font-weight: 500;
+    margin: 0;
+}
+
+/* ===== INFO GRID ===== */
+.infoGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.infoItem {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.infoLabel {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.infoValue {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+/* ===== STUDENT INFO ===== */
+.studentInfo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.studentAvatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-success), #059669);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.studentAvatar span {
+    color: var(--color-white);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.studentName {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0 0 2px;
+}
+
+.studentGrade {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+/* ===== SCHEDULE ===== */
+.scheduleList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.scheduleItem {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    background: var(--color-bg);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.scheduleItem:hover {
+    background: var(--color-accent-light);
+}
+
+.scheduleDayBadge {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-accent);
+    background: rgba(79, 70, 229, 0.1);
+    padding: 4px 12px;
+    border-radius: var(--radius-sm);
+    min-width: 70px;
+    text-align: center;
+}
+
+.scheduleTime {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.scheduleTime svg {
+    color: var(--color-text-muted);
+}
+
+/* ===== PRICE BREAKDOWN ===== */
+.priceBreakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.priceRow {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.priceRow span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.priceDiscount {
+    color: var(--color-success);
+    font-weight: 500;
+}
+
+.priceDivider {
+    height: 1px;
+    background: var(--color-border);
+    margin: 4px 0;
+}
+
+.priceTotal {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-text-primary);
+}
+
+.priceFee {
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+/* ===== PAYMENT STATUS ===== */
+.paymentStatusBox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--color-bg);
+    border-radius: var(--radius-md);
+    margin-bottom: 12px;
+}
+
+.paymentPaid {
+    color: var(--color-success);
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.paymentUnpaid {
+    color: var(--color-amber);
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.paymentDue {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--color-amber);
+    font-weight: 500;
+    padding: 8px 0;
+}
+
+/* ===== TIMELINE ===== */
+.timeline {
+    display: flex;
+    flex-direction: column;
+}
+
+.timelineStep {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    min-height: 44px;
+}
+
+.timelineIndicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    width: 20px;
+}
+
+.timelineIcon {
+    color: var(--color-text-muted);
+}
+
+.timelineCompleted {
+    color: var(--color-success);
+}
+
+.timelineLine {
+    width: 2px;
+    flex: 1;
+    min-height: 20px;
+    background: var(--color-border);
+    margin: 3px 0;
+}
+
+.timelineLineCompleted {
+    background: var(--color-success);
+}
+
+.timelineLabel {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    padding-top: 2px;
+    font-weight: 400;
+}
+
+.timelineLabelCurrent {
+    color: var(--color-accent);
+    font-weight: 600;
+}
+
+.timelineLabelCompleted {
+    color: var(--color-text-secondary);
+    font-weight: 500;
+}
+
+/* ===== CANCELLED CARD ===== */
+.cancelledCard {
+    display: flex;
+    gap: 14px;
+    padding: 20px;
+    background: rgba(220, 38, 38, 0.05);
+    border: 1px solid rgba(220, 38, 38, 0.15);
+    border-radius: var(--radius-lg);
+    margin-bottom: 16px;
+    color: var(--color-danger);
+}
+
+.cancelledCard h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 4px;
+}
+
+.cancelledCard p {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* ===== ACTION BUTTONS ===== */
+.actionButtons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.cancelBtn,
+.payBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px 20px;
+    border-radius: var(--radius-md);
+    font-family: var(--font-primary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border: none;
+}
+
+.cancelBtn {
+    background: var(--color-white);
+    color: var(--color-danger);
+    border: 1px solid var(--color-danger);
+}
+
+.cancelBtn:hover {
+    background: var(--color-danger);
+    color: var(--color-white);
+}
+
+.payBtn {
+    background: var(--color-accent);
+    color: var(--color-white);
+}
+
+.payBtn:hover {
+    background: var(--color-accent-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+/* ===== NOT FOUND ===== */
+.notFound {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    text-align: center;
+    color: var(--color-text-muted);
+    gap: 12px;
+}
+
+.notFound h2 {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.notFound p {
+    font-size: 15px;
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+.backBtnPrimary {
+    margin-top: 16px;
+    padding: 12px 24px;
+    background: var(--color-accent);
+    color: var(--color-white);
+    border: none;
+    border-radius: var(--radius-md);
+    font-family: var(--font-primary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.backBtnPrimary:hover {
+    background: var(--color-accent-hover);
+}
+
+/* ===== COLUMNS ===== */
+.leftColumn {
+    display: flex;
+    flex-direction: column;
+}
+
+.rightColumn {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+    .detailGrid {
+        grid-template-columns: 1fr;
+        padding: 16px;
+    }
+
+    .topBar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px;
+    }
+
+    .topBarRight {
+        flex-wrap: wrap;
+    }
+
+    .infoGrid {
+        grid-template-columns: 1fr;
+    }
+}

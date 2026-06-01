@@ -1,0 +1,83 @@
+/* ===== DELETE CONFIRMATION MODAL ===== */
+.deleteModalContent {
+    max-width: 400px;
+}
+
+.deleteModalIcon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 24px;
+    background: rgba(220, 38, 38, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.deleteModalIcon svg {
+    color: var(--color-danger);
+    width: 40px;
+    height: 40px;
+}
+
+.deleteModalTitle {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0 0 24px 16px;
+    text-align: center;
+    letter-spacing: -0.5px;
+}
+
+.deleteModalText {
+    font-family: var(--font-primary);
+    font-size: 15px;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    text-align: center;
+    margin: 0 0 16px;
+}
+
+.deleteModalText strong {
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.deleteModalActions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    padding-top: 24px;
+}
+
+.modalBtn {
+    padding: 12px 24px;
+    font-family: var(--font-primary);
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    background: var(--color-white);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.modalBtn:hover {
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+}
+
+.modalBtnDanger {
+    background: var(--color-danger);
+    color: var(--color-white);
+    border-color: var(--color-danger);
+}
+
+.modalBtnDanger:hover {
+    background: var(--color-danger-hover);
+    border-color: var(--color-danger-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}

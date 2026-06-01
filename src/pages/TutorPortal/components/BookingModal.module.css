@@ -1,0 +1,210 @@
+/* ===== BOOKING MODAL ===== */
+.bookingModal :global(.ant-modal-content) {
+    border-radius: 21px;
+    padding: 0;
+    overflow: hidden;
+}
+
+.bookingModal :global(.ant-modal-close) {
+    top: 20px;
+    right: 20px;
+}
+
+.bookingModal :global(.ant-modal-body) {
+    padding: 0;
+}
+
+.modalContent {
+    padding: 28px;
+}
+
+/* Header */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(62, 47, 40, 0.1);
+}
+
+.title {
+    font-family: 'Bricolage Grotesque', serif;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 28px;
+    color: #1a2238;
+    margin: 0;
+}
+
+.priceTag {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    padding: 8px 16px;
+    border-radius: 12px;
+    background-color: rgba(61, 74, 62, 0.1);
+}
+
+.priceAmount {
+    font-family: 'Bricolage Grotesque', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #3d4a3e;
+}
+
+.priceUnit {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(61, 74, 62, 0.7);
+}
+
+/* Schedule Section */
+.scheduleSection {
+    margin-bottom: 20px;
+}
+
+.sectionTitle {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(62, 47, 40, 0.6);
+    margin: 0 0 16px 0;
+}
+
+.scheduleGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.dayGroup {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.dayLabel {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background-color: #1a2238;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.timeSlots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex: 1;
+}
+
+.timeSlot {
+    padding: 8px 16px;
+    border-radius: 10px;
+    background-color: #f2f0e4;
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a2238;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.timeSlot:hover {
+    background-color: #1a2238;
+    color: #fff;
+    border-color: #1a2238;
+}
+
+/* Info Note */
+.infoNote {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background-color: rgba(251, 191, 36, 0.1);
+    margin-top: 20px;
+}
+
+.infoNote svg {
+    flex-shrink: 0;
+    color: #92700c;
+    margin-top: 1px;
+}
+
+.infoNote span {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    line-height: 18px;
+    color: #92700c;
+}
+
+/* No Schedule State */
+.noSchedule {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 32px 20px;
+}
+
+.noScheduleIcon {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+    background-color: rgba(242, 240, 228, 0.8);
+    color: rgba(62, 47, 40, 0.4);
+    margin-bottom: 20px;
+}
+
+.noScheduleTitle {
+    font-family: 'Bricolage Grotesque', serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a2238;
+    margin: 0 0 8px 0;
+}
+
+.noScheduleText {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    line-height: 22px;
+    color: rgba(62, 47, 40, 0.7);
+    margin: 0 0 24px 0;
+    max-width: 300px;
+}
+
+.updateScheduleBtn {
+    padding: 12px 28px;
+    border-radius: 12px;
+    background-color: #1a2238;
+    border: none;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    box-shadow: 0px 10px 15px -3px rgba(26, 34, 56, 0.2);
+}
+
+.updateScheduleBtn:hover {
+    background-color: #2a3248;
+}

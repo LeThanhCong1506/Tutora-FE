@@ -1,0 +1,562 @@
+/* ===== ADD AVAILABILITY MODAL (SIDEBAR) ===== */
+/* Color Palette:
+   - Primary dark: #1a2238 (navy)
+   - Primary hover: #2a3248
+   - Primary light: #3d4a6a
+   - Accent: #4f8cff (blue accent)
+   - Background: #f8fafc
+   - Border: rgba(26, 34, 56, 0.12)
+*/
+
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(26, 34, 56, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease-out, visibility 0.25s ease-out;
+}
+
+.modalOverlay.open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.sidebarModal {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: 380px;
+    background-color: #f8fafc;
+    border-left: none;
+    box-shadow: -8px 0 32px rgba(26, 34, 56, 0.15), -2px 0 8px rgba(26, 34, 56, 0.08);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.sidebarModal.open {
+    transform: translateX(0);
+}
+
+/* ===== HEADER ===== */
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #1a2238 0%, #2a3a5c 100%);
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+}
+
+.title {
+    font-family: 'Bricolage Grotesque', serif;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 26px;
+    color: #ffffff;
+    margin: 0;
+    letter-spacing: -0.02em;
+    position: relative;
+    z-index: 1;
+}
+
+.closeBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.closeBtn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: scale(1.05);
+}
+
+/* ===== CONTENT ===== */
+
+.content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+
+/* Custom scrollbar */
+.content::-webkit-scrollbar {
+    width: 5px;
+}
+
+.content::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 4px 0;
+}
+
+.content::-webkit-scrollbar-thumb {
+    background: rgba(26, 34, 56, 0.15);
+    border-radius: 10px;
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+    background: rgba(26, 34, 56, 0.25);
+}
+
+/* ===== FORM ===== */
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 27.4px;
+    flex: 1;
+}
+
+.formFields {
+    display: flex;
+    flex-direction: column;
+    gap: 27.4px;
+}
+
+.fieldGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.label {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    line-height: 16px;
+    text-transform: uppercase;
+    color: #1a2238;
+    opacity: 0.6;
+}
+
+.inputWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.inputIcon {
+    position: absolute;
+    left: 14px;
+    color: #1a2238;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.inputWrapper:focus-within .inputIcon {
+    opacity: 1;
+    color: #4f8cff;
+}
+
+.input {
+    width: 100%;
+    border-radius: 12px;
+    background-color: #ffffff;
+    border: 1.5px solid rgba(26, 34, 56, 0.12);
+    padding: 14px 16px 14px 44px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    color: #1a2238;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(26, 34, 56, 0.04);
+}
+
+.input:hover {
+    border-color: rgba(26, 34, 56, 0.2);
+    box-shadow: 0 2px 4px rgba(26, 34, 56, 0.06);
+}
+
+.input:focus {
+    outline: none;
+    border-color: #4f8cff;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.12), 0 2px 4px rgba(26, 34, 56, 0.06);
+}
+
+.input::placeholder {
+    color: rgba(26, 34, 56, 0.4);
+    font-weight: 400;
+}
+
+/* Date and Time inputs */
+.input[type="date"],
+.input[type="time"] {
+    cursor: pointer;
+}
+
+.input[type="date"]::-webkit-calendar-picker-indicator,
+.input[type="time"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+    filter: invert(10%) sepia(20%) saturate(1000%) hue-rotate(190deg);
+}
+
+.input[type="date"]::-webkit-calendar-picker-indicator:hover,
+.input[type="time"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+/* Select input */
+.select {
+    width: 100%;
+    border-radius: 12px;
+    background-color: #ffffff;
+    border: 1.5px solid rgba(26, 34, 56, 0.12);
+    padding: 14px 16px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    color: #1a2238;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%231a2238' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    padding-right: 40px;
+    box-shadow: 0 1px 2px rgba(26, 34, 56, 0.04);
+}
+
+.select:hover {
+    border-color: rgba(26, 34, 56, 0.2);
+    box-shadow: 0 2px 4px rgba(26, 34, 56, 0.06);
+}
+
+.select:focus {
+    outline: none;
+    border-color: #4f8cff;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.12), 0 2px 4px rgba(26, 34, 56, 0.06);
+}
+
+/* Select with icon (for time pickers) */
+.selectWithIcon {
+    padding-left: 44px;
+}
+
+.select:disabled {
+    background-color: #f1f5f9;
+    color: rgba(26, 34, 56, 0.4);
+    cursor: not-allowed;
+}
+
+/* Time Picker Row - Hour and Minute side by side */
+.timePickerRow {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    position: relative;
+    background-color: #ffffff;
+    border: 1.5px solid rgba(26, 34, 56, 0.12);
+    border-radius: 12px;
+    padding: 4px 6px 4px 36px;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(26, 34, 56, 0.04);
+}
+
+.timePickerRow:hover {
+    border-color: rgba(26, 34, 56, 0.2);
+    box-shadow: 0 2px 4px rgba(26, 34, 56, 0.06);
+}
+
+.timePickerRow:focus-within {
+    border-color: #4f8cff;
+    box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.12), 0 2px 4px rgba(26, 34, 56, 0.06);
+}
+
+.timePickerRow .inputIcon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.timeSelect {
+    flex: 1;
+    min-width: 48px;
+    border: none;
+    background-color: transparent;
+    padding: 10px 4px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    color: #1a2238;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='8' height='8' viewBox='0 0 10 10' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2.5 3.75L5 6.25L7.5 3.75' stroke='%231a2238' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 2px center;
+    padding-right: 14px;
+}
+
+.timeSelect:focus {
+    outline: none;
+}
+
+.timeSelect:disabled {
+    color: rgba(26, 34, 56, 0.4);
+    cursor: not-allowed;
+}
+
+.timeSeparator {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(26, 34, 56, 0.4);
+    user-select: none;
+    flex-shrink: 0;
+}
+
+/* Disabled state */
+.primaryBtn:disabled,
+.secondaryBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.primaryBtn:disabled:hover {
+    background-color: #1a2238;
+}
+
+/* Time Range Group */
+.timeRangeGroup {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.timeRangeGroup .fieldGroup {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Error state for input */
+.inputError {
+    border-color: #dc2626 !important;
+}
+
+.inputError .input,
+.inputError .select {
+    border-color: #dc2626;
+}
+
+.inputError .input:focus,
+.inputError .select:focus {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12), 0 2px 4px rgba(26, 34, 56, 0.06);
+}
+
+/* Error message */
+.errorMessage {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 16px;
+    color: #dc2626;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Time hint */
+.timeHint {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 18px;
+    color: rgba(26, 34, 56, 0.5);
+    margin: 0;
+    padding: 8px 12px;
+    background-color: rgba(79, 140, 255, 0.08);
+    border-radius: 8px;
+    border-left: 3px solid #4f8cff;
+}
+
+/* Validity hint — 30-day auto-expiry notice */
+.validityHint {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: linear-gradient(135deg, rgba(79, 140, 255, 0.08) 0%, rgba(79, 140, 255, 0.04) 100%);
+    border: 1px solid rgba(79, 140, 255, 0.18);
+    border-radius: 12px;
+    margin-top: 4px;
+}
+
+.validityHintIcon {
+    color: #4f8cff;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.validityHintContent {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+.validityHintTitle {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 18px;
+    color: #1a2238;
+}
+
+.validityHintText {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 17px;
+    color: rgba(26, 34, 56, 0.7);
+}
+
+.validityHintText b {
+    font-weight: 600;
+    color: #1a2238;
+}
+
+/* ===== ACTIONS ===== */
+
+.actions {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: 14.6px;
+    border-top: 1px solid rgba(62, 47, 40, 0.1);
+    margin-top: auto;
+}
+
+.primaryBtn {
+    width: 100%;
+    box-shadow: 0px 20px 25px -5px rgba(0, 0, 0, 0.1), 0px 8px 10px -6px rgba(0, 0, 0, 0.1);
+    border-radius: 14px;
+    background-color: #1a2238;
+    border: none;
+    padding: 14px 0;
+    font-family: 'Bricolage Grotesque', serif;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 21px;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.primaryBtn:hover {
+    background-color: #2a3248;
+}
+
+.primaryBtn:active {
+    transform: scale(0.98);
+}
+
+.secondaryBtn {
+    width: 100%;
+    border-radius: 10.5px;
+    background-color: rgba(242, 240, 228, 0.5);
+    border: 1px solid rgba(62, 47, 40, 0.1);
+    padding: 12.3px 0;
+    font-family: 'Bricolage Grotesque', serif;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 21px;
+    color: #631b1b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.secondaryBtn:hover {
+    background-color: rgba(242, 240, 228, 0.8);
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 768px) {
+    .sidebarModal {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .header {
+        padding: 16px;
+    }
+
+    .content {
+        padding: 20px;
+    }
+
+    .title {
+        font-size: 16px;
+        line-height: 22px;
+    }
+
+    .timeRangeGroup {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .timePickerRow {
+        padding: 4px 8px 4px 40px;
+    }
+
+    .timeSelect {
+        min-width: 55px;
+        padding: 10px 6px;
+        padding-right: 18px;
+    }
+}

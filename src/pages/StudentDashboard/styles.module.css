@@ -1,0 +1,1011 @@
+/* ===========================================
+   Student Dashboard — Figma-inspired Styles
+   Design tokens from Figma node 2253-21781
+   =========================================== */
+
+/* --- Design Tokens --- */
+.page {
+  background: #f2f0e4;
+  min-height: 100%;
+  padding: 24px 32px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* --- Layout: Main + Right Sidebar --- */
+.dashboardGrid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 28px;
+  max-width: 1200px;
+}
+
+.mainContent {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.rightSidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* --- Greeting Section --- */
+.greeting {
+  margin-bottom: 4px;
+}
+
+.greetingTitle {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1A2130;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.greetingTitle em {
+  font-style: italic;
+  color: #8B7355;
+}
+
+.greetingSubtitle {
+  font-size: 14px;
+  color: #8C8C8C;
+  margin-top: 6px;
+  font-style: italic;
+}
+
+/* --- Metric Cards Row --- */
+.metricsRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.metricCard {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 16px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.metricCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.metricIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.metricIcon.bookings {
+  background: rgba(79, 209, 197, 0.12);
+  color: #4FD1C5;
+}
+
+.metricIcon.lessons {
+  background: rgba(99, 102, 241, 0.12);
+  color: #6366F1;
+}
+
+.metricIcon.pending {
+  background: rgba(245, 158, 11, 0.12);
+  color: #F59E0B;
+}
+
+.metricIcon.completed {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10B981;
+}
+
+.metricLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8C8C8C;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.metricValue {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1A2130;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+/* --- Quick Action Buttons --- */
+.quickActions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.quickActionBtn {
+  background: #fff;
+  border: 1.5px solid #E8E5DE;
+  border-radius: 14px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1A2130;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  text-decoration: none;
+}
+
+.quickActionBtn:hover {
+  border-color: #4FD1C5;
+  background: rgba(79, 209, 197, 0.04);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 209, 197, 0.12);
+}
+
+.quickActionIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* --- Section Headers --- */
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.sectionTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: #8C8C8C;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin: 0;
+}
+
+.sectionLink {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4FD1C5;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.2s;
+}
+
+.sectionLink:hover {
+  color: #38B2AC;
+}
+
+/* --- Pending Lessons (Critical Deadlines style) --- */
+.pendingList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pendingItem {
+  background: #fff;
+  border: 1px solid #EDEAE3;
+  border-radius: 14px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+}
+
+.pendingItem:hover {
+  border-color: #D4D0C8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.pendingItemIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 18px;
+}
+
+.pendingItemIcon.scheduled {
+  background: rgba(99, 102, 241, 0.08);
+  color: #6366F1;
+}
+
+.pendingItemIcon.pending_confirmation {
+  background: rgba(139, 92, 246, 0.08);
+  color: #8B5CF6;
+}
+
+.pendingItemIcon.completed {
+  background: rgba(16, 185, 129, 0.08);
+  color: #10B981;
+}
+
+.pendingItemBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.pendingItemTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1A2130;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pendingItemMeta {
+  font-size: 12px;
+  color: #8C8C8C;
+  margin-top: 2px;
+}
+
+.pendingBadge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pendingBadge.urgent {
+  background: #FEF2F2;
+  color: #DC2626;
+}
+
+.pendingBadge.confirm {
+  background: #1A2130;
+  color: #fff;
+  cursor: pointer;
+}
+
+.pendingBadge.confirm:hover {
+  background: #2D3748;
+}
+
+/* --- Booking Cards (Academic Paths style) --- */
+.bookingCards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.bookingCard {
+  background: #fff;
+  border: 1px solid #EDEAE3;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+}
+
+.bookingCard:hover {
+  border-color: #D4D0C8;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.bookingCardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.bookingCardIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 20px;
+}
+
+.bookingCardInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.bookingCardMastery {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8C8C8C;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bookingCardMasteryValue {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1A2130;
+}
+
+.bookingCardTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1A2130;
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bookingCardTutor {
+  font-size: 12px;
+  color: #8C8C8C;
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.bookingCardProgress {
+  height: 4px;
+  background: #EDEAE3;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.bookingCardProgressBar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.bookingCardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #8C8C8C;
+}
+
+/* --- Right Sidebar: Mini Calendar --- */
+.calendarWidget {
+  background: #fff;
+  border: 1px solid #EDEAE3;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.calendarHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.calendarMonthTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1A2130;
+}
+
+.calendarNav {
+  display: flex;
+  gap: 8px;
+}
+
+.calendarNavBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #8C8C8C;
+  padding: 4px;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.calendarNavBtn:hover {
+  color: #1A2130;
+}
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  text-align: center;
+}
+
+.calendarDayLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8C8C8C;
+  padding: 6px 0;
+  text-transform: uppercase;
+}
+
+.calendarDay {
+  font-size: 13px;
+  padding: 6px 0;
+  border-radius: 8px;
+  color: #4A4A4A;
+  position: relative;
+  cursor: default;
+}
+
+.calendarDay.today {
+  background: #4FD1C5;
+  color: #fff;
+  font-weight: 700;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.calendarDay.hasLesson::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #4FD1C5;
+}
+
+.calendarDay.otherMonth {
+  color: #D4D0C8;
+}
+
+/* --- Right Sidebar: Today's Schedule --- */
+.scheduleWidget {
+  background: #fff;
+  border: 1px solid #EDEAE3;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.scheduleTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1A2130;
+  margin-bottom: 16px;
+}
+
+.scheduleList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.scheduleItem {
+  border: 1px solid #EDEAE3;
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: all 0.2s;
+}
+
+.scheduleItem.active {
+  background: #1A2130;
+  border-color: #1A2130;
+  color: #fff;
+}
+
+.scheduleItemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.scheduleItemName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1A2130;
+}
+
+.scheduleItem.active .scheduleItemName {
+  color: #fff;
+}
+
+.scheduleItemTime {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8C8C8C;
+}
+
+.scheduleItem.active .scheduleItemTime {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.scheduleItemTutor {
+  font-size: 12px;
+  color: #8C8C8C;
+  margin-top: 2px;
+}
+
+.scheduleItem.active .scheduleItemTutor {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.scheduleItemTimeRange {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #8C8C8C;
+  margin-top: 6px;
+}
+
+.scheduleItem.active .scheduleItemTimeRange {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.joinBtn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #4FD1C5;
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.joinBtn:hover {
+  background: #38B2AC;
+}
+
+/* --- Empty State --- */
+.emptyState {
+  text-align: center;
+  padding: 32px 16px;
+  color: #8C8C8C;
+  font-size: 13px;
+}
+
+/* --- Loading --- */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  color: #8C8C8C;
+  font-size: 14px;
+}
+
+/* --- Responsive --- */
+
+/* ===== TABLET (< 1100px) ===== */
+@media (max-width: 1100px) {
+  .dashboardGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .rightSidebar {
+    flex-direction: row;
+  }
+
+  .calendarWidget,
+  .scheduleWidget {
+    flex: 1;
+  }
+}
+
+/* ===== MOBILE (< 768px) ===== */
+@media (max-width: 768px) {
+  .page {
+    padding: 10px 14px 20px;
+  }
+
+  .dashboardGrid {
+    gap: 12px;
+  }
+
+  .mainContent {
+    gap: 12px;
+  }
+
+  /* --- Greeting: Compact --- */
+  .greeting {
+    margin-bottom: 0;
+  }
+
+  .greetingTitle {
+    font-size: 20px;
+    line-height: 1.3;
+  }
+
+  .greetingSubtitle {
+    font-size: 11px;
+    margin-top: 2px;
+  }
+
+  /* --- Metrics: Compact 2x2 grid --- */
+  .metricsRow {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .metricCard {
+    padding: 12px;
+    gap: 10px;
+    border-radius: 12px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.03);
+  }
+
+  .metricIcon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+  }
+
+  .metricLabel {
+    font-size: 10px;
+    letter-spacing: 0.4px;
+  }
+
+  .metricValue {
+    font-size: 20px;
+  }
+
+  /* --- Quick Actions: Horizontal scroll strip --- */
+  .quickActions {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+    margin: 0 -14px;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .quickActions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .quickActionBtn {
+    flex: 0 0 auto;
+    min-width: 0;
+    width: auto;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 11px;
+    gap: 8px;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    text-transform: none;
+  }
+
+  .quickActionIcon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+  }
+
+  /* --- Section Headers: tight --- */
+  .sectionHeader {
+    margin-bottom: 6px;
+  }
+
+  .sectionTitle {
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  .sectionLink {
+    font-size: 11px;
+  }
+
+  /* --- Pending Lessons: compact cards --- */
+  .pendingList {
+    gap: 6px;
+  }
+
+  .pendingItem {
+    padding: 10px 12px;
+    gap: 10px;
+    border-radius: 10px;
+  }
+
+  .pendingItemIcon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+  }
+
+  .pendingItemTitle {
+    font-size: 13px;
+  }
+
+  .pendingItemMeta {
+    font-size: 11px;
+  }
+
+  .pendingBadge {
+    font-size: 9px;
+    padding: 3px 7px;
+    border-radius: 5px;
+  }
+
+  /* --- Booking Cards: single column, compact --- */
+  .bookingCards {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .bookingCard {
+    padding: 14px;
+    gap: 8px;
+    border-radius: 12px;
+  }
+
+  .bookingCardIcon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  .bookingCardMasteryValue {
+    font-size: 18px;
+  }
+
+  .bookingCardTitle {
+    font-size: 13px;
+    margin-top: 2px;
+  }
+
+  .bookingCardTutor {
+    font-size: 11px;
+  }
+
+  .bookingCardFooter {
+    font-size: 11px;
+  }
+
+  /* --- Right Sidebar: SIDE-BY-SIDE on mobile --- */
+  .rightSidebar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  /* --- Calendar Widget: compact --- */
+  .calendarWidget {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .calendarHeader {
+    margin-bottom: 8px;
+  }
+
+  .calendarMonthTitle {
+    font-size: 13px;
+  }
+
+  .calendarNavBtn {
+    padding: 2px;
+  }
+
+  .calendarGrid {
+    gap: 0px;
+  }
+
+  .calendarDayLabel {
+    font-size: 9px;
+    padding: 3px 0;
+  }
+
+  .calendarDay {
+    font-size: 11px;
+    padding: 3px 0;
+  }
+
+  .calendarDay.today {
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+  }
+
+  .calendarDay.hasLesson::after {
+    width: 3px;
+    height: 3px;
+    bottom: 1px;
+  }
+
+  /* --- Schedule Widget: compact --- */
+  .scheduleWidget {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .scheduleTitle {
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+
+  .scheduleList {
+    gap: 6px;
+  }
+
+  .scheduleItem {
+    padding: 10px 12px;
+    border-radius: 8px;
+  }
+
+  .scheduleItemName {
+    font-size: 12px;
+  }
+
+  .scheduleItemTime {
+    font-size: 10px;
+  }
+
+  .scheduleItemTutor {
+    font-size: 10px;
+  }
+
+  .scheduleItemTimeRange {
+    font-size: 10px;
+    margin-top: 3px;
+  }
+
+  .joinBtn {
+    padding: 8px;
+    font-size: 12px;
+    border-radius: 7px;
+    margin-top: 6px;
+    display: block;
+    text-align: center;
+    text-decoration: none;
+  }
+
+  /* --- Empty State: ULTRA compact --- */
+  .emptyState {
+    padding: 14px 10px;
+    font-size: 12px;
+    color: #b0ada5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 0;
+  }
+
+  /* --- Loading: mobile-scaled --- */
+  .loading {
+    min-height: 180px;
+    font-size: 13px;
+  }
+}
+
+/* ===== SMALL MOBILE (< 400px) ===== */
+@media (max-width: 400px) {
+  .page {
+    padding: 8px 10px 16px;
+  }
+
+  .greetingTitle {
+    font-size: 18px;
+  }
+
+  .metricsRow {
+    gap: 6px;
+  }
+
+  .metricCard {
+    padding: 10px;
+    gap: 8px;
+    border-radius: 10px;
+  }
+
+  .metricIcon {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+  }
+
+  .metricIcon svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .metricValue {
+    font-size: 18px;
+  }
+
+  .metricLabel {
+    font-size: 9px;
+  }
+
+  .quickActionBtn {
+    padding: 8px 12px;
+    font-size: 10px;
+  }
+
+  .quickActionIcon {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+  }
+
+  .pendingItem {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .pendingItemIcon {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+  }
+
+  .bookingCard {
+    padding: 12px;
+  }
+
+  /* Stack calendar and schedule vertically on very small screens */
+  .rightSidebar {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .calendarWidget {
+    padding: 10px;
+  }
+
+  .scheduleWidget {
+    padding: 10px;
+  }
+
+  .calendarMonthTitle {
+    font-size: 12px;
+  }
+
+  .scheduleTitle {
+    font-size: 12px;
+  }
+}

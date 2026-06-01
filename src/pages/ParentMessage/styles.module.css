@@ -1,0 +1,1421 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 56px);
+  background: #f2f0e4;
+  width: 100%;
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #1a2238;
+  overflow: hidden;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26px 40px;
+  background: transparent;
+  gap: 32px;
+  flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.topBarLeft {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex: 1;
+}
+
+.pageTitle {
+  font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
+  font-size: 31.5px;
+  line-height: 1.11em;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: #1a2238;
+  margin: 0;
+}
+
+.childSelector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(242, 240, 228, 0.6);
+  border: 1px solid rgba(62, 47, 40, 0.1);
+  border-radius: 12px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.childSelector:hover {
+  border-color: rgba(62, 47, 40, 0.2);
+}
+
+.childAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #e0d4c8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1a2238;
+  flex-shrink: 0;
+}
+
+.childName {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  color: #1a2238;
+}
+
+.dropdownIcon {
+  width: 12px;
+  height: 12px;
+  color: #737373;
+}
+
+.topBarActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.primaryButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 12px;
+  background: #631b1b;
+  border: none;
+  color: #ffffff;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.43em;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  box-shadow: 0px 4px 6px -4px rgba(0, 0, 0, 0.1), 0px 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.primaryButton:hover {
+  opacity: 0.9;
+}
+
+.secondaryButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  color: #1a2238;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.43em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.secondaryButton:hover {
+  border-color: #1a2238;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.buttonIcon {
+  width: 14px;
+  height: 14px;
+}
+
+.mainContent {
+  display: flex;
+  flex: 1;
+  gap: 24px;
+  background: transparent;
+  min-height: 0;
+  width: 100%;
+  padding: 0 40px 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 360px;
+  min-width: 360px;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.searchBlock {
+  padding: 20px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.searchInputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchInput {
+  width: 100%;
+  border: 1px solid rgba(62, 47, 40, 0.1);
+  border-radius: 12px;
+  background: rgba(242, 240, 228, 0.6);
+  padding: 11px 16px 11px 44px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.3em;
+  color: #1a2238;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.searchInput::placeholder {
+  color: rgba(62, 47, 40, 0.4);
+}
+
+.searchInput:focus {
+  border-color: rgba(62, 47, 40, 0.2);
+}
+
+.searchIcon {
+  position: absolute;
+  left: 16px;
+  width: 14px;
+  height: 14px;
+  color: rgba(62, 47, 40, 0.4);
+  pointer-events: none;
+}
+
+.tabGroup {
+  background: rgba(242, 240, 228, 0.4);
+  border-radius: 12px;
+  padding: 4px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.tabButton {
+  border: none;
+  background: transparent;
+  padding: 8px 12px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+  color: #737373;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tabButton:hover {
+  color: #1a2238;
+}
+
+.tabButtonActive {
+  background: #ffffff;
+  color: #1a2238;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.messageList {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  flex: 1;
+}
+
+.avatarContainer {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.requestIndicator {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 14px;
+  height: 14px;
+  background: #f59e0b;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+}
+
+.bookingRequestBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: #d97706;
+  margin-top: 4px;
+}
+
+.bookingRequestBadge svg {
+  color: #f59e0b;
+  width: 12px;
+  height: 12px;
+}
+
+.messageItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border: none;
+  background: #ffffff;
+  border-bottom: 1px solid #e8e6da;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.messageItem:hover {
+  background: #fafaf8;
+}
+
+.messageItemActive {
+  background: #fafaf8;
+  border-left: 3px solid #631b1b;
+}
+
+.messageAvatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid #e0ddd0;
+  display: block;
+}
+
+.messageItemContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.messageItemTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.messageName {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  color: #1a2238;
+}
+
+.messageTime {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  color: #737373;
+}
+
+.messageMetaRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.messageRole,
+.messageSession {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  color: #737373;
+}
+
+.messageDot {
+  font-size: 12px;
+  line-height: 16px;
+  color: #d4d4d4;
+}
+
+.messageBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(242, 240, 228, 0.6);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+  color: #1a2238;
+}
+
+.messageBadgeMuted {
+  background: #f5f5f5;
+  color: #737373;
+}
+
+.messageBadgeIcon {
+  width: 10px;
+  height: 10px;
+}
+
+.messagePreview {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  line-height: 20px;
+  color: #737373;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.unreadDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #631b1b;
+  margin-left: auto;
+  margin-top: 4px;
+  box-shadow: 0 0 0 3px rgba(99, 27, 27, 0.1);
+}
+
+/* Loading State */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 20px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f2f0e4;
+  border-top-color: #1a2238;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loadingText {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  color: #737373;
+  margin: 0;
+}
+
+/* Error State */
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 16px;
+}
+
+.errorText {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  color: #dc2626;
+  margin: 0;
+}
+
+.retryButton {
+  background: #631b1b;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.retryButton:hover {
+  opacity: 0.9;
+}
+
+/* Empty State */
+.emptyContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 8px;
+  text-align: center;
+}
+
+.emptyText {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  color: #1a2238;
+  margin: 0;
+}
+
+.emptySubtext {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  color: #737373;
+  margin: 0;
+}
+
+.chatArea {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.chatHeader {
+  display: flex;
+  flex-direction: column;
+  padding: 20px 24px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #ffffff;
+}
+
+.chatHeaderTopRow {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 16px;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: rgba(242, 240, 228, 0.6);
+  border-radius: 10px;
+  padding: 0;
+  cursor: pointer;
+  color: #1a2238;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.backButton:hover {
+  background: rgba(242, 240, 228, 1);
+}
+
+.topBarHidden {
+  display: none;
+}
+
+.chatHeaderInfo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+}
+
+.chatAvatarWrapper {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.chatAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #f2f0e4;
+  display: block;
+}
+
+.statusDot {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  z-index: 2;
+}
+
+.chatHeaderText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.chatName {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  color: #1a2238;
+}
+
+.chatRole {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  line-height: 18px;
+  color: #737373;
+}
+
+.chatHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.iconButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #e5e5e5;
+  background: transparent;
+  border-radius: 10px;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.iconButton:hover {
+  background: #fafaf8;
+  border-color: #d4d4d4;
+}
+
+.iconButton img {
+  width: 18px;
+  height: 18px;
+}
+
+.leaveButton {
+  border: 1px solid #e5e5e5;
+  background: transparent;
+  border-radius: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #dc2626;
+  transition: all 0.2s ease;
+}
+
+.leaveButton:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.leaveButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.leaveButton svg {
+  width: 16px;
+  height: 16px;
+}
+
+.messagesAreaContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #fafaf8;
+}
+
+.messagesArea {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.chatEmptyState {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafaf8;
+  padding: 48px 24px;
+}
+
+.emptyStateText {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 15px;
+  line-height: 24px;
+  color: #737373;
+  margin: 0;
+  text-align: center;
+}
+
+.chatLoadingContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background: #fafaf8;
+  padding: 48px 24px;
+}
+
+.chatLoadingText {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  color: #737373;
+  margin: 0;
+}
+
+.sessionContextCard {
+  align-self: center;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  max-width: 480px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.sessionContextCaption {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  color: #737373;
+}
+
+.sessionContextTitle {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+  color: #1a2238;
+}
+
+.sessionContextMeta {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.sessionContextItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  line-height: 18px;
+  color: #737373;
+}
+
+.sessionContextItem img {
+  width: 14px;
+  height: 14px;
+}
+
+.bookingActionPrompt {
+  margin-top: 8px;
+  padding: 12px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  line-height: 18px;
+  color: #92400e;
+}
+
+.dateSeparator {
+  align-self: center;
+  background: rgba(242, 240, 228, 0.6);
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: #737373;
+}
+
+.messageBubbleRow {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.messageBubbleRowSender {
+  justify-content: flex-end;
+}
+
+.messageBubbleAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 2px solid #f2f0e4;
+  flex-shrink: 0;
+}
+
+.messageBubbleContent {
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.messageBubble {
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  line-height: 22px;
+  color: #1a2238;
+  white-space: pre-wrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.messageBubbleSender {
+  background: #1a2238;
+  color: #ffffff;
+  border-color: #1a2238;
+}
+
+.messageBubbleTime {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  color: #a3a3a3;
+  padding: 0 4px;
+}
+
+.messageBubbleTimeSender {
+  text-align: right;
+}
+
+.typingRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.typingBubble {
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  gap: 5px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.typingDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #a3a3a3;
+  animation: typingBounce 1.4s infinite ease-in-out;
+}
+
+.typingDot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.typingDot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes typingBounce {
+
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+
+  40% {
+    transform: translateY(-6px);
+  }
+}
+
+.chatFooter {
+  border-top: 1px solid #f0f0f0;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #ffffff;
+}
+
+.quickTemplatesLabel {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: #737373;
+}
+
+.quickTemplateRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.templateButton {
+  border: 1px solid #e5e5e5;
+  background: rgba(242, 240, 228, 0.3);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  color: #1a2238;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.templateButton:hover {
+  background: rgba(242, 240, 228, 0.6);
+  border-color: #d4d4d4;
+}
+
+.composerWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.imagePreviewWrapper {
+  position: relative;
+  align-self: flex-start;
+  display: inline-flex;
+}
+
+.imagePreview {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #e5e5e5;
+  display: block;
+}
+
+.imagePreviewRemove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #1a2238;
+  border: none;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s ease;
+}
+
+.imagePreviewRemove:hover {
+  background: #631b1b;
+}
+
+.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.composer .iconButton {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+}
+
+.composerInput {
+  flex: 1;
+  border: 1px solid rgba(62, 47, 40, 0.1);
+  border-radius: 12px;
+  background: rgba(242, 240, 228, 0.3);
+  padding: 12px 16px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  line-height: 22px;
+  color: #1a2238;
+  resize: none;
+  outline: none;
+  transition: border-color 0.2s ease;
+  min-height: 44px;
+  max-height: 120px;
+}
+
+.composerInput::placeholder {
+  color: rgba(62, 47, 40, 0.4);
+}
+
+.composerInput:focus {
+  border-color: rgba(62, 47, 40, 0.2);
+  background: rgba(242, 240, 228, 0.5);
+}
+
+.sendButton {
+  background: #631b1b;
+  border: none;
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+}
+
+.sendButton:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.sendButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sendButton img {
+  width: 18px;
+  height: 18px;
+}
+
+.sendingSpinner {
+  animation: spin 0.8s linear infinite;
+}
+
+.systemMessageContainer {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin: 12px 0;
+}
+
+.systemCard {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 10px;
+  padding: 14px 18px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1200px) {
+  .mainContent {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .sidebar {
+    width: 100%;
+    min-width: unset;
+    max-height: none;
+    flex: 1;
+  }
+
+  .chatArea {
+    min-height: 0;
+    flex: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .topBar {
+    padding: 16px 20px;
+  }
+
+  .pageTitle {
+    font-size: 24px;
+  }
+
+  .mainContent {
+    padding: 0;
+    gap: 0;
+  }
+
+  .topBarActions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .sidebar {
+    border-radius: 0;
+    border: none;
+  }
+
+  .chatArea {
+    border-radius: 0;
+    border: none;
+  }
+
+  .chatHeader {
+    padding: 12px 16px;
+    flex-direction: column;
+    gap: 0;
+    border-bottom: 2px solid #e0ddd0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  .chatHeaderInfo {
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .chatAvatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border-width: 1px;
+  }
+
+  .statusDot {
+    width: 12px;
+    height: 12px;
+    bottom: -1px;
+    right: -1px;
+    border-width: 2px;
+  }
+
+  .chatName {
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .chatRole {
+    font-size: 11px;
+  }
+
+
+
+  .iconButton {
+    width: 34px;
+    height: 34px;
+    border: none;
+    background: transparent;
+  }
+
+  .composer .iconButton {
+    width: 44px;
+    height: 44px;
+    border: 1px solid #e5e5e5;
+  }
+
+  .messagesArea {
+    padding: 24px 16px 16px;
+  }
+
+  .chatFooter {
+    padding: 12px 16px;
+  }
+
+  .messageBubbleContent {
+    max-width: 280px;
+  }
+}
+
+@media (max-width: 480px) {
+  .topBar {
+    padding: 16px;
+  }
+
+  .pageTitle {
+    font-size: 20px;
+  }
+
+  .mainContent {
+    padding: 0;
+  }
+
+  .searchBlock {
+    padding: 16px;
+  }
+
+  .messageItem {
+    padding: 14px 16px;
+  }
+
+  .messageAvatar {
+    width: 50px;
+    height: 50px;
+  }
+
+  .chatAvatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    font-size: 13px;
+    padding: 8px 16px;
+  }
+
+
+
+  .iconButton {
+    width: 36px;
+    height: 36px;
+  }
+
+  .leaveButton {
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+}
+
+/* ===== Typing Indicator ===== */
+.typingIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  color: #737373;
+  font-style: italic;
+}
+
+.typingDots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.typingDots span {
+  width: 6px;
+  height: 6px;
+  background: #9ca3af;
+  border-radius: 50%;
+  animation: typingBounce 1.4s infinite ease-in-out;
+}
+
+.typingDots span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.typingDots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typingDots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typingBounce {
+  0%, 80%, 100% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ===== Emoji Picker ===== */
+.emojiWrapper {
+  position: relative;
+}
+
+.emojiPicker {
+  position: absolute;
+  bottom: 48px;
+  left: 0;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: 12px;
+  z-index: 100;
+  width: 280px;
+}
+
+.emojiGrid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+}
+
+.emojiItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 0;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.emojiItem:hover {
+  background: #f2f0e4;
+  transform: scale(1.2);
+}
+
+/* ===== Chat Search Bar ===== */
+.chatSearchBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px 16px;
+  border-top: 1px solid #f0f0f0;
+  width: calc(100% + 48px);
+  margin: 16px -24px -20px -24px;
+  box-sizing: border-box;
+}
+
+.chatSearchInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  line-height: 20px;
+  color: #1a2238;
+  outline: none;
+  padding: 4px 0;
+}
+
+.chatSearchInput::placeholder {
+  color: #9ca3af;
+}
+
+.chatSearchClear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: #f5f5f5;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 0;
+  color: #737373;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.chatSearchClear:hover {
+  background: #e5e5e5;
+}
+
+@media (max-width: 768px) {
+  .chatSearchBar {
+    width: calc(100% + 32px);
+    margin: 12px -16px -12px -16px;
+    padding: 10px 16px;
+    border-top: 1px solid #f0ede3;
+    background: #fafaf8;
+  }
+  .emojiPicker {
+    width: 240px;
+    left: -40px;
+  }
+
+  .emojiGrid {
+    grid-template-columns: repeat(8, 1fr);
+  }
+
+  .emojiItem {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+  }
+
+  .chatSearchBar {
+    padding: 8px 16px 12px;
+  }
+}

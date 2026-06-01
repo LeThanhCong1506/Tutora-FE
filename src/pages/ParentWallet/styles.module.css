@@ -1,0 +1,501 @@
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 24px;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+.card {
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+}
+
+.heroCard {
+    padding: 33px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    min-height: fit-content;
+}
+
+.heroTop {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.heroInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.label {
+    font-size: 14px;
+    line-height: 20px;
+    color: #525252;
+}
+
+.balance {
+    font-size: 36px;
+    line-height: 40px;
+    color: #171717;
+    font-weight: 400;
+}
+
+.subtle {
+    font-size: 14px;
+    line-height: 20px;
+    color: #525252;
+}
+
+.pill {
+    background: #f5f5f5;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 14px;
+    line-height: 20px;
+    color: #171717;
+}
+
+.nextCharge {
+    background: #fafafa;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.miniLabel {
+    font-size: 12px;
+    line-height: 16px;
+    color: #525252;
+}
+
+.nextChargeRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.nextChargeInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.value {
+    font-size: 14px;
+    line-height: 20px;
+    color: #171717;
+}
+
+.meta {
+    font-size: 12px;
+    line-height: 16px;
+    color: #525252;
+}
+
+.amount {
+    font-size: 18px;
+    line-height: 28px;
+    color: #171717;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.primaryButton {
+    background: #171717;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 24px;
+    font-size: 16px;
+    line-height: 24px;
+    cursor: pointer;
+}
+
+.secondaryButton {
+    background: transparent;
+    color: #171717;
+    border: 1px solid #d4d4d4;
+    border-radius: 8px;
+    padding: 11px 25px;
+    font-size: 16px;
+    line-height: 24px;
+    cursor: pointer;
+}
+
+.sectionTitle {
+    font-size: 18px;
+    line-height: 28px;
+    color: #171717;
+    font-weight: 400;
+}
+
+.sectionBlock {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.optionRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.amountButton {
+    border: 2px solid #d4d4d4;
+    border-radius: 8px;
+    padding: 14px 26px;
+    background: #ffffff;
+    font-size: 16px;
+    line-height: 24px;
+    color: #171717;
+    cursor: pointer;
+}
+
+.amountButtonActive {
+    background: #fafafa;
+    border-color: #171717;
+}
+
+.amountButtonCustom {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.customIcon {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    background: #171717;
+    position: relative;
+}
+
+.customIcon::before,
+.customIcon::after {
+    content: '';
+    position: absolute;
+    background: #ffffff;
+}
+
+.customIcon::before {
+    width: 8px;
+    height: 2px;
+    top: 6px;
+    left: 3px;
+}
+
+.customIcon::after {
+    width: 2px;
+    height: 8px;
+    top: 3px;
+    left: 6px;
+}
+
+.methodRow {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.methodCard {
+    border: 2px solid #d4d4d4;
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 18px;
+    min-width: 160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.methodCardActive {
+    background: #fafafa;
+    border-color: #171717;
+}
+
+.methodIcon {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: #171717;
+}
+
+.methodIconMomo {
+    background: #a3005f;
+}
+
+.methodIconZalo {
+    background: #0068ff;
+}
+
+.methodIconBank {
+    background: #111827;
+}
+
+.methodIconCard {
+    background: #6b7280;
+}
+
+.methodLabel {
+    font-size: 12px;
+    line-height: 16px;
+    color: #171717;
+}
+
+.methodLabelMuted {
+    font-size: 12px;
+    line-height: 16px;
+    color: #525252;
+}
+
+.cardHeader {
+    border-bottom: 1px solid #e5e5e5;
+    padding: 24px;
+}
+
+.rowBetween {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.rowInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.rowActions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.amountBlock {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.status {
+    font-size: 12px;
+    line-height: 16px;
+    color: #525252;
+}
+
+.primaryButtonSmall {
+    background: #171717;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 14px;
+    line-height: 20px;
+    cursor: pointer;
+}
+
+.secondaryButtonSmall {
+    background: transparent;
+    color: #171717;
+    border: 1px solid #d4d4d4;
+    border-radius: 8px;
+    padding: 9px 17px;
+    font-size: 14px;
+    line-height: 20px;
+    cursor: pointer;
+}
+
+.cardHeaderRow {
+    border-bottom: 1px solid #e5e5e5;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.filterRow {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.filterButton {
+    background: #efefef;
+    border: 1px solid #d4d4d4;
+    border-radius: 8px;
+    padding: 9px 17px;
+    font-size: 14px;
+    line-height: 14px;
+    color: #000000;
+    cursor: pointer;
+}
+
+.transactionList {
+    display: flex;
+    flex-direction: column;
+}
+
+.transactionRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 24px;
+    border-top: 1px solid #e5e5e5;
+}
+
+.transactionRow:first-of-type {
+    border-top: none;
+}
+
+.transactionInfo {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.transactionIcon {
+    width: 40px;
+    height: 40px;
+    border-radius: 9999px;
+    background: #f5f5f5;
+    position: relative;
+}
+
+.transactionIcon::before,
+.transactionIcon::after {
+    content: '';
+    position: absolute;
+    border-radius: 2px;
+    background: #171717;
+}
+
+.transactionIcon::before {
+    width: 12px;
+    height: 2px;
+    top: 19px;
+    left: 14px;
+}
+
+.transactionIcon::after {
+    width: 2px;
+    height: 12px;
+    top: 14px;
+    left: 19px;
+}
+
+.transactionIconLesson::after {
+    display: none;
+}
+
+.transactionIconLesson::before {
+    width: 16px;
+    left: 12px;
+}
+
+.transactionIconRefund::before {
+    width: 16px;
+    left: 12px;
+    background: #171717;
+}
+
+.transactionIconTopup::before,
+.transactionIconTopup::after {
+    background: #171717;
+}
+
+.transactionAmount {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.statusPill {
+    background: #f5f5f5;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    line-height: 16px;
+    color: #171717;
+}
+
+.chevron {
+    width: 10px;
+    height: 16px;
+    position: relative;
+}
+
+.chevron::before {
+    content: '';
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-right: 2px solid #171717;
+    border-top: 2px solid #171717;
+    transform: rotate(45deg);
+    top: 4px;
+    left: 1px;
+}
+
+.linkButton {
+    background: transparent;
+    border: none;
+    color: #525252;
+    font-size: 14px;
+    line-height: 20px;
+    padding: 24px;
+    text-align: left;
+    cursor: pointer;
+}
+
+@media (max-width: 960px) {
+
+    .heroTop,
+    .nextChargeRow,
+    .actions,
+    .rowBetween,
+    .rowActions,
+    .transactionRow,
+    .cardHeaderRow {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .amountBlock,
+    .transactionAmount {
+        align-items: flex-start;
+    }
+
+    .page {
+        padding: 16px;
+    }
+}

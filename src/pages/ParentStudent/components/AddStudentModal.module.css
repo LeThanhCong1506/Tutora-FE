@@ -1,0 +1,229 @@
+/* ===== ADD STUDENT MODAL ===== */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(23, 23, 23, 0.6);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    animation: fadeIn var(--transition-normal);
+}
+
+.modalContent {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--color-white);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    z-index: 1001;
+    animation: modalScaleIn var(--transition-normal);
+}
+
+.modalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 32px 24px 24px;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.modalTitle {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+
+.modalCloseBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--color-border-light);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    color: var(--color-text-secondary);
+}
+
+.modalCloseBtn:hover {
+    background: var(--color-text-muted);
+    color: var(--color-white);
+}
+
+.modalCloseBtn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* ===== ADD STUDENT FORM ===== */
+.addStudentForm {
+    padding: 24px 32px 32px 24px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+.formRow {
+    margin-bottom: 20px;
+}
+
+.formRow:last-child {
+    margin-bottom: 0;
+}
+
+.formLabel {
+    display: block;
+    font-family: var(--font-primary);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    margin-bottom: 8px;
+}
+
+.required {
+    color: var(--color-danger);
+    margin-left: 4px;
+}
+
+.formInput,
+.formTextarea {
+    width: 100%;
+    padding: 12px 16px;
+    font-family: var(--font-primary);
+    font-size: 15px;
+    color: var(--color-text-primary);
+    background: var(--color-input-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    transition: all var(--transition-fast);
+}
+
+.formInput:focus,
+.formTextarea:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.formInputError {
+    border-color: var(--color-danger);
+    animation: shake 0.3s ease;
+}
+
+.errorMessage {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-danger);
+    margin-top: 6px;
+    animation: slideDown var(--transition-fast);
+}
+
+/* Error summary banner */
+.errorSummary {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    background: #fff5f5;
+    border: 1px solid #fca5a5;
+    border-left: 4px solid var(--color-danger);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 20px;
+    animation: slideDown 0.2s ease;
+}
+
+.errorSummaryIcon {
+    color: var(--color-danger);
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.errorSummaryTitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-danger);
+    margin: 0 0 6px 0;
+}
+
+.errorSummaryList {
+    margin: 0;
+    padding-left: 16px;
+    font-size: 13px;
+    color: #b91c1c;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.formTextarea {
+    min-height: 80px;
+    resize: vertical;
+    font-family: var(--font-primary);
+    line-height: 1.5;
+}
+
+/* ===== MODAL ACTIONS ===== */
+.modalActions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding-top: 24px;
+}
+
+.modalBtn {
+    padding: 12px 24px;
+    font-family: var(--font-primary);
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #374151;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.modalBtn:hover {
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+}
+
+.modalBtnPrimary {
+    background: #1a2238;
+    color: #fff;
+    border: 1px solid #1a2238;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-family: var(--font-primary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.modalBtnPrimary:hover {
+    background: #2a3654;
+    border-color: #2a3654;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(26, 34, 56, 0.25);
+}
+
+.modalBtnPrimary:active {
+    transform: translateY(0);
+}

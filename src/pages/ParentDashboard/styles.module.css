@@ -1,0 +1,726 @@
+/* ===== PARENT DASHBOARD ===== */
+
+.dashboard {
+    width: 100%;
+    min-height: 100%;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 32px 24px;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* ===== WELCOME BANNER ===== */
+
+@keyframes bannerGradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes floatOrb {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-12px) scale(1.08); }
+}
+
+@keyframes floatOrbAlt {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(8px) scale(0.95); }
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+}
+
+@keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.welcomeBanner {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(-45deg, #0f172a, #1e293b, #312e5c, #4a1942, #1a2238);
+    background-size: 400% 400%;
+    animation: bannerGradient 12s ease infinite;
+    border-radius: 16px;
+    padding: 40px 36px;
+    width: 100%;
+    box-sizing: border-box;
+    box-shadow:
+        0 4px 24px rgba(15, 23, 42, 0.25),
+        0 1px 3px rgba(15, 23, 42, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Decorative floating orbs */
+.welcomeBanner::before {
+    content: '';
+    position: absolute;
+    top: -30px;
+    right: -20px;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.25) 0%, transparent 70%);
+    animation: floatOrb 6s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.welcomeBanner::after {
+    content: '';
+    position: absolute;
+    bottom: -40px;
+    right: 30%;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+    animation: floatOrbAlt 8s ease-in-out infinite;
+    pointer-events: none;
+}
+
+/* Glass inner decorative strip */
+.bannerDecorStrip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 30%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 70%, transparent 100%);
+}
+
+/* Small secondary orb */
+.bannerOrbSmall {
+    position: absolute;
+    top: 20px;
+    right: 35%;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(251, 191, 36, 0.12) 0%, transparent 70%);
+    animation: floatOrb 5s ease-in-out 1s infinite;
+    pointer-events: none;
+}
+
+.welcomeContent {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    animation: fadeSlideUp 0.6s ease-out;
+}
+
+.welcomeGreeting {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0 0 4px 0;
+}
+
+.welcomeTitle {
+    font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
+    font-size: 28px;
+    line-height: 36px;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0;
+    background: linear-gradient(
+        90deg,
+        #ffffff 0%,
+        #e2e8f0 25%,
+        #c4b5fd 50%,
+        #e2e8f0 75%,
+        #ffffff 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 4s linear infinite;
+}
+
+.welcomeSubtitle {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    line-height: 22px;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+    font-weight: 400;
+}
+
+.welcomeDatePill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 5px 14px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: fit-content;
+    transition: background 0.3s ease;
+}
+
+.welcomeDatePill:hover {
+    background: rgba(255, 255, 255, 0.13);
+}
+
+.welcomeDateIcon {
+    display: flex;
+    align-items: center;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.welcomeDate {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    line-height: 16px;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+/* ===== STATS GRID ===== */
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    width: 100%;
+}
+
+.statCard {
+    background-color: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: box-shadow 0.2s ease;
+}
+
+.statCard:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.statHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.statIconWrap {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background-color: #f2f0e4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.statBadge {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 11px;
+    line-height: 16px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 9999px;
+}
+
+.badgeGreen {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.badgeBlue {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.badgeOrange {
+    background-color: #ffedd5;
+    color: #9a3412;
+}
+
+/* Loading Spinner */
+.spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #e5e5e5;
+    border-top-color: #1a2238;
+    border-radius: 50%;
+    margin: 0 auto;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.statValue {
+    font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
+    font-size: 28px;
+    line-height: 36px;
+    font-weight: 700;
+    color: #1a2238;
+}
+
+.statLabel {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: 500;
+    color: #525252;
+}
+
+.statSubtitle {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    line-height: 16px;
+    color: #a3a3a3;
+}
+
+/* ===== QUICK ACTIONS ===== */
+.quickActions {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+}
+
+.quickActionBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: 1px solid #e5e5e5;
+    background-color: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 500;
+    color: #1a2238;
+}
+
+.quickActionBtn:hover {
+    border-color: #1a2238;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.quickActionBtn svg {
+    flex-shrink: 0;
+}
+
+/* ===== CONTENT GRID (2 columns) ===== */
+.contentGrid {
+    display: grid;
+    grid-template-columns: 1.8fr 1fr;
+    gap: 24px;
+    width: 100%;
+}
+
+/* ===== UPCOMING LESSONS (Left) ===== */
+.lessonsCard {
+    background-color: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.lessonsHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.lessonsHeader h3 {
+    font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
+    font-size: 18px;
+    line-height: 28px;
+    font-weight: 600;
+    color: #1a2238;
+    margin: 0;
+}
+
+.viewAllLink {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    line-height: 20px;
+    color: #525252;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.viewAllLink:hover {
+    color: #1a2238;
+}
+
+.lessonsList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.lessonItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    background-color: #ffffff;
+    transition: background-color 0.15s ease;
+}
+
+.lessonHighlighted {
+    background-color: #fafaf8;
+    border-color: #d4d4d4;
+}
+
+.lessonLeft {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1;
+    min-width: 0;
+}
+
+.lessonIcon {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    background-color: #f2f0e4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.lessonInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.lessonSubject {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 500;
+    color: #1a2238;
+}
+
+.lessonTime {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    line-height: 16px;
+    color: #737373;
+}
+
+.lessonRight {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.lessonBadge {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 9999px;
+}
+
+.badgeConfirmed {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.badgeScheduled {
+    background-color: #f5f5f5;
+    color: #525252;
+}
+
+.lessonViewBtn {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    line-height: 18px;
+    color: #525252;
+    text-decoration: underline;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.2s ease;
+}
+
+.lessonViewBtn:hover {
+    color: #1a2238;
+}
+
+/* ===== RIGHT COLUMN ===== */
+.rightColumn {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* ===== LATEST SESSION CARD ===== */
+.sessionCard {
+    background-color: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sessionHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sessionHeader h3 {
+    font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
+    font-size: 18px;
+    line-height: 28px;
+    font-weight: 600;
+    color: #1a2238;
+    margin: 0;
+}
+
+.sessionDate {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    line-height: 16px;
+    color: #737373;
+}
+
+.sessionContent {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.sessionDescription {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    color: #525252;
+    margin: 0;
+}
+
+.sessionInfo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sessionInfoLabel {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    line-height: 18px;
+    color: #737373;
+}
+
+.sessionInfoValue {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: 600;
+    color: #1a2238;
+}
+
+.sessionBtn {
+    width: 100%;
+    padding: 8px;
+    border-radius: 8px;
+    background-color: #f2f0e4;
+    border: none;
+    cursor: pointer;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    line-height: 20px;
+    font-weight: 500;
+    color: #1a2238;
+    text-align: center;
+    transition: background-color 0.2s ease;
+}
+
+.sessionBtn:hover {
+    background-color: #e8e5d8;
+}
+
+/* ===== NEEDS ATTENTION CARD ===== */
+.attentionCard {
+    background-color: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.attentionCard h3 {
+    font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
+    font-size: 18px;
+    line-height: 28px;
+    font-weight: 600;
+    color: #1a2238;
+    margin: 0;
+}
+
+.attentionContent {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 8px;
+    background-color: #fffbeb;
+    border: 1px solid #fde68a;
+}
+
+.attentionIcon {
+    flex-shrink: 0;
+    padding-top: 1px;
+}
+
+.attentionDetails {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.attentionTitle {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 500;
+    color: #1a2238;
+}
+
+.attentionDesc {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    line-height: 16px;
+    color: #737373;
+}
+
+.attentionLink {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 600;
+    color: #92400e;
+    text-decoration: underline;
+    margin-top: 2px;
+}
+
+.attentionLink:hover {
+    color: #78350f;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1200px) {
+    .statsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .contentGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 20px 16px;
+        gap: 16px;
+    }
+
+    .welcomeBanner {
+        padding: 28px 20px;
+        border-radius: 14px;
+    }
+
+    .welcomeGreeting {
+        font-size: 11px;
+    }
+
+    .welcomeTitle {
+        font-size: 22px;
+        line-height: 28px;
+    }
+
+    .statsGrid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .statCard {
+        padding: 16px;
+    }
+
+    .statValue {
+        font-size: 24px;
+        line-height: 30px;
+    }
+
+    .quickActions {
+        flex-wrap: wrap;
+    }
+
+    .quickActionBtn {
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .statsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .quickActions {
+        flex-direction: column;
+    }
+
+    .quickActionBtn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .lessonRight {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+    }
+}
