@@ -1,0 +1,292 @@
+/* ===== STATISTICS SECTION ===== */
+.statistics-section {
+    margin: 64px auto 0;
+    max-width: min(1305px, 90vw);
+    width: calc(100% - 42px);
+    padding: clamp(3rem, 2.5rem + 2vw, 8rem);
+    background-color: var(--color-navy);
+    border-radius: var(--radius-3xl);
+    box-shadow: var(--shadow-soft);
+    position: relative;
+    overflow: hidden;
+}
+
+.statistics-glow-bg {
+    position: absolute;
+    top: -20%;
+    left: -10%;
+    width: 60%;
+    height: 140%;
+    background: radial-gradient(circle, rgba(212, 180, 131, 0.08) 0%, rgba(212, 180, 131, 0) 60%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.statistics-container {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: clamp(3rem, 2.5rem + 2vw, 7rem);
+    position: relative;
+    z-index: 1;
+}
+
+.statistics-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+.security-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(212, 180, 131, 0.1);
+    border: 1px solid rgba(212, 180, 131, 0.2);
+    border-radius: 100px;
+    color: var(--color-gold);
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    width: fit-content;
+}
+
+.security-icon {
+    font-size: 16px;
+}
+
+.statistics-title {
+    font-size: clamp(36px, 4vw, 52px);
+    font-weight: 800;
+    letter-spacing: -1.31px;
+    line-height: 1.1;
+    text-transform: uppercase;
+    color: var(--color-cream-light);
+}
+
+.title-gold {
+    color: var(--color-gold);
+}
+
+.statistics-description {
+    font-family: var(--font-serif);
+    font-size: 18px;
+    font-style: italic;
+    line-height: 25.59px;
+    color: var(--color-cream-light);
+    max-width: 392px;
+}
+
+.statistics-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    position: relative;
+    z-index: 2;
+}
+
+.statistics-grid .stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 32px;
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-2xl, 24px);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: hidden;
+    min-height: 200px;
+}
+
+.statistics-grid .stat-card:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(212, 180, 131, 0.3);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.3);
+}
+
+.statistics-grid .stat-value {
+    font-size: 64px;
+    font-weight: 800;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.03);
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+    pointer-events: none;
+}
+
+.statistics-grid .stat-card:hover .stat-value {
+    color: rgba(212, 180, 131, 0.1);
+    transform: scale(1.1) translate(5px, -5px);
+}
+
+.statistics-grid .stat-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(212, 180, 131, 0.1);
+    color: var(--color-gold);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    transition: all 0.3s ease;
+}
+
+.statistics-grid .stat-card:hover .stat-icon-wrapper {
+    background-color: var(--color-gold);
+    color: var(--color-navy);
+    transform: scale(1.05);
+}
+
+.statistics-grid .stat-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    z-index: 2;
+}
+
+.statistics-grid .stat-label {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    line-height: 1.4;
+    text-transform: none;
+    color: var(--color-cream-light);
+    opacity: 1;
+    transition: color 0.3s ease;
+}
+
+.statistics-grid .stat-card:hover .stat-label {
+    color: var(--color-gold);
+}
+
+.statistics-grid .stat-sublabel {
+    font-size: 15px;
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.65);
+    padding-top: 0;
+}
+
+/* ===== STATISTICS RESPONSIVE ===== */
+@media (max-width: 1200px) {
+    .statistics-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 48px;
+    }
+
+    .statistics-left {
+        align-items: center;
+        text-align: center;
+    }
+
+    .statistics-description {
+        max-width: 100%;
+    }
+
+    .statistics-grid {
+        width: 100%;
+        max-width: 600px;
+    }
+}
+
+@media (max-width: 992px) {
+    .statistics-section {
+        padding: 48px;
+    }
+
+    .statistics-title {
+        font-size: 42px;
+        line-height: 42px;
+    }
+
+    .statistics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .statistics-section {
+        padding: 24px 16px;
+        border-radius: var(--radius-xl);
+        width: calc(100% - 24px);
+    }
+
+    .statistics-glow-bg {
+        display: none;
+    }
+
+    .statistics-title {
+        font-size: 28px;
+        line-height: 1.2;
+    }
+
+    .statistics-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        max-width: 100%;
+    }
+
+    .statistics-grid .stat-card {
+        padding: 16px;
+        min-height: 140px;
+        gap: 10px;
+    }
+
+    .statistics-grid .stat-value {
+        font-size: 36px;
+        top: 12px;
+        right: 12px;
+    }
+
+    .statistics-grid .stat-icon-wrapper {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        margin-bottom: 4px;
+    }
+
+    .statistics-grid .stat-icon-wrapper svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .statistics-grid .stat-label {
+        font-size: 13px;
+    }
+
+    .statistics-grid .stat-sublabel {
+        font-size: 11px;
+        line-height: 1.4;
+    }
+}
+
+/* ===== LARGE SCREEN ENHANCEMENTS ===== */
+@media (min-width: 1920px) {
+    .statistics-section {
+        max-width: min(1800px, 92vw);
+    }
+}
+
+@media (min-width: 2560px) {
+    .statistics-section {
+        max-width: min(2200px, 94vw);
+    }
+}
+
+@media (min-width: 3840px) {
+    .statistics-section {
+        max-width: min(3000px, 95vw);
+    }
+}

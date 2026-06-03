@@ -1,0 +1,114 @@
+/* ===== TRUSTED BANNER ===== */
+.trusted-banner {
+    background-color: var(--color-navy);
+    border-top: 0.8px solid var(--color-white-10);
+    border-bottom: 0.8px solid var(--color-white-10);
+    padding: 13.2px 0 14px;
+    overflow: hidden;
+}
+
+.trusted-content {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    overflow: hidden;
+}
+
+.trusted-scroll {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    will-change: transform;
+    animation: trusted-scroll 90s linear infinite;
+}
+
+.trusted-scroll-group {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 80px;
+    padding: 0 24px;
+}
+
+@keyframes trusted-scroll {
+    0% {
+        transform: translate3d(0, 0, 0);
+    }
+    100% {
+        transform: translate3d(-50%, 0, 0);
+    }
+}
+
+.trusted-separator {
+    font-size: 18px;
+    color: var(--color-cream-light);
+    opacity: 0.3;
+    flex-shrink: 0;
+}
+
+.trusted-banner .university-name {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 1.3px;
+    line-height: 19.5px;
+    text-transform: uppercase;
+    color: var(--color-cream-light);
+    flex-shrink: 0;
+}
+
+.trusted-banner .university-name.highlight {
+    color: var(--color-gold);
+}
+
+.trusted-banner .university-name.italic {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 13px;
+    color: var(--color-white-80);
+}
+
+/* ===== RESPONSIVE — MOBILE ===== */
+@media (max-width: 768px) {
+    .trusted-banner {
+        padding: 10px 0;
+    }
+
+    .trusted-scroll {
+        animation-duration: 20s;
+    }
+
+    .trusted-scroll-group {
+        gap: 24px;
+        padding: 0 12px;
+    }
+
+    .trusted-separator {
+        font-size: 14px;
+    }
+
+    .trusted-banner .university-name {
+        font-size: 12px;
+        letter-spacing: 0.8px;
+    }
+
+    .trusted-banner .university-name.italic {
+        font-size: 11px;
+    }
+}
+
+/* ===== SMALL MOBILE ===== */
+@media (max-width: 400px) {
+    .trusted-banner {
+        padding: 8px 0;
+    }
+
+    .trusted-scroll-group {
+        gap: 18px;
+        padding: 0 8px;
+    }
+
+    .trusted-banner .university-name {
+        font-size: 10px;
+        letter-spacing: 0.5px;
+    }
+}

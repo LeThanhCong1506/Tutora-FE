@@ -1,0 +1,307 @@
+/* ===== FEATURES SECTION ===== */
+.features-section {
+    max-width: min(1305px, 90vw);
+    margin: 0 auto;
+    padding: 24px 21px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(2.5rem, 2rem + 1vw, 5rem);
+}
+
+.features-cards {
+    flex: 1;
+    max-width: 710px;
+    display: flex;
+    gap: 28px;
+}
+
+.feature-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+.feature-column.offset {
+    padding-top: 70px;
+}
+
+.feature-card-image {
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-soft);
+}
+
+.feature-card-image img {
+    width: 100%;
+    height: 493.9px;
+    object-fit: cover;
+}
+
+.feature-card {
+    padding: 35px;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-medium);
+    display: flex;
+    flex-direction: column;
+    gap: 13.1px;
+}
+
+.feature-card.green {
+    background-color: var(--color-green);
+}
+
+.feature-card.gold {
+    background-color: var(--color-gold);
+}
+
+.feature-card-title {
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.52px;
+    line-height: 28px;
+    text-transform: uppercase;
+    color: var(--color-white);
+}
+
+.feature-card.gold .feature-card-title {
+    color: var(--color-navy);
+}
+
+.feature-card-description {
+    font-family: var(--font-serif);
+    font-size: 14px;
+    font-style: italic;
+    line-height: 19.91px;
+    color: var(--color-white);
+    opacity: 0.7;
+}
+
+.feature-card.gold .feature-card-description {
+    color: var(--color-navy);
+}
+
+.features-content {
+    flex: 1;
+    max-width: 533.2px;
+    display: flex;
+    flex-direction: column;
+    gap: 41px;
+}
+
+.features-title {
+    font-size: 63px;
+    font-weight: 800;
+    letter-spacing: -1.58px;
+    line-height: 63px;
+    text-transform: uppercase;
+    color: var(--color-navy);
+}
+
+.title-green {
+    color: var(--color-green);
+}
+
+.features-description {
+    font-family: var(--font-serif);
+    font-size: 17.5px;
+    font-style: italic;
+    line-height: 28.44px;
+    color: var(--color-navy-60);
+}
+
+.benefits-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 21px;
+    padding-top: 1px;
+}
+
+.benefit-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.benefit-dot {
+    width: 17.5px;
+    height: 17.5px;
+    border-radius: 50%;
+    background-color: var(--color-burgundy-10);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.benefit-dot-inner {
+    width: 5.3px;
+    height: 5.3px;
+    border-radius: 50%;
+    background-color: var(--color-burgundy);
+}
+
+.benefit-text {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    line-height: 18px;
+    text-transform: uppercase;
+    color: rgba(26, 34, 56, 0.7);
+}
+
+/* ===== FEATURES RESPONSIVE ===== */
+@media (max-width: 1400px) {
+    .features-section {
+        flex-direction: column;
+        gap: 64px;
+    }
+
+    .features-cards {
+        width: 100%;
+        max-width: 710px;
+    }
+
+    .features-content {
+        width: 100%;
+        max-width: 710px;
+    }
+}
+
+@media (max-width: 992px) {
+    .features-cards {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .feature-column {
+        width: 100%;
+        max-width: 341px;
+    }
+
+    .feature-column.offset {
+        padding-top: 0;
+    }
+
+    .features-title {
+        font-size: 48px;
+        line-height: 48px;
+    }
+}
+
+@media (max-width: 768px) {
+    .features-section {
+        flex-direction: column;
+        padding: 24px 16px;
+        gap: 32px;
+    }
+
+    .features-cards {
+        flex-direction: row;
+        width: 100%;
+        max-width: 100%;
+        gap: 12px;
+        order: 1;
+    }
+
+    .features-content {
+        width: 100%;
+        max-width: 100%;
+        order: 2;
+        gap: 24px;
+    }
+
+    .feature-column {
+        flex: 1;
+        max-width: none;
+        gap: 12px;
+    }
+
+    .feature-column.offset {
+        padding-top: 0;
+    }
+
+    .feature-card {
+        padding: 20px;
+        gap: 8px;
+    }
+
+    .feature-card-title {
+        font-size: 14px;
+        line-height: 20px;
+    }
+
+    .feature-card-description {
+        font-size: 11px;
+        line-height: 16px;
+    }
+
+    .feature-card-image img {
+        height: 180px;
+    }
+
+    .features-title {
+        font-size: 32px;
+        line-height: 36px;
+        text-align: center;
+    }
+
+    .features-description {
+        text-align: center;
+        font-size: 15px;
+    }
+
+    .benefits-list {
+        gap: 14px;
+    }
+
+    .benefit-text {
+        font-size: 11px;
+        letter-spacing: 0.8px;
+    }
+}
+
+/* ===== LARGE SCREEN ENHANCEMENTS ===== */
+@media (min-width: 1920px) {
+    .features-section {
+        max-width: min(1800px, 92vw);
+    }
+
+    .features-cards {
+        max-width: 900px;
+    }
+
+    .features-content {
+        max-width: 700px;
+    }
+}
+
+@media (min-width: 2560px) {
+    .features-section {
+        max-width: min(2200px, 94vw);
+    }
+
+    .features-cards {
+        max-width: 1100px;
+    }
+
+    .features-content {
+        max-width: 850px;
+    }
+}
+
+@media (min-width: 3840px) {
+    .features-section {
+        max-width: min(3000px, 95vw);
+    }
+
+    .features-cards {
+        max-width: 1500px;
+    }
+
+    .features-content {
+        max-width: 1200px;
+    }
+}
