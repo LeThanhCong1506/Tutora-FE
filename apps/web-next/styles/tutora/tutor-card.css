@@ -1,0 +1,734 @@
+/* ===== TUTOR CARD COMPONENT (Tutor Search Page) ===== */
+
+.tutor-search-page .tutor-card {
+    width: 430px;
+    box-shadow: 0px 3px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 24px;
+    background-color: var(--color-white);
+    border: 0.3px solid #6b7280;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tutor-search-page .tutor-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Card Body */
+.tutor-search-page .tutor-card-body {
+    display: flex;
+    flex-direction: column;
+    padding: 21px 21px 14px;
+    gap: 17.5px;
+}
+
+/* Header Row */
+.tutor-search-page .tutor-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.tutor-search-page .tutor-profile {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+/* Avatar */
+.tutor-search-page .tutor-avatar-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    position: relative;
+}
+
+.tutor-search-page .tutor-avatar {
+    width: 49px;
+    height: 49px;
+    border-radius: 9999px;
+    box-shadow: 0px 0px 0px 2px #fff, 0px 1px 2px rgba(0, 0, 0, 0.05);
+    object-fit: cover;
+}
+
+.tutor-search-page .tutor-verified-badge {
+    width: 14px;
+    height: 14px;
+    position: absolute;
+    right: -3.5px;
+    bottom: -3.5px;
+    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+    border-radius: 9999px;
+    background-color: var(--color-white);
+    border: 1px solid #faf5ee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tutor-search-page .tutor-verified-badge svg {
+    width: 7px;
+    height: 7px;
+    color: #10b981;
+}
+
+/* Tutor Info */
+.tutor-search-page .tutor-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3.5px;
+}
+
+.tutor-search-page .tutor-name {
+    font-size: 15.7px;
+    letter-spacing: -0.39px;
+    line-height: 19.69px;
+    color: var(--color-navy);
+    font-family: var(--font-primary);
+    font-weight: 400;
+    margin: 0;
+}
+
+.tutor-search-page .tutor-badges {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+/* Tutor Type Badge */
+.tutor-search-page .tutor-type-badge {
+    border-radius: 3.5px;
+    display: flex;
+    align-items: center;
+    padding: 1.8px 7px;
+    font-size: 8px;
+    letter-spacing: 0.8px;
+    line-height: 12px;
+    text-transform: uppercase;
+    font-weight: 900;
+    color: var(--color-white);
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.tutor-search-page .tutor-type-badge.intensive {
+    background-color: #059669;
+}
+
+.tutor-search-page .tutor-type-badge.guided {
+    background-color: #2563eb;
+}
+
+.tutor-search-page .tutor-type-badge.basic {
+    background: linear-gradient(135deg, #b8860b 0%, #d4a853 50%, #c49b3a 100%);
+    box-shadow: 0 1px 4px -1px rgba(180, 134, 11, 0.35);
+    letter-spacing: 1.2px;
+}
+
+.tutor-search-page .tutor-type-badge.elite {
+    background-color: #f97316;
+}
+
+/* Credential */
+.tutor-search-page .tutor-credential {
+    font-size: 9px;
+    letter-spacing: -0.45px;
+    line-height: 13.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #9ca3af;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Rating */
+.tutor-search-page .tutor-rating {
+    display: flex;
+    align-items: center;
+    gap: 3.5px;
+}
+
+.tutor-search-page .rating-star {
+    font-size: 16px;
+    line-height: 14px;
+    color: #fb923c;
+    font-family: 'Segoe UI Symbol', sans-serif;
+}
+
+.tutor-search-page .rating-value {
+    font-size: 14px;
+    line-height: 14px;
+    font-weight: 900;
+    color: var(--color-navy);
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* University Row */
+.tutor-search-page .tutor-university-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tutor-search-page .university-icon {
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+}
+
+.tutor-search-page .university-icon svg {
+    width: 13px;
+    height: 8px;
+}
+
+.tutor-search-page .university-name {
+    font-size: 11px;
+    line-height: 16.5px;
+    font-weight: 700;
+    color: #6b7280;
+}
+
+.tutor-search-page .class-type-badge {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 5.3px;
+    font-size: 8px;
+    letter-spacing: 0.8px;
+    line-height: 12px;
+    text-transform: uppercase;
+    font-weight: 900;
+}
+
+.tutor-search-page .class-type-label {
+    color: #d1d5db;
+}
+
+.tutor-search-page .class-type-value {
+    font-weight: 900;
+}
+
+.tutor-search-page .class-type-value.intensive {
+    color: #059669;
+}
+
+.tutor-search-page .class-type-value.guided {
+    color: #2563eb;
+}
+
+.tutor-search-page .class-type-value.basic {
+    color: #6b7280;
+}
+
+.tutor-search-page .class-type-value.elite {
+    color: #f97316;
+}
+
+/* Subject Tags */
+.tutor-search-page .tutor-subjects {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.tutor-search-page .subject-tag {
+    border-radius: 7px;
+    background-color: var(--color-navy, #1a2238);
+    border: 1px solid rgba(26, 34, 56, 0.9);
+    padding: 4px 12px;
+    font-size: 10px;
+    line-height: 15px;
+    font-weight: 800;
+    color: #f2f0e4;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 6px -2px rgba(26, 34, 56, 0.25);
+}
+
+/* Stats Row */
+.tutor-search-page .tutor-stats {
+    border-radius: 10.5px;
+    background-color: rgba(243, 244, 246, 0.5);
+    border: 1px solid #faf5ee;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    gap: 1px;
+}
+
+.tutor-search-page .tutor-stats .stat-item {
+    flex: 1;
+    background-color: rgba(255, 255, 255, 0.4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 9.8px 10.5px 10.5px;
+    gap: 2.5px;
+}
+
+.tutor-search-page .tutor-stats .stat-item:not(:first-child) {
+    border-left: 1.1px solid #faf5ee;
+}
+
+.tutor-search-page .tutor-stats .stat-label {
+    font-size: 8px;
+    letter-spacing: 0.8px;
+    line-height: 12px;
+    text-transform: uppercase;
+    font-weight: 900;
+    color: #9ca3af;
+    text-align: center;
+}
+
+.tutor-search-page .tutor-stats .stat-value {
+    font-size: 12.3px;
+    line-height: 17.5px;
+    font-weight: 900;
+    color: var(--color-navy);
+    text-align: center;
+}
+
+.tutor-search-page .tutor-stats .stat-value.success {
+    color: #059669;
+}
+
+.tutor-search-page .tutor-stats .stat-value.primary {
+    color: #2563eb;
+}
+
+.tutor-search-page .tutor-stats .stat-value.muted {
+    color: #6b7280;
+}
+
+.tutor-search-page .tutor-stats .stat-value.warning {
+    color: #f97316;
+}
+
+/* Highlights */
+.tutor-search-page .tutor-highlights {
+    display: flex;
+    flex-direction: column;
+    padding-top: 3.5px;
+    gap: 5px;
+}
+
+.tutor-search-page .highlight-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+}
+
+.tutor-search-page .highlight-icon {
+    width: 10.5px;
+    height: 10.5px;
+    margin-top: 1.8px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+}
+
+.tutor-search-page .highlight-icon svg {
+    width: 6px;
+    height: 4.5px;
+}
+
+.tutor-search-page .highlight-text {
+    font-size: 10px;
+    line-height: 12.5px;
+    font-weight: 700;
+    color: #9ca3af;
+}
+
+/* Card Footer */
+.tutor-search-page .tutor-card-footer {
+    background-color: var(--color-white);
+    border-top: 1.1px solid #faf5ee;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 21px;
+    gap: 12px;
+    margin-top: auto;
+}
+
+/* Pricing */
+.tutor-search-page .tutor-pricing {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.tutor-search-page .pricing-label {
+    font-size: 8px;
+    letter-spacing: 0.8px;
+    line-height: 12px;
+    text-transform: uppercase;
+    font-weight: 900;
+    color: #d1d5db;
+}
+
+.tutor-search-page .pricing-value {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+}
+
+.tutor-search-page .price-amount {
+    font-size: 17.5px;
+    letter-spacing: -0.87px;
+    line-height: 24.5px;
+    font-weight: 900;
+    color: var(--color-navy);
+}
+
+.tutor-search-page .price-unit {
+    font-size: 10px;
+    letter-spacing: -0.87px;
+    line-height: 24.5px;
+    font-weight: 700;
+    color: #d1d5db;
+}
+
+.tutor-search-page .trial-price-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 3px;
+    padding: 3px 8px;
+    background: linear-gradient(135deg, rgba(212, 180, 131, 0.15) 0%, rgba(212, 180, 131, 0.05) 100%);
+    border: 1px solid rgba(212, 180, 131, 0.4);
+    border-radius: 6px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: #9c7127;
+    white-space: nowrap;
+}
+
+.tutor-search-page .trial-price-badge.is-placeholder {
+    background: transparent;
+    border-color: #e5e7eb;
+    color: #b0b4bb;
+    font-weight: 600;
+}
+
+.tutor-search-page .highlight-item.is-disabled .highlight-icon,
+.tutor-search-page .highlight-item.is-disabled .highlight-text {
+    color: #d1d5db;
+}
+
+/* Action Buttons */
+.tutor-search-page .tutor-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.tutor-search-page .btn-details {
+    height: 37px;
+    padding: 0 12px;
+    border-radius: 10.5px;
+    border: 1px solid rgba(26, 34, 56, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    line-height: 23px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--color-navy);
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.tutor-search-page .btn-details:hover {
+    background-color: rgba(26, 34, 56, 0.05);
+}
+
+.tutor-search-page .btn-start-plan {
+    box-shadow: 0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -2px rgba(0, 0, 0, 0.1);
+    border-radius: 10.5px;
+    background-color: var(--color-green);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    padding: 10.5px 16px;
+    gap: 7px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.tutor-search-page .btn-start-plan:hover {
+    background-color: #2f3a2f;
+}
+
+.tutor-search-page .btn-start-plan-text {
+    font-size: 11px;
+    letter-spacing: 1px;
+    line-height: 15px;
+    text-transform: uppercase;
+    font-weight: 900;
+    color: var(--color-white);
+}
+
+.tutor-search-page .btn-start-plan-icon {
+    width: 12.3px;
+    height: 12.3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-white);
+}
+
+.tutor-search-page .btn-start-plan-icon svg {
+    width: 9px;
+    height: 4px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .tutor-search-page .tutor-card {
+        width: 100%;
+        border-radius: 10px;
+    }
+
+    /* Ultra-compact card body */
+    .tutor-search-page .tutor-card-body {
+        padding: 8px 10px 6px;
+        gap: 5px;
+    }
+
+    .tutor-search-page .tutor-card-header {
+        gap: 6px;
+    }
+
+    .tutor-search-page .tutor-avatar {
+        width: 30px;
+        height: 30px;
+    }
+
+    .tutor-search-page .tutor-verified-badge {
+        width: 10px;
+        height: 10px;
+        right: -1px;
+        bottom: -1px;
+    }
+
+    .tutor-search-page .tutor-verified-badge svg {
+        width: 5px;
+        height: 5px;
+    }
+
+    .tutor-search-page .tutor-info {
+        gap: 1px;
+    }
+
+    .tutor-search-page .tutor-name {
+        font-size: 12px;
+        line-height: 15px;
+    }
+
+    .tutor-search-page .tutor-type-badge {
+        padding: 1px 4px;
+        font-size: 6px;
+        letter-spacing: 0.5px;
+    }
+
+    .tutor-search-page .tutor-credential {
+        font-size: 7px;
+        line-height: 9px;
+    }
+
+    .tutor-search-page .tutor-badges {
+        gap: 4px;
+    }
+
+    .tutor-search-page .rating-star {
+        font-size: 11px;
+    }
+
+    .tutor-search-page .rating-value {
+        font-size: 10px;
+    }
+
+    /* University row ultra-compact */
+    .tutor-search-page .tutor-university-row {
+        gap: 3px;
+    }
+
+    .tutor-search-page .university-icon {
+        width: 11px;
+        height: 11px;
+    }
+
+    .tutor-search-page .university-icon svg {
+        width: 10px;
+        height: 6px;
+    }
+
+    .tutor-search-page .university-name {
+        font-size: 9px;
+        line-height: 12px;
+    }
+
+    .tutor-search-page .class-type-badge {
+        font-size: 6px;
+        gap: 2px;
+        letter-spacing: 0.5px;
+    }
+
+    /* Subject tags ultra-compact */
+    .tutor-search-page .tutor-subjects {
+        gap: 3px;
+        max-height: 34px;
+    }
+
+    .tutor-search-page .subject-tag {
+        padding: 1px 6px;
+        font-size: 8px;
+        line-height: 12px;
+        border-radius: 4px;
+    }
+
+    /* Stats row ultra-compact */
+    .tutor-search-page .tutor-stats {
+        border-radius: 6px;
+    }
+
+    .tutor-search-page .tutor-stats .stat-item {
+        padding: 4px 6px;
+        gap: 0;
+    }
+
+    .tutor-search-page .tutor-stats .stat-label {
+        font-size: 6px;
+        letter-spacing: 0.4px;
+        line-height: 9px;
+    }
+
+    .tutor-search-page .tutor-stats .stat-value {
+        font-size: 10px;
+        line-height: 13px;
+    }
+
+    /* Highlights ultra-compact */
+    .tutor-search-page .tutor-highlights {
+        padding-top: 0;
+        gap: 2px;
+    }
+
+    .tutor-search-page .highlight-icon {
+        width: 8px;
+        height: 8px;
+        margin-top: 1px;
+    }
+
+    .tutor-search-page .highlight-icon svg {
+        width: 5px;
+        height: 3.5px;
+    }
+
+    .tutor-search-page .highlight-text {
+        font-size: 8px;
+        line-height: 10px;
+    }
+
+    /* Footer ultra-compact */
+    .tutor-search-page .tutor-card-footer {
+        padding: 6px 10px;
+        gap: 8px;
+    }
+
+    .tutor-search-page .pricing-label {
+        font-size: 6px;
+        line-height: 8px;
+    }
+
+    .tutor-search-page .price-amount {
+        font-size: 13px;
+        line-height: 17px;
+    }
+
+    .tutor-search-page .price-unit {
+        font-size: 8px;
+    }
+
+    .tutor-search-page .trial-price-badge {
+        padding: 2px 5px;
+        font-size: 7px;
+        border-radius: 4px;
+    }
+
+    .tutor-search-page .tutor-actions {
+        gap: 4px;
+    }
+
+    .tutor-search-page .btn-details {
+        height: 26px;
+        width: auto;
+        padding: 0 10px;
+        font-size: 8px;
+        border-radius: 6px;
+        letter-spacing: 0.8px;
+    }
+
+    .tutor-search-page .btn-start-plan {
+        padding: 5px 10px;
+        border-radius: 6px;
+        gap: 4px;
+    }
+
+    .tutor-search-page .btn-start-plan-text {
+        font-size: 8px;
+        letter-spacing: 0.6px;
+    }
+
+    .tutor-search-page .btn-start-plan-icon {
+        width: 8px;
+        height: 8px;
+    }
+
+    .tutor-search-page .btn-start-plan-icon svg {
+        width: 7px;
+        height: 3px;
+    }
+}
+
+@media (max-width: 420px) {
+    .tutor-search-page .tutor-card-footer {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .tutor-search-page .tutor-actions {
+        width: 100%;
+    }
+
+    .tutor-search-page .btn-details {
+        flex: 0 0 auto;
+    }
+
+    .tutor-search-page .btn-start-plan {
+        flex: 1;
+        justify-content: center;
+    }
+}
