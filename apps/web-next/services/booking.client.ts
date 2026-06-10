@@ -8,13 +8,21 @@ export type ScheduleItemPayload = {
   endTime: string;
 };
 
+export type FlexibleBookingSlotPayload = {
+  scheduledStart: string;
+  scheduledEnd: string;
+};
+
 export type CreateBookingPayload = {
-  studentId: string;
+  studentId?: string;
   tutorId: string;
-  subjectId: number;
-  teachingMode: 'online' | 'offline' | 'hybrid';
+  subjectId?: number;
+  tutorSubjectGradePriceId: number;
+  packageId: number;
+  totalSessions?: number;
   startDate: string;
-  schedule: ScheduleItemPayload[];
+  schedule?: ScheduleItemPayload[];
+  flexibleSlots?: FlexibleBookingSlotPayload[];
   locationCity?: string;
   locationDistrict?: string;
   locationWard?: string;
@@ -54,19 +62,19 @@ export type PromotionValidateResult = {
   message?: string;
 };
 
-export function createBooking(
-  payload: CreateBookingPayload
-): Promise<ApiResponse<BookingResponseDTO>> {
+export function createBooking(payload: CreateBookingPayload): Promise<ApiResponse<BookingResponseDTO>> {
   return apiRequest<BookingResponseDTO>('/bookings', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
 }
 
-export function validatePromotion(
-  code: string,
-  orderValue: number
-): Promise<ApiResponse<PromotionValidateResult>> {
+export function getTutorBookedSlots(tutorId: string, startDate?: string): Promise<ApiResponse<ScheduleItemPayload[]>> {
+  const params = startDate ? `?${new URLSearchParams({ startDate }).toString()}` : '';
+  return apiRequest<ScheduleItemPayload[]>(`/bookings/tutor/${encodeURIComponent(tutorId)}/booked-slots${params}`);
+}
+
+export function validatePromotion(code: string, orderValue: number): Promise<ApiResponse<PromotionValidateResult>> {
   const params = new URLSearchParams({
     code,
     orderValue: String(orderValue),
