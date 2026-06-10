@@ -57,6 +57,9 @@ const nextConfig: NextConfig = {
       { protocol: 'http', hostname: 'localhost' },
       // Supabase storage (avatar / cover đã upload)
       { protocol: 'https', hostname: '*.supabase.co' },
+      // Public fallback images used by tutor detail.
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: 'randomuser.me' },
     ],
   },
 };
