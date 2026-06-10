@@ -4,7 +4,6 @@ import { Popconfirm } from 'antd';
 import { toast } from 'react-toastify';
 import { useTutorProfileForm, type CredentialData } from './hooks/useTutorProfileForm';
 import ProfileHeroModal from './components/ProfileHeroModal';
-import PricingModal from './components/PricingModal';
 import AboutMeModal from './components/AboutMeModal';
 import CredentialModal from './components/CredentialModal';
 import type { CredentialData as ModalCredentialData } from './components/CredentialModal';
@@ -152,7 +151,6 @@ const TutorPortalProfile: React.FC = () => {
 
     // Modal states
     const [isHeroModalOpen, setIsHeroModalOpen] = useState(false);
-    const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
     const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
     const [isCredentialModalOpen, setIsCredentialModalOpen] = useState(false);
     const [editingCredential, setEditingCredential] = useState<ModalCredentialData | null>(null);
@@ -163,6 +161,7 @@ const TutorPortalProfile: React.FC = () => {
     // Form hook
     const {
         formData,
+        pricingItems,
         sectionStatuses: _sectionStatuses,
         isDirty,
         isLoading: _isLoading,
@@ -173,7 +172,6 @@ const TutorPortalProfile: React.FC = () => {
         canPublish: _canPublish,
         fetchProgress,
         updateHeroSection: _updateHeroSection,
-        updatePricing,
         updateAbout,
         updateVideoUrl,
         uploadVideo,
@@ -193,11 +191,6 @@ const TutorPortalProfile: React.FC = () => {
         return `${district}, ${city}`;
     };
 
-    // Format price
-    const formatPrice = (price: number) => {
-        return new Intl.NumberFormat('vi-VN').format(price);
-    };
-
     // Handle completeness section click
     const handleCompletenessClick = (section: string) => {
         switch (section) {
@@ -215,7 +208,8 @@ const TutorPortalProfile: React.FC = () => {
                 setIsCredentialModalOpen(true);
                 break;
             case 'pricing':
-                setIsPricingModalOpen(true);
+                // Giá theo môn × lớp được thiết lập ở Onboarding.
+                navigate('/tutor-portal/onboarding');
                 break;
             case 'schedule':
                 // Navigate to schedule page
@@ -625,70 +619,46 @@ const TutorPortalProfile: React.FC = () => {
 
                         {/* Right Column - Sidebar */}
                         <div className={styles.rightColumn}>
-                            {/* Pricing Card */}
-                            <div className={styles.pricingCard} data-tour="profile-pricing">
-                                {isEditMode && (
-                                    <button
-                                        className={styles.editPriceBtn}
-                                        onClick={() => setIsPricingModalOpen(true)}
-                                    >
-                                        <EditPencilIcon />
-                                    </button>
-                                )}
-                                <div className={styles.priceRow}>
-                                    <span className={styles.priceAmount}>{formatPrice(formData.hourlyRate)}</span>
-                                    <span className={styles.priceUnit}>VND / giờ</span>
+                            {/* Card phải chỉ render khi có nội dung: preview (nút đặt/nhắn) hoặc
+                                edit chưa có lịch (nhắc cập nhật lịch). Tránh hộp trắng rỗng. */}
+                            {(!isEditMode || formData.availability.length === 0) && (
+                                <div className={styles.pricingCard} data-tour="profile-pricing">
+                                    {/* Show no schedule message on card only in edit mode */}
+                                    {isEditMode && formData.availability.length === 0 && (
+                                        <div className={styles.noScheduleSection}>
+                                            <p className={styles.noScheduleMessage}>Chưa cập nhật lịch</p>
+                                            <button
+                                                className={styles.updateScheduleLink}
+                                                onClick={() => navigate('/tutor-portal/schedule')}
+                                            >
+                                                Cập nhật lịch ngay
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Show booking and message buttons only in preview mode */}
+                                    {!isEditMode && (
+                                        <>
+                                            <button
+                                                className={styles.bookTrialBtn}
+                                                onClick={() => setIsBookingModalOpen(true)}
+                                            >
+                                                Đặt buổi học thử
+                                            </button>
+                                            <button className={styles.sendMessageBtn}>
+                                                <MessageIcon />
+                                                <span>Gửi tin nhắn</span>
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
-                                {formData.trialLessonPrice && (
-                                    <div className={styles.trialPrice}>
-                                        Buổi học thử: {formatPrice(formData.trialLessonPrice)} VND
-                                    </div>
-                                )}
-                                {formData.allowPriceNegotiation && (
-                                    <div className={styles.negotiationNote}>
-                                        Có thể thương lượng giá
-                                    </div>
-                                )}
-
-                                {/* Show no schedule message on card only in edit mode */}
-                                {isEditMode && formData.availability.length === 0 && (
-                                    <div className={styles.noScheduleSection}>
-                                        <p className={styles.noScheduleMessage}>Chưa cập nhật lịch</p>
-                                        <button
-                                            className={styles.updateScheduleLink}
-                                            onClick={() => navigate('/tutor-portal/schedule')}
-                                        >
-                                            Cập nhật lịch ngay
-                                        </button>
-                                    </div>
-                                )}
-
-                                {/* Show booking and message buttons only in preview mode */}
-                                {!isEditMode && (
-                                    <>
-                                        <button
-                                            className={styles.bookTrialBtn}
-                                            onClick={() => setIsBookingModalOpen(true)}
-                                        >
-                                            Đặt buổi học thử
-                                        </button>
-                                        <button className={styles.sendMessageBtn}>
-                                            <MessageIcon />
-                                            <span>Gửi tin nhắn</span>
-                                        </button>
-                                    </>
-                                )}
-
-                                <div className={styles.cancellationNote}>
-                                    <CheckCircleIcon />
-                                    <span>Miễn phí hủy trước 24h</span>
-                                </div>
-                            </div>
+                            )}
 
                             {/* Profile Completeness Card */}
                             {isEditMode && (
                                 <ProfileCompleteness
                                     profileData={formData}
+                                    hasPricing={pricingItems.length > 0}
                                     onSectionClick={handleCompletenessClick}
                                 />
                             )}
@@ -753,7 +723,6 @@ const TutorPortalProfile: React.FC = () => {
                         teachingAreaCity: data.teachingAreaCity,
                         teachingAreaDistrict: data.teachingAreaDistrict,
                         teachingMode: data.teachingMode,
-                        subjects: data.subjects
                     });
 
                     if (success) {
@@ -767,24 +736,6 @@ const TutorPortalProfile: React.FC = () => {
                     teachingAreaCity: formData.teachingAreaCity,
                     teachingAreaDistrict: formData.teachingAreaDistrict,
                     teachingMode: formData.teachingMode,
-                    subjects: formData.subjects
-                }}
-            />
-
-            <PricingModal
-                isOpen={isPricingModalOpen}
-                onClose={() => setIsPricingModalOpen(false)}
-                onSave={async (data) => {
-                    const success = await updatePricing(data);
-                    if (success) {
-                        setIsPricingModalOpen(false);
-                    }
-                    return success;
-                }}
-                initialData={{
-                    hourlyRate: formData.hourlyRate,
-                    trialLessonPrice: formData.trialLessonPrice,
-                    allowPriceNegotiation: formData.allowPriceNegotiation
                 }}
             />
 

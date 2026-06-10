@@ -32,6 +32,8 @@ interface ProfileData {
 
 interface ProfileCompletenessProps {
     profileData: ProfileData;
+    /** Có ít nhất 1 dòng giá theo môn × lớp (từ getPricing) — model giá mới. */
+    hasPricing?: boolean;
     onSectionClick?: (section: string) => void;
 }
 
@@ -44,6 +46,7 @@ interface CompletionItem {
 
 const ProfileCompleteness: React.FC<ProfileCompletenessProps> = ({
     profileData,
+    hasPricing,
     onSectionClick
 }) => {
     // Calculate completion for each section
@@ -100,12 +103,12 @@ const ProfileCompleteness: React.FC<ProfileCompletenessProps> = ({
             percentage: 15
         });
 
-        // Pricing (hourlyRate > 0): 10%
-        const hasPricing = profileData.hourlyRate != null && profileData.hourlyRate > 0;
+        // Pricing (có ≥1 giá theo môn × lớp): 10%
+        const pricingDone = hasPricing ?? (profileData.hourlyRate != null && profileData.hourlyRate > 0);
         items.push({
             key: 'pricing',
             label: 'Thiết lập giá',
-            completed: hasPricing,
+            completed: pricingDone,
             percentage: 10
         });
 
@@ -119,7 +122,7 @@ const ProfileCompleteness: React.FC<ProfileCompletenessProps> = ({
         });
 
         return items;
-    }, [profileData]);
+    }, [profileData, hasPricing]);
 
     // Calculate total percentage
     const totalPercentage = useMemo(() => {
