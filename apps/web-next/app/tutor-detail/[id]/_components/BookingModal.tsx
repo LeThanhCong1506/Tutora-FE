@@ -430,23 +430,37 @@ function isSlotWithinAvailability(
   const [eh, em] = endTime.split(':').map(Number);
   const startMins = sh * 60 + sm;
   const endMins = eh * 60 + em;
+  if (endMins <= startMins) return false;
 
-  for (let current = startMins; current < endMins; current += 30) {
-    const chunkStart = current;
-    const chunkEnd = current + 30;
-    const isChunkCovered = availabilities.some((slot) => {
-      if (backendDayToFe(slot.dayofweek) !== dayOfWeek || !slot.starttime || !slot.endtime) return false;
-      const [ash, asm] = slot.starttime.split(':').map(Number);
-      const [aeh, aem] = slot.endtime.split(':').map(Number);
-      const availabilityStart = ash * 60 + (asm || 0);
-      const availabilityEnd = aeh * 60 + (aem || 0);
-      return chunkStart >= availabilityStart && chunkEnd <= availabilityEnd;
-    });
+  // Lấy các khung rảnh của ĐÚNG ngày này, parse về phút và sort theo giờ bắt đầu.
+  // Vì onboarding lưu mỗi ô 30' = 1 record, cần MERGE các khung giáp/đè nhau thành
+  // dải liên tục trước khi kiểm tra — nếu không, slot vẫn pass khi nó vắt qua
+  // các record liền kề nhưng có thể tính sai biên cuối.
+  const daySlots = availabilities
+    .filter((s) => backendDayToFe(s.dayofweek) === dayOfWeek && s.starttime && s.endtime)
+    .map((s) => {
+      const [ash, asm] = s.starttime.split(':').map(Number);
+      const [aeh, aem] = s.endtime.split(':').map(Number);
+      return { start: ash * 60 + (asm || 0), end: aeh * 60 + (aem || 0) };
+    })
+    .filter((r) => r.end > r.start)
+    .sort((a, b) => a.start - b.start);
 
-    if (!isChunkCovered) return false;
+  if (daySlots.length === 0) return false;
+
+  const merged: { start: number; end: number }[] = [{ ...daySlots[0] }];
+  for (let i = 1; i < daySlots.length; i++) {
+    const last = merged[merged.length - 1];
+    if (daySlots[i].start <= last.end) {
+      last.end = Math.max(last.end, daySlots[i].end);
+    } else {
+      merged.push({ ...daySlots[i] });
+    }
   }
 
-  return true;
+  // Slot [startMins, endMins] phải nằm GỌN trong MỘT dải đã merge — đảm bảo
+  // endMins KHÔNG vượt qua biên cuối availability.
+  return merged.some((r) => startMins >= r.start && endMins <= r.end);
 }
 
 function isScheduleWithinAvailability(schedule: ScheduleSlot[], availabilities: AvailabilitySlot[]) {
