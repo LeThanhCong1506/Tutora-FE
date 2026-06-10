@@ -79,12 +79,29 @@ export const getUnreadCount = async (): Promise<number> => {
         const response = await api.get('/notifications/mine/unread-count', {
             headers: getAuthHeaders(),
         });
-        // Backend returns: { unreadCount: number }
+        // Backend returns: { unreadCount, byType, total }
         return response.data.unreadCount || 0;
     } catch (error: any) {
         console.error('Error fetching unread count:', error);
         // Return 0 on error to prevent UI breaking
         return 0;
+    }
+};
+
+/**
+ * Get unread notification counts grouped by `type` — dùng cho sidebar badge
+ * per-tab. Cùng endpoint với `getUnreadCount` (BE bundle vào 1 response).
+ * Noti có type null/empty bị BE bỏ qua khỏi map này.
+ */
+export const getUnreadCountByType = async (): Promise<Record<string, number>> => {
+    try {
+        const response = await api.get('/notifications/mine/unread-count', {
+            headers: getAuthHeaders(),
+        });
+        return response.data?.byType || {};
+    } catch (error: any) {
+        console.error('Error fetching unread count by type:', error);
+        return {};
     }
 };
 
@@ -98,6 +115,22 @@ export const markAsRead = async (notificationId: number): Promise<void> => {
         });
     } catch (error: any) {
         console.error(`Error marking notification ${notificationId} as read:`, error);
+        throw error;
+    }
+};
+
+/**
+ * Mark all unread notifications of a given `type` as read. BE sẽ push
+ * `NotificationCountUpdated` qua SignalR sau khi mark → chuông tự sync.
+ * Noti có type null/empty không bị ảnh hưởng (BE quy ước).
+ */
+export const markAsReadByType = async (type: string): Promise<void> => {
+    try {
+        await api.put(`/notifications/mine/read-by-type/${encodeURIComponent(type)}`, null, {
+            headers: getAuthHeaders(),
+        });
+    } catch (error: any) {
+        console.error(`Error marking notifications of type ${type} as read:`, error);
         throw error;
     }
 };

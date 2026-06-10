@@ -5,12 +5,26 @@ import { getUserInfoFromToken } from '../../services/auth.service';
 import { StudentProvider, useStudentContext } from '../../contexts/StudentContext';
 import { useNextLesson } from '../shared/useLayoutData';
 import { useUnreadMessageBadge } from '../../hooks/useUnreadMessageBadge';
+import { useUnreadBadgesByTab } from '../../hooks/useUnreadBadgesByTab';
 import {
     DashboardIcon, ChildrenIcon, MessagesIcon, BookingIcon,
     AccountIcon, LessonsIcon, CalendarIcon, ClockIcon,
 } from '../shared/icons';
 
 const MESSAGES_PATH = '/parent-portal/messages';
+
+// Map sidebar path → notification types thuộc tab đó. Đồng bộ với BE
+// `MV.DomainLayer/Constants/NotificationType.cs`.
+const NOTIFICATION_TYPES_BY_PATH: Record<string, string[]> = {
+    '/parent-portal/booking': ['booking_new', 'booking_accepted', 'booking_declined'],
+    '/parent-portal/lessons': [
+        'lesson_reminder',
+        'lesson_checkin',
+        'lesson_confirmed',
+        'lesson_no_show',
+        'lesson_report',
+    ],
+};
 
 const baseParentNavItems: NavItem[] = [
     { path: '/parent-portal/dashboard', label: 'Tổng quan', icon: DashboardIcon },
@@ -64,12 +78,19 @@ const ParentLayoutInner: React.FC<ParentLayoutProps> = ({ children }) => {
 
     // Tin nhắn unread badge — sidebar nav
     const unreadMessageCount = useUnreadMessageBadge(MESSAGES_PATH);
+    // Notification badges per-tab — group unread noti theo `type` → map sang path sidebar.
+    const badgesByPath = useUnreadBadgesByTab(NOTIFICATION_TYPES_BY_PATH);
+
     const navItems = useMemo<NavItem[]>(
         () =>
-            baseParentNavItems.map((item) =>
-                item.path === MESSAGES_PATH ? { ...item, badge: unreadMessageCount } : item,
-            ),
-        [unreadMessageCount],
+            baseParentNavItems.map((item) => {
+                if (item.path === MESSAGES_PATH) {
+                    return { ...item, badge: unreadMessageCount };
+                }
+                const count = badgesByPath[item.path];
+                return count ? { ...item, badge: count } : item;
+            }),
+        [unreadMessageCount, badgesByPath],
     );
 
     return (
