@@ -290,7 +290,14 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                             ) : null}
                             <span className={styles.navText}>{item.label}</span>
                             {item.badge != null && item.badge > 0 && (
-                                <span className={styles.navBadge}>{item.badge}</span>
+                                <>
+                                    {/* Floating dot — hiển thị khi sidebar collapsed */}
+                                    <span className={styles.navBadgeDot}>
+                                        {item.badge > 99 ? '99+' : item.badge}
+                                    </span>
+                                    {/* Inline badge — hiển thị khi sidebar expanded (hover) */}
+                                    <span className={styles.navBadge}>{item.badge}</span>
+                                </>
                             )}
                         </div>
                     ))}

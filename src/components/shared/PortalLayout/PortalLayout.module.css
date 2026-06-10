@@ -78,6 +78,7 @@
 }
 
 .navItem {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 10.5px;
@@ -133,7 +134,7 @@
     opacity: 1;
 }
 
-/* Nav Badge (e.g., pending count on Admin vetting) */
+/* Nav Badge (inline) — hiển thị khi sidebar expanded (hover) */
 .navBadge {
     min-width: 20px;
     height: 20px;
@@ -153,6 +154,41 @@
 
 .sidebar:hover .navBadge {
     opacity: 1;
+}
+
+/* Nav Badge Dot — floating ở góc icon khi sidebar collapsed (không hover).
+   Crossfade với .navBadge inline khi sidebar mở rộng. */
+.navBadgeDot {
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 9999px;
+    background-color: #ef4444;
+    color: #fff;
+    font-size: 9.5px;
+    font-weight: 700;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid #1a2238;
+    box-sizing: border-box;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.sidebar:hover .navBadgeDot {
+    opacity: 0;
+}
+
+/* Khi navItem đang active (background sáng), đổi border dot cho contrast */
+.navItemActive .navBadgeDot {
+    border-color: #f2f0e4;
 }
 
 /* Sidebar User Profile */
@@ -633,6 +669,11 @@
     .sidebar .userInfo,
     .sidebar .navBadge {
         opacity: 1;
+    }
+
+    /* Mobile sidebar luôn full-width khi mở → ẩn dot floating, dùng inline badge */
+    .sidebar .navBadgeDot {
+        opacity: 0;
     }
 
     .main {
