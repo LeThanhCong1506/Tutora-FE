@@ -33,6 +33,13 @@ export interface CreateAvailabilityData {
     endtime: string;    // "HH:mm" format
 }
 
+export interface UpdateAvailabilityData {
+    availabilityid: number;
+    dayofweek: number;  // BE ISO: 1=Monday, ..., 7=Sunday
+    starttime: string;  // "HH:mm" format
+    endtime: string;    // "HH:mm" format
+}
+
 export interface ApiResponse<T = any> {
     content: T;
     statusCode: number;
@@ -179,6 +186,27 @@ export const bulkCreateAvailabilities = async (
     data: CreateAvailabilityData[]
 ): Promise<ApiResponse<AvailabilitySlot[]>> => {
     const response = await api.post(
+        '/tutor/availabilities/bulk',
+        { availabilities: data },
+        {
+            headers: {
+                ...getAuthHeaders(),
+                'Content-Type': 'application/json'
+            }
+        }
+    );
+    return response.data;
+};
+
+/**
+ * Cập nhật NHIỀU khung giờ trong 1 request (tại chỗ, giữ nguyên id).
+ * PATCH /api/tutor/availabilities/bulk — body { availabilities: [{ availabilityid, ... }] }
+ * Mỗi phần tử cần availabilityid hiện có. BE chặn nếu khung giờ cũ đang có buổi học được đặt (400).
+ */
+export const bulkUpdateAvailabilities = async (
+    data: UpdateAvailabilityData[]
+): Promise<ApiResponse<AvailabilitySlot[]>> => {
+    const response = await api.patch(
         '/tutor/availabilities/bulk',
         { availabilities: data },
         {

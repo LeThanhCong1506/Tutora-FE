@@ -5,7 +5,11 @@ import { SUBJECTS, START_HOUR, END_HOUR, formatHourMinute, parseTime } from './c
 import type { SubjectRecord, TutorAvailabilitySlot } from './types';
 import type { FixedCombo } from '../../../types/combo.types';
 import type { SubjectGradePriceItem, UpdatePricingData } from '../../../services/tutorProfile.service';
-import type { AvailabilitySlot } from '../../../services/availability.service';
+import type {
+  AvailabilitySlot,
+  CreateAvailabilityData,
+  UpdateAvailabilityData,
+} from '../../../services/availability.service';
 import type { CreateTutorPackageData, TutorPackageResponse } from '../../../services/tutorPackages.service';
 
 // ── Grade key ⇄ id ──────────────────────────────────────────────
@@ -82,9 +86,128 @@ export const expandAvailabilityToCells = (slot: AvailabilitySlot): TutorAvailabi
   return cells;
 };
 
-// Khoá tự nhiên để diff slot (ngày + giờ bắt đầu + giờ kết thúc).
-export const availabilityKey = (dayOfWeek: number, startTime: string, endTime: string): string =>
-  `${dayOfWeek}|${normalizeHHmm(startTime)}|${normalizeHHmm(endTime)}`;
+// Gộp các ô 30' LIỀN KỀ trong cùng 1 ngày thành 1 CỤM (dải dài) để gửi 1 payload/cụm
+// thay vì 1 payload/ô. Vd T2: 06:00-06:30, 06:30-07:00, … 09:30-10:00 → cụm 06:00-10:00.
+// Các ô có khoảng trống ở giữa tách thành cụm riêng (vd 06:00-10:00 và 15:00-18:00 → 2 cụm).
+// BE chấp nhận dải bất kỳ và khi đọc lại sẽ tách dải về các ô 30' (xem expandAvailabilityToCells).
+export const mergeCellsToClusters = (cells: TutorAvailabilitySlot[]): TutorAvailabilitySlot[] => {
+  const toMin = (t: string) => {
+    const { hour, minute } = parseTime(normalizeHHmm(t));
+    return hour * 60 + minute;
+  };
+
+  const byDay = new Map<number, TutorAvailabilitySlot[]>();
+  for (const cell of cells) {
+    const list = byDay.get(cell.dayOfWeek);
+    if (list) list.push(cell);
+    else byDay.set(cell.dayOfWeek, [cell]);
+  }
+
+  const clusters: TutorAvailabilitySlot[] = [];
+  for (const [dayOfWeek, list] of byDay) {
+    const sorted = [...list].sort((a, b) => toMin(a.startTime) - toMin(b.startTime));
+    let runStart = sorted[0].startTime;
+    let runEnd = sorted[0].endTime;
+
+    for (let i = 1; i < sorted.length; i++) {
+      const cell = sorted[i];
+      if (toMin(cell.startTime) <= toMin(runEnd)) {
+        // Liền mạch (hoặc chồng lấn) → mở rộng cụm hiện tại.
+        if (toMin(cell.endTime) > toMin(runEnd)) runEnd = cell.endTime;
+      } else {
+        // Có khoảng trống → chốt cụm hiện tại, bắt đầu cụm mới.
+        clusters.push({ id: `${dayOfWeek}-${runStart}`, dayOfWeek, startTime: runStart, endTime: runEnd });
+        runStart = cell.startTime;
+        runEnd = cell.endTime;
+      }
+    }
+    clusters.push({ id: `${dayOfWeek}-${runStart}`, dayOfWeek, startTime: runStart, endTime: runEnd });
+  }
+
+  return clusters;
+};
+
+const toMinutes = (t: string): number => {
+  const { hour, minute } = parseTime(normalizeHHmm(t));
+  return hour * 60 + minute;
+};
+
+export interface AvailabilityDiff {
+  toCreate: CreateAvailabilityData[]; // POST  /bulk
+  toUpdate: UpdateAvailabilityData[]; // PATCH /bulk (tái dùng id hiện có)
+  toDelete: number[]; // DELETE /bulk (availabilityid)
+}
+
+/**
+ * So sánh lịch rảnh mong muốn (các ô 30' đã chọn trên lưới) với lịch đang lưu ở BE,
+ * rồi sinh ra 3 nhóm thao tác tối thiểu cho 3 endpoint bulk:
+ *   - Gộp ô liền kề → cụm (mergeCellsToClusters), diff theo TỪNG NGÀY.
+ *   - Cụm trùng khớp y hệt (start+end) → bỏ qua (no-op).
+ *   - Phần còn lại ghép theo thứ tự để TÁI DÙNG id qua PATCH (giữ id + createdat,
+ *     tránh xoá-tạo lại); dư mong muốn → POST; dư hiện có → DELETE.
+ *
+ * Caller PHẢI gọi theo thứ tự DELETE → PATCH → POST. Vì các cụm mong muốn không bao giờ
+ * chồng nhau, thứ tự này không bao giờ kích hoạt guard "trùng giờ" của BE.
+ */
+export const diffAvailability = (
+  desiredCells: TutorAvailabilitySlot[],
+  loaded: AvailabilitySlot[],
+): AvailabilityDiff => {
+  const toCreate: CreateAvailabilityData[] = [];
+  const toUpdate: UpdateAvailabilityData[] = [];
+  const toDelete: number[] = [];
+
+  // Mong muốn: gộp cụm rồi gom theo ngày (FE 0-6).
+  const desiredByDay = new Map<number, { start: string; end: string }[]>();
+  for (const c of mergeCellsToClusters(desiredCells)) {
+    const list = desiredByDay.get(c.dayOfWeek) ?? [];
+    list.push({ start: normalizeHHmm(c.startTime), end: normalizeHHmm(c.endTime) });
+    desiredByDay.set(c.dayOfWeek, list);
+  }
+
+  // Hiện có: BE trả ISO 1-7 (giờ local) → convert về FE 0-6, gom theo ngày.
+  const loadedByDay = new Map<number, { id: number; start: string; end: string }[]>();
+  for (const s of loaded) {
+    const feDay = isoDayToFe(s.dayofweek);
+    const list = loadedByDay.get(feDay) ?? [];
+    list.push({ id: s.availabilityid, start: normalizeHHmm(s.starttime), end: normalizeHHmm(s.endtime) });
+    loadedByDay.set(feDay, list);
+  }
+
+  const days = new Set<number>([...desiredByDay.keys(), ...loadedByDay.keys()]);
+  for (const day of days) {
+    const isoDay = feDayToIso(day);
+    const desired = [...(desiredByDay.get(day) ?? [])].sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
+    const loadedRemaining = [...(loadedByDay.get(day) ?? [])].sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
+
+    // 1) Loại các cụm trùng khớp y hệt — không cần đụng tới.
+    const desiredRemaining: { start: string; end: string }[] = [];
+    for (const d of desired) {
+      const idx = loadedRemaining.findIndex((l) => l.start === d.start && l.end === d.end);
+      if (idx >= 0) loadedRemaining.splice(idx, 1);
+      else desiredRemaining.push(d);
+    }
+
+    // 2) Ghép phần còn lại theo vị trí → PATCH; phần dư → POST / DELETE.
+    const pairCount = Math.min(desiredRemaining.length, loadedRemaining.length);
+    for (let i = 0; i < pairCount; i++) {
+      toUpdate.push({
+        availabilityid: loadedRemaining[i].id,
+        dayofweek: isoDay,
+        starttime: desiredRemaining[i].start,
+        endtime: desiredRemaining[i].end,
+      });
+    }
+    for (let i = pairCount; i < desiredRemaining.length; i++) {
+      toCreate.push({ dayofweek: isoDay, starttime: desiredRemaining[i].start, endtime: desiredRemaining[i].end });
+    }
+    for (let i = pairCount; i < loadedRemaining.length; i++) {
+      toDelete.push(loadedRemaining[i].id);
+    }
+  }
+
+  return { toCreate, toUpdate, toDelete };
+};
 
 // ── Packages / Combos (Step 3) ──────────────────────────────────
 export const packageToFixedCombo = (pkg: TutorPackageResponse): FixedCombo => ({
