@@ -6,25 +6,34 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { toast } from 'react-toastify';
 import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type Dispatch,
-  type SetStateAction,
-} from 'react';
+  AlertTriangle,
+  ArrowLeft,
+  BookOpen,
+  CalendarRange,
+  CalendarDays,
+  Check,
+  Clock3,
+  ChevronLeft,
+  ChevronRight,
+  GraduationCap,
+  PackageCheck,
+  Repeat2,
+  Route,
+  ShieldCheck,
+  X,
+} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import type { AvailabilitySlot, SubjectInfo } from '@/services/tutorDetail.types';
+import type { TutorPackageResponse, TutorSubjectGradePrice } from '@/services/tutorDetail.types';
 import {
   createBooking,
+  getTutorBookedSlots,
   validatePromotion,
   type CreateBookingPayload,
   type PromotionValidateResult,
+  type ScheduleItemPayload,
 } from '@/services/booking.client';
-import {
-  getApiErrorMessage,
-  getCurrentUserRole,
-  getUserIdFromToken,
-} from '@/services/auth.client';
+import { getApiErrorMessage, getCurrentUserRole, getUserIdFromToken } from '@/services/auth.client';
 import { getMyLinkStatus, getStudents, type StudentType } from '@/services/student.client';
 
 type ScheduleSlot = {
@@ -36,11 +45,17 @@ type ScheduleSlot = {
 type SubjectOption = {
   id: number;
   name: string;
+  optionKey?: string;
+  price?: TutorSubjectGradePrice;
+  gradePrices?: TutorSubjectGradePrice[];
 };
 
 type BookingFormData = {
   studentId: string;
   subjectId: number;
+  tutorSubjectGradePriceId: number | null;
+  bookingMode: 'schedule' | 'package';
+  packageId: number | null;
   teachingMode: 'online' | 'offline' | 'hybrid';
   startDate: string;
   schedule: ScheduleSlot[];
@@ -58,6 +73,8 @@ type BookingModalProps = {
   tutorId: string;
   hourlyRate: number;
   subjects: SubjectInfo[];
+  subjectGradePrices?: TutorSubjectGradePrice[];
+  packages?: TutorPackageResponse[];
   availabilities?: AvailabilitySlot[] | null;
   tutorTeachingMode?: string | null;
 };
@@ -69,6 +86,10 @@ type StepProps = {
   students: StudentType[];
   loadingStudents: boolean;
   availableSubjects: SubjectOption[];
+  subjectGradePrices: TutorSubjectGradePrice[];
+  packages: TutorPackageResponse[];
+  selectedPrice: TutorSubjectGradePrice | null;
+  bookedSlots: ScheduleSlot[];
   availabilities: AvailabilitySlot[];
   slotDuration: number;
   setSlotDuration: Dispatch<SetStateAction<number>>;
@@ -97,6 +118,8 @@ const SUBJECT_MAPPING: SubjectOption[] = [
 ];
 
 const DAY_NAMES = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
+const WEEKDAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 const DURATION_OPTIONS = [
   { value: 1, label: '1 giờ' },
   { value: 1.5, label: '1.5 giờ' },
@@ -111,7 +134,7 @@ const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
 });
 const STEPS = [
   { key: 'student', label: 'Học sinh & Môn' },
-  { key: 'mode', label: 'Hình thức' },
+  { key: 'mode', label: 'Cách đặt' },
   { key: 'schedule', label: 'Lịch học' },
   { key: 'review', label: 'Xác nhận' },
 ];
@@ -130,6 +153,154 @@ function formatGrade(grade?: string) {
   return grade.toLowerCase().includes('lớp') ? grade : `Lớp ${grade}`;
 }
 
+function backendDayToFe(day: number) {
+  return day === 7 ? 0 : day;
+}
+
+function feDayToIso(day: number) {
+  return day === 0 ? 7 : day;
+}
+
+function parseGradeId(raw?: string | number | null) {
+  if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+  if (!raw) return null;
+  const match = String(raw).match(/\d+/);
+  return match ? Number(match[0]) : null;
+}
+
+function normalizeDateInput(date: string) {
+  return date || new Date().toISOString().split('T')[0];
+}
+
+function toDateTimeLocal(date: string, time: string) {
+  return `${date}T${time.length === 5 ? `${time}:00` : time}`;
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function dateToYmd(date: Date) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
+function getBookingStartWindow(referenceDate = new Date()) {
+  const min = startOfDay(referenceDate);
+  const max = new Date(min.getFullYear(), min.getMonth() + 2, 0);
+  return { min, max };
+}
+
+function getRecurringWindowEnd(firstLessonDate: Date) {
+  return addDays(
+    new Date(firstLessonDate.getFullYear(), firstLessonDate.getMonth() + 1, firstLessonDate.getDate()),
+    -1,
+  );
+}
+
+function clampDateToWindow(date: Date, min: Date, max: Date) {
+  if (date < min) return min;
+  if (date > max) return max;
+  return date;
+}
+
+function isDateInRange(date: Date, min: Date, max: Date) {
+  const normalized = startOfDay(date);
+  return normalized >= min && normalized <= max;
+}
+
+function firstScheduledDateForSlot(slot: ScheduleSlot, startDate: string) {
+  const start = new Date(`${normalizeDateInput(startDate)}T00:00:00`);
+  const daysUntilSlot = (slot.dayOfWeek - start.getDay() + 7) % 7;
+  return addDays(start, daysUntilSlot);
+}
+
+function getFirstScheduledDate(schedule: ScheduleSlot[], startDate: string) {
+  if (schedule.length === 0) return null;
+  return schedule
+    .map((slot) => firstScheduledDateForSlot(slot, startDate))
+    .sort((a, b) => a.getTime() - b.getTime())[0];
+}
+
+function buildFlexibleSlots(schedule: ScheduleSlot[], startDate: string) {
+  const firstLessonDate = getFirstScheduledDate(schedule, startDate);
+  if (!firstLessonDate) return [];
+
+  const windowEnd = getRecurringWindowEnd(firstLessonDate);
+  const slots: { scheduledStart: string; scheduledEnd: string }[] = [];
+
+  schedule.forEach((slot) => {
+    const firstDate = firstScheduledDateForSlot(slot, startDate);
+    for (let date = firstDate; date <= windowEnd; date = addDays(date, 7)) {
+      const dateKey = dateToYmd(date);
+      slots.push({
+        scheduledStart: toDateTimeLocal(dateKey, slot.startTime),
+        scheduledEnd: toDateTimeLocal(dateKey, slot.endTime),
+      });
+    }
+  });
+
+  return slots.sort((a, b) => a.scheduledStart.localeCompare(b.scheduledStart));
+}
+
+function fixedPackageToSchedule(pkg: TutorPackageResponse, durationMinutes?: number | null): ScheduleSlot[] {
+  const durationHours = durationMinutes ? durationMinutes / 60 : null;
+  return (pkg.fixedSlots || []).map((slot) => ({
+    dayOfWeek: backendDayToFe(slot.dayOfWeek),
+    startTime: slot.startTime.slice(0, 5),
+    endTime: durationHours ? addHoursToTime(slot.startTime.slice(0, 5), durationHours) : slot.endTime.slice(0, 5),
+  }));
+}
+
+function getStudentGradeIds(student?: StudentType) {
+  const explicitGradeLevelId = parseGradeId(
+    student ? (student as StudentType & { gradeLevelId?: number | string }).gradeLevelId : null,
+  );
+  const gradeNumber = parseGradeId(student?.gradeLevel);
+  return { explicitGradeLevelId, gradeNumber };
+}
+
+function getPriceGradeNumber(price: TutorSubjectGradePrice) {
+  return parseGradeId(price.gradeLevelName) ?? (price.gradeLevelId > 0 && price.gradeLevelId <= 12 ? price.gradeLevelId : null);
+}
+
+function isPriceCompatibleWithStudent(price: TutorSubjectGradePrice, student?: StudentType) {
+  if (!student) return true;
+  const { explicitGradeLevelId, gradeNumber } = getStudentGradeIds(student);
+
+  if (explicitGradeLevelId != null && price.gradeLevelId === explicitGradeLevelId) return true;
+  if (gradeNumber == null) return true;
+
+  return getPriceGradeNumber(price) === gradeNumber;
+}
+
+function resolvePriceForSelection(prices: TutorSubjectGradePrice[], subjectId: number, student?: StudentType) {
+  const activePrices = prices.filter((price) => price.isActive && price.subjectId === subjectId);
+  if (activePrices.length === 0) return null;
+
+  if (student) {
+    const exact = activePrices.find((price) => isPriceCompatibleWithStudent(price, student));
+    return exact ?? null;
+  }
+
+  return activePrices[0];
+}
+
+function formatSessionDuration(minutes?: number | null) {
+  if (!minutes) return '';
+  const hours = minutes / 60;
+  return Number.isInteger(hours) ? `${hours} giờ` : `${hours.toFixed(1).replace('.', 'h')}`;
+}
+
 function addHoursToTime(time: string, hours: number) {
   const [h, m] = time.split(':').map(Number);
   const totalMinutes = h * 60 + m + hours * 60;
@@ -146,11 +317,112 @@ function calcTotalHoursFromSchedule(schedule: ScheduleSlot[]) {
   }, 0);
 }
 
+function parseLocalDate(date: string) {
+  return new Date(`${normalizeDateInput(date)}T00:00:00`);
+}
+
+function startOfWeek(date: Date) {
+  const offset = date.getDay() === 0 ? -6 : 1 - date.getDay();
+  return addDays(date, offset);
+}
+
+function formatShortDate(date: Date) {
+  return `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function buildCalendarPreviewSlots(schedule: ScheduleSlot[], startDate: string) {
+  return buildFlexibleSlots(schedule, startDate).map((slot) => ({
+    date: slot.scheduledStart.slice(0, 10),
+    startTime: slot.scheduledStart.slice(11, 16),
+    endTime: slot.scheduledEnd.slice(11, 16),
+  }));
+}
+
+function MonthSchedulePreview({
+  slots,
+  startDate,
+  variant = 'side',
+}: {
+  slots: { date: string; startTime: string; endTime: string }[];
+  startDate: string;
+  variant?: 'side' | 'confirm';
+}) {
+  const fallbackStart = parseLocalDate(startDate);
+  const sortedSlots = [...slots].sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`));
+  const windowStart = sortedSlots[0]?.date ? parseLocalDate(sortedSlots[0].date) : fallbackStart;
+  const lastSlot = sortedSlots[sortedSlots.length - 1];
+  const windowEnd = lastSlot?.date ? parseLocalDate(lastSlot.date) : addDays(fallbackStart, 27);
+  const countByDate = new Map<string, number>();
+  sortedSlots.forEach((slot) => countByDate.set(slot.date, (countByDate.get(slot.date) ?? 0) + 1));
+
+  const months: { year: number; month: number }[] = [];
+  let cursor = new Date(windowStart.getFullYear(), windowStart.getMonth(), 1);
+  const lastMonth = new Date(windowEnd.getFullYear(), windowEnd.getMonth(), 1);
+  while (cursor <= lastMonth) {
+    months.push({ year: cursor.getFullYear(), month: cursor.getMonth() });
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+  }
+
+  return (
+    <aside className={`bm-month-preview ${variant === 'confirm' ? 'confirm' : ''}`}>
+      <div className="bm-month-preview-head">
+        <CalendarRange size={15} />
+        <span>Lịch học theo tháng</span>
+      </div>
+
+      {sortedSlots.length === 0 ? (
+        <p className="bm-month-empty">Lịch học sẽ hiển thị sau khi bạn chọn giờ.</p>
+      ) : (
+        <div className="bm-month-list">
+          {months.map(({ year, month }) => {
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const leadingBlanks = (new Date(year, month, 1).getDay() + 6) % 7;
+            return (
+              <div key={`${year}-${month}`} className="bm-month-grid">
+                <div className="bm-month-title">
+                  Tháng {month + 1}/{year}
+                </div>
+                <div className="bm-month-weekdays">
+                  {WEEKDAY_LABELS.map((label) => (
+                    <span key={label}>{label}</span>
+                  ))}
+                </div>
+                <div className="bm-month-days">
+                  {Array.from({ length: leadingBlanks }, (_, index) => (
+                    <span key={`blank-${index}`} className="bm-month-blank" />
+                  ))}
+                  {Array.from({ length: daysInMonth }, (_, index) => {
+                    const day = index + 1;
+                    const date = new Date(year, month, day);
+                    const key = dateToYmd(date);
+                    const count = countByDate.get(key) ?? 0;
+                    const muted = date < windowStart || date > windowEnd;
+                    return (
+                      <span
+                        key={day}
+                        className={`bm-month-day ${count > 0 ? 'active' : ''} ${muted ? 'muted' : ''}`}
+                        title={count > 0 ? `${day}/${month + 1}: ${count} buổi` : undefined}
+                      >
+                        {day}
+                        {count > 0 && <i />}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </aside>
+  );
+}
+
 function isSlotWithinAvailability(
   dayOfWeek: number,
   startTime: string,
   endTime: string,
-  availabilities: AvailabilitySlot[]
+  availabilities: AvailabilitySlot[],
 ) {
   if (availabilities.length === 0) return false;
 
@@ -163,7 +435,7 @@ function isSlotWithinAvailability(
     const chunkStart = current;
     const chunkEnd = current + 30;
     const isChunkCovered = availabilities.some((slot) => {
-      if (slot.dayofweek !== dayOfWeek || !slot.starttime || !slot.endtime) return false;
+      if (backendDayToFe(slot.dayofweek) !== dayOfWeek || !slot.starttime || !slot.endtime) return false;
       const [ash, asm] = slot.starttime.split(':').map(Number);
       const [aeh, aem] = slot.endtime.split(':').map(Number);
       const availabilityStart = ash * 60 + (asm || 0);
@@ -177,15 +449,29 @@ function isSlotWithinAvailability(
   return true;
 }
 
+function isScheduleWithinAvailability(schedule: ScheduleSlot[], availabilities: AvailabilitySlot[]) {
+  return schedule.every((slot) =>
+    isSlotWithinAvailability(slot.dayOfWeek, slot.startTime, slot.endTime, availabilities),
+  );
+}
+
+function isScheduleStartWithinWindow(schedule: ScheduleSlot[], startDate: string, min: Date, max: Date) {
+  const firstDate = getFirstScheduledDate(schedule, startDate);
+  return Boolean(firstDate && isDateInRange(firstDate, min, max));
+}
+
 function useFormDraft<T>(draftKey: string) {
-  const saveDraft = useCallback((data: T) => {
-    if (typeof window === 'undefined') return;
-    try {
-      window.sessionStorage.setItem(draftKey, JSON.stringify(data));
-    } catch {
-      // Draft persistence is best-effort.
-    }
-  }, [draftKey]);
+  const saveDraft = useCallback(
+    (data: T) => {
+      if (typeof window === 'undefined') return;
+      try {
+        window.sessionStorage.setItem(draftKey, JSON.stringify(data));
+      } catch {
+        // Draft persistence is best-effort.
+      }
+    },
+    [draftKey],
+  );
 
   const loadDraft = useCallback((): T | null => {
     if (typeof window === 'undefined') return null;
@@ -230,9 +516,7 @@ function usePromotion(estimatedPrice: number) {
 
         if ((result.discountType === 'percentage' || result.discountType === 'percent') && result.discountValue) {
           const calculated = estimatedPrice * (result.discountValue / 100);
-          setPromoDiscount(
-            result.maxDiscountAmount ? Math.min(calculated, result.maxDiscountAmount) : calculated
-          );
+          setPromoDiscount(result.maxDiscountAmount ? Math.min(calculated, result.maxDiscountAmount) : calculated);
         } else if (result.discountType === 'fixed' && result.discountValue) {
           setPromoDiscount(result.discountValue);
         }
@@ -246,7 +530,7 @@ function usePromotion(estimatedPrice: number) {
         setPromoLoading(false);
       }
     },
-    [estimatedPrice]
+    [estimatedPrice],
   );
 
   const reset = useCallback(() => {
@@ -267,11 +551,21 @@ function BookingStepper({ step }: { step: number }) {
         >
           <div className="bm-stepper-dot">{index < step ? '✓' : index + 1}</div>
           <span className="bm-stepper-label">{item.label}</span>
-          {index < STEPS.length - 1 && (
-            <div className={`bm-stepper-line ${index < step ? 'completed' : ''}`} />
-          )}
+          {index < STEPS.length - 1 && <div className={`bm-stepper-line ${index < step ? 'completed' : ''}`} />}
         </div>
       ))}
+    </div>
+  );
+}
+
+function StepHeading({ icon, eyebrow, title }: { icon: ReactNode; eyebrow: string; title: string }) {
+  return (
+    <div className="bm-section-heading">
+      <span className="bm-heading-icon">{icon}</span>
+      <div>
+        <span className="bm-eyebrow">{eyebrow}</span>
+        <h3>{title}</h3>
+      </div>
     </div>
   );
 }
@@ -282,13 +576,108 @@ function StepStudentSubject({
   students,
   loadingStudents,
   availableSubjects,
+  subjectGradePrices,
+  selectedPrice,
   userRole,
 }: StepProps) {
+  const selectedStudent = students.find((student) => student.studentId === formData.studentId);
+  const selectedPriceFitsStudent = selectedPrice ? isPriceCompatibleWithStudent(selectedPrice, selectedStudent) : false;
+
+  const handleStudentSelect = (student: StudentType) => {
+    const currentPrice =
+      subjectGradePrices.find((price) => price.id === formData.tutorSubjectGradePriceId) ?? null;
+    const price =
+      currentPrice && currentPrice.subjectId === formData.subjectId
+        ? currentPrice
+        : formData.subjectId
+          ? resolvePriceForSelection(subjectGradePrices, formData.subjectId, student)
+          : null;
+    setFormData((draft) => ({
+      ...draft,
+      studentId: student.studentId,
+      tutorSubjectGradePriceId: price?.id ?? null,
+      schedule: [],
+    }));
+  };
+
+  const handleSubjectSelect = (subject: SubjectOption) => {
+    const price = subject.price ?? resolvePriceForSelection(subjectGradePrices, subject.id, selectedStudent);
+    setFormData((draft) => ({
+      ...draft,
+      subjectId: subject.id,
+      tutorSubjectGradePriceId: price?.id ?? null,
+      schedule: [],
+    }));
+  };
+
   return (
     <div className="bm-step">
+      <StepHeading icon={<GraduationCap size={20} />} eyebrow="Bước 01" title="Chọn môn học và trẻ" />
+
+      <section className="bm-form-section">
+        <h4>Môn học muốn đặt</h4>
+        {availableSubjects.length === 0 ? (
+          <div className="bm-empty-msg">Gia sư này chưa cập nhật môn học.</div>
+        ) : (
+          <div className="bm-subject-grid">
+            {availableSubjects.map((subject) => {
+              const selectedPriceForSubject =
+                subject.price ?? resolvePriceForSelection(subjectGradePrices, subject.id, selectedStudent);
+              const gradeText =
+                selectedPriceForSubject?.gradeLevelName ||
+                (selectedPriceForSubject?.gradeLevelId ? `Lớp ${selectedPriceForSubject.gradeLevelId}` : '');
+              const isSelected = subject.price
+                ? formData.tutorSubjectGradePriceId === subject.price.id
+                : formData.subjectId === subject.id;
+
+              return (
+                <button
+                  key={subject.optionKey ?? subject.id}
+                  className={`bm-subject-card ${isSelected ? 'selected' : ''}`}
+                  onClick={() => handleSubjectSelect(subject)}
+                  type="button"
+                >
+                  <div className="bm-subject-card-head">
+                    <span className="bm-subject-icon">
+                      <BookOpen size={18} />
+                    </span>
+                    <div>
+                      <strong>{subject.name}</strong>
+                      <small>{gradeText || 'Chưa có khối lớp'}</small>
+                    </div>
+                  </div>
+
+                  <div className="bm-subject-price">
+                    <span>Học phí</span>
+                    <strong>
+                      {selectedPriceForSubject
+                        ? `${formatPrice(selectedPriceForSubject.pricePerHour)} / giờ`
+                        : 'Chưa phù hợp'}
+                    </strong>
+                  </div>
+
+                  <div className="bm-subject-setup-grid">
+                    <span>
+                      <Clock3 size={14} />
+                      <b>{formatSessionDuration(selectedPriceForSubject?.durationMinutesPerSession) || '--'}</b>
+                      <small>/ buổi</small>
+                    </span>
+                    <span>
+                      <CalendarDays size={14} />
+                      <b>{selectedPriceForSubject?.sessionsPerWeek ?? '--'}</b>
+                      <small>buổi/tuần</small>
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
       {userRole === 'Parent' && (
-        <>
-          <div className="bm-step-title">Chọn học sinh</div>
+        <section className="bm-form-section">
+          <h4>Trẻ sẽ tham gia học</h4>
           {loadingStudents ? (
             <div className="bm-loading">Đang tải danh sách học sinh...</div>
           ) : students.length === 0 ? (
@@ -304,7 +693,8 @@ function StepStudentSubject({
                 <button
                   key={student.studentId}
                   className={`bm-student-card ${formData.studentId === student.studentId ? 'selected' : ''}`}
-                  onClick={() => setFormData((draft) => ({ ...draft, studentId: student.studentId }))}
+                  onClick={() => handleStudentSelect(student)}
+                  disabled={formData.subjectId === 0}
                   type="button"
                 >
                   <span className="bm-student-avatar">
@@ -320,33 +710,104 @@ function StepStudentSubject({
                       {student.gradeLevel ? formatGrade(student.gradeLevel) : student.school}
                     </span>
                   </span>
-                  {formData.studentId === student.studentId && <span className="bm-check">✓</span>}
                 </button>
               ))}
             </div>
           )}
-        </>
+        </section>
       )}
 
-      <div className="bm-step-title" style={{ marginTop: userRole === 'Parent' ? 24 : 0 }}>
-        Chọn môn học
-      </div>
-      {availableSubjects.length === 0 ? (
-        <div className="bm-empty-msg">Gia sư này chưa cập nhật môn học.</div>
-      ) : (
-        <div className="bm-subject-grid">
-          {availableSubjects.map((subject) => (
-            <button
-              key={subject.id}
-              className={`bm-subject-btn ${formData.subjectId === subject.id ? 'selected' : ''}`}
-              onClick={() => setFormData((draft) => ({ ...draft, subjectId: subject.id }))}
-              type="button"
-            >
-              {subject.name}
-            </button>
-          ))}
+      {formData.subjectId !== 0 && selectedStudent && (!selectedPrice || !selectedPriceFitsStudent) && (
+        <div className="bm-warning-box">
+          <AlertTriangle size={19} />
+          <div>
+            <strong>Khối lớp chưa phù hợp</strong>
+            <p>Hãy chọn cấu hình đúng lớp của học sinh để tiếp tục.</p>
+          </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function StepBookingMode({ formData, setFormData, packages }: StepProps) {
+  const flexiblePackage = packages.find((pkg) => pkg.isActive && pkg.packageType === 1);
+  const fixedPackages = packages.filter((pkg) => pkg.isActive && pkg.packageType === 2);
+
+  useEffect(() => {
+    if (formData.bookingMode === 'schedule' && flexiblePackage && formData.packageId !== flexiblePackage.packageId) {
+      setFormData((draft) => ({ ...draft, packageId: flexiblePackage.packageId }));
+    }
+  }, [flexiblePackage, formData.bookingMode, formData.packageId, setFormData]);
+
+  const selectSchedule = () => {
+    if (!flexiblePackage) return;
+    setFormData((draft) => ({
+      ...draft,
+      bookingMode: 'schedule',
+      packageId: flexiblePackage.packageId,
+      schedule: [],
+    }));
+  };
+
+  const selectPackage = () => {
+    if (fixedPackages.length === 0) return;
+    setFormData((draft) => ({
+      ...draft,
+      bookingMode: 'package',
+      packageId: null,
+      schedule: [],
+    }));
+  };
+
+  return (
+    <div className="bm-step">
+      <StepHeading icon={<Route size={20} />} eyebrow="Bước 02" title="Chọn cách đặt lịch" />
+      <div className="bm-booking-mode-grid">
+        <button
+          className={`bm-booking-mode-card ${formData.bookingMode === 'schedule' ? 'selected' : ''} ${
+            !flexiblePackage ? 'locked' : ''
+          }`}
+          onClick={selectSchedule}
+          disabled={!flexiblePackage}
+          type="button"
+        >
+          <span className="bm-booking-mode-icon availability">
+            <CalendarDays size={20} />
+          </span>
+          <span className="bm-booking-mode-info">
+            <span className="bm-eyebrow">Theo lịch rảnh</span>
+            <strong>Tự chọn lịch rảnh</strong>
+            <small>Phụ huynh chọn trực tiếp các khung giờ còn trống của gia sư.</small>
+          </span>
+          <small className="bm-card-action">
+            {formData.bookingMode === 'schedule' ? 'Đang chọn' : 'Chọn cách này'}
+          </small>
+        </button>
+
+        <button
+          className={`bm-booking-mode-card ${formData.bookingMode === 'package' ? 'selected' : ''} ${
+            fixedPackages.length === 0 ? 'locked' : ''
+          }`}
+          onClick={selectPackage}
+          disabled={fixedPackages.length === 0}
+          type="button"
+        >
+          <span className="bm-booking-mode-icon package">
+            <PackageCheck size={20} />
+          </span>
+          <span className="bm-booking-mode-info">
+            <span className="bm-eyebrow">Theo gói cố định</span>
+            <strong>Chọn gói cố định</strong>
+            <small>
+              {fixedPackages.length > 0
+                ? `Có ${fixedPackages.length} gói cố định để chọn.`
+                : 'Gia sư chưa tạo gói cố định.'}
+            </small>
+          </span>
+          <small className="bm-card-action">{formData.bookingMode === 'package' ? 'Đã chọn' : 'Xem các gói'}</small>
+        </button>
+      </div>
     </div>
   );
 }
@@ -377,7 +838,7 @@ function StepTeachingMode({ formData, setFormData, tutorTeachingMode }: StepProp
   return (
     <div className="bm-step">
       <div className="bm-step-title">Hình thức học</div>
-      
+
       {isLocked && (
         <div
           className="bm-locked-mode-banner"
@@ -395,10 +856,12 @@ function StepTeachingMode({ formData, setFormData, tutorTeachingMode }: StepProp
             lineHeight: 1.5,
           }}
         >
-          <span aria-hidden style={{ fontSize: 16, lineHeight: '20px' }}>ℹ️</span>
+          <span aria-hidden style={{ fontSize: 16, lineHeight: '20px' }}>
+            ℹ️
+          </span>
           <span>
-            Gia sư này chỉ dạy theo hình thức{' '}
-            <b>{lockedMode === 'online' ? 'Online' : 'Tại nhà (Offline)'}</b>. Bạn không thể đổi sang hình thức khác.
+            Gia sư này chỉ dạy theo hình thức <b>{lockedMode === 'online' ? 'Online' : 'Tại nhà (Offline)'}</b>. Bạn
+            không thể đổi sang hình thức khác.
           </span>
         </div>
       )}
@@ -444,9 +907,7 @@ function StepTeachingMode({ formData, setFormData, tutorTeachingMode }: StepProp
                 className="bm-form-input"
                 placeholder="VD: Hồ Chí Minh"
                 value={formData.locationCity}
-                onChange={(event) =>
-                  setFormData((draft) => ({ ...draft, locationCity: event.target.value }))
-                }
+                onChange={(event) => setFormData((draft) => ({ ...draft, locationCity: event.target.value }))}
               />
             </label>
             <label className="bm-form-group">
@@ -456,9 +917,7 @@ function StepTeachingMode({ formData, setFormData, tutorTeachingMode }: StepProp
                 className="bm-form-input"
                 placeholder="VD: Quận 1"
                 value={formData.locationDistrict}
-                onChange={(event) =>
-                  setFormData((draft) => ({ ...draft, locationDistrict: event.target.value }))
-                }
+                onChange={(event) => setFormData((draft) => ({ ...draft, locationDistrict: event.target.value }))}
               />
             </label>
             <label className="bm-form-group">
@@ -468,9 +927,7 @@ function StepTeachingMode({ formData, setFormData, tutorTeachingMode }: StepProp
                 className="bm-form-input"
                 placeholder="VD: Phường Bến Nghé"
                 value={formData.locationWard}
-                onChange={(event) =>
-                  setFormData((draft) => ({ ...draft, locationWard: event.target.value }))
-                }
+                onChange={(event) => setFormData((draft) => ({ ...draft, locationWard: event.target.value }))}
               />
             </label>
             <label className="bm-form-group">
@@ -480,9 +937,7 @@ function StepTeachingMode({ formData, setFormData, tutorTeachingMode }: StepProp
                 className="bm-form-input"
                 placeholder="VD: 123 Nguyễn Huệ"
                 value={formData.locationDetail}
-                onChange={(event) =>
-                  setFormData((draft) => ({ ...draft, locationDetail: event.target.value }))
-                }
+                onChange={(event) => setFormData((draft) => ({ ...draft, locationDetail: event.target.value }))}
               />
             </label>
           </div>
@@ -498,6 +953,9 @@ function StepSchedule({
   slotDuration,
   setSlotDuration,
   availabilities,
+  packages,
+  selectedPrice,
+  bookedSlots,
 }: StepProps) {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [hoveredSlot, setHoveredSlot] = useState<{ day: number; time: string } | null>(null);
@@ -516,13 +974,31 @@ function StepSchedule({
       const endMins = startMins + 30;
 
       return availabilities.some((slot) => {
-        if (slot.dayofweek !== day || !slot.starttime || !slot.endtime) return false;
+        if (backendDayToFe(slot.dayofweek) !== day || !slot.starttime || !slot.endtime) return false;
         const [ash, asm] = slot.starttime.split(':').map(Number);
         const [aeh, aem] = slot.endtime.split(':').map(Number);
         return startMins >= ash * 60 + asm && endMins <= aeh * 60 + aem;
       });
     },
-    [availabilities]
+    [availabilities],
+  );
+
+  const isChunkBooked = useCallback(
+    (day: number, time: string) => {
+      const [h, m] = time.split(':').map(Number);
+      const startMins = h * 60 + m;
+      const endMins = startMins + 30;
+
+      return bookedSlots.some((slot) => {
+        if (slot.dayOfWeek !== day) return false;
+        const [sh, sm] = slot.startTime.split(':').map(Number);
+        const [eh, em] = slot.endTime.split(':').map(Number);
+        const bookedStart = sh * 60 + sm;
+        const bookedEnd = eh * 60 + em;
+        return startMins < bookedEnd && endMins > bookedStart;
+      });
+    },
+    [bookedSlots],
   );
 
   const checkOverlap = useCallback(
@@ -542,20 +1018,16 @@ function StepSchedule({
         return nextStart < currentEnd && nextEnd > currentStart;
       });
     },
-    [formData.schedule]
+    [formData.schedule],
   );
 
   const toggleSlot = (dayOfWeek: number, startTime: string) => {
-    const exists = formData.schedule.find(
-      (slot) => slot.dayOfWeek === dayOfWeek && slot.startTime === startTime
-    );
+    const exists = formData.schedule.find((slot) => slot.dayOfWeek === dayOfWeek && slot.startTime === startTime);
 
     if (exists) {
       setFormData((draft) => ({
         ...draft,
-        schedule: draft.schedule.filter(
-          (slot) => !(slot.dayOfWeek === dayOfWeek && slot.startTime === startTime)
-        ),
+        schedule: draft.schedule.filter((slot) => !(slot.dayOfWeek === dayOfWeek && slot.startTime === startTime)),
       }));
       return;
     }
@@ -568,9 +1040,18 @@ function StepSchedule({
     }
 
     if (!isSlotWithinAvailability(dayOfWeek, startTime, endTime, availabilities)) {
-      setToastMessage(
-        `Gia sư không rảnh khung giờ ${startTime}-${endTime} vào ${DAY_NAMES[dayOfWeek]}.`
-      );
+      setToastMessage(`Gia sư không rảnh khung giờ ${startTime}-${endTime} vào ${DAY_NAMES[dayOfWeek]}.`);
+      return;
+    }
+
+    if (isChunkBooked(dayOfWeek, startTime)) {
+      setToastMessage('Khung giờ này đã có lịch đặt. Bạn hãy chọn khung giờ khác.');
+      return;
+    }
+
+    const maxSlots = selectedPrice?.sessionsPerWeek ?? 1;
+    if (formData.bookingMode === 'schedule' && formData.schedule.length >= maxSlots) {
+      setToastMessage(`Bạn chỉ cần chọn ${maxSlots} buổi/tuần theo cấu hình gia sư đã thiết lập.`);
       return;
     }
 
@@ -609,12 +1090,7 @@ function StepSchedule({
 
       for (const slot of draft.schedule) {
         const nextEndTime = addHoursToTime(slot.startTime, nextDuration);
-        const isAvailable = isSlotWithinAvailability(
-          slot.dayOfWeek,
-          slot.startTime,
-          nextEndTime,
-          availabilities
-        );
+        const isAvailable = isSlotWithinAvailability(slot.dayOfWeek, slot.startTime, nextEndTime, availabilities);
         const overlaps = validSlots.some((accepted) => {
           if (accepted.dayOfWeek !== slot.dayOfWeek) return false;
           const [sh, sm] = slot.startTime.split(':').map(Number);
@@ -639,7 +1115,294 @@ function StepSchedule({
     });
   };
 
-  const sessionCount = formData.schedule.length * 4;
+  const expectedWeeklySlots = selectedPrice?.sessionsPerWeek ?? 1;
+  const sessionCount = expectedWeeklySlots * 4;
+  const fixedPackages = packages.filter((pkg) => pkg.isActive && pkg.packageType === 2);
+  const selectedPackage = fixedPackages.find((pkg) => pkg.packageId === formData.packageId);
+  const selectedPackageSchedule = selectedPackage
+    ? fixedPackageToSchedule(selectedPackage, selectedPrice?.durationMinutesPerSession)
+    : [];
+  const selectedPackageFitsAvailability =
+    selectedPackageSchedule.length > 0 && isScheduleWithinAvailability(selectedPackageSchedule, availabilities);
+  const bookingWindow = getBookingStartWindow();
+  const minBookingDate = bookingWindow.min;
+  const maxBookingDate = bookingWindow.max;
+  const weekStart = startOfWeek(parseLocalDate(formData.startDate));
+  const visibleDays = WEEK_ORDER.map((_, index) => addDays(weekStart, index));
+  const previewSlots = buildCalendarPreviewSlots(formData.schedule, formData.startDate);
+  const scheduleChoiceLabel = formData.bookingMode === 'package' ? 'Gói cố định' : 'Tự chọn lịch rảnh';
+  const minBookingDateText = formatShortDate(minBookingDate);
+  const maxBookingDateText = formatShortDate(maxBookingDate);
+  const weekHasBookableDate = (start: Date) =>
+    WEEK_ORDER.some((_, index) => isDateInRange(addDays(start, index), minBookingDate, maxBookingDate));
+  const weekLockedBySelection = formData.bookingMode === 'schedule' && formData.schedule.length > 0;
+  const canGoPrevWeek = !weekLockedBySelection && weekHasBookableDate(addDays(weekStart, -7));
+  const canGoNextWeek = !weekLockedBySelection && weekHasBookableDate(addDays(weekStart, 7));
+
+  const shiftWeek = (weekOffset: number) => {
+    if (weekLockedBySelection) {
+      setToastMessage('Hãy bỏ các buổi đã chọn trước khi đổi sang tuần khác.');
+      return;
+    }
+    const nextStart = addDays(weekStart, weekOffset * 7);
+    if (!weekHasBookableDate(nextStart)) {
+      setToastMessage(`Chỉ có thể chọn buổi học đầu tiên trong khoảng ${minBookingDateText} - ${maxBookingDateText}.`);
+      return;
+    }
+    setFormData((draft) => ({ ...draft, startDate: dateToYmd(nextStart) }));
+  };
+
+  const selectPackageStartDate = (date: Date) => {
+    if (!selectedPackage || !selectedPackageFitsAvailability) {
+      setToastMessage('Gói này không còn khớp với lịch rảnh hiện tại của gia sư.');
+      return;
+    }
+
+    if (!isDateInRange(date, minBookingDate, maxBookingDate)) {
+      setToastMessage(`Chỉ có thể chọn buổi học đầu tiên trong khoảng ${minBookingDateText} - ${maxBookingDateText}.`);
+      return;
+    }
+
+    setFormData((draft) => ({
+      ...draft,
+      startDate: dateToYmd(date),
+      schedule: selectedPackageSchedule,
+    }));
+  };
+
+  const removeCoveringSlot = (day: number, time: string) => {
+    const [h, m] = time.split(':').map(Number);
+    const cellTime = h * 60 + m;
+    setFormData((draft) => ({
+      ...draft,
+      schedule: draft.schedule.filter((slot) => {
+        if (slot.dayOfWeek !== day) return true;
+        const [sh, sm] = slot.startTime.split(':').map(Number);
+        const [eh, em] = slot.endTime.split(':').map(Number);
+        return !(cellTime >= sh * 60 + sm && cellTime < eh * 60 + em);
+      }),
+    }));
+  };
+
+  const renderCalendarGrid = (readOnly = false) => (
+    <section className="bm-calendar-section">
+      <div className="bm-calendar-heading">
+        <div>
+          <span className="bm-eyebrow">Lịch rảnh của gia sư</span>
+          <h3>{scheduleChoiceLabel}</h3>
+        </div>
+        <div className="bm-calendar-controls">
+          <button type="button" onClick={() => shiftWeek(-1)} disabled={!canGoPrevWeek} aria-label="Tuần trước">
+            <ChevronLeft size={18} />
+          </button>
+          <strong>
+            {formatShortDate(visibleDays[0])} - {formatShortDate(visibleDays[6])}
+          </strong>
+          <button type="button" onClick={() => shiftWeek(1)} disabled={!canGoNextWeek} aria-label="Tuần sau">
+            <ChevronRight size={18} />
+          </button>
+        </div>
+      </div>
+
+      <div className="bm-legend">
+        <span>
+          <i className="available" />
+          Lịch trống
+        </span>
+        <span>
+          <i className="selected" />
+          Đã chọn
+        </span>
+        <span>
+          <i className="unavailable" />
+          Không mở lịch
+        </span>
+      </div>
+
+      <div className="bm-calendar-scroller">
+        <div className="bm-calendar-grid">
+          <div className="bm-calendar-cell bm-time-head">Giờ học</div>
+          {visibleDays.map((date, index) => (
+            <div key={dateToYmd(date)} className="bm-calendar-cell bm-day-head">
+              <strong>{DAY_NAMES[WEEK_ORDER[index]]}</strong>
+              <span>{formatShortDate(date)}</span>
+            </div>
+          ))}
+
+          {TIME_SLOTS.map((time) => (
+            <div className="bm-calendar-row" key={time}>
+              <div className="bm-calendar-cell bm-time-cell">{time}</div>
+              {WEEK_ORDER.map((day) => {
+                const endTime = addHoursToTime(time, slotDuration);
+                const dayIndex = WEEK_ORDER.indexOf(day);
+                const slotDate = visibleDays[dayIndex] ?? weekStart;
+                const isBookableDate = isDateInRange(slotDate, minBookingDate, maxBookingDate);
+                const dateKey = dateToYmd(slotDate);
+                const selectedByPattern = isSelected(day, time);
+                const selectedByDate = previewSlots.some((slot) => {
+                  if (slot.date !== dateKey) return false;
+                  const [sh, sm] = slot.startTime.split(':').map(Number);
+                  const [eh, em] = slot.endTime.split(':').map(Number);
+                  const [ch, cm] = time.split(':').map(Number);
+                  const cellTime = ch * 60 + cm;
+                  return cellTime >= sh * 60 + sm && cellTime < eh * 60 + em;
+                });
+                const selected = formData.bookingMode === 'package' ? selectedByDate : selectedByPattern;
+                const isBooked = isChunkBooked(day, time);
+                const fitsAvailability = isSlotWithinAvailability(day, time, endTime, availabilities);
+                const overlap = checkOverlap(day, time, endTime);
+                const isFull = formData.bookingMode === 'schedule' && formData.schedule.length >= expectedWeeklySlots;
+                const packageCell = selectedPackageSchedule.some((slot) => {
+                  if (slot.dayOfWeek !== day) return false;
+                  const [sh, sm] = slot.startTime.split(':').map(Number);
+                  const [eh, em] = slot.endTime.split(':').map(Number);
+                  const [ch, cm] = time.split(':').map(Number);
+                  const cellTime = ch * 60 + cm;
+                  return cellTime >= sh * 60 + sm && cellTime < eh * 60 + em;
+                });
+                const canPickPackage =
+                  formData.bookingMode === 'package' &&
+                  Boolean(selectedPackage) &&
+                  packageCell &&
+                  isBookableDate &&
+                  selectedPackageFitsAvailability;
+                const canPick =
+                  formData.bookingMode === 'schedule'
+                    ? !readOnly &&
+                      (selected || (isBookableDate && fitsAvailability && !isBooked && !overlap && !isFull))
+                    : canPickPackage;
+                const showAvailable = canPick && !selected && formData.bookingMode === 'schedule';
+                const showPackagePick = canPickPackage && !selected;
+
+                return (
+                  <div key={`${day}-${time}`} className="bm-calendar-cell bm-slot-cell">
+                    <button
+                      type="button"
+                      className={`bm-slot-button ${
+                        selected ? 'selected' : showAvailable || showPackagePick ? 'available' : 'unavailable'
+                      } ${isSlotHovered(day, time) && showAvailable ? 'hovering' : ''}`}
+                      disabled={!canPick}
+                      onClick={() => {
+                        if (formData.bookingMode === 'package') {
+                          selectPackageStartDate(slotDate);
+                          return;
+                        }
+                        selected ? removeCoveringSlot(day, time) : toggleSlot(day, time);
+                      }}
+                      onMouseEnter={() => setHoveredSlot({ day, time })}
+                      onMouseLeave={() => setHoveredSlot(null)}
+                      aria-label={`${DAY_NAMES[day]} lúc ${time}`}
+                    >
+                      {selected ? (
+                        <>
+                          <Check size={13} />
+                          Đã chọn
+                        </>
+                      ) : showAvailable ? (
+                        '+ Chọn'
+                      ) : showPackagePick ? (
+                        '+ Bắt đầu'
+                      ) : (
+                        '—'
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+
+  if (formData.bookingMode === 'package') {
+    return (
+      <div className="bm-step">
+        {toastMessage && (
+          <div className="bm-toast-warning">
+            <span>{toastMessage}</span>
+            <button className="bm-toast-close" onClick={() => setToastMessage(null)} type="button">
+              ✕
+            </button>
+          </div>
+        )}
+
+        <StepHeading
+          icon={<CalendarDays size={20} />}
+          eyebrow="Bước 03"
+          title={selectedPackage ? 'Chọn lịch học' : 'Chọn gói cố định'}
+        />
+
+        <section className="bm-package-pick-section">
+          {fixedPackages.length === 0 ? (
+            <div className="bm-warning-box">
+              <AlertTriangle size={18} />
+              <strong>Gia sư chưa tạo gói cố định nào.</strong>
+            </div>
+          ) : (
+            <div className="bm-package-grid">
+              {fixedPackages.map((pkg) => {
+                const packageSchedule = fixedPackageToSchedule(pkg, selectedPrice?.durationMinutesPerSession);
+                const packageFitsAvailability =
+                  packageSchedule.length > 0 && isScheduleWithinAvailability(packageSchedule, availabilities);
+                const isPicked = formData.packageId === pkg.packageId;
+                return (
+                  <button
+                    key={pkg.packageId}
+                    className={`bm-package-card ${isPicked ? 'selected' : ''} ${
+                      packageFitsAvailability ? '' : 'locked'
+                    }`}
+                    onClick={() => {
+                      if (!packageFitsAvailability) {
+                        setToastMessage('Gói này không còn khớp với lịch rảnh hiện tại của gia sư.');
+                        return;
+                      }
+                      setFormData((draft) => ({
+                        ...draft,
+                        packageId: pkg.packageId,
+                        schedule: [],
+                      }));
+                    }}
+                    type="button"
+                    aria-disabled={!packageFitsAvailability}
+                  >
+                    <span className="bm-combo-icon">
+                      <Repeat2 size={18} />
+                    </span>
+                    <span className="bm-eyebrow">Gói cố định</span>
+                    <strong>{pkg.name}</strong>
+                    <div className="bm-package-meta">
+                      <span>
+                        <BookOpen size={14} />
+                        {packageSchedule.length || selectedPrice?.sessionsPerWeek || 0} buổi/tuần
+                      </span>
+                      <span>
+                        <Clock3 size={14} />
+                        {formatSessionDuration(selectedPrice?.durationMinutesPerSession)} / buổi
+                      </span>
+                    </div>
+                    <small>
+                      {packageFitsAvailability ? (isPicked ? 'Đã chọn gói' : 'Chọn gói') : 'Không khả dụng'}
+                    </small>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {selectedPackage && (
+          <>
+            <div className="bm-schedule-layout">
+              {renderCalendarGrid(false)}
+              <MonthSchedulePreview slots={previewSlots} startDate={formData.startDate} />
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="bm-step">
@@ -652,40 +1415,17 @@ function StepSchedule({
         </div>
       )}
 
-      <div className="bm-step-title">Chọn lịch học hàng tuần</div>
-      <p className="bm-step-desc">
-        Chọn các khoảng thời gian học và ngày bắt đầu mong muốn. Học phí tạm tính theo{' '}
-        <strong>{formData.schedule.length} buổi/tuần x 4 tuần = {sessionCount} buổi/tháng</strong>.
-      </p>
+      <StepHeading icon={<CalendarDays size={20} />} eyebrow="Bước 03" title="Chọn lịch học" />
 
-      <div className="bm-duration-section">
-        <span className="bm-duration-label">Ngày bắt đầu dự kiến:</span>
-        <input
-          type="date"
-          className="bm-form-input"
-          min={new Date().toISOString().split('T')[0]}
-          value={formData.startDate}
-          onChange={(event) => setFormData((draft) => ({ ...draft, startDate: event.target.value }))}
-        />
-      </div>
-
-      <div className="bm-duration-section">
-        <span className="bm-duration-label">Thời lượng mỗi slot:</span>
-        <div className="bm-hours-grid">
-          {DURATION_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              className={`bm-hours-btn ${slotDuration === option.value ? 'selected' : ''}`}
-              onClick={() => handleDurationChange(option.value)}
-              disabled={availabilities.length === 0}
-              style={availabilities.length === 0 ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
-              type="button"
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <section className="bm-duration-info">
+        <Clock3 size={15} />
+        <span>
+          {selectedPrice?.subjectName || 'Buổi học'}:{' '}
+          <strong>{formatSessionDuration(selectedPrice?.durationMinutesPerSession)}/buổi</strong> ·{' '}
+          <strong>{expectedWeeklySlots} buổi/tuần</strong>. Chọn buổi học đầu tiên để bắt đầu hành trình học cùng gia
+          sư.
+        </span>
+      </section>
 
       {availabilities.length === 0 && (
         <div className="bm-toast-warning" style={{ marginBottom: 16 }}>
@@ -693,208 +1433,153 @@ function StepSchedule({
         </div>
       )}
 
-      <div className="bm-schedule-table">
-        <div className="bm-schedule-header">
-          <div className="bm-schedule-corner" />
-          {[1, 2, 3, 4, 5, 6, 0].map((day) => (
-            <div key={day} className="bm-schedule-day-header">
-              {DAY_NAMES[day]}
-            </div>
-          ))}
-        </div>
-        <div className="bm-schedule-body">
-          {TIME_SLOTS.map((time) => (
-            <div key={time} className="bm-schedule-row">
-              <div className="bm-schedule-time">{time}</div>
-              {[1, 2, 3, 4, 5, 6, 0].map((day) => {
-                const endTime = addHoursToTime(time, slotDuration);
-                const isBusy = !isChunkAvailable(day, time);
-                const isInvalid = isBusy || !isSlotWithinAvailability(day, time, endTime, availabilities);
-                const startHovered = hoveredSlot?.day === day && hoveredSlot?.time === time;
-                const overlapHovered = startHovered && checkOverlap(day, time, endTime);
-                const hoverInvalid = startHovered && (isInvalid || overlapHovered);
-
-                return (
-                  <button
-                    key={day}
-                    className={`bm-schedule-cell ${isSelected(day, time) ? 'selected' : ''} ${
-                      isBusy ? 'unavailable' : ''
-                    } ${isSlotHovered(day, time) ? 'hovering' : ''} ${hoverInvalid ? 'hover-invalid' : ''}`}
-                    onClick={() => toggleSlot(day, time)}
-                    onMouseEnter={() => setHoveredSlot({ day, time })}
-                    onMouseLeave={() => setHoveredSlot(null)}
-                    title={
-                      isBusy
-                        ? 'Gia sư bận khung giờ này'
-                        : isInvalid
-                          ? 'Thời lượng đã chọn vượt quá lịch rảnh'
-                          : overlapHovered
-                            ? 'Trùng với lịch học đã chọn'
-                            : ''
-                    }
-                    type="button"
-                  />
-                );
-              })}
-            </div>
-          ))}
-        </div>
+      <div className="bm-schedule-layout">
+        {renderCalendarGrid(false)}
+        <MonthSchedulePreview slots={previewSlots} startDate={formData.startDate} />
       </div>
-
-      {formData.schedule.length > 0 && (
-        <div className="bm-selected-slots">
-          <div className="bm-step-title small">
-            Đã chọn ({formData.schedule.length} slot/tuần {'->'} {sessionCount} buổi/tháng)
-          </div>
-          <div className="bm-slot-tags">
-            {formData.schedule.map((slot, index) => (
-              <span key={`${slot.dayOfWeek}-${slot.startTime}`} className="bm-slot-tag">
-                {DAY_NAMES[slot.dayOfWeek]} {slot.startTime}-{slot.endTime}
-                <button
-                  className="bm-slot-remove"
-                  onClick={() =>
-                    setFormData((draft) => ({
-                      ...draft,
-                      schedule: draft.schedule.filter((_, slotIndex) => slotIndex !== index),
-                    }))
-                  }
-                  type="button"
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
-function StepReview({ formData, setFormData, hourlyRate, students, availableSubjects }: StepProps) {
+function StepReview({
+  formData,
+  setFormData,
+  hourlyRate,
+  students,
+  availableSubjects,
+  selectedPrice,
+  packages,
+}: StepProps) {
   const student = students.find((item) => item.studentId === formData.studentId);
-  const subject = availableSubjects.find((item) => item.id === formData.subjectId);
+  const subject =
+    availableSubjects.find((item) => item.price?.id === formData.tutorSubjectGradePriceId) ??
+    availableSubjects.find((item) => item.id === formData.subjectId);
   const teachingModeInfo = TEACHING_MODES.find((item) => item.key === formData.teachingMode);
-  const totalHours = calcTotalHoursFromSchedule(formData.schedule);
-  const estimatedPrice = hourlyRate * totalHours;
+  const selectedPackage = packages.find((pkg) => pkg.packageId === formData.packageId);
+  const previewSlots = buildCalendarPreviewSlots(formData.schedule, formData.startDate);
+  const totalSessions = previewSlots.length;
+  const durationHours =
+    (selectedPrice?.durationMinutesPerSession ?? Math.round(calcTotalHoursFromSchedule(formData.schedule) * 60)) / 60;
+  const effectiveHourlyRate = selectedPrice?.pricePerHour ?? hourlyRate;
+  const totalHours = totalSessions * durationHours;
+  const estimatedPrice = effectiveHourlyRate * totalHours;
   const { promoResult, promoLoading, promoDiscount, validate, reset } = usePromotion(estimatedPrice);
   const baseAmount = estimatedPrice - promoDiscount;
   const serviceFee = Math.round(baseAmount * 0.05);
   const finalEstimate = Math.max(0, baseAmount + serviceFee);
+  const durationLabel = formatSessionDuration(selectedPrice?.durationMinutesPerSession);
+  const totalHoursLabel = Number.isInteger(totalHours) ? `${totalHours}` : totalHours.toFixed(1).replace('.', ',');
+  const studentName = student?.fullName || 'Học sinh hiện tại';
+  const studentInitials = studentName
+    .split(' ')
+    .map((part) => part.charAt(0))
+    .join('')
+    .slice(-2)
+    .toUpperCase();
+  const scheduleChoiceLabel =
+    formData.bookingMode === 'package'
+      ? `Gói cố định${selectedPackage?.name ? ` · ${selectedPackage.name}` : ''}`
+      : 'Theo lịch rảnh';
+  const subjectGradeLabel =
+    selectedPrice?.gradeLevelName || (selectedPrice?.gradeLevelId ? `Lớp ${selectedPrice.gradeLevelId}` : '');
 
   return (
     <div className="bm-step">
-      <div className="bm-step-title">Xác nhận booking</div>
+      <StepHeading icon={<ShieldCheck size={20} />} eyebrow="Bước 04" title="Xác nhận đặt lịch" />
 
-      <div className="bm-review-card">
-        <div className="bm-review-row">
-          <span className="bm-review-label">Học sinh</span>
-          <span className="bm-review-value">
-            {student?.fullName || 'Học sinh hiện tại'}{' '}
-            {student?.gradeLevel ? `(${formatGrade(student.gradeLevel)})` : student?.school ? `(${student.school})` : ''}
-          </span>
-        </div>
-        <div className="bm-review-row">
-          <span className="bm-review-label">Môn học</span>
-          <span className="bm-review-value">{subject?.name}</span>
-        </div>
-        <div className="bm-review-row">
-          <span className="bm-review-label">Hình thức</span>
-          <span className="bm-review-value">
-            {teachingModeInfo?.icon} {teachingModeInfo?.label}
-          </span>
-        </div>
-        {(formData.teachingMode === 'offline' || formData.teachingMode === 'hybrid') && (
-          <div className="bm-review-row">
-            <span className="bm-review-label">Địa điểm</span>
-            <span className="bm-review-value">
-              {[formData.locationDetail, formData.locationWard, formData.locationDistrict, formData.locationCity]
-                .filter(Boolean)
-                .join(', ')}
-            </span>
-          </div>
-        )}
-        <div className="bm-review-row">
-          <span className="bm-review-label">Ngày bắt đầu</span>
-          <span className="bm-review-value">
-            {new Date(formData.startDate || new Date().toISOString()).toLocaleDateString('vi-VN')}
-          </span>
-        </div>
-        <div className="bm-review-row">
-          <span className="bm-review-label">Số buổi/tháng</span>
-          <span className="bm-review-value">{formData.schedule.length * 4} buổi</span>
-        </div>
-        <div className="bm-review-row">
-          <span className="bm-review-label">Tổng giờ/tháng</span>
-          <span className="bm-review-value">{totalHours} giờ</span>
-        </div>
-        <div className="bm-review-row">
-          <span className="bm-review-label">Lịch học</span>
-          <div className="bm-review-schedule">
-            {formData.schedule.map((slot) => (
-              <span key={`${slot.dayOfWeek}-${slot.startTime}`} className="bm-slot-tag-sm">
-                {DAY_NAMES[slot.dayOfWeek]} {slot.startTime}-{slot.endTime}
+      <div className="bm-confirm-layout">
+        <div className="bm-confirm-main">
+          <section className="bm-review-hero">
+            <span className="bm-review-hero-avatar">{studentInitials}</span>
+            <div className="bm-review-hero-content">
+              <span className="bm-eyebrow">Tóm tắt đặt lịch</span>
+              <h3>
+                {subject?.name || 'Môn học'}
+                {subjectGradeLabel ? ` · ${subjectGradeLabel}` : ''} · {studentName}
+              </h3>
+              <p>
+                {scheduleChoiceLabel}
+                {teachingModeInfo?.label ? ` · ${teachingModeInfo.label}` : ''}
+              </p>
+            </div>
+            <div className="bm-confirm-quick-facts">
+              <span>
+                <b>{totalSessions}</b>
+                <small>buổi</small>
               </span>
-            ))}
-          </div>
-        </div>
-      </div>
+              <span>
+                <b>{durationLabel || '--'}</b>
+                <small>/ buổi</small>
+              </span>
+              <span>
+                <b>{totalHoursLabel}</b>
+                <small>giờ</small>
+              </span>
+            </div>
+          </section>
 
-      <div className="bm-promo-section">
-        <div className="bm-step-title small">Mã khuyến mãi</div>
-        <div className="bm-promo-input-row">
-          <input
-            type="text"
-            placeholder="Nhập mã khuyến mãi"
-            value={formData.promotionCode}
-            onChange={(event) => {
-              setFormData((draft) => ({ ...draft, promotionCode: event.target.value.toUpperCase() }));
-              reset();
-            }}
-            className="bm-promo-input"
-          />
-          <button
-            className="bm-promo-btn"
-            onClick={() => validate(formData.promotionCode)}
-            disabled={!formData.promotionCode || promoLoading}
-            type="button"
-          >
-            {promoLoading ? '...' : 'Áp dụng'}
-          </button>
+          <MonthSchedulePreview slots={previewSlots} startDate={formData.startDate} variant="confirm" />
         </div>
-        {promoResult?.valid && (
-          <div className="bm-promo-msg valid">
-            ✓ {promoResult.message || `Mã hợp lệ! Giảm ${formatPrice(promoDiscount)}`}
-          </div>
-        )}
-        {promoResult && !promoResult.valid && (
-          <div className="bm-promo-msg invalid">✕ {promoResult.message || 'Mã không hợp lệ'}</div>
-        )}
-      </div>
 
-      <div className="bm-price-section">
-        <div className="bm-price-note">Giá ước tính. Giá cuối cùng sẽ được backend tính chính xác.</div>
-        <div className="bm-price-row">
-          <span>
-            Giá gốc ({totalHours} giờ x {formatPrice(hourlyRate)}/h)
-          </span>
-          <span>{formatPrice(estimatedPrice)}</span>
-        </div>
-        {promoResult?.valid && promoDiscount > 0 && (
-          <div className="bm-price-row discount">
-            <span>Mã khuyến mãi ({promoResult.code})</span>
-            <span>-{formatPrice(promoDiscount)}</span>
+        <aside className="bm-price-summary">
+          <div className="bm-price-summary-head">
+            <span className="bm-eyebrow">Học phí dự kiến</span>
+            <strong>{formatPrice(finalEstimate)}</strong>
+            <small>Tổng thanh toán</small>
           </div>
-        )}
-        <div className="bm-price-row fee">
-          <span>Phí dịch vụ (5%)</span>
-          <span>{formatPrice(serviceFee)}</span>
-        </div>
-        <div className="bm-price-divider" />
-        <div className="bm-price-row total">
-          <span>Dự kiến thanh toán</span>
-          <span>{formatPrice(finalEstimate)}</span>
-        </div>
+
+          <div className="bm-price-line">
+            <span>Học phí · {totalHoursLabel} giờ</span>
+            <strong>{formatPrice(estimatedPrice)}</strong>
+          </div>
+          {promoResult?.valid === true && promoDiscount > 0 && (
+            <div className="bm-price-line discount">
+              <span>Mã khuyến mãi ({promoResult?.code})</span>
+              <strong>-{formatPrice(promoDiscount)}</strong>
+            </div>
+          )}
+          <div className="bm-price-line">
+            <span>Phí dịch vụ (5%)</span>
+            <strong>{formatPrice(serviceFee)}</strong>
+          </div>
+
+          <div className="bm-promo-compact">
+            <span className="bm-eyebrow">Mã khuyến mãi</span>
+            <div className="bm-promo-input-row">
+              <input
+                type="text"
+                placeholder="Nhập mã"
+                value={formData.promotionCode}
+                onChange={(event) => {
+                  setFormData((draft) => ({ ...draft, promotionCode: event.target.value.toUpperCase() }));
+                  reset();
+                }}
+                className="bm-promo-input"
+              />
+              <button
+                className="bm-promo-btn"
+                onClick={() => validate(formData.promotionCode)}
+                disabled={!formData.promotionCode || promoLoading}
+                type="button"
+              >
+                {promoLoading ? '...' : 'Áp dụng'}
+              </button>
+            </div>
+            {promoResult?.valid === true && (
+              <div className="bm-promo-msg valid">
+                ✓ {promoResult?.message || `Mã hợp lệ! Giảm ${formatPrice(promoDiscount)}`}
+              </div>
+            )}
+            {promoResult?.valid === false && (
+              <div className="bm-promo-msg invalid">✕ {promoResult?.message || 'Mã không hợp lệ'}</div>
+            )}
+          </div>
+
+          <p className="bm-price-summary-note">
+            <ShieldCheck size={14} />
+            Thanh toán sau khi gia sư xác nhận lịch học.
+          </p>
+        </aside>
       </div>
     </div>
   );
@@ -907,6 +1592,8 @@ export default function BookingModal({
   tutorId,
   hourlyRate,
   subjects,
+  subjectGradePrices = [],
+  packages = [],
   availabilities,
   tutorTeachingMode,
 }: BookingModalProps) {
@@ -918,8 +1605,11 @@ export default function BookingModal({
     () => ({
       studentId: userRole === 'Student' ? currentUserId || '' : '',
       subjectId: 0,
+      tutorSubjectGradePriceId: null,
+      bookingMode: 'schedule',
+      packageId: packages.find((pkg) => pkg.isActive && pkg.packageType === 1)?.packageId ?? null,
       teachingMode: lockedMode ?? 'online',
-      startDate: new Date().toISOString().split('T')[0],
+      startDate: dateToYmd(new Date()),
       schedule: [],
       locationCity: '',
       locationDistrict: '',
@@ -927,7 +1617,7 @@ export default function BookingModal({
       locationDetail: '',
       promotionCode: '',
     }),
-    [currentUserId, userRole, lockedMode]
+    [currentUserId, userRole, lockedMode, packages],
   );
 
   const [step, setStep] = useState(0);
@@ -938,6 +1628,7 @@ export default function BookingModal({
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [successBookingId, setSuccessBookingId] = useState<number | null>(null);
   const [slotDuration, setSlotDuration] = useState(2);
+  const [bookedSlots, setBookedSlots] = useState<ScheduleSlot[]>([]);
   const [formData, setFormData] = useState<BookingFormData>(defaultFormData);
   const { saveDraft, loadDraft, clearDraft } = useFormDraft<{
     formData: BookingFormData;
@@ -945,13 +1636,65 @@ export default function BookingModal({
     slotDuration: number;
   }>(`draft_booking_${currentUserId || 'anon'}_${tutorId}`);
 
-  const availableSubjects = useMemo(
-    () =>
-      SUBJECT_MAPPING.filter((subject) =>
-        subjects.some((tutorSubject) => tutorSubject.subjectId === subject.id)
-      ),
-    [subjects]
+  const activeSubjectGradePrices = useMemo(
+    () => subjectGradePrices.filter((price) => price.isActive),
+    [subjectGradePrices],
   );
+
+  const selectedPrice = useMemo(
+    () => activeSubjectGradePrices.find((price) => price.id === formData.tutorSubjectGradePriceId) ?? null,
+    [activeSubjectGradePrices, formData.tutorSubjectGradePriceId],
+  );
+
+  const availableSubjects = useMemo(() => {
+    if (activeSubjectGradePrices.length === 0) {
+      return SUBJECT_MAPPING.filter((subject) =>
+        subjects.some((tutorSubject) => tutorSubject.subjectId === subject.id),
+      );
+    }
+
+    return [...activeSubjectGradePrices]
+      .sort((a, b) => {
+        const subjectName = (a.subjectName || '').localeCompare(b.subjectName || '', 'vi');
+        if (subjectName !== 0) return subjectName;
+        return (getPriceGradeNumber(a) ?? a.gradeLevelId) - (getPriceGradeNumber(b) ?? b.gradeLevelId);
+      })
+      .map((price) => {
+        const fallback = SUBJECT_MAPPING.find((subject) => subject.id === price.subjectId);
+        return {
+          id: price.subjectId,
+          optionKey: `price_${price.id}`,
+          name: price.subjectName || fallback?.name || `Môn ${price.subjectId}`,
+          price,
+          gradePrices: [price],
+        };
+      });
+  }, [activeSubjectGradePrices, subjects]);
+
+  useEffect(() => {
+    if (!formData.tutorSubjectGradePriceId) return;
+    const stillActive = activeSubjectGradePrices.some((price) => price.id === formData.tutorSubjectGradePriceId);
+    if (stillActive) return;
+    setFormData((draft) => ({
+      ...draft,
+      subjectId: 0,
+      tutorSubjectGradePriceId: null,
+      schedule: [],
+    }));
+  }, [activeSubjectGradePrices, formData.tutorSubjectGradePriceId]);
+
+  useEffect(() => {
+    if (!formData.subjectId || formData.tutorSubjectGradePriceId) return;
+    const matchingOptions = activeSubjectGradePrices.filter((price) => price.subjectId === formData.subjectId);
+    if (matchingOptions.length !== 1) return;
+    const student = students.find((item) => item.studentId === formData.studentId);
+    if (student && !isPriceCompatibleWithStudent(matchingOptions[0], student)) return;
+    setFormData((draft) => ({ ...draft, tutorSubjectGradePriceId: matchingOptions[0].id }));
+  }, [activeSubjectGradePrices, formData.studentId, formData.subjectId, formData.tutorSubjectGradePriceId, students]);
+
+  const selectedStudentForValidation = students.find((item) => item.studentId === formData.studentId);
+  const selectedPriceFitsStudent =
+    selectedPrice != null && isPriceCompatibleWithStudent(selectedPrice, selectedStudentForValidation);
 
   useEffect(() => {
     if (!isOpen || userRole !== 'Student') return;
@@ -959,6 +1702,9 @@ export default function BookingModal({
       .then((response) => {
         const studentId = response.content.studentProfile?.studentId;
         if (studentId) {
+          if (response.content.studentProfile) {
+            setStudents([response.content.studentProfile]);
+          }
           setFormData((draft) => ({ ...draft, studentId }));
         }
       })
@@ -981,13 +1727,45 @@ export default function BookingModal({
   }, [isOpen, userRole]);
 
   useEffect(() => {
+    if (!selectedPrice) return;
+    setSlotDuration(selectedPrice.durationMinutesPerSession / 60);
+  }, [selectedPrice]);
+
+  useEffect(() => {
+    if (!isOpen || !formData.startDate) return;
+    let cancelled = false;
+
+    getTutorBookedSlots(tutorId, formData.startDate)
+      .then((response) => {
+        if (cancelled) return;
+        setBookedSlots(
+          (response.content || []).map((slot: ScheduleItemPayload) => ({
+            dayOfWeek: backendDayToFe(slot.dayOfWeek),
+            startTime: slot.startTime.slice(0, 5),
+            endTime: slot.endTime.slice(0, 5),
+          })),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setBookedSlots([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [formData.startDate, isOpen, tutorId]);
+
+  useEffect(() => {
     if (isOpen) {
       const draft = loadDraft();
       if (draft) {
-        const restored = draft.formData || defaultFormData;
-        const todayStr = new Date().toISOString().split('T')[0];
-        if (restored.startDate && restored.startDate < todayStr) {
-          restored.startDate = todayStr;
+        const restored = { ...defaultFormData, ...(draft.formData || {}) };
+        const { min, max } = getBookingStartWindow();
+        if (restored.startDate) {
+          restored.startDate = dateToYmd(clampDateToWindow(parseLocalDate(restored.startDate), min, max));
+        }
+        if (restored.bookingMode === 'schedule' && !restored.packageId) {
+          restored.packageId = defaultFormData.packageId;
         }
         setFormData(lockedMode ? { ...restored, teachingMode: lockedMode } : restored);
         setStep(draft.step || 0);
@@ -1017,18 +1795,35 @@ export default function BookingModal({
 
   if (!isOpen) return null;
 
+  const bookingWindow = getBookingStartWindow();
+  const scheduleStartsInWindow = isScheduleStartWithinWindow(
+    formData.schedule,
+    formData.startDate,
+    bookingWindow.min,
+    bookingWindow.max,
+  );
+  const scheduleFitsAvailability = isScheduleWithinAvailability(formData.schedule, availabilities || []);
+
   const canNext = () => {
     switch (step) {
       case 0:
-        if (userRole === 'Student') return formData.subjectId !== 0 && !!formData.studentId;
-        return formData.studentId !== '' && formData.subjectId !== 0;
-      case 1:
-        if (formData.teachingMode === 'offline' || formData.teachingMode === 'hybrid') {
-          return formData.locationCity.trim() !== '' && formData.locationDistrict.trim() !== '';
+        if (userRole === 'Student') {
+          return formData.subjectId !== 0 && !!formData.studentId && !!formData.tutorSubjectGradePriceId && selectedPriceFitsStudent;
         }
-        return true;
+        return formData.studentId !== '' && formData.subjectId !== 0 && !!formData.tutorSubjectGradePriceId && selectedPriceFitsStudent;
+      case 1:
+        if (formData.bookingMode === 'schedule') return !!formData.packageId;
+        return packages.some((pkg) => pkg.isActive && pkg.packageType === 2);
       case 2:
-        return formData.schedule.length > 0;
+        if (!selectedPrice || !formData.packageId) return false;
+        if (formData.bookingMode === 'schedule') {
+          return (
+            formData.schedule.length === selectedPrice.sessionsPerWeek &&
+            scheduleStartsInWindow &&
+            scheduleFitsAvailability
+          );
+        }
+        return formData.schedule.length > 0 && scheduleStartsInWindow && scheduleFitsAvailability;
       case 3:
         return true;
       default:
@@ -1039,9 +1834,15 @@ export default function BookingModal({
   const handleNext = () => {
     if (!canNext()) {
       if (step === 0) {
+        if (formData.studentId && formData.subjectId && formData.tutorSubjectGradePriceId && !selectedPriceFitsStudent) {
+          toast.warning('Cấu hình môn học chưa phù hợp với khối lớp của học sinh.');
+          return;
+        }
         if (userRole === 'Student') {
           toast.warning(
-            formData.studentId ? 'Vui lòng chọn môn học trước khi tiếp tục.' : 'Tài khoản học sinh chưa liên kết hồ sơ.'
+            formData.studentId
+              ? 'Vui lòng chọn môn học trước khi tiếp tục.'
+              : 'Tài khoản học sinh chưa liên kết hồ sơ.',
           );
         } else if (!formData.studentId) {
           toast.warning('Vui lòng chọn học sinh trước khi tiếp tục.');
@@ -1049,9 +1850,15 @@ export default function BookingModal({
           toast.warning('Vui lòng chọn môn học trước khi tiếp tục.');
         }
       } else if (step === 1) {
-        toast.warning('Vui lòng nhập đầy đủ địa điểm học.');
+        toast.warning('Vui lòng chọn cách đặt lịch phù hợp trước khi tiếp tục.');
       } else if (step === 2) {
-        toast.warning('Vui lòng chọn ít nhất 1 slot lịch học.');
+        if (formData.schedule.length > 0 && !scheduleStartsInWindow) {
+          toast.warning('Buổi học đầu tiên chỉ được chọn trong khoảng cho phép hiện tại.');
+        } else if (formData.schedule.length > 0 && !scheduleFitsAvailability) {
+          toast.warning('Lịch đã chọn không còn khớp với lịch rảnh hiện tại của gia sư.');
+        } else {
+          toast.warning('Vui lòng chọn đủ lịch học theo cấu hình của gia sư.');
+        }
       }
       return;
     }
@@ -1063,17 +1870,41 @@ export default function BookingModal({
     setSubmitError(null);
 
     try {
+      if (!selectedPrice || !formData.packageId) {
+        setSubmitError('Thiếu cấu hình gói hoặc giá theo môn/lớp. Vui lòng chọn lại môn học.');
+        return;
+      }
+
+      if (!scheduleStartsInWindow) {
+        setSubmitError('Buổi học đầu tiên chỉ được chọn trong khoảng cho phép hiện tại.');
+        return;
+      }
+
+      if (!scheduleFitsAvailability) {
+        setSubmitError('Lịch đã chọn không còn khớp với lịch rảnh hiện tại của gia sư.');
+        return;
+      }
+
+      const recurringSlots = buildFlexibleSlots(formData.schedule, formData.startDate);
+      const flexibleSlots = formData.bookingMode === 'schedule' ? recurringSlots : undefined;
+      const totalSessions = recurringSlots.length;
+      const firstLessonDate = getFirstScheduledDate(formData.schedule, formData.startDate);
+      const payloadStartDate = firstLessonDate ? dateToYmd(firstLessonDate) : normalizeDateInput(formData.startDate);
+
       const payload: CreateBookingPayload = {
-        studentId: formData.studentId,
+        studentId: formData.studentId || undefined,
         tutorId,
-        subjectId: formData.subjectId,
-        teachingMode: formData.teachingMode,
-        startDate: formData.startDate,
+        subjectId: formData.subjectId || undefined,
+        tutorSubjectGradePriceId: selectedPrice.id,
+        packageId: formData.packageId,
+        totalSessions,
+        startDate: toDateTimeLocal(payloadStartDate, '00:00'),
         schedule: formData.schedule.map((slot) => ({
-          dayOfWeek: slot.dayOfWeek,
+          dayOfWeek: feDayToIso(slot.dayOfWeek),
           startTime: slot.startTime,
           endTime: slot.endTime,
         })),
+        flexibleSlots,
         locationCity: formData.locationCity || undefined,
         locationDistrict: formData.locationDistrict || undefined,
         locationWard: formData.locationWard || undefined,
@@ -1100,6 +1931,10 @@ export default function BookingModal({
     students,
     loadingStudents,
     availableSubjects,
+    subjectGradePrices: activeSubjectGradePrices,
+    packages,
+    selectedPrice,
+    bookedSlots,
     availabilities: availabilities || [],
     slotDuration,
     setSlotDuration,
@@ -1122,8 +1957,8 @@ export default function BookingModal({
               </div>
               <h3 className="bm-success-title">Đặt lịch thành công!</h3>
               <p className="bm-success-desc">
-                Yêu cầu booking của bạn đã được gửi đến <strong>{tutorName}</strong>. Gia sư sẽ xác nhận
-                trong thời gian sớm nhất.
+                Yêu cầu booking của bạn đã được gửi đến <strong>{tutorName}</strong>. Gia sư sẽ xác nhận trong thời gian
+                sớm nhất.
               </p>
               {successBookingId && (
                 <div className="bm-success-booking-id">
@@ -1170,8 +2005,8 @@ export default function BookingModal({
             <h2 className="bm-title">Đặt lịch học</h2>
             <p className="bm-subtitle">với {tutorName}</p>
           </div>
-          <button className="bm-close" onClick={onClose} type="button">
-            ✕
+          <button className="bm-close" onClick={onClose} type="button" aria-label="Đóng modal">
+            <X size={24} />✕
           </button>
         </div>
 
@@ -1179,12 +2014,18 @@ export default function BookingModal({
 
         <div className="bm-body">
           {step === 0 && <StepStudentSubject {...stepProps} />}
-          {step === 1 && <StepTeachingMode {...stepProps} />}
+          {step === 1 && <StepBookingMode {...stepProps} />}
           {step === 2 && <StepSchedule {...stepProps} />}
           {step === 3 && <StepReview {...stepProps} />}
         </div>
 
         <div className="bm-footer">
+          {step === 0 && (
+            <button className="bm-btn-back" disabled type="button">
+              <ArrowLeft size={16} />
+              Quay lại
+            </button>
+          )}
           {step > 0 && (
             <button
               className="bm-btn-back"
@@ -1202,7 +2043,7 @@ export default function BookingModal({
               </button>
             ) : (
               <button className="bm-btn-submit" onClick={handleSubmit} disabled={submitting} type="button">
-                {submitting ? 'Đang xử lý...' : 'Xác nhận đặt lịch'}
+                {submitting ? 'Đang xử lý...' : 'Gửi yêu cầu →'}
               </button>
             )}
           </div>

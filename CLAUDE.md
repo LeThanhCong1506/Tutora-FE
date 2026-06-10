@@ -29,20 +29,21 @@ Vite here is `npm:rolldown-vite@7.2.5` (drop-in fork) — see `overrides` in pac
 - **Base path** (`vite.config.ts`): `./` for Zalo build, `/` for web.
 - **Router basename** (`src/main.tsx`): `BrowserRouter basename={'/zapps/…'}` vs `'/'`.
 - **Storage backend** (`src/services/storage.adapter.ts`): `zmp-sdk/apis` getStorage/setStorage vs `localStorage`. Zalo path is async, so the adapter hydrates an in-memory cache **once** in `main.tsx` before React renders, and exposes `getCachedUser()` for sync hot-paths (axios interceptor).
-- **Routes hidden from Zalo** (`src/App.tsx`): `/admin-portal/*`, `/tutor-portal/*`, `/login`, `/register`, `/reset-password` are only registered when `!inMiniApp`. Admin/Tutor flows are web-only; Zalo has Parent + Student portals.
-- **Chunking** (`vite.config.ts`): anything under `pages/Admin*`, `pages/TutorPortal`, `pages/TutorFinance`, `layouts/AdminLayout`, `layouts/TutorPortalLayout` is split into a `portal-staff` chunk so the Zalo bundle never loads staff code.
+- **Routes hidden from Zalo** (`src/App.tsx`): `/tutor-portal/*`, `/login`, `/register`, `/reset-password` are only registered when `!inMiniApp`. Tutor flows are web-only; Zalo has Parent + Student portals.
+- **Chunking** (`vite.config.ts`): anything under `pages/TutorPortal`, `pages/TutorOnboarding`, `pages/TutorFinance`, `layouts/TutorPortalLayout` is split into a `portal-staff` chunk so the Zalo bundle never loads staff code.
 - **Post-build for Zalo** (`scripts/zalo-post-build.mjs`): reads `dist/index.html`, extracts hashed JS/CSS names, writes `dist/assets/bootstrap.js` (a tiny dynamic-import shim), and updates both `dist/app-config.json` and root `app-config.json` so Zalo loader picks up the latest hashed files. **Run only via `npm run build:zalo`**; root `app-config.json` IS checked in and is rewritten by each Zalo build.
 
 When editing anything platform-specific, always ask "does this run in Zalo?" — the entry point, storage, router base, and route set all differ.
 
 ## Routing & portals
 
-Single `<Routes>` tree in `src/App.tsx` using React Router v7. Four role portals, each wrapped in `ProtectedRoute allowedRoles={[...]}` + a layout with `<Outlet />`:
+Single `<Routes>` tree in `src/App.tsx` using React Router v7. Three role portals (Admin moved to separate repo `tutora-admin-frontend` — see plan `~/.claude/plans/t-i-mu-n-t-ch-resource-shimmering-wren.md`), each wrapped in `ProtectedRoute allowedRoles={[...]}` + a layout with `<Outlet />`:
 
-- `/admin-portal/*` → `AdminLayout` (web only)
 - `/tutor-portal/*` → `TutorPortalLayout` (web only; has onboarding tour)
 - `/parent-portal/*` → `ParentLayout` (wraps `StudentProvider` for the multi-student selector)
 - `/student-portal/*` → `StudentLayout`
+
+Admin (`/admin-portal/*`) is no longer routed here — paths return 404. Hitting an admin URL on production should redirect users to the admin domain (out of scope for this repo).
 
 Public: `/`, `/tutor-search`, `/tutor-detail/:id`. `/tutor-detail/:id` is the SEO-critical page — any change to its HTML/metadata should be reviewed for SEO impact.
 

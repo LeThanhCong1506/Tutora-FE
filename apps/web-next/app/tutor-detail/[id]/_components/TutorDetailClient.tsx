@@ -30,6 +30,9 @@ interface TutorDetailClientProps {
 export default function TutorDetailClient({ profile, tutorId }: TutorDetailClientProps) {
   const router = useRouter();
   const [showBooking, setShowBooking] = useState(false);
+  const activePrices = profile.subjectGradePrices?.filter((item) => item.isActive) ?? [];
+  const displayHourlyRate =
+    profile.hourlyRate ?? activePrices.sort((a, b) => a.pricePerHour - b.pricePerHour)[0]?.pricePerHour ?? null;
 
   const handleBooking = useCallback(() => {
     const user = readStoredUser();
@@ -43,10 +46,7 @@ export default function TutorDetailClient({ profile, tutorId }: TutorDetailClien
 
   return (
     <>
-      <main
-        className="tutor-detail-main"
-        style={{ paddingTop: '24px' }}
-      >
+      <main className="tutor-detail-main" style={{ paddingTop: '24px' }}>
         <div className="tutor-detail-container">
           <div className="tutor-detail-content">
             <HeroSection profile={profile} />
@@ -56,19 +56,13 @@ export default function TutorDetailClient({ profile, tutorId }: TutorDetailClien
               <AcademicPortfolioSection certificates={profile.certificates} />
             </div>
 
-            <ActiveClassesSection
-              classes={profile.activeClasses}
-              totalActive={profile.totalActiveClasses}
-            />
+            <ActiveClassesSection classes={profile.activeClasses} totalActive={profile.totalActiveClasses} />
 
-            <TestimonialsSection
-              feedbacks={profile.feedbacks}
-              totalFeedbacks={profile.totalFeedbacks}
-            />
+            <TestimonialsSection feedbacks={profile.feedbacks} totalFeedbacks={profile.totalFeedbacks} />
           </div>
 
           <BookingSidebar
-            hourlyRate={profile.hourlyRate}
+            hourlyRate={displayHourlyRate}
             trialLessonPrice={profile.trialLessonPrice}
             availabilities={profile.availabilities}
             onBooking={handleBooking}
@@ -79,7 +73,7 @@ export default function TutorDetailClient({ profile, tutorId }: TutorDetailClien
       <div className="mobile-sticky-cta">
         <div className="mobile-cta-price">
           <span className="mobile-cta-price-amount">
-            {formatCurrency(profile.hourlyRate ? Math.round(profile.hourlyRate * 1.05) : null)}
+            {formatCurrency(displayHourlyRate ? Math.round(displayHourlyRate * 1.05) : null)}
           </span>
           <span className="mobile-cta-price-unit">/ buổi học</span>
         </div>
@@ -93,8 +87,10 @@ export default function TutorDetailClient({ profile, tutorId }: TutorDetailClien
         onClose={() => setShowBooking(false)}
         tutorName={profile.fullName || ''}
         tutorId={tutorId}
-        hourlyRate={profile.hourlyRate || 0}
+        hourlyRate={displayHourlyRate || 0}
         subjects={profile.subjects || []}
+        subjectGradePrices={profile.subjectGradePrices || []}
+        packages={profile.packages || []}
         availabilities={profile.availabilities}
         tutorTeachingMode={profile.teachingMode}
       />

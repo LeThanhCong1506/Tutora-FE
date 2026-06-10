@@ -103,11 +103,11 @@ export default defineConfig(({ mode, command }) => ({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // Admin đã chuyển sang repo riêng tutora-admin-frontend; chỉ còn Tutor.
           if (
-            id.includes("/pages/Admin") ||
             id.includes("/pages/TutorPortal") ||
+            id.includes("/pages/TutorOnboarding") ||
             id.includes("/pages/TutorFinance") ||
-            id.includes("/layouts/AdminLayout") ||
             id.includes("/layouts/TutorPortalLayout")
           ) {
             return "portal-staff";
