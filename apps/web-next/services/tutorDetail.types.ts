@@ -10,8 +10,37 @@ export type { ApiResponse };
 export interface SubjectInfo {
   subjectId: number;
   subjectName?: string | null;
-  gradeLevels?: string[] | null;
-  tags?: string[] | null;
+  gradeLevels?: string | string[] | null;
+  tags?: string | string[] | null;
+}
+
+export interface TutorSubjectGradePrice {
+  id: number;
+  subjectId: number;
+  subjectName?: string | null;
+  gradeLevelId: number;
+  gradeLevelName?: string | null;
+  pricePerHour: number;
+  durationMinutesPerSession: number;
+  sessionsPerWeek: number;
+  currency: string;
+  isActive: boolean;
+}
+
+export interface TutorPackageFixedSlot {
+  fixedSlotId: number;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+}
+
+export interface TutorPackageResponse {
+  packageId: number;
+  tutorId: string;
+  name: string;
+  packageType: 1 | 2;
+  isActive: boolean;
+  fixedSlots: TutorPackageFixedSlot[];
 }
 
 export interface CertificateInfo {
@@ -73,6 +102,7 @@ export interface TutorFullProfile {
   teachingAreaDistrict: string | null;
   teachingMode: string | null;
   subjects: SubjectInfo[] | null;
+  subjectGradePrices?: TutorSubjectGradePrice[] | null;
 
   bio: string | null;
   education: string | null;
@@ -87,6 +117,7 @@ export interface TutorFullProfile {
   allowPriceNegotiation: boolean | null;
 
   availabilities: AvailabilitySlot[] | null;
+  packages?: TutorPackageResponse[] | null;
 
   totalFeedbacks: number;
   averageRating: number;
