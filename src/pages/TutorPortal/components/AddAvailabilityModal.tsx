@@ -29,12 +29,10 @@ const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => {
     };
 });
 
-// Minute options: 00, 15, 30, 45
+// Minute options: 00, 30 — đồng nhất với grid 30 phút trong onboarding.
 const MINUTE_OPTIONS = [
     { value: '0', label: '00' },
-    { value: '15', label: '15' },
     { value: '30', label: '30' },
-    { value: '45', label: '45' }
 ];
 
 // Helper to combine hour and minute to time string
