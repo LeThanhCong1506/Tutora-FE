@@ -1,0 +1,3385 @@
+/* ===== TUTOR ONBOARDING (new booking-setup flow) =====
+   Palette (khớp tutor portal):
+   - cream bg #f2f0e4 / navy #1a2238 / brown #3e2f28 / red #631b1b / green #3d4a3e
+*/
+
+.page {
+  /* Scroll container là .contentArea của PortalLayout (đã nằm dưới header),
+       nên sticky tính từ top:0 của container — KHÔNG cộng thêm chiều cao header. */
+  --tabs-h: 52px; /* chiều cao hàng tab môn khi dính */
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 56px);
+  background-color: #f2f0e4;
+  font-family: 'IBM Plex Sans', sans-serif;
+  color: #3e2f28;
+}
+
+/* ── Header + Stepper ── */
+.header {
+  background: linear-gradient(135deg, #1a2238 0%, #2a3a5c 100%);
+  padding: 28px 32px 22px;
+  color: #fff;
+}
+
+.headerTitle {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 4px;
+}
+
+.headerSubtitle {
+  font-size: 14px;
+  color: rgba(242, 240, 228, 0.7);
+  margin: 0;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+  max-width: 720px;
+}
+
+.stepItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-family: inherit;
+}
+
+.stepItem:disabled {
+  cursor: not-allowed;
+}
+
+.stepBubble {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.6);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.stepItem.active .stepBubble {
+  background: #f2f0e4;
+  color: #1a2238;
+  border-color: #f2f0e4;
+}
+
+.stepItem.done .stepBubble {
+  background: #3d4a3e;
+  color: #fff;
+  border-color: #3d4a3e;
+}
+
+.stepLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+}
+
+.stepItem.active .stepLabel,
+.stepItem.done .stepLabel {
+  color: #fff;
+}
+
+.stepConnector {
+  flex: 1;
+  height: 1.5px;
+  background: rgba(255, 255, 255, 0.2);
+  min-width: 16px;
+}
+
+.stepConnector.filled {
+  background: #3d4a3e;
+}
+
+/* ── Body ── */
+.body {
+  flex: 1;
+  padding: 28px 32px;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.stepHeading {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a2238;
+  margin: 0 0 4px;
+}
+
+.stepHint {
+  font-size: 14px;
+  color: rgba(62, 47, 40, 0.65);
+  margin: 0 0 22px;
+}
+
+/* ── Subject tabs ── */
+.subjectTabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+  border-bottom: 1px solid rgba(26, 34, 56, 0.1);
+  padding-bottom: 0;
+  padding-top: 10px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #f2f0e4;
+}
+
+.subjectTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  border-bottom: 2.5px solid transparent;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(62, 47, 40, 0.55);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  margin-bottom: -1px;
+}
+
+.subjectTab:hover {
+  color: #1a2238;
+}
+
+.subjectTab.activeTab {
+  color: #1a2238;
+  border-bottom-color: #1a2238;
+}
+
+.subjectTabBadge {
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 34, 56, 0.1);
+  color: #1a2238;
+}
+
+.subjectTab.activeTab .subjectTabBadge {
+  background: #3d4a3e;
+  color: #fff;
+}
+
+.subjectTabBadge.warn {
+  background: #fbe9c7;
+  color: #92580f;
+}
+
+/* ── Hour slot grid ── */
+.gridCard {
+  background: #fff;
+  border: 1px solid rgba(26, 34, 56, 0.08);
+  border-radius: 14px;
+  padding: 16px;
+  /* không tạo scroll container ở desktop để header ngày dính theo window */
+  overflow: visible;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 56px repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.gridCorner {
+  position: sticky;
+  top: var(--tabs-h);
+  z-index: 6;
+  background: #fff;
+}
+
+.colHead {
+  text-align: center;
+  padding: 6px 0 8px;
+  position: sticky;
+  top: var(--tabs-h);
+  z-index: 6;
+  background: #fff;
+}
+
+.colHeadDay {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a2238;
+}
+
+.wholeDayBtn {
+  display: block;
+  margin: 4px auto 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: rgba(62, 47, 40, 0.55);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 5px;
+  font-family: inherit;
+}
+
+.wholeDayBtn:hover {
+  background: rgba(26, 34, 56, 0.06);
+  color: #1a2238;
+}
+
+.rowTime {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+  font-size: 11px;
+  color: rgba(62, 47, 40, 0.5);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Base cell */
+.cell {
+  height: 48px;
+  border-radius: 8px;
+  border: 1.5px dashed rgba(26, 34, 56, 0.15);
+  background: rgba(26, 34, 56, 0.02);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  font-family: inherit;
+  padding: 2px;
+  transition: all 0.12s ease;
+  position: relative;
+}
+
+.cell:hover {
+  border-color: rgba(26, 34, 56, 0.35);
+  background: rgba(26, 34, 56, 0.05);
+}
+
+.cellHour {
+  font-size: 10px;
+  color: rgba(62, 47, 40, 0.4);
+}
+
+/* Ô khung giờ rảnh (B3 + lưới recap) */
+.cell.available {
+  border-style: solid;
+  border-color: #3d4a3e;
+  background: rgba(61, 74, 62, 0.12);
+}
+
+.cellLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #3d4a3e;
+}
+
+/* Check icon thay cho text "Rảnh" — gọn, hiện đại, đỡ chữ */
+.cellCheck {
+  color: #3d4a3e;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.cell.available .cellCheck {
+  color: #3d4a3e;
+}
+
+.cellAdd {
+  color: rgba(61, 74, 62, 0.45);
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.cell:hover .cellAdd,
+.cell:focus-visible .cellAdd {
+  opacity: 1;
+}
+
+/* Ô đã mở bán (có giá) — vẫn dùng cho readonly grid khi cần hiển thị giá */
+.cell.priced {
+  border-style: solid;
+  border-color: #1a2238;
+  background: #1a2238;
+}
+
+.cell.priced .cellPrice {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.1;
+}
+
+/* Khung giờ đã dùng cho môn khác — khóa, không cho chọn */
+.cell.takenOther {
+  cursor: not-allowed;
+  border: 1.5px solid rgba(99, 27, 27, 0.22);
+  background: rgba(99, 27, 27, 0.06);
+  gap: 0;
+}
+
+.takenLabel {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #631b1b;
+  line-height: 1.15;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.takenHint {
+  font-size: 8.5px;
+  color: rgba(99, 27, 27, 0.65);
+  line-height: 1.1;
+}
+
+/* Selected for bulk pricing */
+.cell.selected {
+  outline: 2.5px solid #631b1b;
+  outline-offset: 1px;
+}
+
+/* ── Legend ── */
+.legend {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(26, 34, 56, 0.08);
+}
+
+/* Legend đặt phía TRÊN lưới — bỏ đường kẻ trên, đẩy khoảng cách xuống dưới */
+.legendTop {
+  margin-top: 0;
+  margin-bottom: 12px;
+  padding-top: 0;
+  border-top: none;
+}
+
+/* Legend dạng cột trong thẻ điều khiển bên phải */
+.legendCol {
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border-top: none;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(62, 47, 40, 0.7);
+}
+
+.legendDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  border: 1.5px solid;
+}
+
+.legendDot.priced {
+  border-color: #1a2238;
+  background: #1a2238;
+}
+
+.legendDot.available {
+  border-color: #3d4a3e;
+  background: rgba(61, 74, 62, 0.12);
+}
+
+.legendDot.dotEmpty {
+  border-style: dashed;
+  border-color: rgba(26, 34, 56, 0.25);
+  background: transparent;
+}
+
+.legendDot.selected {
+  border-color: #631b1b;
+  background: rgba(99, 27, 27, 0.12);
+}
+
+.legendDot.takenOther {
+  border-color: rgba(99, 27, 27, 0.4);
+  background: rgba(99, 27, 27, 0.08);
+}
+
+/* ── Step 1 subject chips ── */
+.subjectChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.subjectChip {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(26, 34, 56, 0.15);
+  background: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #3e2f28;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.subjectChip:hover {
+  border-color: #1a2238;
+}
+
+.subjectChip.chipSelected {
+  background: #1a2238;
+  border-color: #1a2238;
+  color: #fff;
+}
+
+/* ── B3 two-column: lưới (trái) + thẻ điều khiển sticky (phải) ── */
+.pricingLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pricingMain {
+  min-width: 0;
+}
+
+.controlPanel {
+  order: -1; /* xếp dọc (mobile/tablet): thẻ nằm trên lưới */
+  width: 100%;
+  background: #fff;
+  border: 1px solid rgba(26, 34, 56, 0.08);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.controlSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.controlSectionTitle {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(62, 47, 40, 0.5);
+}
+
+.controlActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.controlActions button {
+  width: 100%;
+  justify-content: center;
+}
+
+@media (min-width: 1024px) {
+  .pricingLayout {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .pricingMain {
+    flex: 1;
+  }
+
+  .controlPanel {
+    order: 0;
+    width: 264px;
+    flex-shrink: 0;
+    position: sticky;
+    top: var(--tabs-h);
+  }
+}
+
+.toolbarBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(26, 34, 56, 0.15);
+  background: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a2238;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.toolbarBtn:hover:not(:disabled) {
+  border-color: #1a2238;
+  background: rgba(26, 34, 56, 0.04);
+}
+
+.toolbarBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.applyPriceBtn {
+  background: #3d4a3e;
+  border-color: #3d4a3e;
+  color: #fff;
+}
+
+.applyPriceBtn:hover:not(:disabled) {
+  background: #324034;
+  border-color: #324034;
+}
+
+.dangerBtn {
+  color: #631b1b;
+  border-color: rgba(99, 27, 27, 0.3);
+}
+
+.dangerBtn:hover:not(:disabled) {
+  border-color: #631b1b;
+  background: rgba(99, 27, 27, 0.05);
+}
+
+/* ── Footer nav ── */
+.footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 32px;
+  background: rgba(242, 240, 228, 0.92);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(26, 34, 56, 0.1);
+}
+
+.footerInfo {
+  font-size: 13px;
+  color: rgba(62, 47, 40, 0.6);
+}
+
+.footerWarn {
+  font-size: 13px;
+  font-weight: 500;
+  color: #92580f;
+}
+
+.footerBtns {
+  display: flex;
+  gap: 10px;
+}
+
+.btnGhost {
+  padding: 11px 22px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(26, 34, 56, 0.18);
+  background: transparent;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a2238;
+  cursor: pointer;
+}
+
+.btnGhost:hover {
+  background: rgba(26, 34, 56, 0.05);
+}
+
+.btnPrimary {
+  padding: 11px 26px;
+  border-radius: 10px;
+  border: none;
+  background: #1a2238;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btnPrimary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Bulk price modal ── */
+.modalLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3e2f28;
+  margin: 0 0 8px;
+}
+
+.priceDisplay {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+  color: #1a2238;
+  margin: 0 0 20px;
+  line-height: 1.1;
+}
+
+.priceDisplay span {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(62, 47, 40, 0.55);
+}
+
+.priceInputRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.priceInputLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(62, 47, 40, 0.7);
+}
+
+.pricePresetRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pricePresetList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pricePresetBtn {
+  padding: 6px 10px;
+  border: 1px solid rgba(26, 34, 56, 0.14);
+  border-radius: 999px;
+  background: #fff;
+  color: rgba(62, 47, 40, 0.72);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pricePresetBtn:hover {
+  border-color: #1a2238;
+  color: #1a2238;
+}
+
+.pricePresetBtn.activePricePreset {
+  border-color: #1a2238;
+  background: #1a2238;
+  color: #fff;
+}
+
+/* ── Success / recap page ── */
+.successIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #3d4a3e;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.summaryHero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 16px;
+  padding: 20px;
+  border: 1px solid rgba(61, 74, 62, 0.16);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(225, 232, 218, 0.78) 100%);
+  box-shadow: 0 12px 26px rgba(61, 74, 62, 0.07);
+}
+
+.summaryHeroIcon {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border-radius: 16px;
+  background: #3d4a3e;
+  color: #fff;
+}
+
+.summaryHeroMain {
+  min-width: 0;
+}
+
+.summaryEyebrow {
+  color: #3d4a3e;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.summaryHeroMain h2 {
+  margin: 5px 0 5px;
+  color: #1a2238;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.summaryHeroMain p {
+  max-width: 760px;
+  margin: 0;
+  color: rgba(62, 47, 40, 0.68);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.summaryHeroAside {
+  display: flex;
+  min-width: 190px;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 14px;
+  border: 1px solid rgba(26, 34, 56, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.summaryHeroAside strong {
+  color: #1a2238;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 17px;
+}
+
+.summaryHeroAside span {
+  color: rgba(62, 47, 40, 0.62);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.summaryMetricGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.summaryMetric {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+  padding: 16px;
+  border: 1px solid rgba(26, 34, 56, 0.08);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 18px rgba(26, 34, 56, 0.035);
+}
+
+.summaryMetric span {
+  color: rgba(62, 47, 40, 0.58);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.summaryMetric strong {
+  color: #1a2238;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.summaryMetric small {
+  color: rgba(62, 47, 40, 0.6);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.summaryChecklist {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.summaryChecklistItem {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid rgba(61, 74, 62, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.summaryChecklistItem > span {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(61, 74, 62, 0.12);
+  color: #3d4a3e;
+  font-weight: 800;
+}
+
+.summaryChecklistItem strong {
+  display: block;
+  margin-bottom: 3px;
+  color: #1a2238;
+  font-size: 13.5px;
+}
+
+.summaryChecklistItem small {
+  display: block;
+  color: rgba(62, 47, 40, 0.62);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.optionalChecklistItem {
+  border-color: rgba(146, 88, 15, 0.18);
+}
+
+.optionalChecklistItem > span {
+  background: rgba(217, 164, 65, 0.16);
+  color: #92580f;
+  font-family: 'Bricolage Grotesque', sans-serif;
+}
+
+.summaryDetailPanel {
+  padding: 18px;
+  border: 1px solid rgba(26, 34, 56, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 12px 26px rgba(26, 34, 56, 0.035);
+}
+
+.summarySectionHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.summarySectionHead h3 {
+  margin: 0;
+  color: #1a2238;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 18px;
+}
+
+.summarySectionHead p {
+  margin: 3px 0 0;
+  color: rgba(62, 47, 40, 0.58);
+  font-size: 12.5px;
+}
+
+.summaryDetailPanel {
+  /* Summary không có subject tabs sticky → day headers trong grid cần stick từ top: 0
+     thay vì top: 52px (var(--tabs-h) mặc định). Tránh gap visual giữa các row khi scroll. */
+  --tabs-h: 0;
+}
+
+.summaryDetailPanel .subjectTabs {
+  position: static;
+  margin-bottom: 16px;
+  padding-top: 0;
+  background: transparent;
+}
+
+.summaryTabContent {
+  min-height: 180px;
+}
+
+.summaryEmpty {
+  display: flex;
+  min-height: 180px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 28px;
+  border: 1px dashed rgba(26, 34, 56, 0.16);
+  border-radius: 14px;
+  background: rgba(242, 240, 228, 0.42);
+  text-align: center;
+}
+
+.summaryEmptyIcon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(61, 74, 62, 0.12);
+  color: #3d4a3e;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-weight: 800;
+}
+
+.summaryEmpty strong {
+  color: #1a2238;
+  font-size: 15px;
+}
+
+.summaryEmpty p {
+  max-width: 520px;
+  margin: 0;
+  color: rgba(62, 47, 40, 0.62);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.summaryTextButton {
+  margin-top: 6px;
+  border: none;
+  background: transparent;
+  color: #1a2238;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.summaryTextButton:hover {
+  text-decoration: underline;
+}
+
+.statRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.statCard {
+  flex: 1;
+  min-width: 150px;
+  background: #fff;
+  border: 1px solid rgba(26, 34, 56, 0.08);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.statLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(62, 47, 40, 0.55);
+}
+
+.statValue {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a2238;
+  line-height: 1.1;
+}
+
+.statSub {
+  font-size: 11.5px;
+  color: rgba(62, 47, 40, 0.55);
+}
+
+.recapTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a2238;
+  margin: 0 0 10px;
+}
+
+/* Ô lưới ở chế độ chỉ-đọc (trang kết quả) — không tương tác */
+.cellStatic {
+  pointer-events: none;
+}
+
+/* ── B1: form thêm record (môn × khối × giá) ── */
+.subjectRecordsStep {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.subjectRecordsIntro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 20px;
+  border: 1px solid rgba(61, 74, 62, 0.16);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(225, 232, 218, 0.8) 100%);
+  box-shadow: 0 12px 26px rgba(61, 74, 62, 0.07);
+}
+
+.subjectRecordsIntroMain {
+  max-width: 660px;
+}
+
+.subjectRecordsEyebrow {
+  color: #3d4a3e;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.subjectRecordsIntro .stepHeading {
+  margin-top: 6px;
+}
+
+.subjectRecordsIntroText {
+  margin: 8px 0 0;
+  color: rgba(62, 47, 40, 0.7);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.subjectRecordsExample {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid rgba(217, 164, 65, 0.18);
+  border-radius: 10px;
+  background: rgba(217, 164, 65, 0.1);
+  color: #92580f;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.subjectRecordsExample svg {
+  flex-shrink: 0;
+}
+
+.recordForm {
+  padding: 22px;
+  background: #fff;
+  border: 1px solid rgba(26, 34, 56, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 16px 34px rgba(26, 34, 56, 0.06);
+}
+
+.recordFormHead,
+.recordPricingHead,
+.recordFormActions,
+.recordsSectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.recordFormTitle,
+.recordsSectionTitle {
+  margin: 0;
+  color: #1a2238;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.recordFormSubtitle,
+.recordsSectionSubtitle,
+.recordPricingHint {
+  margin: 4px 0 0;
+  color: rgba(62, 47, 40, 0.6);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.recordFormStep,
+.recordsCount,
+.recordPricingUnit {
+  flex-shrink: 0;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(61, 74, 62, 0.1);
+  color: #3d4a3e;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.recordFormStepActive {
+  background: rgba(217, 164, 65, 0.16);
+  color: #92580f;
+}
+
+.recordSelectGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid rgba(26, 34, 56, 0.06);
+  border-radius: 14px;
+  background: rgba(242, 240, 228, 0.26);
+}
+
+.recordField {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.recordFieldLabel {
+  color: #1a2238;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.recordSetupGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.recordSetupCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid rgba(26, 34, 56, 0.08);
+  border-radius: 14px;
+  background: rgba(242, 240, 228, 0.32);
+}
+
+.recordSetupCardWide {
+  grid-column: 1 / -1;
+}
+
+.recordSetupHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.recordValueBadge {
+  flex-shrink: 0;
+  max-width: 46%;
+  overflow: hidden;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #fff;
+  color: #1a2238;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recordManualInput {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(26, 34, 56, 0.07);
+}
+
+.recordManualInput > span {
+  color: rgba(62, 47, 40, 0.58);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.recordPricingHead {
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.recordFormActions {
+  align-items: stretch;
+  justify-content: flex-end;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(26, 34, 56, 0.08);
+}
+
+.recordDraft {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+  color: #1a2238;
+  font-size: 13px;
+}
+
+.recordDraftLabel {
+  color: rgba(62, 47, 40, 0.55);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.recordDraftCard {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  padding: 11px 12px;
+  border: 1px solid rgba(61, 74, 62, 0.14);
+  border-radius: 12px;
+  background: rgba(61, 74, 62, 0.06);
+}
+
+.recordDraftCard strong {
+  color: #1a2238;
+  font-size: 13.5px;
+}
+
+.recordDraftCard small {
+  color: rgba(62, 47, 40, 0.64);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.recordAddBtn {
+  align-self: stretch;
+  flex-shrink: 0;
+  min-height: 50px;
+  padding: 0 20px;
+  border-color: #1a2238 !important;
+  background: #1a2238 !important;
+  font-weight: 700;
+}
+
+.recordAddBtn:disabled {
+  border-color: rgba(26, 34, 56, 0.12) !important;
+  background: rgba(26, 34, 56, 0.12) !important;
+}
+
+.recordCancelBtn {
+  min-height: 50px;
+  padding: 0 18px;
+  border-color: rgba(26, 34, 56, 0.14) !important;
+  color: #1a2238 !important;
+  font-weight: 700;
+}
+
+.recordsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recordsTable {
+  background: #fff;
+  border: 1px solid rgba(26, 34, 56, 0.08);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.recordsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 60px;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(26, 34, 56, 0.06);
+  font-size: 13.5px;
+}
+
+.recordsRow:last-child {
+  border-bottom: none;
+}
+
+.recordsHead {
+  background: rgba(26, 34, 56, 0.04);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(62, 47, 40, 0.55);
+}
+
+.recordSubject {
+  font-weight: 600;
+  color: #1a2238;
+}
+
+.recordGrade {
+  color: rgba(62, 47, 40, 0.72);
+}
+
+.recordRate {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-weight: 700;
+  color: #3d4a3e;
+}
+
+.recordAction {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ── B2: cards giá theo môn ── */
+.subjectPriceList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.subjectPriceCard {
+  background: #fff;
+  border: 1px solid rgba(26, 34, 56, 0.08);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.subjectPriceHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.subjectPriceName {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a2238;
+  margin: 0;
+}
+
+.subjectPriceBadge {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #3d4a3e;
+  background: rgba(61, 74, 62, 0.12);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.priceBadgeWarn {
+  color: #92580f;
+  background: rgba(217, 164, 65, 0.15);
+}
+
+/* ── B2: lịch rảnh demo trong state onboarding ── */
+.availabilityStep {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.availabilityStep .cell {
+  touch-action: none;
+}
+
+.availabilityIntro,
+.availabilityToolbar,
+.availabilityToolbarActions,
+.availabilitySelectionSummary {
+  display: flex;
+  align-items: center;
+}
+
+.availabilityIntro {
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 20px;
+  border: 1px solid rgba(61, 74, 62, 0.16);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(225, 232, 218, 0.8) 100%);
+  box-shadow: 0 12px 26px rgba(61, 74, 62, 0.07);
+}
+
+.availabilityEyebrow {
+  color: #3d4a3e;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.availabilityIntro .stepHeading {
+  margin-top: 6px;
+}
+
+.availabilityIntro p {
+  margin: 7px 0 0;
+  color: rgba(62, 47, 40, 0.68);
+  font-size: 13px;
+}
+
+.availabilityCountBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  padding: 7px 10px;
+  border: 1px solid rgba(61, 74, 62, 0.16);
+  border-radius: 999px;
+  background: rgba(61, 74, 62, 0.08);
+  color: #3d4a3e;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.availabilityToolbar {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.availabilityLegend {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: rgba(62, 47, 40, 0.68);
+  font-size: 12px;
+}
+
+.availabilityToolbarActions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.availabilityDragHint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(62, 47, 40, 0.58);
+  font-size: 12px;
+}
+
+.availabilityClearBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 12px;
+  border: 1px solid rgba(99, 27, 27, 0.25);
+  border-radius: 8px;
+  background: rgba(99, 27, 27, 0.04);
+  color: #631b1b;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.availabilityClearBtn:hover {
+  background: rgba(99, 27, 27, 0.1);
+  border-color: rgba(99, 27, 27, 0.45);
+}
+
+.availabilitySelectionSummary {
+  gap: 9px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(61, 74, 62, 0.1);
+  color: #3d4a3e;
+  font-size: 12.5px;
+}
+
+.availabilitySelectionSummary svg {
+  flex-shrink: 0;
+}
+
+/* ── B4: danh sách combo ── */
+.comboStep {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.comboIntro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1px solid rgba(146, 88, 15, 0.14);
+  border-radius: 14px;
+  background: linear-gradient(135deg, #fffdf7 0%, #f4ecdd 100%);
+  color: #1a2238;
+  box-shadow: 0 8px 20px rgba(92, 68, 32, 0.06);
+}
+
+.comboIntroMain {
+  max-width: 720px;
+}
+
+.comboIntro .stepHeading {
+  margin-top: 6px;
+  color: #1a2238;
+}
+
+.comboEyebrow {
+  color: #92580f;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.comboIntroText {
+  margin: 6px 0 0;
+  color: rgba(62, 47, 40, 0.72);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.comboIntroBadge {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid rgba(146, 88, 15, 0.16);
+  border-radius: 999px;
+  background: rgba(217, 164, 65, 0.12);
+  color: #78480c;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.comboIntroBadge svg {
+  color: #92580f;
+}
+
+.comboRuleNotice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 1px solid rgba(146, 88, 15, 0.2);
+  border-radius: 10px;
+  background: rgba(217, 164, 65, 0.1);
+  color: #92580f;
+}
+
+.comboRuleNoticeIcon {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(217, 164, 65, 0.2);
+  font-size: 13px;
+}
+
+.comboRuleNotice strong {
+  color: #78480c;
+}
+
+.comboRuleNotice p {
+  margin: 0;
+  color: rgba(120, 72, 12, 0.82);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.comboManager {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.comboManagerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.comboManagerTitle {
+  margin: 0;
+  color: #1a2238;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.comboManagerSubtitle {
+  margin: 3px 0 0;
+  color: rgba(62, 47, 40, 0.6);
+  font-size: 12.5px;
+}
+
+.comboPrimaryAction,
+.sessionAddBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 14px;
+  border: 1px solid #1a2238;
+  border-radius: 9px;
+  background: #1a2238;
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.comboPrimaryAction:hover,
+.sessionAddBtn:hover {
+  border-color: #2a3a5c;
+  background: #2a3a5c;
+  transform: translateY(-1px);
+}
+
+.comboEmptyState {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  align-self: center;
+  max-width: 680px;
+  box-sizing: border-box;
+  padding: 24px;
+  border: 1px solid rgba(26, 34, 56, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 12px 26px rgba(26, 34, 56, 0.04);
+  text-align: center;
+}
+
+.comboEmptyIcon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 9px;
+  place-items: center;
+  border-radius: 16px;
+  background: rgba(212, 180, 131, 0.2);
+  color: #1a2238;
+  font-size: 20px;
+}
+
+.comboEmptyState h3 {
+  margin: 0;
+  color: #1a2238;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 17px;
+}
+
+.comboEmptyState > p {
+  max-width: 500px;
+  margin: 5px 0 13px;
+  color: rgba(62, 47, 40, 0.65);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.comboEmptyModes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.comboEmptyModes span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: rgba(26, 34, 56, 0.05);
+  color: rgba(26, 34, 56, 0.76);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.comboEmptyModes svg {
+  color: #3d4a3e;
+}
+
+.comboList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.comboCard {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(26, 34, 56, 0.08);
+  border-radius: 14px;
+  background: #fff;
+  padding: 17px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 10px 24px rgba(26, 34, 56, 0.04);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.comboCard:hover {
+  border-color: rgba(26, 34, 56, 0.18);
+  box-shadow: 0 14px 28px rgba(26, 34, 56, 0.08);
+  transform: translateY(-2px);
+}
+
+.comboCardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.comboCardActions {
+  display: flex;
+  gap: 4px;
+}
+
+.comboTypeBadge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+.comboFixed {
+  background: rgba(26, 34, 56, 0.1);
+  color: #1a2238;
+}
+
+.comboFlex {
+  background: rgba(61, 74, 62, 0.12);
+  color: #3d4a3e;
+}
+
+.comboName {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a2238;
+  margin: 0;
+}
+
+.comboMetaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.comboMetaRow span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 7px;
+  border-radius: 7px;
+  background: rgba(26, 34, 56, 0.04);
+  color: rgba(62, 47, 40, 0.68);
+  font-size: 11.5px;
+}
+
+.comboMetaRow svg {
+  color: #3d4a3e;
+}
+
+.comboMetaRow strong {
+  color: #1a2238;
+}
+
+.comboSessionList {
+  list-style: disc inside;
+  padding: 0;
+  margin: 0;
+  font-size: 12.5px;
+  color: rgba(62, 47, 40, 0.78);
+  line-height: 1.7;
+}
+
+.comboFlexInfo {
+  padding: 10px;
+  border-radius: 9px;
+  background: rgba(61, 74, 62, 0.06);
+  font-size: 12.5px;
+  color: rgba(62, 47, 40, 0.8);
+  line-height: 1.55;
+}
+
+.comboFlexInfo strong {
+  color: #1a2238;
+}
+
+.comboDescription {
+  font-size: 12px;
+  color: rgba(62, 47, 40, 0.65);
+  margin: 6px 0 0;
+  font-style: italic;
+}
+
+.comboScheduleList {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.comboScheduleItem {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px;
+  border-radius: 9px;
+  background: rgba(26, 34, 56, 0.035);
+}
+
+.comboScheduleIndex {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 50%;
+  background: #1a2238;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.comboScheduleItem div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.comboScheduleItem strong {
+  color: #1a2238;
+  font-size: 12px;
+}
+
+.comboScheduleItem div span {
+  color: rgba(62, 47, 40, 0.62);
+  font-size: 11.5px;
+}
+
+.comboAddBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 190px;
+  border-radius: 14px;
+  border: 2px dashed rgba(26, 34, 56, 0.2);
+  background: rgba(255, 255, 255, 0.38);
+  color: #1a2238;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.comboAddBtn:hover {
+  border-color: #1a2238;
+  background: rgba(26, 34, 56, 0.04);
+}
+
+.comboAddBtn strong {
+  font-size: 13px;
+}
+
+.comboAddBtn > span:last-child {
+  max-width: 190px;
+  color: rgba(62, 47, 40, 0.55);
+  line-height: 1.45;
+}
+
+.comboAddIcon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(26, 34, 56, 0.08);
+  color: #1a2238;
+}
+
+.iconBtn {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1px solid rgba(26, 34, 56, 0.12);
+  background: #fff;
+  color: #1a2238;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconBtn:hover {
+  background: rgba(26, 34, 56, 0.05);
+  border-color: rgba(26, 34, 56, 0.25);
+}
+
+.iconBtnDanger {
+  color: #631b1b;
+}
+
+.iconBtnDanger:hover {
+  background: rgba(99, 27, 27, 0.06);
+  border-color: rgba(99, 27, 27, 0.3);
+}
+
+/* ── ComboFormModal ── */
+.comboModal :global(.ant-modal-content) {
+  overflow: hidden;
+  padding: 0;
+  border-radius: 16px;
+}
+
+.comboModal :global(.ant-modal-header) {
+  margin: 0;
+  padding: 19px 22px 16px;
+  border-bottom: 1px solid rgba(26, 34, 56, 0.08);
+}
+
+.comboModal :global(.ant-modal-close) {
+  top: 18px;
+  right: 18px;
+}
+
+.comboModal :global(.ant-modal-body) {
+  max-height: calc(100vh - 210px);
+  overflow-y: auto;
+  padding: 18px 22px;
+}
+
+.comboModal :global(.ant-modal-footer) {
+  margin: 0;
+  padding: 14px 22px;
+  border-top: 1px solid rgba(26, 34, 56, 0.08);
+  background: rgba(242, 240, 228, 0.45);
+}
+
+.comboModal :global(.ant-btn-primary) {
+  border-color: #1a2238;
+  background: #1a2238;
+  color: #fff;
+  font-weight: 700;
+}
+
+.comboModal :global(.ant-btn-primary:not(:disabled):hover) {
+  border-color: #2a3a5c;
+  background: #2a3a5c;
+}
+
+.comboModal :global(.ant-btn-primary:disabled),
+.comboModal :global(.ant-btn-primary.ant-btn-disabled) {
+  border-color: rgba(26, 34, 56, 0.12);
+  background: rgba(26, 34, 56, 0.12);
+  color: rgba(26, 34, 56, 0.48);
+  box-shadow: none;
+}
+
+.comboModalTitle {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 36px;
+}
+
+.comboModalTitle strong {
+  color: #1a2238;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 18px;
+}
+
+.comboModalTitle > span:last-child {
+  color: rgba(62, 47, 40, 0.58);
+  font-size: 12.5px;
+  font-weight: 400;
+}
+
+.comboModalEyebrow {
+  color: #92580f;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.comboForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.comboFormField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.comboFormLabel {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #1a2238;
+}
+
+.comboFormRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.comboFormHint {
+  display: flex;
+  align-items: center;
+  font-size: 12.5px;
+  color: #92580f;
+  background: rgba(217, 164, 65, 0.12);
+  padding: 9px 10px;
+  border-radius: 8px;
+  line-height: 1.5;
+}
+
+.comboTypeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.comboTypeOption {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px;
+  border: 1.5px solid rgba(26, 34, 56, 0.1);
+  border-radius: 11px;
+  background: #fff;
+  color: #1a2238;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.comboTypeOption:hover {
+  border-color: rgba(26, 34, 56, 0.35);
+}
+
+.comboTypeOption.activeComboType {
+  border-color: #1a2238;
+  background: rgba(26, 34, 56, 0.04);
+  box-shadow: inset 0 0 0 1px #1a2238;
+}
+
+.comboTypeIcon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(26, 34, 56, 0.08);
+  color: #1a2238;
+}
+
+.activeComboType .comboTypeIcon {
+  background: #1a2238;
+  color: #fff;
+}
+
+.comboTypeOption > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.comboTypeOption strong {
+  font-size: 13px;
+}
+
+.comboTypeOption small {
+  color: rgba(62, 47, 40, 0.6);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.comboBuilderLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(290px, 0.92fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.comboBuilderMain {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.comboBuilderSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(26, 34, 56, 0.08);
+  border-radius: 11px;
+  background: #fff;
+}
+
+.comboBuilderSectionHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.comboBuilderSectionHead > div {
+  position: relative;
+  padding-left: 32px;
+}
+
+.comboBuilderStep {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: #d4b483;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.comboBuilderSection h4 {
+  margin: 0;
+  color: #1a2238;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 15px;
+}
+
+.comboBuilderSectionHead p {
+  margin: 3px 0 0;
+  color: rgba(62, 47, 40, 0.58);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.sessionList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sessionRow {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 9px;
+  padding: 9px;
+  border: 1px solid rgba(26, 34, 56, 0.08);
+  border-radius: 9px;
+  background: rgba(242, 240, 228, 0.32);
+}
+
+.sessionRow.sessionRowError {
+  border-color: rgba(146, 88, 15, 0.44);
+  background: rgba(217, 164, 65, 0.08);
+}
+
+.sessionIndex {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  background: #1a2238;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sessionControlGrid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 7px;
+}
+
+.sessionControlGrid label {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sessionControlGrid label > span {
+  color: rgba(62, 47, 40, 0.58);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.sessionRemoveBtn {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  align-self: end;
+  place-items: center;
+  border: 1px solid rgba(99, 27, 27, 0.14);
+  border-radius: 7px;
+  background: #fff;
+  color: #631b1b;
+  cursor: pointer;
+}
+
+.sessionRemoveBtn:hover {
+  border-color: rgba(99, 27, 27, 0.35);
+  background: rgba(99, 27, 27, 0.06);
+}
+
+.sessionAddBtn {
+  align-self: flex-start;
+  padding: 8px 11px;
+  font-size: 12px;
+}
+
+.sessionAddBtn:disabled {
+  border-color: rgba(26, 34, 56, 0.12);
+  background: rgba(26, 34, 56, 0.1);
+  color: rgba(26, 34, 56, 0.42);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.sessionEmptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 18px;
+  border: 1px dashed rgba(26, 34, 56, 0.18);
+  border-radius: 9px;
+  background: rgba(242, 240, 228, 0.3);
+  color: rgba(62, 47, 40, 0.6);
+  text-align: center;
+}
+
+.sessionEmptyState > svg {
+  margin-bottom: 7px;
+  color: #3d4a3e;
+  font-size: 21px;
+}
+
+.sessionEmptyState strong {
+  color: #1a2238;
+  font-size: 13px;
+}
+
+.sessionEmptyState > span {
+  margin: 3px 0 11px;
+  font-size: 11.5px;
+}
+
+.sessionEmptyState .sessionAddBtn {
+  align-self: center;
+}
+
+.comboValidationWarn {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 8px 9px;
+  border-radius: 8px;
+  background: rgba(217, 164, 65, 0.14);
+  color: #92580f;
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.comboAvailabilityHint {
+  color: rgba(62, 47, 40, 0.58);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+/* ── Combo preview (lịch mô phỏng trong modal) ── */
+.comboPreviewPanel {
+  position: sticky;
+  top: 0;
+}
+
+.comboPreview {
+  padding: 14px;
+  background: rgba(26, 34, 56, 0.025);
+  border: 1px solid rgba(26, 34, 56, 0.08);
+  border-radius: 11px;
+}
+
+.comboPreviewHead {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.comboPreviewIcon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 9px;
+  background: rgba(61, 74, 62, 0.12);
+  color: #3d4a3e;
+}
+
+.comboPreviewTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(62, 47, 40, 0.5);
+  margin: 0 0 2px;
+}
+
+.comboPreviewSubtitle {
+  font-size: 12px;
+  color: rgba(62, 47, 40, 0.8);
+  margin: 0;
+}
+
+.comboPreviewLegend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+  margin: 11px 0 9px;
+  color: rgba(62, 47, 40, 0.58);
+  font-size: 10.5px;
+}
+
+.comboPreviewLegend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.comboPreviewLegend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: #1a2238;
+}
+
+.comboPreviewLegend .comboPreviewAvailableDot {
+  border: 1px solid rgba(61, 74, 62, 0.3);
+  background: rgba(61, 74, 62, 0.12);
+}
+
+.comboPreviewStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 13px;
+}
+
+.comboPreviewStats div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 6px;
+  border-radius: 8px;
+  background: #fff;
+  text-align: center;
+}
+
+.comboPreviewStats strong {
+  color: #1a2238;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 17px;
+}
+
+.comboPreviewStats span,
+.comboPreviewNote {
+  color: rgba(62, 47, 40, 0.58);
+  font-size: 10.5px;
+}
+
+.comboPreviewNote {
+  margin: 11px 0 0;
+  line-height: 1.5;
+}
+
+/* Lưới compact + bỏ sticky trong context modal */
+.comboPreview .gridCard {
+  overflow: hidden;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.comboPreview .cell {
+  height: 20px;
+  border-radius: 5px;
+}
+
+.comboPreview .timeRow,
+.comboPreview .gridCorner,
+.comboPreview .colHead {
+  position: static;
+  background: transparent;
+}
+
+.comboPreview .colHead {
+  padding: 2px 0 5px;
+}
+
+.comboPreview .colHeadDay {
+  font-size: 10.5px;
+}
+
+.comboPreview .rowTime {
+  padding-right: 4px;
+  font-size: 8.5px;
+}
+
+.comboPreview .grid {
+  min-width: 0;
+  grid-template-columns: 38px repeat(7, minmax(0, 1fr));
+  gap: 3px;
+}
+
+/* Ô session gói cố định — tô đậm */
+.comboPreviewSelected {
+  border-style: solid;
+  border-color: #1a2238;
+  background: #1a2238;
+}
+
+.previewLabel {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+/* Ô rảnh nhưng KHÔNG thuộc gói cố định — làm mờ làm bối cảnh */
+.comboPreviewAvail {
+  border-style: solid;
+  border-color: rgba(61, 74, 62, 0.25);
+  background: rgba(61, 74, 62, 0.06);
+}
+
+/* Ô đã bị combo khác chiếm — đỏ mờ, không tương tác */
+.comboPreviewBusy {
+  border-style: dashed;
+  border-color: rgba(99, 27, 27, 0.4);
+  background: rgba(99, 27, 27, 0.1);
+}
+
+/* Ô xung đột: combo hiện tại VÀ combo khác cùng claim — đỏ đậm cảnh báo */
+.comboPreviewConflict {
+  border-style: solid;
+  border-color: #631b1b;
+  background: #631b1b;
+  box-shadow: 0 0 0 1px rgba(99, 27, 27, 0.3) inset;
+}
+
+.comboPreviewConflict .previewLabel {
+  color: #fff;
+  font-weight: 800;
+}
+
+/* Dot trong legend */
+.comboPreviewLegend .comboPreviewBusyDot {
+  border: 1px dashed rgba(99, 27, 27, 0.55);
+  background: rgba(99, 27, 27, 0.12);
+}
+
+.comboPreviewLegend .comboPreviewConflictDot {
+  border: 1px solid #631b1b;
+  background: #631b1b;
+}
+
+/* ── Recap (trang kết quả) ── */
+.recapList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.recapRow {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #fff;
+  border: 1px solid rgba(26, 34, 56, 0.08);
+  border-radius: 10px;
+  flex-wrap: wrap;
+}
+
+.recapRowName {
+  font-weight: 700;
+  color: #1a2238;
+  min-width: 100px;
+}
+
+.recapRowValue {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #3d4a3e;
+}
+
+.recapRowMeta {
+  margin-left: auto;
+  font-size: 12.5px;
+  color: rgba(62, 47, 40, 0.6);
+}
+
+@media (max-width: 900px) {
+  .summaryHero,
+  .summaryMetricGrid,
+  .summaryChecklist {
+    grid-template-columns: 1fr;
+  }
+
+  .summaryHero {
+    align-items: flex-start;
+  }
+
+  .summaryHeroAside {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 640px) {
+  .comboIntro,
+  .comboManagerHead,
+  .subjectRecordsIntro,
+  .availabilityIntro {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .comboIntroBadge,
+  .comboPrimaryAction,
+  .availabilityCountBadge {
+    width: 100%;
+  }
+
+  .availabilityCountBadge {
+    box-sizing: border-box;
+    justify-content: center;
+  }
+
+  .availabilityToolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .comboTypeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .comboEmptyModes {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .comboEmptyModes span {
+    justify-content: center;
+  }
+
+  .comboFormRow {
+    grid-template-columns: 1fr;
+  }
+
+  .sessionRow {
+    grid-template-columns: 26px minmax(0, 1fr) 26px;
+    align-items: start;
+  }
+
+  .sessionControlGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sessionRemoveBtn {
+    align-self: start;
+    margin-top: 16px;
+  }
+
+  .recordSelectGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .recordSetupGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .recordFormHead,
+  .recordPricingHead,
+  .recordFormActions,
+  .recordsSectionHead {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .recordAddBtn,
+  .recordCancelBtn {
+    width: 100%;
+  }
+
+  .recordsHead {
+    display: none;
+  }
+
+  .recordsRow {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 8px 12px;
+  }
+
+  .recordSubject {
+    grid-column: 1 / -1;
+  }
+
+  .recordAction {
+    align-items: center;
+  }
+}
+
+@media (max-width: 900px) {
+  .comboBuilderLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .comboPreviewPanel {
+    position: static;
+  }
+}
+
+/* ── Empty / placeholder ── */
+.empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: rgba(62, 47, 40, 0.5);
+  font-size: 14px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .header,
+  .body,
+  .footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .stepLabel {
+    display: none;
+  }
+
+  /* Mobile: cho cuộn ngang lưới (sticky header ngày sẽ không áp dụng ở đây) */
+  .gridCard {
+    overflow-x: auto;
+  }
+
+  .grid {
+    min-width: 640px;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────
+   Step 1 (B1) — 2-column layout: form trái, list cấu hình phải
+   ─────────────────────────────────────────────────────────── */
+.recordsLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.recordsMain {
+  min-width: 0;
+}
+
+.recordsAside {
+  background: #fff;
+  border: 1px solid rgba(26, 34, 56, 0.08);
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 14px 30px rgba(26, 34, 56, 0.055);
+}
+
+.recordsAsideHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(26, 34, 56, 0.06);
+}
+
+.recordsAsideEmpty {
+  padding: 18px 8px;
+  text-align: center;
+  color: rgba(62, 47, 40, 0.5);
+  font-size: 12.5px;
+}
+
+.recordsAsideList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 460px;
+  overflow-y: auto;
+}
+
+.recordsAsideItem {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(26, 34, 56, 0.08);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(242, 240, 228, 0.54));
+  font-size: 12.5px;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.recordsAsideItemActive {
+  border-color: rgba(217, 164, 65, 0.85);
+  background: linear-gradient(180deg, rgba(255, 249, 235, 0.96), rgba(255, 255, 255, 0.9));
+  box-shadow: 0 0 0 3px rgba(217, 164, 65, 0.12);
+}
+
+.recordsAsideItemActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.recordsAsideItemActions :global(.ant-btn) {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+}
+
+.recordsAsideItem:hover {
+  border-color: rgba(217, 164, 65, 0.42);
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.recordsAsideCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.recordsAsideItemMain {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.recordsAsideItemMain strong {
+  color: #1a2238;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.recordsAsideItemMain span {
+  color: rgba(62, 47, 40, 0.6);
+  font-size: 11.5px;
+}
+
+.recordsAsideTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.recordsAsideTitleRow strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recordsAsideTitleRow span {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(26, 34, 56, 0.06);
+  color: rgba(62, 47, 40, 0.62);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.recordsAsideMetaGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.recordsAsideMetaGrid span {
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: rgba(26, 34, 56, 0.045);
+  color: rgba(62, 47, 40, 0.68);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.recordsAsideItemPrice {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-weight: 700;
+  color: #3d4a3e;
+  font-size: 15px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.recordsAsideFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(26, 34, 56, 0.06);
+}
+
+.recordsAsideStatus {
+  margin-right: auto;
+  color: rgba(62, 47, 40, 0.52);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.recordPriceWarn {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: rgba(217, 164, 65, 0.12);
+  color: #92580f;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.recordPriceWarn svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+@media (min-width: 1024px) {
+  .recordsLayout {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  .recordsMain {
+    flex: 1;
+  }
+  .recordsAside {
+    width: 360px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 12px;
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────
+   Step 2 (B2) — 2-column layout: grid trái, panel sticky phải
+   ─────────────────────────────────────────────────────────── */
+
+/* Step 2 và 3 không có sticky tabs ở đầu — override --tabs-h = 0 để
+   các sticky header trong grid không bị offset 52px gây gap visual. */
+.availabilityStep,
+.comboStep {
+  --tabs-h: 0;
+}
+
+.availabilityLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.availabilityMain {
+  min-width: 0;
+}
+
+.availabilityAside {
+  display: flex;
+  flex-direction: column;
+}
+
+.availabilityAsideCard {
+  background: #fff;
+  border: 1px solid rgba(26, 34, 56, 0.08);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.availabilityAsideStatus {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.availabilityAsideStatus.statusEmpty {
+  background: rgba(217, 164, 65, 0.12);
+  color: #92580f;
+}
+
+.availabilityAsideStatus.statusFilled {
+  background: rgba(61, 74, 62, 0.1);
+  color: #3d4a3e;
+}
+
+.availabilityAsideStatus svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.availabilityAsideStatus span {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.availabilityAsideStatus strong {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.availabilityAsideStatus small {
+  font-size: 11.5px;
+  opacity: 0.75;
+}
+
+.availabilityAsideHints {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(242, 240, 228, 0.5);
+}
+
+.availabilityAsideHint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(62, 47, 40, 0.65);
+  font-size: 12px;
+}
+
+.availabilityAsideHint svg {
+  color: rgba(26, 34, 56, 0.5);
+}
+
+@media (min-width: 1024px) {
+  .availabilityLayout {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  .availabilityMain {
+    flex: 1;
+  }
+  .availabilityAside {
+    width: 280px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 12px;
+  }
+}
+
+/* Flex combos strip — hiển thị nổi ở đầu tab "Lịch gói cố định" vì gói linh hoạt
+   không có chỗ trên lưới (không cố định giờ). */
+.flexCombosStrip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(146, 88, 15, 0.16);
+  border-radius: 12px;
+  background: rgba(217, 164, 65, 0.08);
+}
+
+.flexCombosStripLabel {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #92580f;
+  white-space: nowrap;
+}
+
+.flexCombosList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.flexComboChip {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid rgba(146, 88, 15, 0.18);
+}
+
+.flexComboChip strong {
+  font-size: 12.5px;
+  color: #1a2238;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.flexComboChip > span {
+  font-size: 11px;
+  color: rgba(62, 47, 40, 0.65);
+  line-height: 1.3;
+}
+
+/* Nút "Thêm theo khung giờ" ở aside panel */
+.availabilityAddBulkBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 10px;
+  background: #1a2238;
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.availabilityAddBulkBtn:hover {
+  background: #2a3a5c;
+  transform: translateY(-1px);
+}
+
+/* ─── Bulk availability modal ─── */
+.bulkAvailModal :global(.ant-modal-content) {
+  overflow: hidden;
+  padding: 0;
+  border-radius: 16px;
+}
+
+.bulkAvailModal :global(.ant-modal-header) {
+  margin: 0;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid rgba(26, 34, 56, 0.08);
+}
+
+.bulkAvailModal :global(.ant-modal-body) {
+  padding: 18px 22px;
+}
+
+.bulkAvailModal :global(.ant-modal-footer) {
+  margin: 0;
+  padding: 12px 22px;
+  border-top: 1px solid rgba(26, 34, 56, 0.08);
+  background: rgba(242, 240, 228, 0.45);
+}
+
+.bulkAvailModal :global(.ant-btn-primary) {
+  border-color: #1a2238;
+  background: #1a2238;
+  color: #fff;
+  font-weight: 700;
+}
+
+.bulkAvailModal :global(.ant-btn-primary:not(:disabled):hover) {
+  border-color: #2a3a5c;
+  background: #2a3a5c;
+}
+
+/* Disabled: tránh tình trạng button đậm nhưng text mờ trông như đã active.
+   Đổi sang nền nhạt + chữ xám để rõ là không bấm được. */
+.bulkAvailModal :global(.ant-btn-primary:disabled),
+.bulkAvailModal :global(.ant-btn-primary.ant-btn-disabled) {
+  border-color: rgba(26, 34, 56, 0.16);
+  background: rgba(26, 34, 56, 0.1);
+  color: rgba(26, 34, 56, 0.4);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.bulkAvailTitle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #1a2238;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.bulkAvailTitle :global(.anticon) {
+  color: #3d4a3e;
+  font-size: 18px;
+}
+
+.bulkAvailForm {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.bulkAvailField {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.bulkAvailFieldHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.bulkAvailFieldLabel {
+  color: #1a2238;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.bulkAvailQuick {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.bulkAvailQuick button {
+  background: none;
+  border: none;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: rgba(26, 34, 56, 0.7);
+  cursor: pointer;
+}
+
+.bulkAvailQuick button:hover {
+  background: rgba(26, 34, 56, 0.08);
+  color: #1a2238;
+}
+
+.bulkAvailDays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.bulkAvailDay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0;
+  border: 1.5px solid rgba(26, 34, 56, 0.18);
+  border-radius: 9px;
+  background: #fff;
+  color: #1a2238;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.bulkAvailDay:hover {
+  border-color: #1a2238;
+  background: rgba(26, 34, 56, 0.04);
+}
+
+.bulkAvailDaySelected {
+  border-color: #1a2238;
+  background: #1a2238;
+  color: #fff;
+}
+
+.bulkAvailDaySelected:hover {
+  background: #2a3a5c;
+  border-color: #2a3a5c;
+}
+
+.bulkAvailTimeRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.bulkAvailTimeField {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+}
+
+.bulkAvailTimeField > span {
+  color: rgba(62, 47, 40, 0.65);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.bulkAvailTimeArrow {
+  padding-bottom: 6px;
+  color: rgba(26, 34, 56, 0.4);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.bulkAvailSummary {
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.bulkAvailSummaryReady {
+  background: rgba(61, 74, 62, 0.1);
+  color: #3d4a3e;
+}
+
+.bulkAvailSummaryEmpty {
+  background: rgba(217, 164, 65, 0.12);
+  color: #92580f;
+}
+
+.bulkAvailNote {
+  margin: 0;
+  padding: 0;
+  color: rgba(62, 47, 40, 0.55);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.bulkAvailNote strong {
+  color: rgba(62, 47, 40, 0.85);
+}
