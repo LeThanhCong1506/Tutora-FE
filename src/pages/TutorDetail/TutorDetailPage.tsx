@@ -10,6 +10,34 @@ import ZaloRoleSelectModal from '../../components/ZaloRoleSelectModal/ZaloRoleSe
 import BookingModal from './BookingModal';
 import { getTutorFullProfile } from '../../services/tutorDetail.service';
 import type { TutorFullProfile } from '../../services/tutorDetail.service';
+import type { Combo } from '../../types/combo.types';
+
+// TODO(BE): Mock combo data — xóa khi /api/tutors/{id}/combos available.
+// Áp dụng chung cho mọi tutor để demo flow "đặt theo gói".
+const MOCK_TUTOR_COMBOS: Combo[] = [
+  {
+    id: 'mock-combo-math-fixed',
+    name: 'Combo 8 buổi Toán cố định',
+    type: 'fixed',
+    subjectId: 1,
+    subjectName: 'Toán',
+    sessions: [
+      { dayOfWeek: 1, startHour: 18, startMinute: 0, durationHours: 1.5 }, // T2 18:00-19:30
+      { dayOfWeek: 3, startHour: 18, startMinute: 0, durationHours: 1.5 }, // T4 18:00-19:30
+    ],
+  },
+  {
+    id: 'mock-combo-english-flex',
+    name: 'Combo Tiếng Anh linh hoạt',
+    type: 'flex',
+    subjectId: 2,
+    subjectName: 'Tiếng Anh',
+    sessionsPerWeek: 2,
+    sessionsPerMonth: 8,
+    hoursPerSession: 1,
+    description: 'Phụ huynh tự chọn khung giờ phù hợp từ lịch rảnh của gia sư. Ưu tiên buổi tối hoặc cuối tuần.',
+  },
+];
 import {
     HeroSection,
     AboutSection,
@@ -70,7 +98,9 @@ const TutorDetailPage = () => {
                 setLoading(true);
                 const response = await getTutorFullProfile(id);
                 if (mounted) {
-                    setProfile(response.content);
+                    // TODO(BE): inject mock combos cho demo — xóa khi BE trả về `combos`.
+                    const profileWithCombos = { ...response.content, combos: response.content.combos ?? MOCK_TUTOR_COMBOS };
+                    setProfile(profileWithCombos);
                     setError(null);
                 }
             } catch (err) {
@@ -174,6 +204,7 @@ const TutorDetailPage = () => {
                 subjects={profile.subjects || []}
                 availabilities={profile.availabilities}
                 tutorTeachingMode={profile.teachingMode}
+                combos={profile.combos || []}
             />
 
             {showRoleSelect && (

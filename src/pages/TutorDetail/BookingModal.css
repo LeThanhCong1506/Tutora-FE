@@ -1467,3 +1467,317 @@
         max-width: 90px;
     }
 }
+
+/* ===== STEP 2 (mới): Booking Mode Cards (Theo lịch trống / Theo gói) ===== */
+.bm-booking-mode-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 8px;
+}
+
+.bm-booking-mode-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 20px;
+    background: #fff;
+    border: 1.5px solid #e4ded5;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.bm-booking-mode-card:hover {
+    border-color: var(--color-navy);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 15px rgba(26, 34, 56, 0.08);
+}
+
+.bm-booking-mode-card.selected {
+    border-color: var(--color-navy);
+    background: rgba(26, 34, 56, 0.04);
+    box-shadow: 0 4px 15px rgba(26, 34, 56, 0.12);
+}
+
+.bm-booking-mode-card.locked,
+.bm-booking-mode-card.locked:hover {
+    cursor: not-allowed;
+    transform: none;
+}
+
+.bm-booking-mode-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(250, 245, 238, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: var(--color-navy);
+    flex-shrink: 0;
+}
+
+.bm-booking-mode-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.bm-booking-mode-label {
+    font-family: var(--font-serif);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-navy);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bm-booking-mode-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background: var(--color-navy);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.bm-booking-mode-desc {
+    font-size: 12.5px;
+    color: rgba(62, 47, 40, 0.62);
+    font-weight: 500;
+    line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+    .bm-booking-mode-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===== STEP 3 (mới): Combo cards trong package mode ===== */
+.bm-combo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+.bm-combo-grid.compact {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.bm-combo-card {
+    position: relative;
+    padding: 16px;
+    background: #fff;
+    border: 1.5px solid #e4ded5;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bm-combo-card.compact {
+    padding: 12px;
+}
+
+.bm-combo-card:hover {
+    border-color: var(--color-navy);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(26, 34, 56, 0.08);
+}
+
+.bm-combo-card.selected {
+    border-color: var(--color-navy);
+    background: rgba(26, 34, 56, 0.04);
+    box-shadow: 0 4px 14px rgba(26, 34, 56, 0.12);
+}
+
+.bm-combo-card-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bm-combo-badge {
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.bm-combo-badge.fixed {
+    background: rgba(26, 34, 56, 0.1);
+    color: var(--color-navy);
+}
+
+.bm-combo-badge.flex {
+    background: rgba(61, 74, 62, 0.12);
+    color: #3d4a3e;
+}
+
+.bm-combo-subject {
+    font-size: 11.5px;
+    color: rgba(62, 47, 40, 0.6);
+    font-weight: 600;
+}
+
+.bm-combo-name {
+    font-family: var(--font-serif);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-navy);
+    margin: 0;
+}
+
+.bm-combo-meta {
+    display: flex;
+    gap: 6px;
+    font-size: 12px;
+    color: rgba(62, 47, 40, 0.65);
+    font-weight: 600;
+}
+
+.bm-combo-sessions {
+    list-style: disc inside;
+    margin: 0;
+    padding: 0;
+    font-size: 12px;
+    color: rgba(62, 47, 40, 0.7);
+    line-height: 1.6;
+}
+
+.bm-combo-desc {
+    font-size: 12px;
+    color: rgba(62, 47, 40, 0.6);
+    margin: 0;
+    line-height: 1.45;
+    font-style: italic;
+}
+
+.bm-combo-card .bm-check {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--color-navy);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.bm-package-suggest {
+    padding-top: 18px;
+    border-top: 1px dashed rgba(0, 0, 0, 0.1);
+}
+
+/* ===== STEP 1 (compact): Student pills + subject grade chip ===== */
+.bm-student-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.bm-student-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #fff;
+    border: 1.5px solid #e4ded5;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+}
+
+.bm-student-pill:hover {
+    border-color: var(--color-navy);
+    background: rgba(26, 34, 56, 0.03);
+}
+
+.bm-student-pill.selected {
+    border-color: var(--color-navy);
+    background: var(--color-navy);
+}
+
+.bm-student-pill.selected .bm-student-pill-name,
+.bm-student-pill.selected .bm-student-pill-grade {
+    color: #fff;
+}
+
+.bm-student-pill-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-navy);
+}
+
+.bm-student-pill-grade {
+    font-size: 11.5px;
+    color: rgba(62, 47, 40, 0.6);
+    font-weight: 500;
+}
+
+.bm-subject-btn {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    text-align: center;
+    line-height: 1.25;
+}
+
+.bm-subject-btn-name {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.bm-subject-btn-grade {
+    font-size: 10.5px;
+    font-weight: 500;
+    opacity: 0.7;
+}
+
+.bm-subject-btn.selected .bm-subject-btn-grade {
+    opacity: 0.85;
+}
+
+.bm-grade-match-banner {
+    margin-top: 14px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.5;
+    border: 1.5px solid;
+}
+
+.bm-grade-match-banner.match {
+    background: rgba(61, 74, 62, 0.08);
+    border-color: rgba(61, 74, 62, 0.25);
+    color: #3d4a3e;
+}
+
+.bm-grade-match-banner.mismatch {
+    background: rgba(99, 27, 27, 0.06);
+    border-color: rgba(99, 27, 27, 0.3);
+    color: #631b1b;
+}
+

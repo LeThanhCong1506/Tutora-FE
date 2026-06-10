@@ -20,10 +20,14 @@ export const TEACHING_MODES = [
     { key: "hybrid" as const, label: "Linh hoạt", icon: <HybridIcon />, desc: "Kết hợp online & offline" },
 ];
 
+// Bội của 30 phút (0.5h). Mentor feedback #7: cần hỗ trợ slot 30 phút.
 export const DURATION_OPTIONS = [
+    { value: 0.5, label: "30 phút" },
     { value: 1, label: "1 giờ" },
     { value: 1.5, label: "1.5 giờ" },
     { value: 2, label: "2 giờ" },
+    { value: 2.5, label: "2.5 giờ" },
+    { value: 3, label: "3 giờ" },
 ];
 
 export const DAY_NAMES = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
@@ -36,7 +40,7 @@ export const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
 
 export const STEPS = [
     { key: "student", label: "Học sinh & Môn" },
-    { key: "mode", label: "Hình thức" },
+    { key: "bookingMode", label: "Cách đặt" },
     { key: "schedule", label: "Lịch học" },
     { key: "review", label: "Xác nhận" },
 ];

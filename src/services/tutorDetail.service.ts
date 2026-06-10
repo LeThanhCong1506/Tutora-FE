@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { Combo } from '../types/combo.types';
 
 // ============================================
 // Tutor Detail API Service
@@ -117,6 +118,10 @@ export interface TutorFullProfile {
     // Active Classes
     totalActiveClasses: number;
     activeClasses: ActiveClassSummary[] | null;
+
+    // Combos (gói học) — TODO(BE): hiện đang mock trên FE trong TutorDetailPage.
+    // Khi BE persist combo, map field này từ API response.
+    combos?: Combo[] | null;
 }
 
 export interface ApiResponse<T> {
