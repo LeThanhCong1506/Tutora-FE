@@ -6,8 +6,24 @@ import styles from '../components/shared/PortalLayout/PortalLayout.module.css';
 import { getTourStatus, completeTour } from '../services/auth.service';
 import TutorTour, { type TourStep } from '../components/TutorTour/TutorTour';
 import { useUnreadMessageBadge } from '../hooks/useUnreadMessageBadge';
+import { useUnreadBadgesByTab } from '../hooks/useUnreadBadgesByTab';
 
 const MESSAGES_PATH = '/tutor-portal/messages';
+
+// Map sidebar path → notification types thuộc tab đó. Đồng bộ với BE
+// `MV.DomainLayer/Constants/NotificationType.cs`. Tin nhắn không vào đây
+// (đã có `useUnreadMessageBadge` đếm chat unread riêng).
+const NOTIFICATION_TYPES_BY_PATH: Record<string, string[]> = {
+    '/tutor-portal/bookings': ['booking_new', 'booking_accepted', 'booking_declined'],
+    '/tutor-portal/schedule': [
+        'lesson_reminder',
+        'lesson_checkin',
+        'lesson_confirmed',
+        'lesson_no_show',
+        'lesson_report',
+    ],
+    '/tutor-portal/finance': ['payment_success'],
+};
 
 // ─── Tutor-specific SVG Icons ───
 
@@ -63,6 +79,16 @@ const BookingIcon = () => (
     </svg>
 );
 
+const TeachingSetupIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M3 4.5H15" strokeLinecap="round" />
+        <path d="M3 9H15" strokeLinecap="round" />
+        <path d="M3 13.5H9" strokeLinecap="round" />
+        <circle cx="12.5" cy="13.5" r="2.5" />
+        <path d="M12.5 12.25V13.5L13.4 14.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+);
+
 const AccountIcon = () => (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
         <circle cx="9" cy="5.5" r="3" />
@@ -77,6 +103,7 @@ const AccountIcon = () => (
 const baseNavItems: NavItem[] = [
     { path: '/tutor-portal/dashboard', label: 'Tổng quan', icon: DashboardIcon, dataTour: 'nav-dashboard' },
     { path: '/tutor-portal/profile', label: 'Hồ sơ công khai', icon: ProfileIcon, dataTour: 'nav-profile' },
+    { path: '/tutor-portal/onboarding', label: 'Thiết lập giảng dạy', icon: TeachingSetupIcon, dataTour: 'nav-onboarding' },
     { path: MESSAGES_PATH, label: 'Tin nhắn', icon: MessagesIcon, dataTour: 'nav-messages' },
     { path: '/tutor-portal/bookings', label: 'Yêu cầu đặt lịch', icon: BookingIcon, dataTour: 'nav-bookings' },
     { path: '/tutor-portal/schedule', label: 'Lịch dạy', icon: ScheduleIcon, dataTour: 'nav-schedule' },
@@ -178,12 +205,19 @@ const TutorPortalLayout: React.FC = () => {
 
     // Tin nhắn unread badge — fetch + SignalR real-time + auto-clear khi vào /messages.
     const unreadMessageCount = useUnreadMessageBadge(MESSAGES_PATH);
+    // Notification badges per-tab — group unread noti theo `type` → map sang path sidebar.
+    const badgesByPath = useUnreadBadgesByTab(NOTIFICATION_TYPES_BY_PATH);
+
     const navItems = useMemo<NavItem[]>(
         () =>
-            baseNavItems.map((item) =>
-                item.path === MESSAGES_PATH ? { ...item, badge: unreadMessageCount } : item,
-            ),
-        [unreadMessageCount],
+            baseNavItems.map((item) => {
+                if (item.path === MESSAGES_PATH) {
+                    return { ...item, badge: unreadMessageCount };
+                }
+                const count = badgesByPath[item.path];
+                return count ? { ...item, badge: count } : item;
+            }),
+        [unreadMessageCount, badgesByPath],
     );
 
     // Show tour prompt only on first visit to dashboard
