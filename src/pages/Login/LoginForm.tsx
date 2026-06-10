@@ -34,9 +34,9 @@ const LoginForm: React.FC = () => {
   };
 
   /**
-   * Decode JWT payload to extract role-based portal path
+   * Decode JWT payload to extract role (lowercase). Returns '' on decode error.
    */
-  const getPortalPathFromToken = (token: string): string => {
+  const getRoleFromToken = (token: string): string => {
     try {
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -46,18 +46,27 @@ const LoginForm: React.FC = () => {
         )
       );
       const roleClaim = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
-      const role = (payload[roleClaim] || '').toLowerCase();
-      switch (role) {
-        case 'admin': return '/admin-portal/dashboard';
-        case 'tutor': return '/tutor-portal/dashboard';
-        case 'parent': return '/parent-portal/dashboard';
-        case 'student': return '/student-portal/dashboard';
-        default: return '/';
-      }
+      return (payload[roleClaim] || '').toLowerCase();
     } catch {
-      return '/';
+      return '';
     }
   };
+
+  /**
+   * Map role -> portal path cho 3 portal còn lại trong repo này.
+   * Admin đã chuyển sang repo riêng `tutora-admin-frontend` — caller PHẢI xử lý
+   * role='admin' riêng (toast + redirect external) trước khi gọi hàm này.
+   */
+  const getPortalPathFromRole = (role: string): string => {
+    switch (role) {
+      case 'tutor': return '/tutor-portal/dashboard';
+      case 'parent': return '/parent-portal/dashboard';
+      case 'student': return '/student-portal/dashboard';
+      default: return '/';
+    }
+  };
+
+  const ADMIN_PORTAL_URL = import.meta.env.VITE_ADMIN_PORTAL_URL || 'https://admin.tutora.vn';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,6 +93,42 @@ const LoginForm: React.FC = () => {
         throw new Error("Không nhận được token từ server");
       }
 
+      // Check role TRƯỚC khi save — admin có cổng đăng nhập riêng
+      // (tutora-admin-frontend). Không save token để khỏi tạo "ghost session"
+      // ở user-facing repo (sau này refresh sẽ có user but không có route hợp lệ).
+      const role = getRoleFromToken(token);
+
+      if (role === 'admin') {
+        toast.warning(
+          <div style={{ lineHeight: 1.5 }}>
+            <strong style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>
+              Tài khoản quản trị
+            </strong>
+            <span style={{ display: 'block', marginBottom: 8, fontSize: 13 }}>
+              Vui lòng dùng cổng quản trị riêng.
+            </span>
+            <a
+              href={ADMIN_PORTAL_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: '#1a2238',
+                fontWeight: 600,
+                fontSize: 13,
+                textDecoration: 'underline',
+              }}
+            >
+              Đi tới Tutora Admin →
+            </a>
+          </div>,
+          {
+            autoClose: 10000,
+            toastId: 'admin-wrong-portal',
+          }
+        );
+        return;
+      }
+
       // Save or clear remembered email based on checkbox
       if (rememberMe) {
         localStorage.setItem(REMEMBERED_EMAIL_KEY, formData.email);
@@ -94,8 +139,8 @@ const LoginForm: React.FC = () => {
       // Save user data with accessToken and refreshToken
       saveUserToStorage({ accessToken: token, refreshToken });
 
-      // Get portal path from role in token
-      const portalPath = getPortalPathFromToken(token);
+      // Navigate by role (admin đã handled ở trên)
+      const portalPath = getPortalPathFromRole(role);
 
       toast.success("Đăng nhập thành công!");
       setTimeout(() => {
