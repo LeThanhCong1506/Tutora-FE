@@ -2,15 +2,15 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import {
     getVerificationProgress,
+    getPricing,
     updateVideo,
     updateAvatar,
     updateBasicInfo,
     updateIntroduction,
-    updatePricing as updatePricingApi,
     type VerificationSections,
     type BasicInfoUpdateData,
     type IntroductionUpdateData,
-    type PricingUpdateData
+    type SubjectGradePriceItem
 } from '../../../services/tutorProfile.service';
 import { getUserIdFromToken } from '../../../services/auth.service';
 import { getMyAvailability, DAY_OF_WEEK_MAP } from '../../../services/availability.service';
@@ -198,41 +198,8 @@ function mapSectionsToFormData(sections: VerificationSections): Partial<TutorPro
         teachingAreaDistrict: sections.basicInfo.teachingAreaDistrict || '',
         // Map teaching mode from API to frontend format
         teachingMode: mapTeachingModeFromApi(sections.basicInfo.teachingMode),
-        // Map subjects with gradeLevels converted to string format
-        // Note: API may return gradeLevels/tags as JSON string instead of array
-        subjects: (sections.basicInfo.subjects || []).map(s => {
-            let gradeLevels: string[] = [];
-            let tags: string[] = [];
-
-            // Parse gradeLevels
-            if (typeof s.gradeLevels === 'string') {
-                try {
-                    gradeLevels = JSON.parse(s.gradeLevels);
-                } catch {
-                    gradeLevels = [];
-                }
-            } else if (Array.isArray(s.gradeLevels)) {
-                gradeLevels = s.gradeLevels.map(g => typeof g === 'string' ? g : `grade_${g}`);
-            }
-
-            // Parse tags (may also be JSON string from API)
-            if (typeof s.tags === 'string') {
-                try {
-                    tags = JSON.parse(s.tags);
-                } catch {
-                    tags = [];
-                }
-            } else if (Array.isArray(s.tags)) {
-                tags = s.tags;
-            }
-
-            return {
-                subjectId: s.subjectId,
-                subjectName: s.subjectName || '',
-                gradeLevels,
-                tags
-            };
-        }),
+        // NOTE: subjects KHÔNG còn lấy từ basic-info nữa — môn & giá được suy từ
+        // getPricing (xem mapPricingToForm + loadAll). Trang profile chỉ hiển thị read-only.
 
         // Introduction section
         bio: sections.introduction.bio || '',
@@ -279,11 +246,28 @@ function mapSectionsToFormData(sections: VerificationSections): Partial<TutorPro
         // touch identity at all (which is correct — saving basic info / pricing
         // / etc. has no business resetting identity fields).
         //
-        // Pricing section
-        hourlyRate: sections.pricing.hourlyRate || 0,
-        trialLessonPrice: sections.pricing.trialLessonPrice,
-        allowPriceNegotiation: sections.pricing.allowPriceNegotiation || false
+        // Pricing: model mới theo môn × lớp — lấy riêng qua getPricing (mapPricingToForm).
     };
+}
+
+/**
+ * Suy `subjects` (read-only, gom theo môn) + danh sách giá chi tiết từ bảng pricing BE.
+ * Đây là nguồn duy nhất cho phần Môn học & Giá hiển thị ở trang profile.
+ */
+function mapPricingToForm(items: SubjectGradePriceItem[]): {
+    subjects: SubjectSelection[];
+    pricingItems: SubjectGradePriceItem[];
+} {
+    const bySubject = new Map<number, SubjectSelection>();
+    for (const it of items) {
+        const cur =
+            bySubject.get(it.subjectId) ??
+            { subjectId: it.subjectId, subjectName: it.subjectName || '', gradeLevels: [], tags: [] };
+        const key = `grade_${it.gradeLevelId}`;
+        if (!cur.gradeLevels.includes(key)) cur.gradeLevels.push(key);
+        bySubject.set(it.subjectId, cur);
+    }
+    return { subjects: Array.from(bySubject.values()), pricingItems: items };
 }
 
 /**
@@ -304,6 +288,8 @@ export function useTutorProfileForm() {
     const [formData, setFormData] = useState<TutorProfileFormData>(initialFormData);
     const [savedData, setSavedData] = useState<TutorProfileFormData>(initialFormData);
     const [sectionStatuses, setSectionStatuses] = useState<SectionStatuses>(initialSectionStatuses);
+    // Bảng giá theo môn × lớp (read-only) — hiển thị ở Pricing card, chỉnh sửa ở Onboarding.
+    const [pricingItems, setPricingItems] = useState<SubjectGradePriceItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [isVideoUploading, setIsVideoUploading] = useState(false);
@@ -407,10 +393,11 @@ export function useTutorProfileForm() {
             try {
                 setError(null);
 
-                const [progressR, availR, kycR] = await Promise.allSettled([
+                const [progressR, availR, kycR, pricingR] = await Promise.allSettled([
                     getVerificationProgress(userId),
                     getMyAvailability(),
                     getUserKYCData(userId),
+                    getPricing(userId),
                 ]);
 
                 if (cancelled) return;
@@ -469,6 +456,21 @@ export function useTutorProfileForm() {
                     }
                 }
 
+                // 4) Pricing — môn (read-only) + bảng giá chi tiết theo môn × lớp.
+                if (pricingR.status === 'fulfilled') {
+                    const { subjects, pricingItems: items } = mapPricingToForm(
+                        pricingR.value.content?.subjectGradePrices ?? [],
+                    );
+                    mergedForm.subjects = subjects;
+                    setPricingItems(items);
+                } else {
+                    // 404 = chưa thiết lập giá (gia sư mới) — bỏ qua im lặng.
+                    const reason = pricingR.reason as { response?: { status?: number } };
+                    if (reason?.response?.status !== 404) {
+                        console.error('Failed to fetch pricing:', pricingR.reason);
+                    }
+                }
+
                 if (cancelled) return;
 
                 // Single commit — one re-render, one progress-bar animation.
@@ -522,68 +524,8 @@ export function useTutorProfileForm() {
         setFormData(prev => ({ ...prev, ...data }));
     }, []);
 
-    // Update pricing (calls API)
-    const updatePricing = useCallback(async (data: {
-        hourlyRate: number;
-        trialLessonPrice: number | null;
-        allowPriceNegotiation: boolean;
-    }): Promise<boolean> => {
-        if (!userId) {
-            toast.error('Không tìm thấy thông tin người dùng');
-            return false;
-        }
-
-        // Validate hourlyRate
-        if (data.hourlyRate < 50000 || data.hourlyRate > 2000000) {
-            toast.error('Giá theo giờ phải nằm trong khoảng 50,000 - 2,000,000 VND');
-            return false;
-        }
-
-        setIsLoading(true);
-        setError(null);
-
-        try {
-            console.log('💰 Saving pricing...');
-
-            const apiData: PricingUpdateData = {
-                hourlyRate: data.hourlyRate,
-                trialLessonPrice: data.trialLessonPrice,
-                allowPriceNegotiation: data.allowPriceNegotiation
-            };
-
-            const response = await updatePricingApi(userId, apiData);
-
-            if (response.statusCode === 200) {
-                toast.success(response.message || 'Cập nhật giá thành công!');
-
-                // Refetch progress to get updated data
-                const progressResponse = await getVerificationProgress(userId);
-
-                if (progressResponse.statusCode === 200 && progressResponse.content?.sections) {
-                    const mappedData = mapSectionsToFormData(progressResponse.content.sections);
-                    const statuses = mapSectionStatuses(progressResponse.content.sections);
-
-                    setFormData(prev => ({ ...prev, ...mappedData }));
-                    setSavedData(prev => ({ ...prev, ...mappedData }));
-                    setSectionStatuses(statuses);
-                    setLastSaved(new Date());
-                }
-
-                return true;
-            } else {
-                toast.error(response.message || 'Không thể cập nhật giá');
-                return false;
-            }
-        } catch (err: any) {
-            console.error('❌ Error saving pricing:', err);
-            const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật giá';
-            setError(errorMessage);
-            toast.error(errorMessage);
-            return false;
-        } finally {
-            setIsLoading(false);
-        }
-    }, [userId]);
+    // Giá theo môn × lớp đã chuyển sang trang Onboarding (model SubjectGradePrices).
+    // Profile chỉ hiển thị read-only — không còn updatePricing tại đây.
 
     // Update about section (calls API)
     const updateAbout = useCallback(async (data: {
@@ -712,7 +654,6 @@ export function useTutorProfileForm() {
         teachingAreaCity: string;
         teachingAreaDistrict: string;
         teachingMode: 'online' | 'offline' | 'both' | '';
-        subjects: SubjectSelection[];
     }): Promise<boolean> => {
         if (!userId) {
             toast.error('Không tìm thấy thông tin người dùng');
@@ -747,11 +688,6 @@ export function useTutorProfileForm() {
                 teachingAreaCity: data.teachingAreaCity,
                 teachingAreaDistrict: data.teachingAreaDistrict,
                 teachingMode: mapTeachingModeToApi(data.teachingMode),
-                subjects: data.subjects.map(s => ({
-                    subjectId: s.subjectId,
-                    gradeLevels: s.gradeLevels,  // Already in string format: ["grade_10", ...]
-                    tags: s.tags || []  // Tags for this subject
-                }))
             };
 
             const response = await updateBasicInfo(userId, apiData);
@@ -872,6 +808,7 @@ export function useTutorProfileForm() {
 
     return {
         formData,
+        pricingItems,
         sectionStatuses,
         isDirty,
         isLoading,
@@ -883,7 +820,6 @@ export function useTutorProfileForm() {
         fetchProgress,
         fetchAvailability: fetchAvailabilityData,
         updateHeroSection,
-        updatePricing,
         updateAbout,
         updateVideoUrl,
         uploadVideo,

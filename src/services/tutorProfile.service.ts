@@ -38,7 +38,8 @@ export interface BasicInfoSection {
   teachingAreaCity: string | null;
   teachingAreaDistrict: string | null;
   teachingMode: string | null;
-  subjects: SubjectSelection[];
+  /** @deprecated BE không còn trả subjects trong basic-info; môn lấy từ getPricing. */
+  subjects?: SubjectSelection[];
   status: SectionStatus;
   updatedAt: string | null;
 }
@@ -82,10 +83,9 @@ export interface IdentityCardSection {
   updatedAt: string | null;
 }
 
+// BE refactor: pricing is now per subject+grade (xem getPricing / SubjectGradePriceItem).
+// Section này trong verification/progress giờ chỉ còn status để theo dõi tiến trình.
 export interface PricingSection {
-  hourlyRate: number;
-  trialLessonPrice: number | null;
-  allowPriceNegotiation: boolean;
   status: SectionStatus;
   updatedAt: string | null;
 }
@@ -202,18 +202,13 @@ export const updateVideo = async (userId: string, videoFile: File): Promise<ApiR
 // Basic Info Update Types
 // ============================================
 
-export interface SubjectInput {
-  subjectId: number;
-  gradeLevels: string[]; // ["grade_10", "grade_11", ...]
-  tags: string[]; // Tags for this subject (max 5, required)
-}
-
+// BE refactor: basic-info KHÔNG còn nhận subjects nữa. Môn học được set qua pricing
+// (SubjectGradePrices) ở trang Onboarding. Xem updatePricing / getPricing.
 export interface BasicInfoUpdateData {
   headline: string;
   teachingAreaCity: string;
   teachingAreaDistrict: string;
   teachingMode: string; // API expects PascalCase: 'Online', 'Offline', 'Both'
-  subjects: SubjectInput[];
 }
 
 /**
@@ -337,24 +332,81 @@ export const updateIntroduction = async (userId: string, data: IntroductionUpdat
 };
 
 // ============================================
-// Pricing Update Types
+// Pricing Types (per subject + grade level)
 // ============================================
 
-export interface PricingUpdateData {
-  hourlyRate: number;
-  trialLessonPrice: number | null;
-  allowPriceNegotiation: boolean;
+/**
+ * 1 dòng giá theo (môn × lớp). Khớp BE TutorSubjectGradePriceResponse.
+ * `id` chính là TutorSubjectGradePriceId mà luồng booking bắt buộc.
+ */
+export interface SubjectGradePriceItem {
+  id: number;
+  subjectId: number;
+  subjectName?: string | null;
+  gradeLevelId: number;
+  gradeLevelName?: string | null;
+  pricePerHour: number;
+  durationMinutesPerSession: number;
+  sessionsPerWeek: number;
+  currency: string;
+  isActive: boolean;
+}
+
+export interface TutorPricingResponse {
+  subjectGradePrices: SubjectGradePriceItem[];
+}
+
+/** Payload PUT pricing — khớp BE UpdateTutorPricingRequest (chỉ SubjectGradePrices[]). */
+export interface UpdatePricingData {
+  subjectGradePrices: Array<{
+    subjectId: number;
+    gradeLevelId: number;
+    pricePerHour: number;
+    durationMinutesPerSession: number;
+    sessionsPerWeek: number;
+    currency: string;
+    isActive: boolean;
+  }>;
+}
+
+export interface SubjectGradePriceData {
+  subjectId: number;
+  gradeLevelId: number;
+  pricePerHour: number;
+  durationMinutesPerSession: number;
+  sessionsPerWeek: number;
+  currency?: string;
+  isActive: boolean;
 }
 
 /**
- * Update pricing
+ * Lấy bảng giá theo môn/lớp của gia sư.
+ * GET /api/tutors/{id}/profile/pricing — owner-only (gia sư xem của chính mình).
+ */
+export const getPricing = async (userId: string): Promise<ApiResponse<TutorPricingResponse>> => {
+  try {
+    const response = await api.get(`/tutors/${userId}/profile/pricing`, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ Error fetching pricing:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
+    throw error;
+  }
+};
+
+/**
+ * Cập nhật bảng giá theo môn/lớp (thay toàn bộ).
  * PUT /api/tutors/{id}/profile/pricing
  *
- * @param userId - User ID (same as tutor ID)
- * @param data - Pricing data to update
- * @returns API response
+ * Đây cũng là nguồn duy nhất để môn của gia sư xuất hiện trên marketplace
+ * (BE suy danh sách môn từ chính các dòng SubjectGradePrices).
  */
-export const updatePricing = async (userId: string, data: PricingUpdateData): Promise<ApiResponse> => {
+export const updatePricing = async (userId: string, data: UpdatePricingData): Promise<ApiResponse> => {
   try {
     console.log('💰 Updating pricing for:', userId);
     console.log('Data:', data);
@@ -370,6 +422,33 @@ export const updatePricing = async (userId: string, data: PricingUpdateData): Pr
     return response.data;
   } catch (error: any) {
     console.error('❌ Error updating pricing:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
+    throw error;
+  }
+};
+
+/**
+ * Thêm một cấu hình môn × khối lớp.
+ * POST /api/tutors/{id}/profile/pricing/subject-grade
+ */
+export const addSubjectGradePrice = async (
+  userId: string,
+  data: SubjectGradePriceData,
+): Promise<ApiResponse<SubjectGradePriceItem>> => {
+  try {
+    const response = await api.post(`/tutors/${userId}/profile/pricing/subject-grade`, data, {
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ Error adding subject grade price:', {
       status: error.response?.status,
       data: error.response?.data,
       message: error.message,
