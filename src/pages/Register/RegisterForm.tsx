@@ -19,7 +19,7 @@ const RegisterForm: React.FC = () => {
         phone: "",
         password: "",
         confirmPassword: "",
-        role: "Student",
+        role: "",
         terms: false,
     });
 
@@ -43,6 +43,10 @@ const RegisterForm: React.FC = () => {
 
         if (!formData.fullname || !formData.email || !formData.password || !formData.confirmPassword) {
             toast.warning("Vui lòng điền đầy đủ thông tin!");
+            return;
+        }
+        if (!formData.role) {
+            toast.warning("Vui lòng chọn vai trò của bạn (Học sinh / Phụ huynh / Gia sư).");
             return;
         }
         if (formData.password !== formData.confirmPassword) {
