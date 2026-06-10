@@ -3,10 +3,28 @@ import { DAY_NAMES, TEACHING_MODES } from "./constants";
 import { calcTotalHoursFromSchedule, formatGrade, formatPrice } from "./utils";
 import { usePromotion } from "./hooks/usePromotion";
 
-const StepReview: React.FC<StepProps> = ({ formData, setFormData, hourlyRate, students, availableSubjects }) => {
+function getLockedMode(raw: string | null): "online" | "offline" | null {
+    const m = (raw ?? "").toLowerCase();
+    if (m === "online") return "online";
+    if (m === "offline") return "offline";
+    return null;
+}
+
+const StepReview: React.FC<StepProps> = ({
+    formData,
+    setFormData,
+    hourlyRate,
+    students,
+    availableSubjects,
+    tutorTeachingMode,
+    combos,
+}) => {
     const student = students.find((s) => s.studentId === formData.studentId);
     const subject = availableSubjects.find((s) => s.id === formData.subjectId);
     const teachingModeInfo = TEACHING_MODES.find((m) => m.key === formData.teachingMode);
+    const selectedCombo = combos.find((c) => c.id === formData.comboId);
+    const lockedMode = getLockedMode(tutorTeachingMode ?? null);
+    const canPickMode = lockedMode === null;
 
     // Replicate backend calculation: hourlyRate × totalHours
     const totalHours = calcTotalHoursFromSchedule(formData.schedule);
@@ -21,9 +39,106 @@ const StepReview: React.FC<StepProps> = ({ formData, setFormData, hourlyRate, st
     const serviceFee = Math.round(baseAmount * 0.05);
     const finalEstimate = baseAmount + serviceFee;
 
+    const needsLocation = formData.teachingMode === "offline" || formData.teachingMode === "hybrid";
+
     return (
         <div className="bm-step">
             <div className="bm-step-title">Xác nhận booking</div>
+
+            {/* Mode picker — chỉ khi tutor support nhiều mode */}
+            {canPickMode && (
+                <div className="bm-review-mode-picker" style={{ marginBottom: 14 }}>
+                    <div className="bm-step-title" style={{ fontSize: 13, marginBottom: 8 }}>Phương thức học</div>
+                    <div className="bm-teaching-mode-chips" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        {TEACHING_MODES.map((m) => (
+                            <button
+                                key={m.key}
+                                type="button"
+                                onClick={() =>
+                                    setFormData((d) => ({
+                                        ...d,
+                                        teachingMode: m.key,
+                                        ...(m.key === "online"
+                                            ? { locationCity: "", locationDistrict: "", locationWard: "", locationDetail: "" }
+                                            : {}),
+                                    }))
+                                }
+                                className={`bm-mode-chip ${formData.teachingMode === m.key ? "selected" : ""}`}
+                                style={{
+                                    padding: "8px 14px",
+                                    borderRadius: 8,
+                                    border: `1.5px solid ${formData.teachingMode === m.key ? "#1a2238" : "rgba(0,0,0,0.15)"}`,
+                                    background: formData.teachingMode === m.key ? "#1a2238" : "#fff",
+                                    color: formData.teachingMode === m.key ? "#fff" : "#1a2238",
+                                    fontSize: 13,
+                                    fontWeight: 600,
+                                    cursor: "pointer",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                }}
+                            >
+                                {m.icon} {m.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Location form — chỉ khi offline/hybrid */}
+            {needsLocation && (
+                <div className="bm-location-section" style={{ marginBottom: 14 }}>
+                    <div className="bm-step-title" style={{ fontSize: 13 }}>
+                        Địa điểm học <span style={{ color: "#631b1b", fontSize: 11, fontWeight: 700 }}>BẮT BUỘC</span>
+                    </div>
+                    <div className="bm-location-form">
+                        <div className="bm-form-row">
+                            <div className="bm-form-group">
+                                <label className="bm-form-label">Tỉnh / Thành phố *</label>
+                                <input
+                                    type="text"
+                                    className="bm-form-input"
+                                    placeholder="VD: Hồ Chí Minh"
+                                    value={formData.locationCity}
+                                    onChange={(e) => setFormData((d) => ({ ...d, locationCity: e.target.value }))}
+                                />
+                            </div>
+                            <div className="bm-form-group">
+                                <label className="bm-form-label">Quận / Huyện *</label>
+                                <input
+                                    type="text"
+                                    className="bm-form-input"
+                                    placeholder="VD: Quận 1"
+                                    value={formData.locationDistrict}
+                                    onChange={(e) => setFormData((d) => ({ ...d, locationDistrict: e.target.value }))}
+                                />
+                            </div>
+                        </div>
+                        <div className="bm-form-row">
+                            <div className="bm-form-group">
+                                <label className="bm-form-label">Phường / Xã</label>
+                                <input
+                                    type="text"
+                                    className="bm-form-input"
+                                    placeholder="VD: Phường Bến Nghé"
+                                    value={formData.locationWard}
+                                    onChange={(e) => setFormData((d) => ({ ...d, locationWard: e.target.value }))}
+                                />
+                            </div>
+                            <div className="bm-form-group">
+                                <label className="bm-form-label">Địa chỉ cụ thể</label>
+                                <input
+                                    type="text"
+                                    className="bm-form-input"
+                                    placeholder="VD: 123 Nguyễn Huệ"
+                                    value={formData.locationDetail}
+                                    onChange={(e) => setFormData((d) => ({ ...d, locationDetail: e.target.value }))}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Summary */}
             <div className="bm-review-card">
@@ -36,10 +151,18 @@ const StepReview: React.FC<StepProps> = ({ formData, setFormData, hourlyRate, st
                     <span className="bm-review-value">{subject?.name}</span>
                 </div>
                 <div className="bm-review-row">
-                    <span className="bm-review-label">Hình thức</span>
+                    <span className="bm-review-label">Cách đặt</span>
+                    <span className="bm-review-value">
+                        {formData.bookingMode === "package" && selectedCombo
+                            ? `Theo gói · ${selectedCombo.name}`
+                            : "Theo lịch trống"}
+                    </span>
+                </div>
+                <div className="bm-review-row">
+                    <span className="bm-review-label">Phương thức</span>
                     <span className="bm-review-value">{teachingModeInfo?.icon} {teachingModeInfo?.label}</span>
                 </div>
-                {(formData.teachingMode === "offline" || formData.teachingMode === "hybrid") && (
+                {needsLocation && formData.locationCity && (
                     <div className="bm-review-row">
                         <span className="bm-review-label">Địa điểm</span>
                         <span className="bm-review-value">
@@ -106,9 +229,7 @@ const StepReview: React.FC<StepProps> = ({ formData, setFormData, hourlyRate, st
 
             {/* Price Estimate */}
             <div className="bm-price-section">
-                <div className="bm-price-note">
-                    💡 Giá ước tính — giá cuối cùng sẽ được tính chính xác bởi hệ thống.
-                </div>
+                <div className="bm-price-note">💡 Giá ước tính, có thể thay đổi khi hệ thống xác nhận.</div>
                 <div className="bm-price-row">
                     <span>Giá gốc ({totalHours} giờ × {formatPrice(hourlyRate)}/h)</span>
                     <span>{formatPrice(estimatedPrice)}</span>

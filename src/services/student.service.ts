@@ -122,7 +122,7 @@ export const linkWithCode = async (code: string): Promise<ApiResponse<StudentTyp
 
 export const getParentBookings = async (params: IGetBookingParams = { page: 1, pageSize: 10 }) => {
   try {
-    const response = await api.get(`/bookings`, {
+    const response = await api.get(`/parent/bookings`, {
       headers: getAuthHeaders(),
       params,
     });
@@ -191,7 +191,7 @@ export const generateParentCode = async (): Promise<ApiResponse<{ parentCode: st
  */
 export const studentSelfLink = async (parentCode: string): Promise<ApiResponse<StudentType>> => {
   try {
-    const response = await api.post(`/parent/students/self-link`, { parentCode }, {
+    const response = await api.post(`/students/self-link`, { parentCode }, {
       headers: getAuthHeaders(),
     });
     return response.data;
@@ -213,7 +213,7 @@ export interface LinkStatusResponse {
  */
 export const getMyLinkStatus = async (): Promise<ApiResponse<LinkStatusResponse>> => {
   try {
-    const response = await api.get(`/parent/students/link-status`, {
+    const response = await api.get(`/students/link-status`, {
       headers: getAuthHeaders(),
     });
     return response.data;
