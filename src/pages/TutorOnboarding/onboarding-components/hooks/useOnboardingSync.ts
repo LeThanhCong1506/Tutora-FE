@@ -6,6 +6,7 @@ import { addSubjectGradePrice, getPricing, updatePricing } from '../../../../ser
 import {
   getMyAvailability,
   bulkCreateAvailabilities,
+  bulkUpdateAvailabilities,
   bulkDeleteAvailabilities,
   type AvailabilitySlot,
 } from '../../../../services/availability.service';
@@ -20,9 +21,8 @@ import {
   priceItemToRecord,
   recordsToPricingPayload,
   expandAvailabilityToCells,
-  availabilityKey,
+  diffAvailability,
   normalizeHHmm,
-  feDayToIso,
   isoDayToFe,
   packageToFixedCombo,
   comboToPackagePayload,
@@ -44,6 +44,22 @@ const getPackageIdFromComboId = (comboId: string): number | null => {
 
 const slotKey = (slot: { dayOfWeek: number; startTime: string; endTime: string }) =>
   `${isoDayToFe(slot.dayOfWeek)}|${normalizeHHmm(slot.startTime)}|${normalizeHHmm(slot.endTime)}`;
+
+// Bóc message lỗi từ envelope APIResponse của BE. Message overlap của POST là tiếng Anh
+// ("... overlaps with existing slot: HH:mm - HH:mm") → dịch sang tiếng Việt; các message
+// còn lại (PATCH/DELETE: trùng giờ, đang có buổi học, không tìm thấy, không có quyền) đã là
+// tiếng Việt → hiển thị trực tiếp.
+const extractAvailabilityError = (err: unknown, fallback: string): string => {
+  const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? '';
+  if (!msg) return fallback;
+  if (/overlaps with/i.test(msg)) {
+    const m = msg.match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
+    return m
+      ? `Khung giờ bị trùng với lịch hiện có: ${m[1]} - ${m[2]}`
+      : 'Khung giờ bị trùng với lịch rảnh hiện có.';
+  }
+  return msg;
+};
 
 const fixedPackageMatchesCombo = (pkg: TutorPackageResponse, combo: FixedCombo) => {
   const payload = comboToPackagePayload(combo);
@@ -148,44 +164,44 @@ export function useOnboardingSync(hydrate: HydrateFn) {
         return false;
       }
       setSaving(true);
+
+      // Đồng bộ ref với BE để lần lưu kế tiếp diff đúng (kể cả khi lưu lỗi giữa chừng).
+      const resyncRef = async () => {
+        try {
+          const fresh = await getMyAvailability();
+          rawAvailabilityRef.current = fresh.content ?? [];
+        } catch {
+          /* giữ ref cũ nếu refetch lỗi */
+        }
+      };
+
       try {
-        // Diff theo TỪNG Ô 30' (mỗi ô = 1 record), gom vào 1 POST/bulk + 1 DELETE/bulk.
-        const desiredKeys = new Set(availability.map((s) => availabilityKey(s.dayOfWeek, s.startTime, s.endTime)));
-        // rawAvailabilityRef từ BE dùng ISO 1-7 → convert về FE 0-6 để so khoá thống nhất.
-        const loadedKeys = new Set(
-          rawAvailabilityRef.current.map((s) => availabilityKey(isoDayToFe(s.dayofweek), s.starttime, s.endtime)),
-        );
-        const toCreate = availability.filter(
-          (s) => !loadedKeys.has(availabilityKey(s.dayOfWeek, s.startTime, s.endTime)),
-        );
-        const toDelete = rawAvailabilityRef.current.filter(
-          (s) => !desiredKeys.has(availabilityKey(isoDayToFe(s.dayofweek), s.starttime, s.endtime)),
-        );
+        // Gộp ô 30' liền kề → cụm, rồi diff theo ngày thành 3 nhóm thao tác tối thiểu.
+        // Vd T2 06:00-10:00 + 15:00-18:00 → 2 record (mỗi cụm 1 record), không phải 14 ô.
+        const { toCreate, toUpdate, toDelete } = diffAvailability(availability, rawAvailabilityRef.current);
 
-        // Xoá trước (1 request), tạo sau (1 request) — tránh trùng giờ với slot cũ trên BE.
-        if (toDelete.length > 0) {
-          await bulkDeleteAvailabilities(toDelete.map((s) => s.availabilityid));
-        }
-        if (toCreate.length > 0) {
-          await bulkCreateAvailabilities(
-            toCreate.map((s) => ({
-              dayofweek: feDayToIso(s.dayOfWeek), // FE 0-6 → BE ISO 1-7
-              starttime: normalizeHHmm(s.startTime),
-              endtime: normalizeHHmm(s.endTime),
-            })),
-          );
+        // Không đổi gì → bỏ qua mọi request (idempotent), chỉ đảm bảo có gói linh hoạt.
+        if (toCreate.length === 0 && toUpdate.length === 0 && toDelete.length === 0) {
+          if (availability.length > 0) await ensureFlexiblePackage(userIdRef.current);
+          return true;
         }
 
-        // Refresh ref để lần lưu sau diff đúng.
-        const fresh = await getMyAvailability();
-        rawAvailabilityRef.current = fresh.content ?? [];
+        // Thứ tự bắt buộc: DELETE → PATCH → POST. Cụm mong muốn không bao giờ chồng nhau,
+        // nên thứ tự này không kích hoạt guard "trùng giờ" của BE (slot cũ đã bị xoá/đổi trước).
+        if (toDelete.length > 0) await bulkDeleteAvailabilities(toDelete);
+        if (toUpdate.length > 0) await bulkUpdateAvailabilities(toUpdate);
+        if (toCreate.length > 0) await bulkCreateAvailabilities(toCreate);
+
+        await resyncRef();
         if (availability.length > 0) {
           await ensureFlexiblePackage(userIdRef.current);
         }
         return true;
       } catch (err) {
         console.error('[Onboarding] saveAvailability:', err);
-        toast.error('Lưu lịch rảnh thất bại.');
+        toast.error(extractAvailabilityError(err, 'Lưu lịch rảnh thất bại.'));
+        // Một số thao tác có thể đã áp dụng trước khi lỗi → đồng bộ lại để retry diff đúng.
+        await resyncRef();
         return false;
       } finally {
         setSaving(false);
