@@ -39,8 +39,8 @@ export const DAY_COLUMNS = [
   { dayOfWeek: 0, label: 'CN', full: 'Chủ Nhật' },
 ];
 
-// Khung giờ lưới: 06:00 → 22:00. Block bắt đầu ở 06:00..21:30 (mỗi ô 30 phút).
-export const START_HOUR = 6;
+// Khung giờ lưới: 07:00 → 22:00. Block bắt đầu ở 07:00..21:30 (mỗi ô 30 phút).
+export const START_HOUR = 7;
 export const END_HOUR = 22;
 
 // Giờ tròn — giữ cho code legacy chưa migrate.
