@@ -1,5 +1,5 @@
 export { default as StepStudentSubject } from "./StepStudentSubject";
-export { default as StepTeachingMode } from "./StepTeachingMode";
+export { default as StepBookingMode } from "./StepBookingMode";
 export { default as StepSchedule } from "./StepSchedule";
 export { default as StepReview } from "./StepReview";
 export { default as BookingStepper } from "./BookingStepper";

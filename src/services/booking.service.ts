@@ -21,17 +21,30 @@ export interface ScheduleItemPayload {
     endTime: string;    // HH:mm
 }
 
+/** Gói flexible: parent tự chọn từng buổi cụ thể (ngày + giờ). */
+export interface FlexibleBookingSlotPayload {
+    scheduledStart: string; // ISO datetime, vd "2026-06-10T18:00:00"
+    scheduledEnd: string;   // ISO datetime
+}
+
 /**
- * Matches backend CreateBookingDTO exactly.
- * Backend auto-calculates: sessionCount, price, finalPrice, fees.
+ * Khớp BE CreateBookingRequest.
+ * Bắt buộc: tutorId, tutorSubjectGradePriceId, packageId, startDate.
+ * - Gói fixed (packageType 2): gửi totalSessions + startDate, BE tự sinh slot từ fixedSlots.
+ * - Gói flexible (packageType 1): gửi flexibleSlots[] (totalSessions = số slot).
+ * StudentId bắt buộc khi Parent đặt hộ con.
+ * Backend tự tính: sessionCount, price, finalPrice, fees.
  */
 export interface CreateBookingPayload {
-    studentId: string;
+    studentId?: string;
     tutorId: string;
-    subjectId: number;
-    teachingMode: 'online' | 'offline' | 'hybrid';
-    startDate: string; // YYYY-MM-DD
-    schedule: ScheduleItemPayload[];
+    subjectId?: number;
+    tutorSubjectGradePriceId: number;
+    packageId: number;
+    totalSessions?: number;
+    startDate: string; // ISO datetime
+    schedule?: ScheduleItemPayload[];
+    flexibleSlots?: FlexibleBookingSlotPayload[];
     locationCity?: string;
     locationDistrict?: string;
     locationWard?: string;
@@ -93,6 +106,31 @@ export const createBooking = async (payload: CreateBookingPayload): Promise<ApiR
         return response.data;
     } catch (error: any) {
         console.error('❌ Error creating booking:', {
+            status: error.response?.status,
+            data: error.response?.data,
+            message: error.message,
+        });
+        throw error;
+    }
+};
+
+/**
+ * GET /api/bookings/tutor/:tutorId/booked-slots?startDate=
+ * Trả các slot đã book (gộp theo tuần, trong 4 tuần kể từ startDate) để FE disable.
+ * Role: Parent,Student.
+ */
+export const getTutorBookedSlots = async (
+    tutorId: string,
+    startDate?: string,
+): Promise<ApiResponse<ScheduleItemPayload[]>> => {
+    try {
+        const response = await api.get(`/bookings/tutor/${tutorId}/booked-slots`, {
+            headers: getAuthHeaders(),
+            params: startDate ? { startDate } : undefined,
+        });
+        return response.data;
+    } catch (error: any) {
+        console.error('❌ Error fetching booked slots:', {
             status: error.response?.status,
             data: error.response?.data,
             message: error.message,
@@ -173,10 +211,10 @@ export const cancelBooking = async (bookingId: number, reason?: string): Promise
     }
 };
 
-/** GET /api/bookings — Get list of parent bookings (BE differentiates by JWT role) */
+/** GET /api/parent/bookings — Get list of parent bookings (BE differentiates by JWT role) */
 export const getParentBookings = async (params: { page?: number; pageSize?: number; status?: string }): Promise<ApiResponse<{ items: BookingResponseDTO[], totalCount: number }>> => {
     try {
-        const response = await api.get('/bookings', {
+        const response = await api.get('/parent/bookings', {
             headers: getAuthHeaders(),
             params,
         });

@@ -1,7 +1,73 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { StepProps, ScheduleSlot } from "./types";
 import { DAY_NAMES, DURATION_OPTIONS, TIME_SLOTS } from "./constants";
 import { addHoursToTime, isSlotWithinAvailability } from "./utils";
+import type { Combo, FixedCombo } from "../../../types/combo.types";
+
+// Convert combo cố định → ScheduleSlot[] để fill thẳng vào formData.schedule.
+const fixedComboToSchedule = (combo: FixedCombo): ScheduleSlot[] =>
+    combo.sessions.map((s) => {
+        const startTotal = s.startHour * 60 + s.startMinute;
+        const endTotal = startTotal + s.durationHours * 60;
+        const startStr = `${String(s.startHour).padStart(2, "0")}:${String(s.startMinute).padStart(2, "0")}`;
+        const endH = Math.floor(endTotal / 60);
+        const endM = endTotal % 60;
+        const endStr = `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+        return { dayOfWeek: s.dayOfWeek, startTime: startStr, endTime: endStr };
+    });
+
+const ComboCard: React.FC<{
+    combo: Combo;
+    selected: boolean;
+    onSelect: () => void;
+    compact?: boolean;
+}> = ({ combo, selected, onSelect, compact = false }) => {
+    const totalSessions = combo.type === "fixed" ? combo.sessions.length : combo.sessionsPerWeek;
+    const totalHours =
+        combo.type === "fixed"
+            ? combo.sessions.reduce((sum, s) => sum + s.durationHours, 0)
+            : combo.sessionsPerWeek * combo.hoursPerSession;
+
+    return (
+        <div
+            className={`bm-combo-card ${selected ? "selected" : ""} ${compact ? "compact" : ""}`}
+            onClick={onSelect}
+            role="button"
+            aria-pressed={selected}
+        >
+            <div className="bm-combo-card-head">
+                <span className={`bm-combo-badge ${combo.type === "fixed" ? "fixed" : "flex"}`}>
+                    {combo.type === "fixed" ? "Cố định" : "Linh hoạt"}
+                </span>
+                {combo.subjectName && <span className="bm-combo-subject">{combo.subjectName}</span>}
+            </div>
+            <h4 className="bm-combo-name">{combo.name}</h4>
+            <div className="bm-combo-meta">
+                <span>{totalSessions} buổi/tuần</span>
+                <span>·</span>
+                <span>{totalHours}h/tuần</span>
+            </div>
+            {combo.type === "fixed" ? (
+                <ul className="bm-combo-sessions">
+                    {combo.sessions.slice(0, 3).map((s, i) => {
+                        const startStr = `${String(s.startHour).padStart(2, "0")}:${String(s.startMinute).padStart(2, "0")}`;
+                        const endTotal = s.startHour * 60 + s.startMinute + s.durationHours * 60;
+                        const endStr = `${String(Math.floor(endTotal / 60)).padStart(2, "0")}:${String(endTotal % 60).padStart(2, "0")}`;
+                        return (
+                            <li key={i}>
+                                {DAY_NAMES[s.dayOfWeek]} · {startStr}–{endStr}
+                            </li>
+                        );
+                    })}
+                    {combo.sessions.length > 3 && <li>... +{combo.sessions.length - 3} buổi khác</li>}
+                </ul>
+            ) : (
+                <p className="bm-combo-desc">{combo.description}</p>
+            )}
+            {selected && <div className="bm-check">✓</div>}
+        </div>
+    );
+};
 
 const StepSchedule: React.FC<StepProps> = ({
     formData,
@@ -9,6 +75,7 @@ const StepSchedule: React.FC<StepProps> = ({
     slotDuration,
     setSlotDuration,
     availabilities,
+    combos,
 }) => {
     const [toast, setToast] = useState<string | null>(null);
     const [hoveredSlot, setHoveredSlot] = useState<{ day: number; time: string } | null>(null);
@@ -19,6 +86,25 @@ const StepSchedule: React.FC<StepProps> = ({
         return () => clearTimeout(timer);
     }, [toast]);
 
+    // ─── Package mode handlers ───
+    const selectedCombo = useMemo(() => combos.find((c) => c.id === formData.comboId), [combos, formData.comboId]);
+
+    const pickCombo = (combo: Combo) => {
+        if (combo.type === "fixed") {
+            // Auto-fill schedule từ combo cố định.
+            setFormData((d) => ({
+                ...d,
+                comboId: combo.id,
+                schedule: fixedComboToSchedule(combo),
+            }));
+        } else {
+            // Flex: clear schedule, để parent chọn slot. setSlotDuration theo combo.
+            setFormData((d) => ({ ...d, comboId: combo.id, schedule: [] }));
+            setSlotDuration(combo.hoursPerSession);
+        }
+    };
+
+    // ─── Schedule mode logic (giống code cũ, support 30-min) ───
     const isChunkAvailable = (day: number, time: string): boolean => {
         if (!availabilities || availabilities.length === 0) return true;
         const [h, m] = time.split(":").map(Number);
@@ -33,7 +119,7 @@ const StepSchedule: React.FC<StepProps> = ({
             if (!aStartStr || !aEndStr) return false;
             const [ash, asm] = aStartStr.split(":").map(Number);
             const [aeh, aem] = aEndStr.split(":").map(Number);
-            return startMins >= (ash * 60 + asm) && endMins <= (aeh * 60 + aem);
+            return startMins >= ash * 60 + asm && endMins <= aeh * 60 + aem;
         });
     };
 
@@ -46,61 +132,56 @@ const StepSchedule: React.FC<StepProps> = ({
         return formData.schedule.some((s) => {
             if (s.dayOfWeek !== day) return false;
             if (excludeStartTime && s.startTime === excludeStartTime) return false;
-
             const [ssh, ssm] = s.startTime.split(":").map(Number);
             const [eeh, eem] = s.endTime.split(":").map(Number);
             const sStart = ssh * 60 + ssm;
             const sEnd = eeh * 60 + eem;
-
-            // Basic overlap check: (StartA < EndB) and (EndA > StartB)
             return newStart < sEnd && newEnd > sStart;
         });
     };
 
     const toggleSlot = (dayOfWeek: number, startTime: string) => {
-        const exists = formData.schedule.find(
-            (s) => s.dayOfWeek === dayOfWeek && s.startTime === startTime
-        );
-
+        const exists = formData.schedule.find((s) => s.dayOfWeek === dayOfWeek && s.startTime === startTime);
         if (exists) {
             setFormData((d) => ({
                 ...d,
-                schedule: d.schedule.filter((s) => !(s.dayOfWeek === dayOfWeek && s.startTime === startTime))
+                schedule: d.schedule.filter((s) => !(s.dayOfWeek === dayOfWeek && s.startTime === startTime)),
             }));
             return;
         }
 
         const endTime = addHoursToTime(startTime, slotDuration);
 
-        // 1. Check if occupied by another selected slot
         if (checkOverlap(dayOfWeek, startTime, endTime)) {
-            setToast(`⚠️ Khung giờ này bị trùng với một lịch học khác bạn đã chọn.`);
+            setToast("⚠️ Khung giờ này bị trùng với một lịch học khác bạn đã chọn.");
             return;
         }
-
-        // 2. Check against tutor availability
         if (availabilities.length > 0 && !isSlotWithinAvailability(dayOfWeek, startTime, endTime, availabilities)) {
             setToast(
-                `⚠️ Gia sư không rảnh khung giờ ${startTime}–${endTime} vào ${DAY_NAMES[dayOfWeek]}. Hãy chọn giờ khác hoặc giảm thời lượng.`
+                `⚠️ Gia sư không rảnh khung giờ ${startTime}–${endTime} vào ${DAY_NAMES[dayOfWeek]}. Hãy chọn giờ khác hoặc giảm thời lượng.`,
             );
             return;
         }
 
-        setFormData((d) => ({
-            ...d,
-            schedule: [...d.schedule, { dayOfWeek, startTime, endTime }]
-        }));
+        // Nếu là package flex → giới hạn theo sessionsPerWeek
+        if (selectedCombo?.type === "flex" && formData.schedule.length >= selectedCombo.sessionsPerWeek) {
+            setToast(
+                `⚠️ Combo "${selectedCombo.name}" chỉ cho phép ${selectedCombo.sessionsPerWeek} buổi/tuần. Hãy bỏ chọn một slot khác trước.`,
+            );
+            return;
+        }
+
+        setFormData((d) => ({ ...d, schedule: [...d.schedule, { dayOfWeek, startTime, endTime }] }));
     };
 
     const isSelected = (day: number, time: string) => {
         const [h, m] = time.split(":").map(Number);
         const cellTime = h * 60 + m;
-
         return formData.schedule.some((s) => {
             if (s.dayOfWeek !== day) return false;
             const [sh, sm] = s.startTime.split(":").map(Number);
             const [eh, em] = s.endTime.split(":").map(Number);
-            return cellTime >= (sh * 60 + sm) && cellTime < (eh * 60 + em);
+            return cellTime >= sh * 60 + sm && cellTime < eh * 60 + em;
         });
     };
 
@@ -119,59 +200,38 @@ const StepSchedule: React.FC<StepProps> = ({
 
     const handleDurationChange = (newDuration: number) => {
         setSlotDuration(newDuration);
-
         setFormData((d) => {
             const validSlots: ScheduleSlot[] = [];
             let removedCount = 0;
-
-            // Process each slot with the new duration
             for (const s of d.schedule) {
                 const newEndTime = addHoursToTime(s.startTime, newDuration);
-
-                // 1. Check availability
                 const isAvailable = isSlotWithinAvailability(s.dayOfWeek, s.startTime, newEndTime, availabilities);
-
-                // 2. Check overlap with already accepted slots in the new list
-                const hasOverlap = validSlots.some(prev => {
+                const hasOverlap = validSlots.some((prev) => {
                     if (prev.dayOfWeek !== s.dayOfWeek) return false;
                     const [sh, sm] = s.startTime.split(":").map(Number);
                     const [eh, em] = newEndTime.split(":").map(Number);
                     const [psh, psm] = prev.startTime.split(":").map(Number);
                     const [peh, pem] = prev.endTime.split(":").map(Number);
-                    return (sh * 60 + sm) < (peh * 60 + pem) && (eh * 60 + em) > (psh * 60 + psm);
+                    return sh * 60 + sm < peh * 60 + pem && eh * 60 + em > psh * 60 + psm;
                 });
-
                 if (isAvailable && !hasOverlap) {
                     validSlots.push({ ...s, endTime: newEndTime });
                 } else {
                     removedCount++;
                 }
             }
-
             if (removedCount > 0) {
                 setToast(`⚠️ Đã xóa ${removedCount} slot do không còn phù hợp với thời lượng mới hoặc bị trùng.`);
             }
-
             return { ...d, schedule: validSlots };
         });
     };
 
-    return (
-        <div className="bm-step">
-            {/* Toast warning */}
-            {toast && (
-                <div className="bm-toast-warning">
-                    <span>{toast}</span>
-                    <button className="bm-toast-close" onClick={() => setToast(null)} type="button">✕</button>
-                </div>
-            )}
+    // ─────────────── Render ───────────────
 
-            <div className="bm-step-title">Chọn lịch học hàng tuần</div>
-            <p className="bm-step-desc">
-                Chọn các khoảng thời gian học và ngày bắt đầu mong muốn. Học phí được tạm tính theo <br /> <strong>{slotsPerWeek} buổi/tuần × 4 tuần = {sessionCount} buổi/tháng</strong>.
-            </p>
-
-            {/* Start Date selector */}
+    const renderScheduleGrid = () => (
+        <>
+            {/* Start Date */}
             <div className="bm-duration-section" style={{ marginBottom: 16 }}>
                 <span className="bm-duration-label">Ngày bắt đầu dự kiến:</span>
                 <input
@@ -180,11 +240,11 @@ const StepSchedule: React.FC<StepProps> = ({
                     style={{ width: "fit-content" }}
                     min={new Date().toISOString().split("T")[0]}
                     value={formData.startDate}
-                    onChange={(e) => setFormData(d => ({ ...d, startDate: e.target.value }))}
+                    onChange={(e) => setFormData((d) => ({ ...d, startDate: e.target.value }))}
                 />
             </div>
 
-            {/* Duration selector */}
+            {/* Duration */}
             <div className="bm-duration-section">
                 <span className="bm-duration-label">Thời lượng mỗi slot:</span>
                 <div className="bm-hours-grid">
@@ -205,7 +265,9 @@ const StepSchedule: React.FC<StepProps> = ({
                 <div className="bm-schedule-header">
                     <div className="bm-schedule-corner"></div>
                     {[1, 2, 3, 4, 5, 6, 0].map((d) => (
-                        <div key={d} className="bm-schedule-day-header">{DAY_NAMES[d]}</div>
+                        <div key={d} className="bm-schedule-day-header">
+                            {DAY_NAMES[d]}
+                        </div>
                     ))}
                 </div>
                 <div className="bm-schedule-body">
@@ -215,12 +277,10 @@ const StepSchedule: React.FC<StepProps> = ({
                             {[1, 2, 3, 4, 5, 6, 0].map((day) => {
                                 const isBusy = !isChunkAvailable(day, time);
                                 const currentEndTime = addHoursToTime(time, slotDuration);
-                                const isStartInvalid = isBusy || !isSlotWithinAvailability(day, time, currentEndTime, availabilities);
-
+                                const isStartInvalid =
+                                    isBusy || !isSlotWithinAvailability(day, time, currentEndTime, availabilities);
                                 const isHovered = isSlotHovered(day, time);
                                 const isStartOfHover = hoveredSlot?.day === day && hoveredSlot?.time === time;
-
-                                // Check if hover range overlaps with existing selections
                                 const isOverlapHovered = isStartOfHover && checkOverlap(day, time, currentEndTime);
                                 const hoverInvalid = isStartOfHover && (isStartInvalid || isOverlapHovered);
 
@@ -231,7 +291,15 @@ const StepSchedule: React.FC<StepProps> = ({
                                         onClick={() => toggleSlot(day, time)}
                                         onMouseEnter={() => setHoveredSlot({ day, time })}
                                         onMouseLeave={() => setHoveredSlot(null)}
-                                        title={isBusy ? "Gia sư bận khung giờ này" : isStartInvalid ? "Thời lượng đã chọn vượt quá lịch rảnh" : isOverlapHovered ? "Trùng với lịch học đã chọn" : ""}
+                                        title={
+                                            isBusy
+                                                ? "Gia sư bận khung giờ này"
+                                                : isStartInvalid
+                                                  ? "Thời lượng đã chọn vượt quá lịch rảnh"
+                                                  : isOverlapHovered
+                                                    ? "Trùng với lịch học đã chọn"
+                                                    : ""
+                                        }
                                     />
                                 );
                             })}
@@ -242,7 +310,9 @@ const StepSchedule: React.FC<StepProps> = ({
 
             {formData.schedule.length > 0 && (
                 <div className="bm-selected-slots">
-                    <div className="bm-step-title" style={{ fontSize: 13 }}>Đã chọn ({formData.schedule.length} slot/tuần → {sessionCount} buổi/tháng)</div>
+                    <div className="bm-step-title" style={{ fontSize: 13 }}>
+                        Đã chọn ({slotsPerWeek} slot/tuần → {sessionCount} buổi/tháng)
+                    </div>
                     <div className="bm-slot-tags">
                         {formData.schedule.map((s, i) => (
                             <span key={i} className="bm-slot-tag">
@@ -260,6 +330,85 @@ const StepSchedule: React.FC<StepProps> = ({
                                     ×
                                 </button>
                             </span>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </>
+    );
+
+    const renderPackageMode = () => (
+        <>
+            <div className="bm-step-title" style={{ fontSize: 14, marginBottom: 8 }}>Chọn 1 gói phù hợp</div>
+            <div className="bm-combo-grid">
+                {combos.map((c) => (
+                    <ComboCard key={c.id} combo={c} selected={formData.comboId === c.id} onSelect={() => pickCombo(c)} />
+                ))}
+            </div>
+
+            {selectedCombo?.type === "flex" && (
+                <div style={{ marginTop: 16 }}>
+                    <div className="bm-step-title" style={{ fontSize: 13 }}>
+                        Chọn {selectedCombo.sessionsPerWeek} khung giờ trong tuần ({selectedCombo.hoursPerSession}h/buổi)
+                    </div>
+                    {renderScheduleGrid()}
+                </div>
+            )}
+
+            {selectedCombo?.type === "fixed" && (
+                <div className="bm-package-fixed-note" style={{ marginTop: 14, padding: "10px 12px", background: "rgba(61, 74, 62, 0.08)", borderRadius: 8, fontSize: 12.5, color: "#3d4a3e" }}>
+                    ✓ Đã tự động chọn {selectedCombo.sessions.length} buổi theo lịch của combo. Bạn có thể chuyển sang bước tiếp theo.
+                </div>
+            )}
+
+            {/* Start date selector — vẫn cần cho cả package mode */}
+            {selectedCombo && (
+                <div className="bm-duration-section" style={{ marginTop: 14 }}>
+                    <span className="bm-duration-label">Ngày bắt đầu dự kiến:</span>
+                    <input
+                        type="date"
+                        className="bm-form-input"
+                        style={{ width: "fit-content" }}
+                        min={new Date().toISOString().split("T")[0]}
+                        value={formData.startDate}
+                        onChange={(e) => setFormData((d) => ({ ...d, startDate: e.target.value }))}
+                    />
+                </div>
+            )}
+        </>
+    );
+
+    const otherCombos = combos.filter((c) => c.id !== formData.comboId);
+
+    return (
+        <div className="bm-step">
+            {toast && (
+                <div className="bm-toast-warning">
+                    <span>{toast}</span>
+                    <button className="bm-toast-close" onClick={() => setToast(null)} type="button">
+                        ✕
+                    </button>
+                </div>
+            )}
+
+            <div className="bm-step-title">
+                {formData.bookingMode === "package" ? "Chọn gói học" : "Chọn lịch học hàng tuần"}
+            </div>
+
+            {formData.bookingMode === "package" ? renderPackageMode() : renderScheduleGrid()}
+
+            {/* Bottom card: gợi ý các gói khác (luôn hiển thị khi có combo) */}
+            {combos.length > 0 && formData.bookingMode === "schedule" && (
+                <div className="bm-package-suggest" style={{ marginTop: 22 }}>
+                    <div className="bm-step-title" style={{ fontSize: 13, marginBottom: 8 }}>
+                        Hoặc thử các gói có sẵn của gia sư
+                    </div>
+                    <div className="bm-combo-grid compact">
+                        {otherCombos.map((c) => (
+                            <ComboCard key={c.id} combo={c} selected={false} onSelect={() => {
+                                setFormData((d) => ({ ...d, bookingMode: "package" }));
+                                pickCombo(c);
+                            }} compact />
                         ))}
                     </div>
                 </div>

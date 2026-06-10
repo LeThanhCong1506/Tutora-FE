@@ -169,3 +169,42 @@ export const deleteAvailability = async (
     });
     return response.data;
 };
+
+/**
+ * Tạo NHIỀU khung giờ trong 1 request.
+ * POST /api/tutor/availabilities/bulk — body { availabilities: [...] }
+ * Mỗi phần tử là 1 ô (vd 30 phút). BE yêu cầu tối thiểu 1 phần tử.
+ */
+export const bulkCreateAvailabilities = async (
+    data: CreateAvailabilityData[]
+): Promise<ApiResponse<AvailabilitySlot[]>> => {
+    const response = await api.post(
+        '/tutor/availabilities/bulk',
+        { availabilities: data },
+        {
+            headers: {
+                ...getAuthHeaders(),
+                'Content-Type': 'application/json'
+            }
+        }
+    );
+    return response.data;
+};
+
+/**
+ * Xoá NHIỀU khung giờ trong 1 request.
+ * DELETE /api/tutor/availabilities/bulk — body { availabilityIds: [...] }
+ * BE yêu cầu tối thiểu 1 id.
+ */
+export const bulkDeleteAvailabilities = async (
+    availabilityIds: number[]
+): Promise<ApiResponse<{ deletedCount: number }>> => {
+    const response = await api.delete('/tutor/availabilities/bulk', {
+        headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json'
+        },
+        data: { availabilityIds }
+    });
+    return response.data;
+};

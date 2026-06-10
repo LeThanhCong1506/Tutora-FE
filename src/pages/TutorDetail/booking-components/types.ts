@@ -1,5 +1,6 @@
 import type { StudentType } from "../../../types/student.type";
 import type { AvailabilitySlot, SubjectInfo } from "../../../services/tutorDetail.service";
+import type { Combo } from "../../../types/combo.types";
 
 export interface ScheduleSlot {
     dayOfWeek: number;
@@ -10,12 +11,19 @@ export interface ScheduleSlot {
 export interface Subject {
     id: number;
     name: string;
+    // Tutor dạy khối nào cho môn này (vd ["grade_10", "grade_11"]). Optional cho legacy.
+    gradeLevels?: string[];
 }
+
+// Cách phụ huynh muốn đặt lịch — chọn sau khi đã chọn student + môn.
+export type BookingMode = "schedule" | "package";
 
 export interface BookingFormData {
     studentId: string;
     subjectId: number;
     teachingMode: "online" | "offline" | "hybrid";
+    bookingMode: BookingMode; // mới — picker ở step 2
+    comboId: string | null; // mới — id của combo đã chọn (chỉ khi bookingMode = "package")
     startDate: string;
     schedule: ScheduleSlot[];
     locationCity: string;
@@ -23,6 +31,10 @@ export interface BookingFormData {
     locationWard: string;
     locationDetail: string;
     promotionCode: string;
+    // BE blocker (xem plan Part E): booking model mới yêu cầu 2 field này, lấy từ
+    // endpoint public của gia sư (giá theo môn/lớp + gói). full-profile hiện chưa trả.
+    tutorSubjectGradePriceId?: number;
+    packageId?: number;
 }
 
 export type TutorTeachingModeKey = "online" | "offline" | "hybrid" | "both";
@@ -45,6 +57,9 @@ export interface StepProps {
      * - null / empty: legacy data → fall back to all modes.
      */
     tutorTeachingMode: string | null;
+    // Combos hiện có của gia sư — dùng cho step BookingMode + Schedule (package mode).
+    // Hiện đang mock trong TutorDetailPage.
+    combos: Combo[];
 }
 
 export interface BookingModalProps {
@@ -59,4 +74,6 @@ export interface BookingModalProps {
      * Tutor's preferred teaching mode. Drives whether student/parent can pick a mode.
      */
     tutorTeachingMode?: string | null;
+    // Danh sách combo (gói học) — hiển thị ở Step 2 (BookingMode) + Step 3 (Schedule).
+    combos?: Combo[];
 }

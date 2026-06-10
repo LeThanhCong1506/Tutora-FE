@@ -3,10 +3,10 @@ import {
     BookingErrorToast,
     BookingStepper,
     BookingSuccessOverlay,
+    StepBookingMode,
     StepReview,
     StepSchedule,
     StepStudentSubject,
-    StepTeachingMode,
     SUBJECT_MAPPING,
     STEPS,
     useBookingForm,
@@ -23,6 +23,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
     subjects,
     availabilities,
     tutorTeachingMode,
+    combos = [],
 }) => {
     const {
         formData,
@@ -42,10 +43,24 @@ const BookingModal: React.FC<BookingModalProps> = ({
         successBookingId,
     } = useBookingForm({ isOpen, tutorId, onClose, tutorTeachingMode });
 
-    // Compute available subjects (intersection of SUBJECT_MAPPING and tutor's subjects)
-    const availableSubjects = SUBJECT_MAPPING.filter(s =>
-        subjects.some(tutorSubj => tutorSubj.subjectId === s.id)
-    );
+    // Compute available subjects (intersection of SUBJECT_MAPPING and tutor's subjects).
+    // Enrich với gradeLevels của tutor để StepStudentSubject hiển thị + check khớp lớp.
+    const availableSubjects = SUBJECT_MAPPING.filter((s) =>
+        subjects.some((tutorSubj) => tutorSubj.subjectId === s.id),
+    ).map((s) => {
+        const tutorSubj = subjects.find((t) => t.subjectId === s.id);
+        return { ...s, gradeLevels: tutorSubj?.gradeLevels ?? [] };
+    });
+
+    // Grade matching: nếu parent đã chọn student + subject, check student.gradeLevel có trong subject.gradeLevels không.
+    const selectedStudent = students.find((s) => s.studentId === formData.studentId);
+    const selectedSubjectInfo = availableSubjects.find((s) => s.id === formData.subjectId);
+    const gradeMatches = (() => {
+        if (!selectedStudent || !selectedSubjectInfo) return true; // chưa chọn đủ → không block
+        const grades = selectedSubjectInfo.gradeLevels ?? [];
+        if (grades.length === 0) return true; // tutor không khai báo khối → cho qua
+        return grades.includes(selectedStudent.gradeLevel);
+    })();
 
     if (!isOpen) return null;
 
@@ -54,14 +69,12 @@ const BookingModal: React.FC<BookingModalProps> = ({
             case 0:
                 // Student role: only need subject selected (studentId is auto-set)
                 if (userRole === "Student") return formData.subjectId !== 0;
-                // Parent role: need both student and subject selected
-                return formData.studentId !== "" && formData.subjectId !== 0;
-            case 1: {
-                if (formData.teachingMode === "offline" || formData.teachingMode === "hybrid") {
-                    return formData.locationCity.trim() !== "" && formData.locationDistrict.trim() !== "";
-                }
-                return true;
-            }
+                // Parent role: need both student and subject selected + grade khớp.
+                return formData.studentId !== "" && formData.subjectId !== 0 && gradeMatches;
+            case 1:
+                // BookingMode: nếu "package" thì phải chọn combo nào đó.
+                if (formData.bookingMode === "package") return formData.comboId !== null;
+                return true; // "schedule" mode không cần input gì ở step này
             case 2: return formData.schedule.length > 0;
             case 3: return true;
             default: return false;
@@ -74,13 +87,16 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 case 0:
                     if (userRole === "Student") {
                         toast.warning("Vui lòng chọn môn học trước khi tiếp tục.");
-                    } else {
-                        if (!formData.studentId) toast.warning("Vui lòng chọn học sinh trước khi tiếp tục.");
-                        else toast.warning("Vui lòng chọn môn học trước khi tiếp tục.");
+                    } else if (!formData.studentId) {
+                        toast.warning("Vui lòng chọn học sinh trước khi tiếp tục.");
+                    } else if (!formData.subjectId) {
+                        toast.warning("Vui lòng chọn môn học trước khi tiếp tục.");
+                    } else if (!gradeMatches) {
+                        toast.warning("Học sinh và khối lớp gia sư dạy không khớp. Hãy đổi học sinh hoặc môn khác.");
                     }
                     break;
                 case 1:
-                    toast.warning("Vui lòng nhập đầy đủ địa điểm học (Thành phố và Quận/Huyện).");
+                    toast.warning("Vui lòng chọn 1 combo gói trước khi tiếp tục.");
                     break;
                 case 2:
                     toast.warning("Vui lòng chọn ít nhất 1 slot lịch học trước khi tiếp tục.");
@@ -103,6 +119,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         setSlotDuration,
         userRole,
         tutorTeachingMode: tutorTeachingMode ?? null,
+        combos,
     };
 
     return (
@@ -126,8 +143,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 {/* Modal Header */}
                 <div className="bm-header">
                     <div className="bm-header-info">
-                        <h2 className="bm-title">Đặt lịch học</h2>
-                        <p className="bm-subtitle">với {tutorName}</p>
+                        <h2 className="bm-title">Đặt lịch với {tutorName}</h2>
                     </div>
                     <button className="bm-close" onClick={onClose} type="button">✕</button>
                 </div>
@@ -137,7 +153,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 {/* Step Content */}
                 <div className="bm-body">
                     {step === 0 && <StepStudentSubject {...stepProps} />}
-                    {step === 1 && <StepTeachingMode {...stepProps} />}
+                    {step === 1 && <StepBookingMode {...stepProps} />}
                     {step === 2 && <StepSchedule {...stepProps} />}
                     {step === 3 && <StepReview {...stepProps} />}
                 </div>
