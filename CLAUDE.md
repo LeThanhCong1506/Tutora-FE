@@ -71,7 +71,7 @@ Exceptions: `signalr.service.ts` (singleton class holding two `HubConnection`s �
 
 Real-time: `@microsoft/signalr` client connects to `${BACKEND_URL}/hubs/chat` and `/notificationHub`, token via query param. The service is a class singleton — keep constructor side-effect-free and lazy.
 
-Supabase (`src/lib/supabase.ts`): two clients — `supabase` (anon) and `supabaseAdmin` (service-role, used for upload-ID-card). **The service-role key is currently bundled into the client — treat this as a known issue (see SSR landmines below), don't expand its usage.**
+Supabase (`src/lib/supabase.ts`): a single anon client (`supabase`) — safe for the browser, used for Auth flows (password reset email). **Never add a service-role client here** — anything needing to bypass RLS (private bucket uploads, `auth.admin.*`) must run on the backend where the service-role key stays in env vars.
 
 ## Data-fetching pattern
 
@@ -120,20 +120,8 @@ All client-visible env vars use `VITE_*` prefix and are read via `import.meta.en
 
 The `.env` file contains real keys — don't commit edits to it without checking git history first.
 
-## Known SSR landmines (relevant to planned Next.js migration)
-
-A migration plan to Next.js lives at `~/.claude/plans/abstract-growing-blossom.md` (monorepo with `apps/zalo` keeping Vite, `apps/web` on Next, shared code in `packages/shared`). Before that work starts, these files have module-scope browser dependencies that **will crash SSR** and must be guarded:
-
-- `src/services/storage.adapter.ts` — `localStorage.getItem` at module scope inside `getCachedUser`.
-- `src/lib/supabase.ts` — `createClient(...)` at import time; service-role key is public. Split into `.browser.ts` + `.admin.ts` (server-only) during migration.
-- `src/App.tsx` — reads `window.location.hash` at render body (lines ~102–108).
-- `src/services/signalr.service.ts` — class singleton; confirm no instance is constructed at module scope.
-- `src/hooks/useFormDraft.ts` — touches `sessionStorage`; needs `typeof window` guard.
-
-Any edit to these files should preserve (or add) the browser-only guarding.
-
 ## Formatting & lint
 
 - Prettier: 2-space indent, single quotes, 120-char print width, trailing commas, semis on (see `.prettierrc`).
 - ESLint flat config with `@eslint/js` recommended + `typescript-eslint` recommended + `react-hooks` + `react-refresh/vite`. `dist` is ignored.
-- tsconfig is **strict**: `noUnusedLocals`, `noUnusedParameters`, `erasableSyntaxOnly`, `verbatimModuleSyntax`, `allowImportingTsExtensions` (Vite-only — not portable to Next). `jsx: "react-jsx"`.
+- tsconfig is **strict**: `noUnusedLocals`, `noUnusedParameters`, `erasableSyntaxOnly`, `verbatimModuleSyntax`, `allowImportingTsExtensions` (Vite-only). `jsx: "react-jsx"`.

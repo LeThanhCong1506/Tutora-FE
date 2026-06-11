@@ -20,10 +20,6 @@ export const storageAdapter = {
       await setStorage({ data: { [key]: value } });
     } else {
       localStorage.setItem(key, value);
-      if (key === "TUTORA_user_data") {
-        // Sync to cookie for Next.js middleware (max-age: 30 days)
-        document.cookie = `${key}=${encodeURIComponent(value)}; path=/; max-age=2592000; SameSite=Lax`;
-      }
     }
     if (key === "TUTORA_user_data") {
       _cachedUserData = JSON.parse(value);
@@ -36,10 +32,6 @@ export const storageAdapter = {
       await removeStorage({ keys: [key] });
     } else {
       localStorage.removeItem(key);
-      if (key === "TUTORA_user_data") {
-        // Remove cookie for Next.js middleware
-        document.cookie = `${key}=; path=/; max-age=0; SameSite=Lax`;
-      }
     }
     if (key === "TUTORA_user_data") {
       _cachedUserData = null;

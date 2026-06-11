@@ -5,9 +5,8 @@ interface Props {
 }
 
 /**
- * Booking success overlay — đồng bộ với Next.js version (web-next/.../BookingModal.tsx).
- * Cùng class names + structure để CSS share design tokens. Step 1 active vì user
- * vừa tạo booking → flow tiếp theo là "Gia sư xem xét yêu cầu".
+ * Booking success overlay. Step 1 active vì user vừa tạo booking → flow tiếp theo
+ * là "Gia sư xem xét yêu cầu".
  */
 const BookingSuccessOverlay: React.FC<Props> = ({ tutorName, bookingId, onClose }) => (
     <div className="bm-success-overlay">
