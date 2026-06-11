@@ -26,6 +26,7 @@ import './styles/toastify.css';
 // Public
 const HomePage = lazy(() => import('./pages/Home/HomePage'));
 const TutorSearchPage = lazy(() => import('./pages/TutorSearch/TutorSearchPage'));
+const TutorDetailPage = lazy(() => import('./pages/TutorDetail/TutorDetailPage'));
 const ParentBookingDemo = lazy(() => import('./pages/ParentBookingDemo'));
 const LoginPage = lazy(() => import('./pages/Login/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/Register/RegisterPage'));
@@ -85,20 +86,6 @@ const NotificationsPage = lazy(() => import('./pages/Notifications/Notifications
 // ---------------------
 
 const inMiniApp = isZaloMiniApp();
-
-const FallbackRedirect = () => {
-  useEffect(() => {
-    if (window.location.port === '5173' || window.location.hostname === 'app.tutora.vn') {
-      const nextDomain = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://tutora.vn';
-      window.location.replace(`${nextDomain}${window.location.pathname}${window.location.search}`);
-    } else {
-      // Force full page navigation → Next.js SSR handles the route.
-      // replace() tears down the current Vite SPA entirely.
-      window.location.replace(window.location.pathname + window.location.search);
-    }
-  }, []);
-  return <PageLoader />;
-};
 
 function App() {
   const location = useLocation();
@@ -186,7 +173,7 @@ function App() {
           <Route path="/demo/parent-booking/:tutorId" element={<ParentBookingDemo />} />
           <Route path="/demo/parent-booking/tutor/:tutorId" element={<ParentBookingDemo />} />
           <Route path="/tutor-detail" element={<Navigate to="/" replace />} />
-          <Route path="/tutor-detail/:id" element={<FallbackRedirect />} />
+          <Route path="/tutor-detail/:id" element={<TutorDetailPage />} />
 
           {/* Tutor Portal — không có trong Zalo Mini App */}
           {!inMiniApp && (
