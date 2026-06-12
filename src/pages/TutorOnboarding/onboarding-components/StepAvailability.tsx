@@ -174,7 +174,7 @@ const StepAvailability: React.FC<StepAvailabilityProps> = ({ onboarding, onSaveA
     <div className={styles.availabilityStep}>
       <section className={styles.availabilityIntro}>
         <div>
-          <span className={styles.availabilityEyebrow}>Bước bắt buộc</span>
+          <span className={styles.availabilityEyebrow}>Mục bắt buộc</span>
           <h2 className={styles.stepHeading}>Thiết lập lịch rảnh hàng tuần</h2>
         </div>
       </section>

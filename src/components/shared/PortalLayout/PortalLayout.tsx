@@ -172,7 +172,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
 
         // Fetch real avatar from profile API
         if (showAvatarImage && user.userId) {
-            getUserProfile(user.userId).then((profile) => {
+            getUserProfile().then((profile) => {
                 const avatar = profile?.content?.avatarUrl || profile?.content?.avatarurl;
                 if (avatar) {
                     setUserData(prev => ({ ...prev, avatar }));

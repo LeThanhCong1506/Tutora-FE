@@ -192,7 +192,7 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
     <div className={styles.subjectRecordsStep}>
       <section className={styles.subjectRecordsIntro}>
         <div className={styles.subjectRecordsIntroMain}>
-          <span className={styles.subjectRecordsEyebrow}>Bước bắt buộc</span>
+          <span className={styles.subjectRecordsEyebrow}>Mục bắt buộc</span>
           <h2 className={styles.stepHeading}>Môn học & giá theo khối lớp</h2>
         </div>
       </section>

@@ -15,10 +15,10 @@
   color: #3e2f28;
 }
 
-/* ── Header + Stepper ── */
+/* ── Header + section navigation ── */
 .header {
   background: linear-gradient(135deg, #1a2238 0%, #2a3a5c 100%);
-  padding: 28px 32px 22px;
+  padding: 28px 32px 24px;
   color: #fff;
 }
 
@@ -34,81 +34,149 @@
   font-size: 14px;
   color: rgba(242, 240, 228, 0.7);
   margin: 0;
+  line-height: 1.5;
+  max-width: 820px;
 }
 
-.stepper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 22px;
-  max-width: 720px;
+.sectionNav {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 24px;
+  max-width: 980px;
 }
 
-.stepItem {
+.sectionNavItem {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  min-width: 0;
+  min-height: 76px;
+  text-align: left;
   cursor: pointer;
-  background: none;
-  border: none;
-  padding: 0;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(242, 240, 228, 0.18);
+  border-radius: 8px;
+  padding: 14px;
   color: inherit;
   font-family: inherit;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
-.stepItem:disabled {
+.sectionNavItem:hover:not(:disabled):not(.sectionNavItemActive) {
+  background: rgba(255, 255, 255, 0.13);
+  border-color: rgba(242, 240, 228, 0.36);
+  transform: translateY(-1px);
+}
+
+.sectionNavItem:focus-visible {
+  outline: 2px solid #f2f0e4;
+  outline-offset: 3px;
+}
+
+.sectionNavItem:active:not(:disabled),
+.sectionNavItemActive {
+  background: #f2f0e4;
+  border-color: #f2f0e4;
+  color: #1a2238;
+  box-shadow: 0 16px 34px rgba(9, 15, 28, 0.22);
+  transform: translateY(-1px);
+}
+
+.sectionNavItemLocked,
+.sectionNavItem:disabled {
   cursor: not-allowed;
+  opacity: 0.58;
 }
 
-.stepBubble {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+.sectionNavIcon {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  background: rgba(242, 240, 228, 0.14);
+  color: #f2f0e4;
+  font-size: 18px;
+}
+
+.sectionNavItem:active:not(:disabled) .sectionNavIcon,
+.sectionNavItemActive .sectionNavIcon {
+  background: #1a2238;
+  color: #f2f0e4;
+}
+
+.sectionNavContent {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+}
+
+.sectionNavTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sectionNavTitle {
+  min-width: 0;
   font-size: 14px;
   font-weight: 700;
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.6);
-  border: 1.5px solid rgba(255, 255, 255, 0.2);
-  flex-shrink: 0;
-  transition: all 0.2s ease;
-}
-
-.stepItem.active .stepBubble {
-  background: #f2f0e4;
-  color: #1a2238;
-  border-color: #f2f0e4;
-}
-
-.stepItem.done .stepBubble {
-  background: #3d4a3e;
   color: #fff;
-  border-color: #3d4a3e;
-}
-
-.stepLabel {
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.6);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.stepItem.active .stepLabel,
-.stepItem.done .stepLabel {
-  color: #fff;
+.sectionNavItem:active:not(:disabled) .sectionNavTitle,
+.sectionNavItemActive .sectionNavTitle {
+  color: #1a2238;
 }
 
-.stepConnector {
-  flex: 1;
-  height: 1.5px;
-  background: rgba(255, 255, 255, 0.2);
-  min-width: 16px;
+.sectionNavStatus {
+  flex-shrink: 0;
+  max-width: 112px;
+  border-radius: 999px;
+  padding: 3px 7px;
+  background: rgba(242, 240, 228, 0.12);
+  color: rgba(242, 240, 228, 0.78);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.stepConnector.filled {
-  background: #3d4a3e;
+.sectionNavItem:active:not(:disabled) .sectionNavStatus,
+.sectionNavItemActive .sectionNavStatus {
+  background: rgba(61, 74, 62, 0.12);
+  color: #3d4a3e;
+}
+
+.sectionNavDesc {
+  color: rgba(242, 240, 228, 0.66);
+  font-size: 12px;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.sectionNavItem:active:not(:disabled) .sectionNavDesc,
+.sectionNavItemActive .sectionNavDesc {
+  color: rgba(26, 34, 56, 0.72);
 }
 
 /* ── Body ── */
@@ -2732,6 +2800,11 @@
 }
 
 @media (max-width: 900px) {
+  .sectionNav {
+    grid-template-columns: 1fr;
+    max-width: 680px;
+  }
+
   .comboBuilderLayout {
     grid-template-columns: 1fr;
   }
@@ -2758,8 +2831,17 @@
     padding-right: 16px;
   }
 
-  .stepLabel {
-    display: none;
+  .sectionNavItem {
+    min-height: auto;
+    padding: 12px;
+  }
+
+  .sectionNavTop {
+    flex-wrap: wrap;
+  }
+
+  .sectionNavStatus {
+    max-width: 100%;
   }
 
   /* Mobile: cho cuộn ngang lưới (sticky header ngày sẽ không áp dụng ở đây) */

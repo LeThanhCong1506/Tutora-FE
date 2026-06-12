@@ -313,9 +313,11 @@ export const registerUserToBackend = async (supabaseToken: string, password: str
 
 // --- USER PROFILE WITH EKYC ---
 
-export const getUserProfile = async (userId: string) => {
+// BE resolves the user from the auth token — endpoint changed from
+// GET /users/{id} to GET /users/profile.
+export const getUserProfile = async () => {
   const user = getCurrentUser();
-  const response = await api.get(`/users/${userId}`, {
+  const response = await api.get(`/users/profile`, {
     headers: { Authorization: `Bearer ${user?.accessToken}` }
   });
   return response.data;
