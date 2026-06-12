@@ -8,36 +8,13 @@ import { isZaloMiniApp } from '../../services/zalo-env';
 import { loginWithZalo } from '../../services/zalo-auth.service';
 import ZaloRoleSelectModal from '../../components/ZaloRoleSelectModal/ZaloRoleSelectModal';
 import BookingModal from './BookingModal';
-import { getTutorFullProfile } from '../../services/tutorDetail.service';
+import {
+    getTutorAvailabilities,
+    getTutorFullProfile,
+    getTutorSchedule,
+    mapPackagesToFixedCombos,
+} from '../../services/tutorDetail.service';
 import type { TutorFullProfile } from '../../services/tutorDetail.service';
-import type { Combo } from '../../types/combo.types';
-
-// TODO(BE): Mock combo data — xóa khi /api/tutors/{id}/combos available.
-// Áp dụng chung cho mọi tutor để demo flow "đặt theo gói".
-const MOCK_TUTOR_COMBOS: Combo[] = [
-  {
-    id: 'mock-combo-math-fixed',
-    name: 'Combo 8 buổi Toán cố định',
-    type: 'fixed',
-    subjectId: 1,
-    subjectName: 'Toán',
-    sessions: [
-      { dayOfWeek: 1, startHour: 18, startMinute: 0, durationHours: 1.5 }, // T2 18:00-19:30
-      { dayOfWeek: 3, startHour: 18, startMinute: 0, durationHours: 1.5 }, // T4 18:00-19:30
-    ],
-  },
-  {
-    id: 'mock-combo-english-flex',
-    name: 'Combo Tiếng Anh linh hoạt',
-    type: 'flex',
-    subjectId: 2,
-    subjectName: 'Tiếng Anh',
-    sessionsPerWeek: 2,
-    sessionsPerMonth: 8,
-    hoursPerSession: 1,
-    description: 'Phụ huynh tự chọn khung giờ phù hợp từ lịch rảnh của gia sư. Ưu tiên buổi tối hoặc cuối tuần.',
-  },
-];
 import {
     HeroSection,
     AboutSection,
@@ -96,10 +73,33 @@ const TutorDetailPage = () => {
             if (!id) return;
             try {
                 setLoading(true);
-                const response = await getTutorFullProfile(id);
+                const [profileResult, availabilityResult, scheduleResult] = await Promise.allSettled([
+                    getTutorFullProfile(id),
+                    getTutorAvailabilities(id),
+                    getTutorSchedule(id),
+                ]);
+
+                if (profileResult.status === 'rejected') {
+                    throw profileResult.reason;
+                }
+
+                const response = profileResult.value;
+                const freshAvailabilities =
+                    availabilityResult.status === 'fulfilled'
+                        ? availabilityResult.value.content
+                        : response.content.availabilities;
+                const freshPackages =
+                    scheduleResult.status === 'fulfilled'
+                        ? scheduleResult.value.content.packages
+                        : response.content.packages;
+
                 if (mounted) {
-                    // TODO(BE): inject mock combos cho demo — xóa khi BE trả về `combos`.
-                    const profileWithCombos = { ...response.content, combos: response.content.combos ?? MOCK_TUTOR_COMBOS };
+                    const profileWithCombos = {
+                        ...response.content,
+                        availabilities: freshAvailabilities ?? [],
+                        packages: freshPackages ?? [],
+                        combos: mapPackagesToFixedCombos(freshPackages),
+                    };
                     setProfile(profileWithCombos);
                     setError(null);
                 }
@@ -202,6 +202,8 @@ const TutorDetailPage = () => {
                 tutorId={id || ''}
                 hourlyRate={profile.hourlyRate || 0}
                 subjects={profile.subjects || []}
+                subjectGradePrices={profile.subjectGradePrices || []}
+                packages={profile.packages || []}
                 availabilities={profile.availabilities}
                 tutorTeachingMode={profile.teachingMode}
                 combos={profile.combos || []}

@@ -1,419 +1,379 @@
-import { useState, useEffect, useMemo } from "react";
-import type { StepProps, ScheduleSlot } from "./types";
-import { DAY_NAMES, DURATION_OPTIONS, TIME_SLOTS } from "./constants";
-import { addHoursToTime, isSlotWithinAvailability } from "./utils";
-import type { Combo, FixedCombo } from "../../../types/combo.types";
+import {
+    AlertTriangle,
+    BookOpen,
+    CalendarDays,
+    CalendarRange,
+    Check,
+    ChevronLeft,
+    ChevronRight,
+    Clock3,
+    Repeat2,
+    RotateCcw,
+} from "lucide-react";
+import type { StepProps } from "./types";
+import type { FixedCombo } from "../../../types/combo.types";
+import MonthSimulation from "./MonthSimulation";
+import {
+    comboToWeeklyPattern,
+    formatDuration,
+    formatFullDate,
+    formatShortDate,
+    mondayOf,
+    rangesOverlap,
+    sessionFitsAvailability,
+    slotCoversCell,
+    timeToMinutes,
+    toDateKey,
+    toDemoWeekday,
+} from "./utils";
+import styles from "./bookingModal.module.css";
 
-// Convert combo cố định → ScheduleSlot[] để fill thẳng vào formData.schedule.
-const fixedComboToSchedule = (combo: FixedCombo): ScheduleSlot[] =>
-    combo.sessions.map((s) => {
-        const startTotal = s.startHour * 60 + s.startMinute;
-        const endTotal = startTotal + s.durationHours * 60;
-        const startStr = `${String(s.startHour).padStart(2, "0")}:${String(s.startMinute).padStart(2, "0")}`;
-        const endH = Math.floor(endTotal / 60);
-        const endM = endTotal % 60;
-        const endStr = `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
-        return { dayOfWeek: s.dayOfWeek, startTime: startStr, endTime: endStr };
-    });
-
-const ComboCard: React.FC<{
-    combo: Combo;
-    selected: boolean;
-    onSelect: () => void;
-    compact?: boolean;
-}> = ({ combo, selected, onSelect, compact = false }) => {
-    const totalSessions = combo.type === "fixed" ? combo.sessions.length : combo.sessionsPerWeek;
-    const totalHours =
-        combo.type === "fixed"
-            ? combo.sessions.reduce((sum, s) => sum + s.durationHours, 0)
-            : combo.sessionsPerWeek * combo.hoursPerSession;
-
-    return (
-        <div
-            className={`bm-combo-card ${selected ? "selected" : ""} ${compact ? "compact" : ""}`}
-            onClick={onSelect}
-            role="button"
-            aria-pressed={selected}
-        >
-            <div className="bm-combo-card-head">
-                <span className={`bm-combo-badge ${combo.type === "fixed" ? "fixed" : "flex"}`}>
-                    {combo.type === "fixed" ? "Cố định" : "Linh hoạt"}
-                </span>
-                {combo.subjectName && <span className="bm-combo-subject">{combo.subjectName}</span>}
-            </div>
-            <h4 className="bm-combo-name">{combo.name}</h4>
-            <div className="bm-combo-meta">
-                <span>{totalSessions} buổi/tuần</span>
-                <span>·</span>
-                <span>{totalHours}h/tuần</span>
-            </div>
-            {combo.type === "fixed" ? (
-                <ul className="bm-combo-sessions">
-                    {combo.sessions.slice(0, 3).map((s, i) => {
-                        const startStr = `${String(s.startHour).padStart(2, "0")}:${String(s.startMinute).padStart(2, "0")}`;
-                        const endTotal = s.startHour * 60 + s.startMinute + s.durationHours * 60;
-                        const endStr = `${String(Math.floor(endTotal / 60)).padStart(2, "0")}:${String(endTotal % 60).padStart(2, "0")}`;
-                        return (
-                            <li key={i}>
-                                {DAY_NAMES[s.dayOfWeek]} · {startStr}–{endStr}
-                            </li>
-                        );
-                    })}
-                    {combo.sessions.length > 3 && <li>... +{combo.sessions.length - 3} buổi khác</li>}
-                </ul>
-            ) : (
-                <p className="bm-combo-desc">{combo.description}</p>
-            )}
-            {selected && <div className="bm-check">✓</div>}
-        </div>
-    );
-};
+// Nhãn cột theo quy ước demo: index 0 = Thứ 2 … 6 = CN.
+const DAY_LABELS = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"];
+const pad2 = (n: number) => String(n).padStart(2, "0");
 
 const StepSchedule: React.FC<StepProps> = ({
     formData,
     setFormData,
-    slotDuration,
-    setSlotDuration,
-    availabilities,
     combos,
+    scheduling,
+    sessionHours,
+    selectedCombo,
 }) => {
-    const [toast, setToast] = useState<string | null>(null);
-    const [hoveredSlot, setHoveredSlot] = useState<{ day: number; time: string } | null>(null);
+    const isPackageMode = formData.bookingMode === "package";
+    const isAvailabilityMode = formData.bookingMode === "schedule";
+    const isFixedPackage = isPackageMode && selectedCombo?.type === "fixed";
+    const fixedCombos = combos.filter((c): c is FixedCombo => c.type === "fixed");
 
-    useEffect(() => {
-        if (!toast) return;
-        const timer = setTimeout(() => setToast(null), 4000);
-        return () => clearTimeout(timer);
-    }, [toast]);
+    const {
+        today,
+        bookingDeadline,
+        visibleWeekIndex,
+        setVisibleWeekIndex,
+        visibleDays,
+        maxVisibleWeekIndex,
+        calendarTimes,
+        calendarAvailability,
+        pickedWeekSlots,
+        selectedSlots,
+        bookingWindowStart,
+        bookingWindowEnd,
+        navLocked,
+        toggleAvailabilityPick,
+        pickFixedStartWeek,
+        clearPicks,
+    } = scheduling;
 
-    // ─── Package mode handlers ───
-    const selectedCombo = useMemo(() => combos.find((c) => c.id === formData.comboId), [combos, formData.comboId]);
+    const fixedPattern = selectedCombo?.type === "fixed" ? comboToWeeklyPattern(selectedCombo) : [];
 
-    const pickCombo = (combo: Combo) => {
-        if (combo.type === "fixed") {
-            // Auto-fill schedule từ combo cố định.
-            setFormData((d) => ({
-                ...d,
-                comboId: combo.id,
-                schedule: fixedComboToSchedule(combo),
-            }));
-        } else {
-            // Flex: clear schedule, để parent chọn slot. setSlotDuration theo combo.
-            setFormData((d) => ({ ...d, comboId: combo.id, schedule: [] }));
-            setSlotDuration(combo.hoursPerSession);
-        }
+    const selectCombo = (combo: FixedCombo) => {
+        if (combo.id === formData.comboId) return;
+        setFormData((d) => ({ ...d, comboId: combo.id }));
     };
 
-    // ─── Schedule mode logic (giống code cũ, support 30-min) ───
-    const isChunkAvailable = (day: number, time: string): boolean => {
-        if (!availabilities || availabilities.length === 0) return true;
-        const [h, m] = time.split(":").map(Number);
-        const startMins = h * 60 + m;
-        const endMins = startMins + 30;
-
-        return availabilities.some((a) => {
-            const aDay = a.dayofweek;
-            if (aDay !== day) return false;
-            const aStartStr = a.starttime;
-            const aEndStr = a.endtime;
-            if (!aStartStr || !aEndStr) return false;
-            const [ash, asm] = aStartStr.split(":").map(Number);
-            const [aeh, aem] = aEndStr.split(":").map(Number);
-            return startMins >= ash * 60 + asm && endMins <= aeh * 60 + aem;
-        });
-    };
-
-    const checkOverlap = (day: number, start: string, end: string, excludeStartTime?: string): boolean => {
-        const [sh, sm] = start.split(":").map(Number);
-        const [eh, em] = end.split(":").map(Number);
-        const newStart = sh * 60 + sm;
-        const newEnd = eh * 60 + em;
-
-        return formData.schedule.some((s) => {
-            if (s.dayOfWeek !== day) return false;
-            if (excludeStartTime && s.startTime === excludeStartTime) return false;
-            const [ssh, ssm] = s.startTime.split(":").map(Number);
-            const [eeh, eem] = s.endTime.split(":").map(Number);
-            const sStart = ssh * 60 + ssm;
-            const sEnd = eeh * 60 + eem;
-            return newStart < sEnd && newEnd > sStart;
-        });
-    };
-
-    const toggleSlot = (dayOfWeek: number, startTime: string) => {
-        const exists = formData.schedule.find((s) => s.dayOfWeek === dayOfWeek && s.startTime === startTime);
-        if (exists) {
-            setFormData((d) => ({
-                ...d,
-                schedule: d.schedule.filter((s) => !(s.dayOfWeek === dayOfWeek && s.startTime === startTime)),
-            }));
-            return;
-        }
-
-        const endTime = addHoursToTime(startTime, slotDuration);
-
-        if (checkOverlap(dayOfWeek, startTime, endTime)) {
-            setToast("⚠️ Khung giờ này bị trùng với một lịch học khác bạn đã chọn.");
-            return;
-        }
-        if (availabilities.length > 0 && !isSlotWithinAvailability(dayOfWeek, startTime, endTime, availabilities)) {
-            setToast(
-                `⚠️ Gia sư không rảnh khung giờ ${startTime}–${endTime} vào ${DAY_NAMES[dayOfWeek]}. Hãy chọn giờ khác hoặc giảm thời lượng.`,
-            );
-            return;
-        }
-
-        // Nếu là package flex → giới hạn theo sessionsPerWeek
-        if (selectedCombo?.type === "flex" && formData.schedule.length >= selectedCombo.sessionsPerWeek) {
-            setToast(
-                `⚠️ Combo "${selectedCombo.name}" chỉ cho phép ${selectedCombo.sessionsPerWeek} buổi/tuần. Hãy bỏ chọn một slot khác trước.`,
-            );
-            return;
-        }
-
-        setFormData((d) => ({ ...d, schedule: [...d.schedule, { dayOfWeek, startTime, endTime }] }));
-    };
-
-    const isSelected = (day: number, time: string) => {
-        const [h, m] = time.split(":").map(Number);
-        const cellTime = h * 60 + m;
-        return formData.schedule.some((s) => {
-            if (s.dayOfWeek !== day) return false;
-            const [sh, sm] = s.startTime.split(":").map(Number);
-            const [eh, em] = s.endTime.split(":").map(Number);
-            return cellTime >= sh * 60 + sm && cellTime < eh * 60 + em;
-        });
-    };
-
-    const isSlotHovered = (day: number, time: string): boolean => {
-        if (!hoveredSlot || hoveredSlot.day !== day) return false;
-        const [h, m] = time.split(":").map(Number);
-        const cellTime = h * 60 + m;
-        const [hh, hm] = hoveredSlot.time.split(":").map(Number);
-        const hoverStart = hh * 60 + hm;
-        const hoverEnd = hoverStart + slotDuration * 60;
-        return cellTime >= hoverStart && cellTime < hoverEnd;
-    };
-
-    const slotsPerWeek = formData.schedule.length;
-    const sessionCount = slotsPerWeek * 4;
-
-    const handleDurationChange = (newDuration: number) => {
-        setSlotDuration(newDuration);
-        setFormData((d) => {
-            const validSlots: ScheduleSlot[] = [];
-            let removedCount = 0;
-            for (const s of d.schedule) {
-                const newEndTime = addHoursToTime(s.startTime, newDuration);
-                const isAvailable = isSlotWithinAvailability(s.dayOfWeek, s.startTime, newEndTime, availabilities);
-                const hasOverlap = validSlots.some((prev) => {
-                    if (prev.dayOfWeek !== s.dayOfWeek) return false;
-                    const [sh, sm] = s.startTime.split(":").map(Number);
-                    const [eh, em] = newEndTime.split(":").map(Number);
-                    const [psh, psm] = prev.startTime.split(":").map(Number);
-                    const [peh, pem] = prev.endTime.split(":").map(Number);
-                    return sh * 60 + sm < peh * 60 + pem && eh * 60 + em > psh * 60 + psm;
-                });
-                if (isAvailable && !hasOverlap) {
-                    validSlots.push({ ...s, endTime: newEndTime });
-                } else {
-                    removedCount++;
-                }
-            }
-            if (removedCount > 0) {
-                setToast(`⚠️ Đã xóa ${removedCount} slot do không còn phù hợp với thời lượng mới hoặc bị trùng.`);
-            }
-            return { ...d, schedule: validSlots };
-        });
-    };
-
-    // ─────────────── Render ───────────────
-
-    const renderScheduleGrid = () => (
+    return (
         <>
-            {/* Start Date */}
-            <div className="bm-duration-section" style={{ marginBottom: 16 }}>
-                <span className="bm-duration-label">Ngày bắt đầu dự kiến:</span>
-                <input
-                    type="date"
-                    className="bm-form-input"
-                    style={{ width: "fit-content" }}
-                    min={new Date().toISOString().split("T")[0]}
-                    value={formData.startDate}
-                    onChange={(e) => setFormData((d) => ({ ...d, startDate: e.target.value }))}
-                />
-            </div>
-
-            {/* Duration */}
-            <div className="bm-duration-section">
-                <span className="bm-duration-label">Thời lượng mỗi slot:</span>
-                <div className="bm-hours-grid">
-                    {DURATION_OPTIONS.map((opt) => (
-                        <button
-                            key={opt.value}
-                            className={`bm-hours-btn ${slotDuration === opt.value ? "selected" : ""}`}
-                            onClick={() => handleDurationChange(opt.value)}
-                            type="button"
-                        >
-                            {opt.label}
-                        </button>
-                    ))}
+            <div className={styles.sectionHeading}>
+                <span className={styles.headingIcon}>
+                    <CalendarDays size={20} />
+                </span>
+                <div>
+                    <span className={styles.eyebrow}>Bước 03</span>
+                    <h2>{isPackageMode && !selectedCombo ? "Chọn gói cố định" : "Chọn lịch học"}</h2>
                 </div>
             </div>
 
-            <div className="bm-schedule-table">
-                <div className="bm-schedule-header">
-                    <div className="bm-schedule-corner"></div>
-                    {[1, 2, 3, 4, 5, 6, 0].map((d) => (
-                        <div key={d} className="bm-schedule-day-header">
-                            {DAY_NAMES[d]}
-                        </div>
-                    ))}
-                </div>
-                <div className="bm-schedule-body">
-                    {TIME_SLOTS.map((time) => (
-                        <div key={time} className="bm-schedule-row">
-                            <div className="bm-schedule-time">{time}</div>
-                            {[1, 2, 3, 4, 5, 6, 0].map((day) => {
-                                const isBusy = !isChunkAvailable(day, time);
-                                const currentEndTime = addHoursToTime(time, slotDuration);
-                                const isStartInvalid =
-                                    isBusy || !isSlotWithinAvailability(day, time, currentEndTime, availabilities);
-                                const isHovered = isSlotHovered(day, time);
-                                const isStartOfHover = hoveredSlot?.day === day && hoveredSlot?.time === time;
-                                const isOverlapHovered = isStartOfHover && checkOverlap(day, time, currentEndTime);
-                                const hoverInvalid = isStartOfHover && (isStartInvalid || isOverlapHovered);
-
+            {isPackageMode && (
+                <section className={styles.comboPickSection}>
+                    {fixedCombos.length === 0 ? (
+                        <p className={styles.noFitNotice}>
+                            <AlertTriangle size={15} />
+                            Gia sư chưa tạo gói cố định nào. Hãy chọn "Tự chọn lịch rảnh" để đặt theo lịch trống.
+                        </p>
+                    ) : (
+                        <div className={styles.comboGrid}>
+                            {fixedCombos.map((combo) => {
+                                const isSelected = combo.id === formData.comboId;
+                                const comboDuration = combo.sessions[0]?.durationHours ?? 1;
                                 return (
-                                    <div
-                                        key={day}
-                                        className={`bm-schedule-cell ${isSelected(day, time) ? "selected" : ""} ${isBusy ? "unavailable" : ""} ${isHovered ? "hovering" : ""} ${hoverInvalid ? "hover-invalid" : ""}`}
-                                        onClick={() => toggleSlot(day, time)}
-                                        onMouseEnter={() => setHoveredSlot({ day, time })}
-                                        onMouseLeave={() => setHoveredSlot(null)}
-                                        title={
-                                            isBusy
-                                                ? "Gia sư bận khung giờ này"
-                                                : isStartInvalid
-                                                  ? "Thời lượng đã chọn vượt quá lịch rảnh"
-                                                  : isOverlapHovered
-                                                    ? "Trùng với lịch học đã chọn"
-                                                    : ""
-                                        }
-                                    />
+                                    <button
+                                        key={combo.id}
+                                        type="button"
+                                        className={`${styles.comboCard} ${isSelected ? styles.selectedCard : ""}`}
+                                        onClick={() => selectCombo(combo)}
+                                    >
+                                        <span className={`${styles.comboIcon} ${styles.fixedPackageIcon}`}>
+                                            <Repeat2 size={18} />
+                                        </span>
+                                        <span className={styles.comboType}>Gói cố định</span>
+                                        <h3>{combo.name}</h3>
+                                        <div className={styles.comboMeta}>
+                                            <span>
+                                                <BookOpen size={14} />
+                                                {combo.sessions.length} buổi / tuần
+                                            </span>
+                                            <span>
+                                                <Clock3 size={14} />
+                                                {formatDuration(comboDuration)} / buổi
+                                            </span>
+                                        </div>
+                                        <ul className={styles.comboSessionList}>
+                                            {combo.sessions.map((session, i) => (
+                                                <li key={i}>
+                                                    <strong>{DAY_LABELS[toDemoWeekday(session.dayOfWeek) - 1]}</strong>
+                                                    <span>
+                                                        {pad2(session.startHour)}:{pad2(session.startMinute)}
+                                                    </span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <small>{isSelected ? "Đã chọn" : "Chọn gói"}</small>
+                                    </button>
                                 );
                             })}
                         </div>
-                    ))}
-                </div>
-            </div>
+                    )}
+                </section>
+            )}
 
-            {formData.schedule.length > 0 && (
-                <div className="bm-selected-slots">
-                    <div className="bm-step-title" style={{ fontSize: 13 }}>
-                        Đã chọn ({slotsPerWeek} slot/tuần → {sessionCount} buổi/tháng)
-                    </div>
-                    <div className="bm-slot-tags">
-                        {formData.schedule.map((s, i) => (
-                            <span key={i} className="bm-slot-tag">
-                                {DAY_NAMES[s.dayOfWeek]} {s.startTime}–{s.endTime}
-                                <button
-                                    className="bm-slot-remove"
-                                    onClick={() =>
-                                        setFormData((d) => ({
-                                            ...d,
-                                            schedule: d.schedule.filter((_, idx) => idx !== i),
-                                        }))
-                                    }
-                                    type="button"
-                                >
-                                    ×
-                                </button>
+            {(isAvailabilityMode || selectedCombo) && (
+                <>
+                    {isAvailabilityMode && (
+                        <section className={styles.durationInfo}>
+                            <Clock3 size={15} />
+                            <span>
+                                Mỗi buổi <strong>{formatDuration(sessionHours)}</strong> · bấm buổi đầu tiên trên lịch để bắt
+                                đầu.
                             </span>
-                        ))}
+                        </section>
+                    )}
+
+                    <section className={styles.packageSetup}>
+                        <div className={styles.packageWindowInfo}>
+                            <CalendarRange size={15} />
+                            <span>
+                                {pickedWeekSlots.length > 0 ? (
+                                    <>
+                                        Bắt đầu <strong>{bookingWindowStart && formatFullDate(bookingWindowStart)}</strong>{" "}
+                                        → <strong>{bookingWindowEnd && formatFullDate(bookingWindowEnd)}</strong> ·{" "}
+                                        <strong>{selectedSlots.length} buổi</strong>
+                                    </>
+                                ) : (
+                                    <>
+                                        Bắt đầu từ <strong>buổi đầu tiên bạn chọn</strong> →{" "}
+                                        <strong>kết thúc sau 1 tháng</strong>
+                                    </>
+                                )}
+                            </span>
+                        </div>
+                        {pickedWeekSlots.length > 0 && (
+                            <button type="button" className={styles.changeWeekBtn} onClick={clearPicks}>
+                                <RotateCcw size={14} />
+                                Đổi tuần khác
+                            </button>
+                        )}
+                    </section>
+
+                    <div className={styles.scheduleLayout}>
+                        <section className={styles.calendarSection}>
+                            <div className={styles.calendarHeading}>
+                                <div>
+                                    <span className={styles.eyebrow}>Lịch rảnh của gia sư</span>
+                                </div>
+                                <div className={styles.calendarControls}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setVisibleWeekIndex((c) => Math.max(0, c - 1))}
+                                        disabled={navLocked || visibleWeekIndex === 0}
+                                        aria-label="Tuần trước"
+                                    >
+                                        <ChevronLeft size={18} />
+                                    </button>
+                                    <strong>
+                                        {formatShortDate(visibleDays[0])} - {formatShortDate(visibleDays[6])}
+                                    </strong>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setVisibleWeekIndex((c) => Math.min(maxVisibleWeekIndex, c + 1))
+                                        }
+                                        disabled={navLocked || visibleWeekIndex === maxVisibleWeekIndex}
+                                        aria-label="Tuần sau"
+                                    >
+                                        <ChevronRight size={18} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {calendarTimes.length === 0 ? (
+                                <p className={styles.noFitNotice}>
+                                    <AlertTriangle size={15} />
+                                    Gia sư chưa mở khung giờ rảnh nào.
+                                </p>
+                            ) : (
+                                <div className={styles.calendarScroller}>
+                                    <div className={styles.calendarGrid}>
+                                        <div className={`${styles.calendarCell} ${styles.timeHead}`}>Giờ học</div>
+                                        {visibleDays.map((date, index) => (
+                                            <div
+                                                key={toDateKey(date)}
+                                                className={`${styles.calendarCell} ${styles.dayHead} ${
+                                                    date < today || date > bookingDeadline
+                                                        ? styles.dayOutsideWindow
+                                                        : ""
+                                                }`}
+                                            >
+                                                <strong>{DAY_LABELS[index]}</strong>
+                                                <span>{formatShortDate(date)}</span>
+                                            </div>
+                                        ))}
+
+                                        {calendarTimes.map((time) => (
+                                            <div className={styles.calendarRow} key={time}>
+                                                <div className={`${styles.calendarCell} ${styles.timeCell}`}>
+                                                    {time}
+                                                </div>
+                                                {visibleDays.map((date, dayIndex) => {
+                                                    const cellMin = timeToMinutes(time);
+                                                    const dateKey = toDateKey(date);
+                                                    const demoDow = dayIndex + 1;
+                                                    const isOpen = calendarAvailability.some(
+                                                        (slot) =>
+                                                            slot.dayOfWeek === demoDow &&
+                                                            slot.available !== false &&
+                                                            slotCoversCell(slot.startTime, slot.durationHours, cellMin),
+                                                    );
+                                                    const isPast = date < today;
+                                                    const selectedCovering = selectedSlots.find(
+                                                        (s) =>
+                                                            s.date === dateKey &&
+                                                            slotCoversCell(s.startTime, s.durationHours, cellMin),
+                                                    );
+                                                    const isSelected = Boolean(selectedCovering);
+                                                    const isSelectedStart = selectedCovering?.startTime === time;
+                                                    const isSelectedContinuation = isSelected && !isSelectedStart;
+
+                                                    let clickable = false;
+                                                    let isOpenButCannotStart = false;
+                                                    let isBlockedBySelectedSession = false;
+                                                    let onCellClick: (() => void) | null = null;
+                                                    if (!isPast && (isOpen || isSelected)) {
+                                                        if (isAvailabilityMode) {
+                                                            const fits =
+                                                                isOpen &&
+                                                                sessionFitsAvailability(
+                                                                    demoDow,
+                                                                    time,
+                                                                    sessionHours,
+                                                                    calendarAvailability,
+                                                                );
+                                                            const overlapsSelectedSession = pickedWeekSlots.some(
+                                                                (p) =>
+                                                                    p.date === dateKey &&
+                                                                    p.startTime !== time &&
+                                                                    rangesOverlap(
+                                                                        timeToMinutes(p.startTime),
+                                                                        p.durationHours,
+                                                                        cellMin,
+                                                                        sessionHours,
+                                                                    ),
+                                                            );
+                                                            const canStartSession =
+                                                                isOpen && fits && date <= bookingDeadline;
+
+                                                            clickable =
+                                                                isSelectedStart ||
+                                                                (canStartSession && !overlapsSelectedSession);
+                                                            isOpenButCannotStart =
+                                                                isOpen && !canStartSession && !isSelectedContinuation;
+                                                            isBlockedBySelectedSession =
+                                                                isSelectedContinuation || overlapsSelectedSession;
+                                                            onCellClick = () =>
+                                                                toggleAvailabilityPick(dateKey, demoDow, time);
+                                                        } else if (isFixedPackage) {
+                                                            const isComboCell = fixedPattern.some(
+                                                                (p) =>
+                                                                    p.dayOfWeek === demoDow &&
+                                                                    slotCoversCell(
+                                                                        p.startTime,
+                                                                        p.durationHours,
+                                                                        cellMin,
+                                                                    ),
+                                                            );
+                                                            clickable =
+                                                                !navLocked && isComboCell && date <= bookingDeadline;
+                                                            onCellClick = () => pickFixedStartWeek(mondayOf(date));
+                                                        }
+                                                    }
+                                                    const showAvailable = clickable && !isSelected;
+                                                    const showBlockedChoose =
+                                                        isAvailabilityMode && isBlockedBySelectedSession && !isSelected;
+                                                    const showSelectedState = isSelected;
+                                                    const slotLabel = showSelectedState ? (
+                                                        <>
+                                                            <Check size={13} />
+                                                            Đã chọn
+                                                        </>
+                                                    ) : showAvailable ? (
+                                                        "+ Chọn"
+                                                    ) : showBlockedChoose ? (
+                                                        "Chọn"
+                                                    ) : isOpenButCannotStart ? (
+                                                        "Không đủ giờ"
+                                                    ) : (
+                                                        "—"
+                                                    );
+
+                                                    return (
+                                                        <div
+                                                            key={`${dateKey}-${time}`}
+                                                            className={`${styles.calendarCell} ${styles.slotCell}`}
+                                                        >
+                                                            <button
+                                                                type="button"
+                                                                className={`${styles.slotButton} ${
+                                                                    showSelectedState
+                                                                        ? styles.slotSelected
+                                                                        : showAvailable
+                                                                          ? styles.slotAvailable
+                                                                          : showBlockedChoose || isOpenButCannotStart
+                                                                            ? styles.slotOpen
+                                                                            : styles.slotUnavailable
+                                                                }`}
+                                                                disabled={!clickable}
+                                                                onClick={() => onCellClick?.()}
+                                                                aria-label={`${formatShortDate(date)} lúc ${time}`}
+                                                                title={
+                                                                    isSelectedContinuation
+                                                                        ? `Thuộc buổi học bắt đầu lúc ${selectedCovering?.startTime}.`
+                                                                        : showBlockedChoose
+                                                                        ? "Khung này đã được khóa theo buổi đã chọn. Bấm ô bắt đầu đã chọn để bỏ buổi."
+                                                                        : isOpenButCannotStart
+                                                                          ? "Khung này vẫn rảnh nhưng không đủ thời lượng để bắt đầu buổi học."
+                                                                          : undefined
+                                                                }
+                                                            >
+                                                                {slotLabel}
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </section>
+
+                        <MonthSimulation
+                            slots={selectedSlots}
+                            windowStart={bookingWindowStart ?? today}
+                            windowEnd={bookingWindowEnd ?? today}
+                        />
                     </div>
-                </div>
+                </>
             )}
         </>
-    );
-
-    const renderPackageMode = () => (
-        <>
-            <div className="bm-step-title" style={{ fontSize: 14, marginBottom: 8 }}>Chọn 1 gói phù hợp</div>
-            <div className="bm-combo-grid">
-                {combos.map((c) => (
-                    <ComboCard key={c.id} combo={c} selected={formData.comboId === c.id} onSelect={() => pickCombo(c)} />
-                ))}
-            </div>
-
-            {selectedCombo?.type === "flex" && (
-                <div style={{ marginTop: 16 }}>
-                    <div className="bm-step-title" style={{ fontSize: 13 }}>
-                        Chọn {selectedCombo.sessionsPerWeek} khung giờ trong tuần ({selectedCombo.hoursPerSession}h/buổi)
-                    </div>
-                    {renderScheduleGrid()}
-                </div>
-            )}
-
-            {selectedCombo?.type === "fixed" && (
-                <div className="bm-package-fixed-note" style={{ marginTop: 14, padding: "10px 12px", background: "rgba(61, 74, 62, 0.08)", borderRadius: 8, fontSize: 12.5, color: "#3d4a3e" }}>
-                    ✓ Đã tự động chọn {selectedCombo.sessions.length} buổi theo lịch của combo. Bạn có thể chuyển sang bước tiếp theo.
-                </div>
-            )}
-
-            {/* Start date selector — vẫn cần cho cả package mode */}
-            {selectedCombo && (
-                <div className="bm-duration-section" style={{ marginTop: 14 }}>
-                    <span className="bm-duration-label">Ngày bắt đầu dự kiến:</span>
-                    <input
-                        type="date"
-                        className="bm-form-input"
-                        style={{ width: "fit-content" }}
-                        min={new Date().toISOString().split("T")[0]}
-                        value={formData.startDate}
-                        onChange={(e) => setFormData((d) => ({ ...d, startDate: e.target.value }))}
-                    />
-                </div>
-            )}
-        </>
-    );
-
-    const otherCombos = combos.filter((c) => c.id !== formData.comboId);
-
-    return (
-        <div className="bm-step">
-            {toast && (
-                <div className="bm-toast-warning">
-                    <span>{toast}</span>
-                    <button className="bm-toast-close" onClick={() => setToast(null)} type="button">
-                        ✕
-                    </button>
-                </div>
-            )}
-
-            <div className="bm-step-title">
-                {formData.bookingMode === "package" ? "Chọn gói học" : "Chọn lịch học hàng tuần"}
-            </div>
-
-            {formData.bookingMode === "package" ? renderPackageMode() : renderScheduleGrid()}
-
-            {/* Bottom card: gợi ý các gói khác (luôn hiển thị khi có combo) */}
-            {combos.length > 0 && formData.bookingMode === "schedule" && (
-                <div className="bm-package-suggest" style={{ marginTop: 22 }}>
-                    <div className="bm-step-title" style={{ fontSize: 13, marginBottom: 8 }}>
-                        Hoặc thử các gói có sẵn của gia sư
-                    </div>
-                    <div className="bm-combo-grid compact">
-                        {otherCombos.map((c) => (
-                            <ComboCard key={c.id} combo={c} selected={false} onSelect={() => {
-                                setFormData((d) => ({ ...d, bookingMode: "package" }));
-                                pickCombo(c);
-                            }} compact />
-                        ))}
-                    </div>
-                </div>
-            )}
-        </div>
     );
 };
 

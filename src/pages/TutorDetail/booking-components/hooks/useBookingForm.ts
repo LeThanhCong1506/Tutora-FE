@@ -5,7 +5,7 @@ import { getCurrentUserRole, getUserIdFromToken } from "../../../../services/aut
 import { useFormDraft } from "../../../../hooks/useFormDraft";
 import type { StudentType } from "../../../../types/student.type";
 import type { CreateBookingPayload } from "../../../../services/booking.service";
-import type { BookingFormData } from "../types";
+import type { BookingFormData, BookingSlot } from "../types";
 
 interface Args {
     isOpen: boolean;
@@ -33,6 +33,23 @@ function resolveLockedMode(raw?: string | null): "online" | "offline" | null {
     if (m === "offline") return "offline";
     return null; // "both", "hybrid", null, or anything else — student picks
 }
+
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+const toLocalDateTimeString = (date: Date): string =>
+    `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}T${pad2(date.getHours())}:${pad2(
+        date.getMinutes(),
+    )}:00`;
+
+const slotToLocalDateTimes = (slot: BookingSlot) => {
+    const start = new Date(`${slot.date}T${slot.startTime}:00`);
+    const end = new Date(start);
+    end.setMinutes(end.getMinutes() + Math.round(slot.durationHours * 60));
+    return {
+        scheduledStart: toLocalDateTimeString(start),
+        scheduledEnd: toLocalDateTimeString(end),
+    };
+};
 
 /**
  * Encapsulate all booking modal state, draft persistence, role-aware
@@ -151,19 +168,23 @@ export function useBookingForm({ isOpen, tutorId, onClose, tutorTeachingMode }: 
         return () => clearTimeout(timer);
     }, [submitError]);
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (selectedSlots: BookingSlot[] = []) => {
         setSubmitting(true);
         setSubmitError(null);
         try {
-            // TODO(BE blocker — plan Part E): booking model mới yêu cầu
-            // tutorSubjectGradePriceId + packageId (lấy từ endpoint public của gia sư:
-            // giá theo môn/lớp + gói). full-profile hiện CHƯA trả các field này, nên
-            // gate bước gửi cho tới khi BE bổ sung. Khi sẵn sàng, set 2 field này từ UI
-            // và payload bên dưới sẽ chạy như thường.
             if (!formData.tutorSubjectGradePriceId || !formData.packageId) {
-                setSubmitError('Tính năng đặt lịch đang được cập nhật theo hệ thống mới. Vui lòng quay lại sau.');
+                setSubmitError('Thiếu thông tin gói học hoặc cấu hình môn/lớp của gia sư. Vui lòng tải lại trang rồi thử lại.');
                 return;
             }
+
+            const sortedSelectedSlots = [...selectedSlots].sort((a, b) =>
+                `${a.date}-${a.startTime}`.localeCompare(`${b.date}-${b.startTime}`),
+            );
+            if (sortedSelectedSlots.length === 0) {
+                setSubmitError('Vui lòng chọn ít nhất một buổi học trước khi gửi yêu cầu.');
+                return;
+            }
+            const isFlexibleBooking = formData.bookingMode === "schedule";
 
             const payload: CreateBookingPayload = {
                 studentId: formData.studentId || undefined,
@@ -171,12 +192,11 @@ export function useBookingForm({ isOpen, tutorId, onClose, tutorTeachingMode }: 
                 subjectId: formData.subjectId || undefined,
                 tutorSubjectGradePriceId: formData.tutorSubjectGradePriceId,
                 packageId: formData.packageId,
+                totalSessions: sortedSelectedSlots.length,
                 startDate: formData.startDate,
-                schedule: formData.schedule.map((s) => ({
-                    dayOfWeek: s.dayOfWeek,
-                    startTime: s.startTime,
-                    endTime: s.endTime,
-                })),
+                ...(isFlexibleBooking
+                    ? { flexibleSlots: sortedSelectedSlots.map(slotToLocalDateTimes) }
+                    : {}),
                 locationCity: formData.locationCity || undefined,
                 locationDistrict: formData.locationDistrict || undefined,
                 locationWard: formData.locationWard || undefined,

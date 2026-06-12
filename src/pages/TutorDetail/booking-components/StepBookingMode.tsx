@@ -1,77 +1,77 @@
 import { useEffect } from "react";
+import { MousePointerClick, PackageCheck, Route } from "lucide-react";
 import type { StepProps } from "./types";
-import { CalendarOutlined, AppstoreOutlined } from "@ant-design/icons";
+import styles from "./bookingModal.module.css";
 
 /**
- * Step 2 mới — phụ huynh chọn CÁCH đặt lịch:
- *   1. "Theo lịch trống": tự pick slot từ availability của gia sư.
- *   2. "Theo gói": chọn 1 combo có sẵn của gia sư.
+ * Bước 2 — phụ huynh chọn CÁCH đặt lịch:
+ *   1. "Tự chọn lịch rảnh": tự pick slot từ lịch trống của gia sư.
+ *   2. "Chọn gói cố định": chọn 1 gói cố định có sẵn của gia sư.
  *
- * Mode online/offline/hybrid (cũ) đã move sang StepReview (chỉ hiển thị khi
- * tutor support nhiều mode — nếu lock 1 mode thì auto-pin, không cần parent chọn).
+ * Nếu gia sư không có gói nào → auto-pin "schedule" và khóa thẻ gói.
  */
 const StepBookingMode: React.FC<StepProps> = ({ formData, setFormData, combos }) => {
     const hasCombos = combos.length > 0;
 
-    // Nếu tutor không có combo nào → auto-pin mode "schedule" và để parent qua step kế tiếp.
     useEffect(() => {
         if (!hasCombos && formData.bookingMode !== "schedule") {
             setFormData((d) => ({ ...d, bookingMode: "schedule", comboId: null }));
         }
     }, [hasCombos, formData.bookingMode, setFormData]);
 
-    const select = (mode: "schedule" | "package") => {
+    const select = (mode: "schedule" | "package") =>
         setFormData((d) => ({
             ...d,
             bookingMode: mode,
-            // Đổi mode → reset combo + schedule để tránh data lệch
             comboId: mode === "package" ? d.comboId : null,
             schedule: mode === "schedule" ? d.schedule : [],
         }));
-    };
+
+    const isAvailability = formData.bookingMode === "schedule";
+    const isPackage = formData.bookingMode === "package";
 
     return (
-        <div className="bm-step">
-            <div className="bm-step-title">Bạn muốn đặt lịch như thế nào?</div>
-
-            <div className="bm-booking-mode-grid">
-                <div
-                    className={`bm-booking-mode-card ${formData.bookingMode === "schedule" ? "selected" : ""}`}
-                    onClick={() => select("schedule")}
-                    role="button"
-                    aria-pressed={formData.bookingMode === "schedule"}
-                >
-                    <div className="bm-booking-mode-icon"><CalendarOutlined /></div>
-                    <div className="bm-booking-mode-info">
-                        <span className="bm-booking-mode-label">Theo lịch trống</span>
-                        <span className="bm-booking-mode-desc">Tự chọn khung giờ từ lịch rảnh của gia sư</span>
-                    </div>
-                    {formData.bookingMode === "schedule" && <div className="bm-check">✓</div>}
-                </div>
-
-                <div
-                    className={`bm-booking-mode-card ${formData.bookingMode === "package" ? "selected" : ""} ${!hasCombos ? "locked" : ""}`}
-                    onClick={() => hasCombos && select("package")}
-                    role="button"
-                    aria-pressed={formData.bookingMode === "package"}
-                    aria-disabled={!hasCombos || undefined}
-                    style={!hasCombos ? { cursor: "not-allowed", opacity: 0.6 } : undefined}
-                >
-                    <div className="bm-booking-mode-icon"><AppstoreOutlined /></div>
-                    <div className="bm-booking-mode-info">
-                        <span className="bm-booking-mode-label">
-                            Theo gói {hasCombos && <span className="bm-booking-mode-count">{combos.length}</span>}
-                        </span>
-                        <span className="bm-booking-mode-desc">
-                            {hasCombos
-                                ? "Chọn 1 gói combo có sẵn của gia sư"
-                                : "Gia sư này chưa có gói nào"}
-                        </span>
-                    </div>
-                    {formData.bookingMode === "package" && <div className="bm-check">✓</div>}
+        <>
+            <div className={styles.sectionHeading}>
+                <span className={styles.headingIcon}>
+                    <Route size={20} />
+                </span>
+                <div>
+                    <span className={styles.eyebrow}>Bước 02</span>
+                    <h2>Chọn cách đặt lịch</h2>
                 </div>
             </div>
-        </div>
+
+            <div className={styles.bookingModeGrid}>
+                <button
+                    type="button"
+                    className={`${styles.bookingModeCard} ${isAvailability ? styles.selectedCard : ""}`}
+                    onClick={() => select("schedule")}
+                >
+                    <span className={`${styles.bookingModeIcon} ${styles.availabilityModeIcon}`}>
+                        <MousePointerClick size={20} />
+                    </span>
+                    <span className={styles.comboType}>Theo lịch rảnh</span>
+                    <h3>Tự chọn lịch rảnh</h3>
+                    <small>{isAvailability ? "Đã chọn" : "Chọn cách này"}</small>
+                </button>
+
+                <button
+                    type="button"
+                    className={`${styles.bookingModeCard} ${isPackage ? styles.selectedCard : ""}`}
+                    onClick={() => hasCombos && select("package")}
+                    disabled={!hasCombos}
+                    aria-disabled={!hasCombos || undefined}
+                >
+                    <span className={`${styles.bookingModeIcon} ${styles.packageModeIcon}`}>
+                        <PackageCheck size={20} />
+                    </span>
+                    <span className={styles.comboType}>Theo gói cố định</span>
+                    <h3>Chọn gói cố định</h3>
+                    <small>{!hasCombos ? "Gia sư chưa có gói" : isPackage ? "Đã chọn" : "Xem các gói"}</small>
+                </button>
+            </div>
+        </>
     );
 };
 

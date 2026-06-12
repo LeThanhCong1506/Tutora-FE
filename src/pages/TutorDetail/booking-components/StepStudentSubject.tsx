@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { BookOpen, CalendarDays, Clock3, GraduationCap } from "lucide-react";
 import type { StepProps } from "./types";
-import { formatGrade } from "./utils";
+import { formatDuration, formatGrade, normalizeGradeToken, studentInitials } from "./utils";
+import styles from "./bookingModal.module.css";
 
 // Compact grade label cho chip (vd ["grade_10", "grade_11", "grade_12"] → "Lớp 10-12").
 const formatGradeRange = (grades: string[]): string => {
@@ -11,7 +12,6 @@ const formatGradeRange = (grades: string[]): string => {
         .sort((a, b) => a - b);
     if (nums.length === 0) return grades.join(", ");
     if (nums.length === 1) return `Lớp ${nums[0]}`;
-    // Liên tục?
     const isContiguous = nums.every((n, i) => i === 0 || n === nums[i - 1] + 1);
     return isContiguous ? `Lớp ${nums[0]}-${nums[nums.length - 1]}` : `Lớp ${nums.join(", ")}`;
 };
@@ -22,118 +22,127 @@ const StepStudentSubject: React.FC<StepProps> = ({
     students,
     loadingStudents,
     availableSubjects,
+    subjectGradePrices,
     userRole,
 }) => {
-    const [subjectQuery, setSubjectQuery] = useState("");
-
-    const filteredSubjects = useMemo(() => {
-        if (!subjectQuery.trim()) return availableSubjects;
-        const q = subjectQuery.trim().toLowerCase();
-        return availableSubjects.filter((s) => s.name.toLowerCase().includes(q));
-    }, [subjectQuery, availableSubjects]);
-
-    const showSearch = availableSubjects.length > 6;
-
-    // Banner check khớp lớp: nếu cả student + subject đã chọn → so sánh.
+    const hasSubject = formData.subjectId !== 0;
     const selectedStudent = students.find((s) => s.studentId === formData.studentId);
-    const selectedSubject = availableSubjects.find((s) => s.id === formData.subjectId);
-    const gradeMatchInfo = (() => {
-        if (!selectedStudent || !selectedSubject) return null;
-        const grades = selectedSubject.gradeLevels ?? [];
-        if (grades.length === 0) return null; // tutor không khai báo → bỏ qua
-        const matches = grades.includes(selectedStudent.gradeLevel);
-        return {
-            matches,
-            studentGrade: formatGrade(selectedStudent.gradeLevel),
-            tutorGrades: formatGradeRange(grades),
-        };
-    })();
+    const selectedGradeToken = normalizeGradeToken(selectedStudent?.gradeLevel);
+    // TẠM THỜI: bỏ banner cảnh báo khớp lớp (gradeMatchInfo) — khôi phục khi cần.
 
     return (
-        <div className="bm-step">
-            {/* Student selection (Parent only) */}
+        <>
+            <div className={styles.sectionHeading}>
+                <span className={styles.headingIcon}>
+                    <GraduationCap size={20} />
+                </span>
+                <div>
+                    <span className={styles.eyebrow}>Bước 01</span>
+                    <h2>Chọn môn học và trẻ</h2>
+                </div>
+            </div>
+
+            <section className={styles.formSection}>
+                <h3>Môn học muốn đặt</h3>
+                {availableSubjects.length === 0 ? (
+                    <p className={styles.inlineHint}>Gia sư này chưa cập nhật môn học.</p>
+                ) : (
+                    <div className={styles.subjectGrid}>
+                        {availableSubjects.map((subj) => {
+                            const activePrices = subjectGradePrices.filter(
+                                (price) => price.isActive !== false && price.subjectId === subj.id,
+                            );
+                            const matchedPrice =
+                                selectedGradeToken &&
+                                activePrices.find(
+                                    (price) => normalizeGradeToken(price.gradeLevelName) === selectedGradeToken,
+                                );
+                            const setup = matchedPrice || activePrices[0];
+                            const gradeText = setup?.gradeLevelName || formatGradeRange(subj.gradeLevels ?? []);
+                            const sessionsLabel = setup?.sessionsPerWeek ? `${setup.sessionsPerWeek} buổi` : "—";
+                            const durationLabel =
+                                setup?.durationMinutesPerSession && setup.durationMinutesPerSession > 0
+                                    ? formatDuration(setup.durationMinutesPerSession / 60)
+                                    : "—";
+                            return (
+                                <button
+                                    key={subj.id}
+                                    type="button"
+                                    className={`${styles.subjectCard} ${
+                                        formData.subjectId === subj.id ? styles.selectedCard : ""
+                                    }`}
+                                    onClick={() => setFormData((d) => ({ ...d, subjectId: subj.id }))}
+                                >
+                                    <div className={styles.subjectCardHead}>
+                                        <span className={styles.subjectIcon}>
+                                            <BookOpen size={17} />
+                                        </span>
+                                        <div>
+                                            <strong>{subj.name}</strong>
+                                            {gradeText && <small>{gradeText}</small>}
+                                        </div>
+                                    </div>
+
+                                    <div className={styles.subjectSetupGrid}>
+                                        <span>
+                                            <CalendarDays size={14} />
+                                            <b>{sessionsLabel}</b>
+                                            <small>/ tuần</small>
+                                        </span>
+                                        <span>
+                                            <Clock3 size={14} />
+                                            <b>{durationLabel}</b>
+                                            <small>/ buổi</small>
+                                        </span>
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+            </section>
+
             {userRole === "Parent" && (
-                <>
-                    <div className="bm-step-title">Chọn học sinh</div>
+                <section className={styles.formSection}>
+                    <h3>Trẻ sẽ tham gia học</h3>
                     {loadingStudents ? (
-                        <div className="bm-loading">Đang tải...</div>
+                        <p className={styles.inlineHint}>Đang tải danh sách học sinh…</p>
                     ) : students.length === 0 ? (
-                        <div className="bm-empty-msg">
-                            <p>Chưa có hồ sơ học sinh.</p>
-                            <a href="/parent-portal/student" target="_blank" className="bm-btn-add-student">
+                        <p className={styles.inlineHint}>
+                            Chưa có hồ sơ học sinh.{" "}
+                            <a href="/parent-portal/student" target="_blank" rel="noreferrer">
                                 + Thêm hồ sơ
                             </a>
-                        </div>
+                        </p>
                     ) : (
-                        <div className="bm-student-row">
+                        <div className={styles.childGrid}>
                             {students.map((s) => (
                                 <button
                                     key={s.studentId}
                                     type="button"
-                                    className={`bm-student-pill ${formData.studentId === s.studentId ? "selected" : ""}`}
+                                    className={`${styles.childCard} ${
+                                        formData.studentId === s.studentId ? styles.selectedCard : ""
+                                    }`}
                                     onClick={() => setFormData((d) => ({ ...d, studentId: s.studentId }))}
+                                    disabled={!hasSubject}
                                 >
-                                    <span className="bm-student-pill-name">{s.fullName}</span>
-                                    <span className="bm-student-pill-grade">
-                                        {s.gradeLevel ? formatGrade(s.gradeLevel) : s.school || ""}
+                                    <span className={styles.childAvatar}>{studentInitials(s.fullName)}</span>
+                                    <span>
+                                        <strong>{s.fullName}</strong>
+                                        <small>
+                                            {[s.gradeLevel ? formatGrade(s.gradeLevel) : null, s.school]
+                                                .filter(Boolean)
+                                                .join(" · ")}
+                                        </small>
                                     </span>
                                 </button>
                             ))}
                         </div>
                     )}
-                </>
+                    {!hasSubject && <p className={styles.inlineHint}>Hãy chọn môn học trước khi chọn trẻ.</p>}
+                </section>
             )}
-
-            {/* Subject selection */}
-            <div className="bm-step-title" style={{ marginTop: userRole === "Parent" ? 22 : 0 }}>
-                Chọn môn học
-            </div>
-
-            {showSearch && (
-                <input
-                    type="text"
-                    className="bm-form-input"
-                    placeholder="Tìm môn..."
-                    value={subjectQuery}
-                    onChange={(e) => setSubjectQuery(e.target.value)}
-                    style={{ marginBottom: 12, maxWidth: 280 }}
-                />
-            )}
-
-            {availableSubjects.length === 0 ? (
-                <div className="bm-empty-msg">Gia sư này chưa cập nhật môn học.</div>
-            ) : (
-                <div className="bm-subject-grid">
-                    {filteredSubjects.map((subj) => {
-                        const gradeText = formatGradeRange(subj.gradeLevels ?? []);
-                        return (
-                            <button
-                                key={subj.id}
-                                className={`bm-subject-btn ${formData.subjectId === subj.id ? "selected" : ""}`}
-                                onClick={() => setFormData((d) => ({ ...d, subjectId: subj.id }))}
-                                type="button"
-                            >
-                                <span className="bm-subject-btn-name">{subj.name}</span>
-                                {gradeText && <span className="bm-subject-btn-grade">{gradeText}</span>}
-                            </button>
-                        );
-                    })}
-                </div>
-            )}
-
-            {/* Grade matching banner */}
-            {gradeMatchInfo && (
-                <div className={`bm-grade-match-banner ${gradeMatchInfo.matches ? "match" : "mismatch"}`}>
-                    {gradeMatchInfo.matches ? (
-                        <span>✓ Học sinh {gradeMatchInfo.studentGrade} khớp với khối {gradeMatchInfo.tutorGrades} gia sư dạy.</span>
-                    ) : (
-                        <span>
-                            ✗ Học sinh đang ở <b>{gradeMatchInfo.studentGrade}</b>, nhưng gia sư chỉ dạy <b>{gradeMatchInfo.tutorGrades}</b>. Hãy đổi học sinh hoặc môn khác.
-                        </span>
-                    )}
-                </div>
-            )}
-        </div>
+        </>
     );
 };
 

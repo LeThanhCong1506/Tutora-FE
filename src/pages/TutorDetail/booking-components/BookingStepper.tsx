@@ -1,21 +1,26 @@
+import { Check } from "lucide-react";
+import styles from "./bookingModal.module.css";
 import { STEPS } from "./constants";
 
 interface Props {
-    step: number;
+    step: number; // 0-indexed
 }
 
 const BookingStepper: React.FC<Props> = ({ step }) => (
-    <div className="bm-stepper">
-        {STEPS.map((s, i) => (
-            <div key={s.key} className={`bm-stepper-item ${i === step ? "active" : ""} ${i < step ? "completed" : ""}`}>
-                <div className="bm-stepper-dot">
-                    {i < step ? "✓" : i + 1}
-                </div>
-                <span className="bm-stepper-label">{s.label}</span>
-                {i < STEPS.length - 1 && <div className={`bm-stepper-line ${i < step ? "completed" : ""}`} />}
+    <nav className={styles.modalStepper} aria-label="Tiến trình đặt lịch">
+        {STEPS.map((item, index) => (
+            <div
+                key={item.key}
+                className={`${styles.modalStep} ${step === index ? styles.modalStepActive : ""} ${
+                    step > index ? styles.modalStepDone : ""
+                }`}
+            >
+                <span>{step > index ? <Check size={15} /> : index + 1}</span>
+                <strong>{item.label}</strong>
+                {index < STEPS.length - 1 && <i />}
             </div>
         ))}
-    </div>
+    </nav>
 );
 
 export default BookingStepper;

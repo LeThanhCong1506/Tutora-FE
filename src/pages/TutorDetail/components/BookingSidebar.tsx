@@ -17,11 +17,12 @@ const DAY_LABELS: Record<number, string> = {
     4: "Thứ 5",
     5: "Thứ 6",
     6: "Thứ 7",
+    7: "Chủ Nhật",
 };
 
 const BookingSidebar = ({ hourlyRate, trialLessonPrice, availabilities, onBooking }: BookingSidebarProps) => {
     const availabilityByDay = (availabilities || []).reduce((acc, slot) => {
-        const key = slot.dayName || DAY_LABELS[slot.dayofweek] || `Thứ ${slot.dayofweek + 1}`;
+        const key = DAY_LABELS[slot.dayofweek] || slot.dayName || `Thứ ${slot.dayofweek + 1}`;
         if (!acc[key]) acc[key] = [];
         acc[key].push(slot);
         return acc;
