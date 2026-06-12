@@ -1,0 +1,2772 @@
+.page {
+  min-height: 100vh;
+  background: var(--color-cream);
+  color: var(--color-navy);
+  font-family: var(--font-primary);
+}
+
+.eyebrow {
+  display: block;
+  color: #9a6a25;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.browseShell,
+.detailShell {
+  width: min(1400px, 100%);
+  margin: 0 auto;
+  padding: 122px 35px 82px;
+}
+
+.searchHero {
+  overflow: hidden;
+  padding: 34px 38px;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 78% -30%, rgba(212, 180, 131, 0.2), transparent 35%),
+    linear-gradient(100deg, var(--color-navy), #282337);
+  color: var(--color-white);
+}
+
+.searchHero .eyebrow {
+  color: var(--color-gold);
+}
+
+.searchHero h1 {
+  margin: 7px 0 6px;
+  color: var(--color-white);
+  font-size: clamp(30px, 3.2vw, 42px);
+  font-weight: 400;
+  letter-spacing: -1.4px;
+  line-height: 1.1;
+}
+
+.searchHero p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-style: italic;
+}
+
+.searchPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 21px;
+}
+
+.searchPills span {
+  padding: 7px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.resultsSection {
+  margin-top: 34px;
+}
+
+.resultsHeading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+
+.resultsHeading h2,
+.infoPanel h2 {
+  margin: 5px 0 0;
+  color: var(--color-navy);
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: -0.6px;
+}
+
+.resultsHeading > span {
+  color: var(--color-navy-60);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.resultGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.tutorResultCard {
+  display: flex;
+  min-width: 0;
+  overflow: hidden;
+  flex-direction: column;
+  border: 1px solid rgba(62, 47, 40, 0.18);
+  border-radius: 22px;
+  background: var(--color-white);
+  box-shadow: 0 6px 14px -10px rgba(26, 34, 56, 0.28);
+  transition:
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.tutorResultCard:hover {
+  box-shadow: 0 14px 24px -14px rgba(26, 34, 56, 0.32);
+  transform: translateY(-3px);
+}
+
+.tutorResultBody {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 14px;
+  padding: 19px;
+}
+
+.tutorCardHeader,
+.tutorIdentity,
+.rating,
+.gradeRow,
+.tutorResultFooter,
+.tutorResultFooter div,
+.tutorResultFooter button,
+.backLink,
+.profileHeroTop,
+.profileHeroTop span,
+.profileHeroBottom,
+.heroRating,
+.heroRating div,
+.heroRating span,
+.gradeGroups,
+.bookingCardHead div,
+.schedulePreviewRow,
+.verificationNote,
+.sectionHeading,
+.childCard,
+.childDetailHead,
+.childDetailHead > div,
+.matchBadge,
+.mismatchBadge,
+.comboMeta,
+.calendarHeading,
+.calendarControls,
+.legend,
+.calendarTip,
+.reviewGrid div,
+.noticeBox,
+.modalFooter,
+.primaryButton,
+.secondaryButton,
+.modalSuccess,
+.bookingCode {
+  display: flex;
+}
+
+.tutorCardHeader,
+.tutorResultFooter,
+.childDetailHead,
+.calendarHeading,
+.bookingCode {
+  justify-content: space-between;
+}
+
+.tutorIdentity,
+.gradeRow,
+.tutorResultFooter,
+.tutorResultFooter div,
+.tutorResultFooter button,
+.backLink,
+.profileHeroTop span,
+.profileHeroBottom,
+.heroRating,
+.heroRating span,
+.gradeGroups,
+.verificationNote,
+.sectionHeading,
+.childCard,
+.childDetailHead > div,
+.matchBadge,
+.mismatchBadge,
+.comboMeta,
+.calendarControls,
+.legend,
+.calendarTip,
+.reviewGrid div,
+.noticeBox,
+.modalFooter,
+.primaryButton,
+.secondaryButton,
+.modalSuccess,
+.bookingCode {
+  align-items: center;
+}
+
+.tutorIdentity {
+  gap: 11px;
+}
+
+.avatar,
+.profileAvatar,
+.childAvatar,
+.childAvatarLarge {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-navy);
+  color: var(--color-gold);
+  font-weight: 800;
+}
+
+.avatar {
+  width: 49px;
+  height: 49px;
+  font-size: 13px;
+}
+
+.tutorIdentity h3 {
+  margin: 0 0 5px;
+  color: var(--color-navy);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.verifiedBadge,
+.rating {
+  align-items: center;
+}
+
+.verifiedBadge {
+  display: inline-flex;
+  gap: 4px;
+  color: var(--color-green);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
+.rating {
+  gap: 4px;
+  color: #bd792a;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.tutorCredential {
+  min-height: 34px;
+  margin: 0;
+  color: var(--color-navy-60);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.subjectTags,
+.detailSubjectTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.subjectTags span,
+.detailSubjectTags span {
+  padding: 5px 10px;
+  border-radius: 7px;
+  background: var(--color-navy);
+  color: var(--color-cream-light);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+}
+
+.gradeRow {
+  min-height: 33px;
+  flex-wrap: wrap;
+  gap: 5px 9px;
+  color: #4266a0;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.tutorStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid rgba(62, 47, 40, 0.08);
+  border-radius: 10px;
+  background: rgba(62, 47, 40, 0.08);
+}
+
+.tutorStats span {
+  display: flex;
+  min-height: 56px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 9px;
+  background: rgba(250, 249, 246, 0.92);
+  color: var(--color-navy-40);
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.tutorStats strong {
+  color: var(--color-navy);
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.tutorResultFooter {
+  gap: 12px;
+  padding: 14px 18px;
+  border-top: 1px solid rgba(62, 47, 40, 0.1);
+  background: rgba(250, 249, 246, 0.62);
+}
+
+.tutorResultFooter div {
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.tutorResultFooter small {
+  width: 100%;
+  color: var(--color-navy-40);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.tutorResultFooter strong {
+  color: var(--color-navy);
+  font-size: 15px;
+}
+
+.tutorResultFooter span {
+  color: var(--color-navy-40);
+  font-size: 10px;
+}
+
+.tutorResultFooter button,
+.bookingCardFoot button {
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-burgundy);
+  color: var(--color-white);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.tutorResultFooter button {
+  gap: 5px;
+  padding: 11px 14px;
+}
+
+.detailShell {
+  padding-bottom: 96px;
+}
+
+.backLink {
+  gap: 7px;
+  margin-bottom: 17px;
+  border: 0;
+  background: transparent;
+  color: var(--color-navy-60);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
+.detailLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  align-items: start;
+  gap: 42px;
+}
+
+.detailContent {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 23px;
+}
+
+.profileHero {
+  position: relative;
+  min-height: 350px;
+  overflow: hidden;
+  border-radius: 38px;
+  background:
+    radial-gradient(circle at 78% 5%, rgba(212, 180, 131, 0.16), transparent 22%),
+    linear-gradient(145deg, #080b12, var(--color-navy));
+  box-shadow: 0 25px 46px -28px rgba(0, 0, 0, 0.65);
+}
+
+.profileHero::after {
+  position: absolute;
+  right: -90px;
+  bottom: -170px;
+  width: 420px;
+  height: 420px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 50%;
+  content: '';
+}
+
+.profileHeroTop {
+  position: absolute;
+  z-index: 2;
+  top: 29px;
+  right: 29px;
+  left: 29px;
+  justify-content: space-between;
+}
+
+.profileHeroTop span {
+  gap: 7px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(26, 34, 56, 0.74);
+  color: var(--color-gold);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.profileHeroTop i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-gold);
+}
+
+.profileHeroTop small {
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.playButton {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  width: 70px;
+  height: 70px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-white);
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+}
+
+.profileHeroBottom {
+  position: absolute;
+  z-index: 2;
+  right: 30px;
+  bottom: 28px;
+  left: 34px;
+  gap: 11px;
+}
+
+.profileAvatar {
+  width: 88px;
+  height: 88px;
+  border: 3px solid var(--color-white);
+  background: linear-gradient(145deg, #3e4d42, var(--color-navy));
+  color: var(--color-white);
+  font-size: 23px;
+}
+
+.profileHeroBottom small {
+  display: inline-block;
+  padding: 4px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-white);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.profileHeroBottom h1 {
+  margin: 7px 0 1px;
+  color: var(--color-white);
+  font-size: 37px;
+  font-weight: 400;
+  letter-spacing: -1.8px;
+}
+
+.profileHeroBottom p {
+  margin: 0;
+  color: var(--color-gold);
+  font-size: 17px;
+}
+
+.heroRating {
+  position: absolute;
+  z-index: 3;
+  right: 28px;
+  bottom: 32px;
+  gap: 13px;
+  padding: 13px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.heroRating div {
+  flex-direction: column;
+  gap: 3px;
+}
+
+.heroRating span {
+  gap: 2px;
+  color: #d49a47;
+}
+
+.heroRating strong {
+  color: var(--color-navy);
+  font-size: 9px;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
+.heroRating > svg {
+  color: var(--color-green);
+}
+
+.teachingMeta,
+.infoPanel,
+.bookingCard,
+.verificationNote {
+  border: 1px solid rgba(62, 47, 40, 0.12);
+  background: var(--color-white);
+}
+
+.teachingMeta {
+  padding: 16px;
+  border-radius: 18px;
+}
+
+.gradeGroups {
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 15px;
+  color: var(--color-navy-60);
+  font-size: 11px;
+}
+
+.gradeGroups > strong {
+  width: 100%;
+  color: var(--color-navy-40);
+  font-size: 9px;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+}
+
+.gradeGroups b {
+  padding: 5px 8px;
+  border: 1px solid rgba(62, 47, 40, 0.1);
+  border-radius: 999px;
+  background: rgba(250, 249, 246, 0.8);
+  color: var(--color-navy);
+  font-size: 10px;
+}
+
+.infoPanel {
+  padding: 24px;
+  border-radius: 20px;
+}
+
+.infoPanel p {
+  margin: 11px 0 0;
+  color: var(--color-navy-60);
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.featureGrid span {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 8px;
+  padding: 13px;
+  border-radius: 12px;
+  background: rgba(242, 240, 228, 0.62);
+}
+
+.featureGrid svg {
+  grid-row: span 2;
+  color: var(--color-green);
+}
+
+.featureGrid b {
+  color: var(--color-navy);
+  font-size: 12px;
+}
+
+.featureGrid small {
+  color: var(--color-navy-60);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.bookingSidebar {
+  position: sticky;
+  top: 122px;
+}
+
+.bookingCard {
+  overflow: hidden;
+  border-radius: 20px;
+}
+
+.bookingCardHead {
+  padding: 24px 21px 20px;
+}
+
+.bookingCardHead div {
+  align-items: baseline;
+  gap: 4px;
+  margin-top: 15px;
+}
+
+.bookingCardHead strong {
+  color: var(--color-navy);
+  font-size: 29px;
+  letter-spacing: -1px;
+}
+
+.bookingCardHead small {
+  color: var(--color-navy-40);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.bookingCardHead em {
+  display: inline-flex;
+  margin-top: 13px;
+  padding: 7px 10px;
+  border: 1px solid rgba(212, 180, 131, 0.5);
+  border-radius: 9px;
+  color: #9a6a25;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.bookingCardBody {
+  padding: 17px 21px;
+  border-top: 1px solid rgba(62, 47, 40, 0.08);
+}
+
+.bookingCardBody > span {
+  display: block;
+  margin-bottom: 11px;
+  color: var(--color-navy-40);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+}
+
+.schedulePreviewRow {
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 0;
+  border-top: 1px solid rgba(62, 47, 40, 0.06);
+}
+
+.schedulePreviewRow strong {
+  color: var(--color-navy);
+  font-size: 12px;
+}
+
+.schedulePreviewRow small {
+  color: var(--color-navy-60);
+  font-size: 10px;
+}
+
+.bookingCardFoot {
+  padding: 16px 21px 19px;
+  border-top: 1px solid rgba(62, 47, 40, 0.08);
+}
+
+.bookingCardFoot button {
+  width: 100%;
+  padding: 15px;
+  box-shadow: 0 15px 20px -13px rgba(99, 27, 27, 0.55);
+}
+
+.verificationNote {
+  gap: 9px;
+  margin-top: 18px;
+  padding: 15px;
+  border-radius: 17px;
+  color: var(--color-green);
+}
+
+.verificationNote div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.verificationNote strong {
+  color: var(--color-navy-60);
+  font-size: 9px;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+}
+
+.verificationNote span {
+  color: var(--color-navy-40);
+  font-family: var(--font-serif);
+  font-size: 11px;
+  font-style: italic;
+}
+
+.modalBackdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  padding: 26px;
+  place-items: center;
+  background: rgba(15, 20, 31, 0.58);
+  backdrop-filter: blur(4px);
+}
+
+.bookingModal {
+  position: relative;
+  display: flex;
+  width: min(1120px, 100%);
+  max-height: min(870px, calc(100vh - 52px));
+  overflow: hidden;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.44);
+  border-radius: 18px;
+  background: var(--color-white);
+  box-shadow: 0 30px 80px -24px rgba(0, 0, 0, 0.48);
+}
+
+/* Overlay xác nhận khi đóng modal lúc đang đặt dở (chống mất lựa chọn do lỡ tay). */
+.closeConfirm {
+  position: absolute;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  padding: 26px;
+  place-items: center;
+  background: rgba(15, 20, 31, 0.5);
+  backdrop-filter: blur(3px);
+}
+
+.closeConfirmCard {
+  width: min(390px, 100%);
+  padding: 26px 24px;
+  border-radius: 16px;
+  background: var(--color-white);
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+
+.closeConfirmCard h3 {
+  margin: 0 0 8px;
+  color: var(--color-navy);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+}
+
+.closeConfirmCard p {
+  margin: 0 0 22px;
+  color: var(--color-navy-60);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.closeConfirmActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 21px 27px 18px;
+  border-bottom: 1px solid rgba(62, 47, 40, 0.08);
+}
+
+.modalHeader h2 {
+  margin: 0;
+  color: var(--color-navy);
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.6px;
+}
+
+.modalHeader p {
+  margin: 4px 0 0;
+  color: var(--color-navy-60);
+  font-size: 13px;
+}
+
+.modalClose {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-navy-60);
+  cursor: pointer;
+}
+
+.modalClose:hover {
+  background: rgba(26, 34, 56, 0.06);
+}
+
+.modalStepper {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 15px 27px;
+  border-bottom: 1px solid rgba(62, 47, 40, 0.08);
+}
+
+.modalStep {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modalStep > span {
+  z-index: 1;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  place-items: center;
+  border: 1px solid rgba(26, 34, 56, 0.16);
+  border-radius: 50%;
+  background: var(--color-white);
+  color: var(--color-navy-60);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.modalStep strong {
+  z-index: 1;
+  padding-right: 8px;
+  background: var(--color-white);
+  color: var(--color-navy-40);
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.modalStep i {
+  position: absolute;
+  right: 12px;
+  left: 42px;
+  height: 1px;
+  background: rgba(26, 34, 56, 0.13);
+}
+
+.modalStepActive > span {
+  border-color: var(--color-gold);
+  background: var(--color-gold);
+  color: var(--color-navy);
+}
+
+.modalStepActive strong {
+  color: var(--color-navy);
+}
+
+.modalStepDone > span {
+  border-color: var(--color-green);
+  background: var(--color-green);
+  color: var(--color-white);
+}
+
+.bookingPolicyBar {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 27px;
+  border-bottom: 1px solid rgba(212, 180, 131, 0.2);
+  background: rgba(212, 180, 131, 0.12);
+  color: #805c28;
+}
+
+.bookingPolicyBar svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.bookingPolicyBar div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 6px;
+}
+
+.bookingPolicyBar strong,
+.bookingPolicyBar span {
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.bookingPolicyBar span {
+  color: rgba(128, 92, 40, 0.88);
+}
+
+.modalBody {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 27px;
+}
+
+.sectionHeading {
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.headingIcon,
+.comboIcon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--color-navy);
+  color: var(--color-gold);
+}
+
+.headingIcon {
+  width: 40px;
+  height: 40px;
+}
+
+.sectionHeading h2 {
+  margin: 2px 0;
+  color: var(--color-navy);
+  font-size: 21px;
+  font-weight: 500;
+  letter-spacing: -0.35px;
+}
+
+.sectionHeading p {
+  margin: 0;
+  color: var(--color-navy-60);
+  font-size: 11px;
+}
+
+.formSection {
+  padding: 15px 0;
+  border-top: 1px solid rgba(62, 47, 40, 0.08);
+}
+
+.formSection h3 {
+  margin: 0 0 11px;
+  color: var(--color-navy);
+  font-size: 14px;
+}
+
+.subjectGrid,
+.comboGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.subjectCard,
+.childCard,
+.bookingModeCard,
+.comboCard {
+  border: 1px solid rgba(62, 47, 40, 0.12);
+  background: var(--color-white);
+  color: var(--color-navy);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.subjectCard:hover,
+.childCard:hover,
+.bookingModeCard:hover,
+.comboCard:hover {
+  border-color: rgba(26, 34, 56, 0.34);
+  box-shadow: 0 10px 18px -15px rgba(26, 34, 56, 0.34);
+}
+
+.selectedCard {
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 3px rgba(212, 180, 131, 0.14);
+}
+
+.subjectCard.selectedCard,
+.childCard.selectedCard,
+.bookingModeCard.selectedCard,
+.comboCard.selectedCard {
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 3px rgba(212, 180, 131, 0.2);
+}
+
+.subjectCard {
+  display: flex;
+  min-height: 134px;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 13px;
+}
+
+.subjectCardHead {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.subjectIcon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(154, 106, 37, 0.1);
+  color: #9a6a25;
+}
+
+.subjectCardHead div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.subjectCardHead strong {
+  overflow: hidden;
+  color: var(--color-navy);
+  font-size: 15px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subjectCardHead small {
+  color: var(--color-navy-60);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.subjectPrice {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.subjectPrice span {
+  color: var(--color-navy-40);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.subjectPrice strong {
+  color: #9a6a25;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.subjectSetupGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: auto;
+}
+
+.subjectSetupGrid > span {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+  padding: 8px;
+  border-radius: 9px;
+  background: rgba(242, 240, 228, 0.58);
+}
+
+.subjectSetupGrid svg {
+  flex-shrink: 0;
+  color: var(--color-green);
+}
+
+.subjectSetupGrid b {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-navy);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.subjectSetupGrid small {
+  overflow: hidden;
+  color: var(--color-navy-50);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.childGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.childCard {
+  gap: 8px;
+  padding: 10px;
+  border-radius: 11px;
+}
+
+.childCard:disabled {
+  cursor: not-allowed;
+  opacity: 0.44;
+}
+
+.childAvatar {
+  width: 34px;
+  height: 34px;
+  font-size: 10px;
+}
+
+.childCard > span:last-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.childCard strong {
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.childCard small,
+.inlineHint {
+  color: var(--color-navy-60);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.inlineHint {
+  margin: 9px 0 0;
+}
+
+.childDetail {
+  margin-top: 9px;
+  padding: 13px;
+  border: 1px solid rgba(61, 74, 62, 0.16);
+  border-radius: 12px;
+  background: rgba(61, 74, 62, 0.045);
+}
+
+.childDetailHead {
+  gap: 12px;
+}
+
+.childDetailHead > div {
+  gap: 9px;
+}
+
+.childAvatarLarge {
+  width: 43px;
+  height: 43px;
+  font-size: 12px;
+}
+
+.childDetailHead h3 {
+  margin: 2px 0;
+  font-size: 15px;
+}
+
+.childDetailHead p {
+  margin: 0;
+  color: var(--color-navy-60);
+  font-size: 10px;
+}
+
+.matchBadge,
+.mismatchBadge {
+  flex-shrink: 0;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.matchBadge {
+  background: rgba(61, 74, 62, 0.1);
+  color: var(--color-green);
+}
+
+.mismatchBadge {
+  background: rgba(99, 27, 27, 0.08);
+  color: var(--color-burgundy);
+}
+
+.childDetailGrid {
+  display: grid;
+  grid-template-columns: 0.65fr 1.4fr 1.4fr;
+  gap: 10px;
+  margin-top: 11px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(62, 47, 40, 0.08);
+}
+
+.childDetailGrid div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.childDetailGrid span,
+.reviewGrid span {
+  color: var(--color-navy-40);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+}
+
+.childDetailGrid strong {
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.warningBox {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  margin-top: 12px;
+  padding: 10px 13px;
+  border: 1px solid rgba(99, 27, 27, 0.18);
+  border-radius: 11px;
+  background: rgba(99, 27, 27, 0.045);
+  color: var(--color-burgundy);
+}
+
+.warningBox svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.warningBox div {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.warningBox strong {
+  display: block;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.warningBox p {
+  margin: 2px 0 0;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.bookingModeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.bookingModeCard {
+  display: flex;
+  min-height: 132px;
+  flex-direction: column;
+  gap: 10px;
+  padding: 17px;
+  border-radius: 14px;
+}
+
+.bookingModeIcon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 0;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--color-navy);
+  color: var(--color-gold);
+}
+
+.availabilityModeIcon {
+  background: #18233b;
+  color: #e3bb78;
+}
+
+.packageModeIcon {
+  background: #8b6634;
+  color: #fff8ec;
+}
+
+.bookingModeCard h3 {
+  margin: 0;
+  color: var(--color-navy);
+  font-size: 16px;
+}
+
+.bookingModeCard small {
+  margin-top: auto;
+  align-self: flex-end;
+  color: #9a6a25;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.packagePanel {
+  margin-top: 13px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(62, 47, 40, 0.08);
+}
+
+.packagePanelHead {
+  margin-bottom: 10px;
+}
+
+.packagePanelHead h3 {
+  margin: 3px 0 0;
+  color: var(--color-navy);
+  font-size: 14px;
+}
+
+.comboCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 200px;
+  padding: 16px 18px;
+  border-radius: 14px;
+}
+
+.comboIcon {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 0;
+}
+
+.fixedPackageIcon {
+  background: #3f5145;
+  color: #f7f5ef;
+}
+
+.flexPackageIcon {
+  background: #40566f;
+  color: #f8fbff;
+}
+
+.comboType {
+  color: #9a6a25;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.comboCard .comboType {
+  margin-top: 2px;
+}
+
+.comboCard h3 {
+  margin: 0;
+  color: var(--color-navy);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  line-height: 1.3;
+}
+
+.comboMeta {
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 2px 0 0;
+  padding: 8px 0;
+  border-top: 1px dashed rgba(26, 34, 56, 0.1);
+  border-bottom: 1px dashed rgba(26, 34, 56, 0.1);
+}
+
+.comboMeta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-navy-60);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* Danh sách buổi trong tuần của gói cố định — hiển thị thứ + giờ bắt đầu. */
+.comboSessionList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.comboSessionList li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: rgba(26, 34, 56, 0.05);
+  color: var(--color-navy);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.comboSessionList li svg {
+  display: none;
+}
+
+.comboSessionList li strong {
+  color: var(--color-navy);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.comboSessionList li span {
+  color: var(--color-navy-60);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.comboCard > small {
+  margin-top: auto;
+  align-self: flex-end;
+  color: #9a6a25;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Danh sách gói cố định ở bước 3 (chọn gói trước khi chọn tuần bắt đầu). */
+.comboPickSection {
+  margin-bottom: 18px;
+}
+
+/* Thông tin số giờ/buổi (theo môn) — chế độ Tự chọn lịch rảnh. */
+.durationInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 11px 16px;
+  border: 1px solid rgba(26, 34, 56, 0.1);
+  border-radius: 12px;
+  background: rgba(242, 240, 228, 0.4);
+  color: var(--color-navy);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.durationInfo svg {
+  flex-shrink: 0;
+  color: var(--color-burgundy);
+}
+
+.durationInfo strong {
+  color: var(--color-burgundy);
+}
+
+/* Thiết lập gói (bước 3): trạng thái chọn tuần bắt đầu + cửa sổ booking. */
+.packageSetup {
+  display: flex;
+  min-height: 64px;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 18px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border: 1px solid rgba(26, 34, 56, 0.1);
+  border-radius: 12px;
+  background: rgba(242, 240, 228, 0.4);
+}
+
+.startDateField {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.startDateField span {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--color-navy-60);
+}
+
+.startDateField input {
+  padding: 9px 12px;
+  border: 1px solid rgba(26, 34, 56, 0.18);
+  border-radius: 9px;
+  background: var(--color-white);
+  color: var(--color-navy);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.packageWindowInfo {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  color: var(--color-navy);
+  font-size: 12.5px;
+}
+
+.packageWindowInfo span {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.packageWindowInfo strong {
+  color: var(--color-burgundy);
+  font-weight: 700;
+}
+
+.changeWeekBtn {
+  display: inline-flex;
+  min-height: 34px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid rgba(26, 34, 56, 0.18);
+  border-radius: 999px;
+  background: var(--color-white);
+  color: var(--color-navy);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.changeWeekBtn:hover {
+  border-color: var(--color-burgundy);
+  color: var(--color-burgundy);
+}
+
+.noFitNotice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(99, 27, 27, 0.25);
+  border-radius: 10px;
+  background: rgba(99, 27, 27, 0.06);
+  color: #631b1b;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.noFitNotice svg {
+  flex-shrink: 0;
+}
+
+.flexHint {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(26, 34, 56, 0.12);
+  color: var(--color-navy-60);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.flexHint svg {
+  flex-shrink: 0;
+  color: var(--color-burgundy);
+}
+
+/* Layout 2 cột bước 3 (gói): lưới chọn theo tuần | lịch tháng mô phỏng. */
+.scheduleLayout {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.scheduleLayout > .calendarSection {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.monthSim {
+  display: flex;
+  width: 290px;
+  flex-shrink: 0;
+  flex-direction: column;
+  gap: 14px;
+  padding: 15px;
+  border: 1px solid rgba(62, 47, 40, 0.1);
+  border-radius: 14px;
+  background: rgba(250, 249, 246, 0.72);
+}
+
+.monthSimConfirm {
+  width: 100%;
+  flex-shrink: 1;
+  background: var(--color-white);
+}
+
+.monthSimHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-navy);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.monthSimHead svg {
+  color: var(--color-burgundy);
+}
+
+.monthSimEmpty {
+  margin: 0;
+  color: var(--color-navy-60);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.monthSimMonths {
+  display: grid;
+  gap: 14px;
+}
+
+.monthSimConfirm .monthSimMonths {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.monthSimGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.monthSimTitle {
+  color: var(--color-navy);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.monthSimWeekdays,
+.monthSimDays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.monthSimWeekdays span {
+  text-align: center;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--color-navy-60);
+}
+
+.monthSimBlank {
+  aspect-ratio: 1;
+}
+
+.monthSimDay {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  border-radius: 7px;
+  background: rgba(26, 34, 56, 0.04);
+  color: var(--color-navy);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.monthSimDayMuted {
+  background: transparent;
+  color: rgba(26, 34, 56, 0.28);
+}
+
+.monthSimDayActive {
+  background: var(--color-burgundy);
+  color: var(--color-white);
+  font-weight: 800;
+}
+
+.monthSimDots {
+  position: absolute;
+  bottom: 3px;
+  right: 4px;
+  left: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.monthSimDot {
+  width: 4px;
+  height: 4px;
+  flex: 0 0 4px;
+  border-radius: 50%;
+  background: var(--color-white);
+}
+
+@media (max-width: 900px) {
+  .scheduleLayout {
+    flex-direction: column;
+  }
+
+  .monthSim {
+    width: 100%;
+  }
+}
+
+.calendarSection {
+  padding: 15px;
+  border: 1px solid rgba(62, 47, 40, 0.1);
+  border-radius: 14px;
+  background: rgba(250, 249, 246, 0.72);
+}
+
+.calendarHeading {
+  gap: 15px;
+}
+
+.calendarHeading h3 {
+  margin: 3px 0 0;
+  font-size: 15px;
+}
+
+.calendarLimit {
+  margin: 4px 0 0;
+  color: #805c28;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.calendarControls {
+  gap: 7px;
+}
+
+.calendarControls button {
+  display: grid;
+  width: 29px;
+  height: 29px;
+  place-items: center;
+  border: 1px solid rgba(62, 47, 40, 0.12);
+  border-radius: 8px;
+  background: var(--color-white);
+  color: var(--color-navy);
+  cursor: pointer;
+}
+
+.calendarControls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.32;
+}
+
+.calendarControls strong {
+  min-width: 100px;
+  color: var(--color-navy-60);
+  font-size: 10px;
+  text-align: center;
+}
+
+.legend {
+  gap: 12px;
+  margin: 12px 0 8px;
+}
+
+.legend span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-navy-60);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.legend i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.availableDot {
+  background: rgba(61, 74, 62, 0.42);
+}
+
+.selectedDot {
+  background: var(--color-green);
+}
+
+.selectedTailDot {
+  background: rgba(61, 74, 62, 0.2);
+}
+
+.unavailableDot {
+  background: rgba(26, 34, 56, 0.12);
+}
+
+.calendarScroller {
+  overflow-x: hidden;
+  border: 1px solid rgba(62, 47, 40, 0.08);
+  border-radius: 9px;
+  background: var(--color-white);
+}
+
+.calendarGrid {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: 62px repeat(7, minmax(0, 1fr));
+}
+
+.calendarRow {
+  display: contents;
+}
+
+.calendarCell {
+  border-right: 1px solid rgba(62, 47, 40, 0.06);
+  border-bottom: 1px solid rgba(62, 47, 40, 0.06);
+}
+
+.timeHead,
+.dayHead {
+  padding: 8px 5px;
+  background: rgba(242, 240, 228, 0.55);
+  text-align: center;
+}
+
+.timeHead,
+.dayHead strong {
+  color: var(--color-navy-60);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.dayHead {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dayHead span {
+  color: var(--color-navy-40);
+  font-size: 9px;
+}
+
+.dayOutsideWindow {
+  background: rgba(99, 27, 27, 0.045);
+}
+
+.dayOutsideWindow strong,
+.dayOutsideWindow span {
+  color: rgba(99, 27, 27, 0.38);
+}
+
+.timeCell {
+  display: grid;
+  min-height: 38px;
+  place-items: center;
+  color: var(--color-navy-60);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.slotCell {
+  padding: 4px;
+}
+
+.slotButton {
+  display: flex;
+  width: 100%;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.slotAvailable {
+  border-color: rgba(61, 74, 62, 0.18);
+  background: rgba(61, 74, 62, 0.05);
+  color: var(--color-green);
+  cursor: pointer;
+}
+
+.slotSelected {
+  border-color: var(--color-green);
+  background: var(--color-green);
+  color: var(--color-white);
+}
+
+.slotSelectedTail {
+  border-color: rgba(61, 74, 62, 0.2);
+  background: rgba(61, 74, 62, 0.1);
+  color: rgba(61, 74, 62, 0.74);
+  cursor: not-allowed;
+}
+
+.slotOpen {
+  border-color: rgba(61, 74, 62, 0.12);
+  background: rgba(61, 74, 62, 0.035);
+  color: rgba(61, 74, 62, 0.48);
+  cursor: not-allowed;
+}
+
+.slotUnavailable {
+  background: rgba(26, 34, 56, 0.02);
+  color: rgba(26, 34, 56, 0.14);
+}
+
+.calendarTip {
+  gap: 6px;
+  margin-top: 9px;
+  padding: 8px 9px;
+  border-radius: 8px;
+  background: rgba(212, 180, 131, 0.14);
+  color: #805c28;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.confirmLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  align-items: start;
+  gap: 12px;
+}
+
+.confirmMain {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reviewHero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid rgba(62, 47, 40, 0.1);
+  border-radius: 12px;
+  background: var(--color-white);
+}
+
+.reviewHeroAvatar {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-navy);
+  color: var(--color-gold);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.reviewHeroContent {
+  min-width: 0;
+}
+
+.reviewHero h3 {
+  margin: 3px 0 2px;
+  color: var(--color-navy);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.reviewHero p {
+  margin: 0;
+  color: var(--color-navy-60);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.confirmQuickFacts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(58px, 1fr));
+  gap: 6px;
+}
+
+.confirmQuickFacts span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 7px;
+  border-radius: 9px;
+  background: rgba(242, 240, 228, 0.62);
+}
+
+.confirmQuickFacts b {
+  color: var(--color-navy);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.confirmQuickFacts small {
+  color: var(--color-navy-50);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.reviewGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.reviewGrid div {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid rgba(62, 47, 40, 0.1);
+  border-radius: 10px;
+  background: rgba(250, 249, 246, 0.68);
+}
+
+.reviewGrid svg {
+  color: var(--color-green);
+}
+
+.reviewGrid strong {
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.scheduleReview {
+  padding: 12px;
+  border: 1px solid rgba(62, 47, 40, 0.1);
+  border-radius: 12px;
+  background: var(--color-white);
+}
+
+.scheduleReviewHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid rgba(62, 47, 40, 0.07);
+}
+
+.scheduleReviewHead > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.scheduleReviewHead strong {
+  color: var(--color-navy);
+  font-size: 12px;
+}
+
+.scheduleReviewHead > small {
+  flex-shrink: 0;
+  padding: 5px 7px;
+  border-radius: 999px;
+  background: rgba(61, 74, 62, 0.08);
+  color: var(--color-green);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.lessonReviewList {
+  display: grid;
+  max-height: 310px;
+  overflow-y: auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 10px;
+  padding-right: 2px;
+}
+
+.lessonReviewRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 9px;
+  border-radius: 9px;
+  background: rgba(242, 240, 228, 0.52);
+}
+
+.lessonReviewIndex {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--color-white);
+  color: var(--color-green);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.lessonReviewRow span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lessonReviewRow strong {
+  overflow: hidden;
+  color: var(--color-navy);
+  font-size: 11px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lessonReviewRow small {
+  color: var(--color-navy-40);
+  font-size: 9px;
+}
+
+.lessonReviewRow b {
+  color: var(--color-green);
+  font-size: 11px;
+}
+
+.weekScheduleGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.weekScheduleCard {
+  overflow: hidden;
+  border: 1px solid rgba(62, 47, 40, 0.09);
+  border-radius: 9px;
+  background: rgba(250, 249, 246, 0.6);
+}
+
+.weekScheduleCard header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid rgba(62, 47, 40, 0.07);
+}
+
+.weekScheduleCard header > span {
+  flex-shrink: 0;
+  padding: 5px 7px;
+  border-radius: 6px;
+  background: var(--color-navy);
+  color: var(--color-gold);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.weekScheduleCard header div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.weekScheduleCard header strong {
+  color: var(--color-navy);
+  font-size: 11px;
+}
+
+.weekScheduleCard header small {
+  color: var(--color-navy-40);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.weekLessonList {
+  display: flex;
+  flex-direction: column;
+}
+
+.weekLesson {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 8px;
+  border-top: 1px solid rgba(62, 47, 40, 0.05);
+}
+
+.weekLesson:first-child {
+  border-top: 0;
+}
+
+.weekLesson svg {
+  flex-shrink: 0;
+  color: var(--color-green);
+}
+
+.weekLesson span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.weekLesson strong {
+  color: var(--color-navy);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.weekLesson small {
+  color: var(--color-navy-40);
+  font-size: 9px;
+}
+
+.weekLesson b {
+  margin-left: auto;
+  color: var(--color-green);
+  font-size: 10px;
+}
+
+.bookingTermSummary {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 11px;
+  border: 1px solid rgba(212, 180, 131, 0.24);
+  border-radius: 10px;
+  background: rgba(212, 180, 131, 0.1);
+  color: #805c28;
+}
+
+.bookingTermSummary svg {
+  flex-shrink: 0;
+}
+
+.bookingTermSummary div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.bookingTermSummary span {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+}
+
+.bookingTermSummary strong {
+  color: var(--color-navy);
+  font-size: 11px;
+}
+
+.bookingTermSummary small {
+  color: rgba(128, 92, 40, 0.86);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.priceSummary {
+  padding: 13px;
+  border: 1px solid rgba(62, 47, 40, 0.1);
+  border-radius: 12px;
+  background: var(--color-white);
+}
+
+.priceSummaryHead {
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(62, 47, 40, 0.08);
+}
+
+.priceSummaryHead > strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--color-burgundy);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.7px;
+}
+
+.priceSummaryHead > small {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-navy-50);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.priceLine {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0 0;
+}
+
+.priceLine + .priceLine {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(62, 47, 40, 0.07);
+}
+
+.priceLine span {
+  color: var(--color-navy-60);
+  font-size: 10px;
+}
+
+.priceLine strong {
+  color: var(--color-navy);
+  font-size: 11px;
+  text-align: right;
+}
+
+.priceSummaryNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 9px;
+  border-radius: 9px;
+  background: rgba(61, 74, 62, 0.07);
+  color: var(--color-green);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.priceSummaryNote svg {
+  flex-shrink: 0;
+}
+
+.noticeBox {
+  gap: 7px;
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 9px;
+  background: rgba(212, 180, 131, 0.14);
+  color: #805c28;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.modalFooter {
+  justify-content: space-between;
+  gap: 10px;
+  padding: 15px 27px;
+  border-top: 1px solid rgba(62, 47, 40, 0.08);
+  background: rgba(250, 249, 246, 0.68);
+}
+
+.primaryButton,
+.secondaryButton {
+  min-height: 42px;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 17px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.primaryButton {
+  border: 1px solid var(--color-burgundy);
+  background: var(--color-burgundy);
+  color: var(--color-white);
+}
+
+.secondaryButton {
+  border: 1px solid rgba(26, 34, 56, 0.17);
+  background: transparent;
+  color: var(--color-navy);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.modalSuccess {
+  position: relative;
+  min-height: 430px;
+  justify-content: center;
+  flex-direction: column;
+  padding: 35px;
+  text-align: center;
+}
+
+.modalSuccess .modalClose {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+}
+
+.successIcon {
+  display: grid;
+  width: 68px;
+  height: 68px;
+  margin-bottom: 14px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(61, 74, 62, 0.1);
+  color: var(--color-green);
+}
+
+.modalSuccess h2 {
+  margin: 6px 0;
+  color: var(--color-navy);
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.7px;
+}
+
+.modalSuccess p {
+  max-width: 420px;
+  margin: 0;
+  color: var(--color-navy-60);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.bookingCode {
+  width: min(370px, 100%);
+  margin: 18px 0 16px;
+  padding: 12px;
+  border: 1px dashed rgba(154, 106, 37, 0.42);
+  border-radius: 9px;
+  background: rgba(212, 180, 131, 0.1);
+}
+
+.bookingCode span {
+  color: var(--color-navy-60);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.bookingCode strong {
+  color: #805c28;
+  font-size: 15px;
+}
+
+.successTerm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px;
+  color: var(--color-green);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+@media (max-width: 1100px) {
+  .resultGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .detailLayout {
+    grid-template-columns: minmax(0, 1fr) 310px;
+    gap: 22px;
+  }
+}
+
+@media (max-width: 860px) {
+  .browseShell,
+  .detailShell {
+    padding: 94px 16px 56px;
+  }
+
+  .resultGrid,
+  .detailLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .bookingSidebar {
+    position: static;
+  }
+
+  .heroRating {
+    display: none;
+  }
+
+  .modalBackdrop {
+    padding: 0;
+  }
+
+  .bookingModal {
+    width: 100%;
+    max-height: 100vh;
+    min-height: 100vh;
+    border-radius: 0;
+  }
+
+  .modalHeader,
+  .modalBody,
+  .modalFooter,
+  .bookingPolicyBar {
+    padding-right: 18px;
+    padding-left: 18px;
+  }
+
+  .modalStepper {
+    padding: 13px 18px;
+  }
+
+  .modalStep {
+    justify-content: center;
+  }
+
+  .modalStep strong {
+    display: none;
+  }
+
+  .modalStep i {
+    right: -50%;
+    left: 50%;
+  }
+
+  .childGrid,
+  .reviewGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .childDetailGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .confirmLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .reviewHero {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .confirmQuickFacts {
+    grid-column: 1 / -1;
+  }
+
+  .lessonReviewList {
+    max-height: none;
+    grid-template-columns: 1fr;
+    padding-right: 0;
+  }
+
+  .monthSimConfirm .monthSimMonths {
+    grid-template-columns: 1fr;
+  }
+
+  .weekScheduleGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .searchHero {
+    padding: 24px 20px;
+    border-radius: 20px;
+  }
+
+  .searchHero h1 {
+    font-size: 31px;
+  }
+
+  .resultsHeading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .profileHero {
+    min-height: 315px;
+    border-radius: 24px;
+  }
+
+  .profileHeroTop small {
+    display: none;
+  }
+
+  .profileHeroBottom {
+    right: 17px;
+    bottom: 21px;
+    left: 17px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .profileAvatar {
+    width: 68px;
+    height: 68px;
+    font-size: 18px;
+  }
+
+  .profileHeroBottom small {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .profileHeroBottom h1 {
+    font-size: 30px;
+  }
+
+  .profileHeroBottom p {
+    font-size: 14px;
+  }
+
+  .featureGrid,
+  .subjectGrid,
+  .bookingModeGrid,
+  .comboGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .childDetailHead,
+  .calendarHeading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .calendarControls {
+    align-self: stretch;
+    justify-content: space-between;
+  }
+
+  .modalHeader h2 {
+    font-size: 22px;
+  }
+
+  .modalBody {
+    padding-top: 18px;
+    padding-bottom: 18px;
+  }
+
+  .sectionHeading h2 {
+    font-size: 19px;
+  }
+
+  .modalFooter {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    width: 100%;
+  }
+}
