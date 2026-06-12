@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons';
 import { toast } from 'react-toastify';
 import styles from '../styles.module.css';
+import { getMaxSessionHours, getMaxSessionsPerWeek } from './availability-utils';
 import { SUBJECTS, GRADE_LEVELS, formatPrice, formatDuration } from './constants';
 import type { UseOnboardingState } from './hooks/useOnboardingState';
 import type { SubjectOption, GradeOption } from './hooks/useLookups';
@@ -38,6 +39,9 @@ const DURATION_STEP = 0.5;
 const SESSIONS_PER_WEEK_OPTIONS = [1, 2, 3];
 const MIN_SESSIONS_PER_WEEK = 1;
 
+// 30 phút = 0.5 giờ → số giờ/buổi hợp lệ phải là bội số của 0.5 (1e-9 để tránh sai số dấu phẩy động).
+const isHalfHourMultiple = (hours: number) => Math.abs(hours * 2 - Math.round(hours * 2)) < 1e-9;
+
 const formatPresetPrice = (n: number) =>
   n >= 1_000_000 ? `${Math.round(n / 100_000) / 10}tr` : `${Math.round(n / 1000)}k`;
 
@@ -63,6 +67,28 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
     [subjectId, subjects],
   );
 
+  // Giới hạn suy ra từ lịch rảnh đã thiết lập ở bước 1:
+  // - Số giờ/buổi không thể vượt khối rảnh liên tục dài nhất trong 1 ngày.
+  // - Số buổi/tuần không thể vượt số buổi (cùng độ dài) nhét vừa cả tuần.
+  const maxHoursPerSession = useMemo(() => getMaxSessionHours(state.availability), [state.availability]);
+  const maxSessionsPerWeek = useMemo(
+    () => (hoursPerSession && hoursPerSession > 0 ? getMaxSessionsPerWeek(state.availability, hoursPerSession) : 0),
+    [state.availability, hoursPerSession],
+  );
+
+  // Gộp mọi lỗi của "số giờ/buổi" thành 1 thông điệp (chỉ hiện 1 dòng tại một thời điểm).
+  const hoursWarning = useMemo(() => {
+    if (hoursPerSession == null) return null;
+    if (!isHalfHourMultiple(hoursPerSession)) {
+      return 'Thời gian mỗi buổi phải là bội số của 30 phút (vd 1 giờ, 1h30, 2 giờ).';
+    }
+    if (maxHoursPerSession > 0 && hoursPerSession > maxHoursPerSession) {
+      return `Mỗi buổi tối đa ${formatDuration(maxHoursPerSession)} theo lịch rảnh bạn đã thiết lập. Hãy giảm thời lượng hoặc mở thêm khung giờ rảnh ở bước trước.`;
+    }
+    return null;
+  }, [hoursPerSession, maxHoursPerSession]);
+  const isSessionsTooHigh = sessionsPerWeek != null && maxSessionsPerWeek > 0 && sessionsPerWeek > maxSessionsPerWeek;
+
   const canAdd =
     subjectId != null &&
     gradeLevel != null &&
@@ -70,8 +96,10 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
     hourlyRate > 0 &&
     hoursPerSession != null &&
     hoursPerSession > 0 &&
+    hoursWarning == null &&
     sessionsPerWeek != null &&
-    sessionsPerWeek > 0;
+    sessionsPerWeek > 0 &&
+    !isSessionsTooHigh;
   const isPriceTooHigh = hourlyRate != null && hourlyRate > PRICE_WARN_HIGH;
   const isEditMode = editingRecordId != null;
 
@@ -260,19 +288,30 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
                   </strong>
                 </div>
                 <div className={styles.pricePresetList}>
-                  {DURATION_OPTIONS.map((d) => (
-                    <button
-                      key={d}
-                      type="button"
-                      className={`${styles.pricePresetBtn} ${hoursPerSession === d ? styles.activePricePreset : ''}`}
-                      onClick={() => setHoursPerSession(d)}
-                    >
-                      {formatDuration(d)}
-                    </button>
-                  ))}
+                  {DURATION_OPTIONS.map((d) => {
+                    const disabled = maxHoursPerSession > 0 && d > maxHoursPerSession;
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        disabled={disabled}
+                        title={
+                          disabled
+                            ? `Vượt quá lịch rảnh (tối đa ${formatDuration(maxHoursPerSession)}/buổi)`
+                            : undefined
+                        }
+                        className={`${styles.pricePresetBtn} ${hoursPerSession === d ? styles.activePricePreset : ''}`}
+                        onClick={() => setHoursPerSession(d)}
+                      >
+                        {formatDuration(d)}
+                      </button>
+                    );
+                  })}
                 </div>
                 <label className={styles.recordManualInput}>
                   <span>Nhập khác</span>
+                  {/* Không set max ở đây: để Antd không tự kẹp giá trị, nhờ vậy số nhập vượt
+                      ngưỡng được giữ nguyên và kích hoạt cảnh báo bên dưới. */}
                   <InputNumber<number>
                     min={MIN_DURATION}
                     step={DURATION_STEP}
@@ -280,9 +319,16 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
                     onChange={(value) => setHoursPerSession(value ?? null)}
                     addonAfter="giờ/buổi"
                     placeholder="VD: 3.5"
+                    status={hoursWarning ? 'error' : undefined}
                     style={{ width: '100%' }}
                   />
                 </label>
+                {hoursWarning && (
+                  <div className={styles.recordPriceWarn}>
+                    <WarningOutlined />
+                    <span>{hoursWarning}</span>
+                  </div>
+                )}
               </div>
 
               <div className={styles.recordSetupCard}>
@@ -293,19 +339,25 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
                   </strong>
                 </div>
                 <div className={styles.pricePresetList}>
-                  {SESSIONS_PER_WEEK_OPTIONS.map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      className={`${styles.pricePresetBtn} ${sessionsPerWeek === n ? styles.activePricePreset : ''}`}
-                      onClick={() => setSessionsPerWeek(n)}
-                    >
-                      {n} buổi
-                    </button>
-                  ))}
+                  {SESSIONS_PER_WEEK_OPTIONS.map((n) => {
+                    const disabled = maxSessionsPerWeek > 0 && n > maxSessionsPerWeek;
+                    return (
+                      <button
+                        key={n}
+                        type="button"
+                        disabled={disabled}
+                        title={disabled ? `Vượt quá lịch rảnh (tối đa ${maxSessionsPerWeek} buổi/tuần)` : undefined}
+                        className={`${styles.pricePresetBtn} ${sessionsPerWeek === n ? styles.activePricePreset : ''}`}
+                        onClick={() => setSessionsPerWeek(n)}
+                      >
+                        {n} buổi
+                      </button>
+                    );
+                  })}
                 </div>
                 <label className={styles.recordManualInput}>
                   <span>Nhập khác</span>
+                  {/* Không set max: giữ nguyên giá trị vượt ngưỡng để hiển thị cảnh báo thay vì tự kẹp. */}
                   <InputNumber<number>
                     min={MIN_SESSIONS_PER_WEEK}
                     step={1}
@@ -314,15 +366,30 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
                     onChange={(value) => setSessionsPerWeek(value ?? null)}
                     addonAfter="buổi/tuần"
                     placeholder="VD: 6"
+                    status={isSessionsTooHigh ? 'error' : undefined}
                     style={{ width: '100%' }}
                   />
                 </label>
+                {isSessionsTooHigh && hoursPerSession != null && (
+                  <div className={styles.recordPriceWarn}>
+                    <WarningOutlined />
+                    <span>
+                      Tối đa <strong>{maxSessionsPerWeek} buổi/tuần</strong> với lịch rảnh hiện tại (mỗi buổi{' '}
+                      {formatDuration(hoursPerSession)}). Hãy giảm số buổi hoặc mở thêm khung giờ rảnh.
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
             <div className={styles.recordFormActions}>
               {isEditMode && (
-                <Button icon={<CloseOutlined />} onClick={resetForm} disabled={saving} className={styles.recordCancelBtn}>
+                <Button
+                  icon={<CloseOutlined />}
+                  onClick={resetForm}
+                  disabled={saving}
+                  className={styles.recordCancelBtn}
+                >
                   Huỷ chỉnh sửa
                 </Button>
               )}
