@@ -396,7 +396,7 @@ export function useTutorProfileForm() {
                 const [progressR, availR, kycR, pricingR] = await Promise.allSettled([
                     getVerificationProgress(userId),
                     getMyAvailability(),
-                    getUserKYCData(userId),
+                    getUserKYCData(),
                     getPricing(userId),
                 ]);
 

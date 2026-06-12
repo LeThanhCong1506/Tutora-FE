@@ -14,14 +14,15 @@ const api = axios.create({
 setupAuthInterceptor(api);
 
 /**
- * Fetch user profile data including eKYC information
- * @param userId - User ID to fetch profile for
+ * Fetch the current user's profile (including eKYC information).
+ * BE resolves the user from the auth token — endpoint changed from
+ * GET /users/{id} to GET /users/profile.
  * @returns User profile with eKYC data
  */
-export const getUserProfile = async (userId: string) => {
+export const getUserProfile = async () => {
     try {
         const user = getCurrentUser();
-        const response = await api.get(`/users/${userId}`, {
+        const response = await api.get(`/users/profile`, {
             headers: {
                 Authorization: `Bearer ${user?.accessToken}`
             }

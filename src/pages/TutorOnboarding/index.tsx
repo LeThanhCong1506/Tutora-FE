@@ -25,6 +25,7 @@ const TutorOnboarding: React.FC = () => {
   // Thứ tự bước: 1 = lịch rảnh, 2 = môn & giá, 3 = gói.
   const availabilityReady = state.availability.length > 0;
   const subjectsReady = state.subjectRecords.length > 0;
+  const packagesReady = state.combos.length > 0;
 
   const isStepEnabled = (step: OnboardingStep) => {
     if (step === 1) return true;
@@ -49,7 +50,19 @@ const TutorOnboarding: React.FC = () => {
     return null;
   })();
 
-  const footerStatusText = `Bước ${state.currentStep} / 3`;
+  const sectionTitles: Record<OnboardingStep, string> = {
+    1: 'Lịch rảnh',
+    2: 'Môn & giá',
+    3: 'Gói lịch học',
+  };
+
+  const sectionStatuses: Record<OnboardingStep, string> = {
+    1: availabilityReady ? 'Đã thiết lập' : 'Cần thiết lập',
+    2: availabilityReady ? (subjectsReady ? `${state.subjectRecords.length} cấu hình` : 'Cần cấu hình') : 'Cần lịch rảnh',
+    3: availabilityReady && subjectsReady ? (packagesReady ? `${state.combos.length} gói` : 'Tuỳ chọn') : 'Cần lịch & giá',
+  };
+
+  const footerStatusText = `Đang chỉnh: ${sectionTitles[state.currentStep]}`;
 
   const handleNext = async () => {
     // Lưu từng bước: mỗi bước map đúng 1 nhóm endpoint.
@@ -100,12 +113,13 @@ const TutorOnboarding: React.FC = () => {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <h1 className={styles.headerTitle}>Thiết lập môn học, lịch rảnh & gói lịch học</h1>
-        <p className={styles.headerSubtitle}>
-          Bước 1: thiết lập lịch rảnh để nhận booking. Bước 2: cấu hình môn và giá. Bước 3: tạo gói lịch học gợi ý,
-          không bắt buộc.
-        </p>
-        <OnboardingStepper currentStep={state.currentStep} onStepClick={goToStep} isStepEnabled={isStepEnabled} />
+        <h1 className={styles.headerTitle}>Thiết lập giảng dạy</h1>
+        <OnboardingStepper
+          currentStep={state.currentStep}
+          onStepClick={goToStep}
+          isStepEnabled={isStepEnabled}
+          sectionStatuses={sectionStatuses}
+        />
       </div>
 
       <div className={styles.body}>

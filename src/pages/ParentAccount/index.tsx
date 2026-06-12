@@ -113,7 +113,7 @@ const ParentAccount = () => {
                 return;
             }
             try {
-                const res = await getUserProfile(userId);
+                const res = await getUserProfile();
                 const data = res.content ?? res;
                 if (!data || !data.userid) {
                     throw new Error('Dữ liệu người dùng không hợp lệ');
