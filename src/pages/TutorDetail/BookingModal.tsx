@@ -1,18 +1,29 @@
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
+import { AlertTriangle, ArrowLeft, ArrowRight, CalendarRange, CheckCircle2, RotateCcw, X } from "lucide-react";
 import {
-    BookingErrorToast,
     BookingStepper,
-    BookingSuccessOverlay,
     StepBookingMode,
     StepReview,
     StepSchedule,
     StepStudentSubject,
     SUBJECT_MAPPING,
     STEPS,
+    parseStringArray,
+    formatFullDate,
+    normalizeGradeToken,
     useBookingForm,
+    useBookingSchedule,
 } from "./booking-components";
 import type { BookingModalProps, StepProps } from "./booking-components";
-import "./BookingModal.css";
+import styles from "./booking-components/bookingModal.module.css";
+
+const packageIdFromComboId = (comboId: string | null): number | undefined => {
+    const match = comboId?.match(/^pkg_(\d+)$/);
+    if (!match) return undefined;
+    const packageId = Number(match[1]);
+    return Number.isFinite(packageId) ? packageId : undefined;
+};
 
 const BookingModal: React.FC<BookingModalProps> = ({
     isOpen,
@@ -21,6 +32,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
     tutorId,
     hourlyRate,
     subjects,
+    subjectGradePrices: rawSubjectGradePrices = [],
+    packages: rawPackages = [],
     availabilities,
     tutorTeachingMode,
     combos = [],
@@ -43,41 +56,112 @@ const BookingModal: React.FC<BookingModalProps> = ({
         successBookingId,
     } = useBookingForm({ isOpen, tutorId, onClose, tutorTeachingMode });
 
+    const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
+    const subjectGradePrices = rawSubjectGradePrices ?? [];
+    const packages = rawPackages ?? [];
+
     // Compute available subjects (intersection of SUBJECT_MAPPING and tutor's subjects).
     // Enrich với gradeLevels của tutor để StepStudentSubject hiển thị + check khớp lớp.
     const availableSubjects = SUBJECT_MAPPING.filter((s) =>
         subjects.some((tutorSubj) => tutorSubj.subjectId === s.id),
     ).map((s) => {
         const tutorSubj = subjects.find((t) => t.subjectId === s.id);
-        return { ...s, gradeLevels: tutorSubj?.gradeLevels ?? [] };
+        // gradeLevels từ BE có thể là mảng, chuỗi JSON hoặc CSV → chuẩn hoá về string[].
+        return { ...s, gradeLevels: parseStringArray(tutorSubj?.gradeLevels) };
     });
 
-    // Grade matching: nếu parent đã chọn student + subject, check student.gradeLevel có trong subject.gradeLevels không.
+    const selectedCombo = combos.find((c) => c.id === formData.comboId);
+    const flexiblePackage = packages.find((pkg) => pkg.isActive && pkg.packageType === 1);
+    const selectedPackageId =
+        formData.bookingMode === "schedule" ? flexiblePackage?.packageId : packageIdFromComboId(formData.comboId);
     const selectedStudent = students.find((s) => s.studentId === formData.studentId);
-    const selectedSubjectInfo = availableSubjects.find((s) => s.id === formData.subjectId);
-    const gradeMatches = (() => {
-        if (!selectedStudent || !selectedSubjectInfo) return true; // chưa chọn đủ → không block
-        const grades = selectedSubjectInfo.gradeLevels ?? [];
-        if (grades.length === 0) return true; // tutor không khai báo khối → cho qua
-        return grades.includes(selectedStudent.gradeLevel);
-    })();
+    const selectedGradeToken = normalizeGradeToken(selectedStudent?.gradeLevel);
+    const selectedSubjectGradePrice = useMemo(() => {
+        const activePrices = subjectGradePrices.filter(
+            (price) => price.isActive !== false && price.subjectId === formData.subjectId,
+        );
+        if (activePrices.length === 0) return undefined;
+
+        if (selectedGradeToken) {
+            const matchedByGrade = activePrices.find(
+                (price) => normalizeGradeToken(price.gradeLevelName) === selectedGradeToken,
+            );
+            if (matchedByGrade) return matchedByGrade;
+        }
+
+        return activePrices[0];
+    }, [formData.subjectId, selectedGradeToken, subjectGradePrices]);
+    const sessionHours =
+        selectedSubjectGradePrice?.durationMinutesPerSession && selectedSubjectGradePrice.durationMinutesPerSession > 0
+            ? selectedSubjectGradePrice.durationMinutesPerSession / 60
+            : slotDuration;
+
+    useEffect(() => {
+        const nextPriceId = selectedSubjectGradePrice?.id;
+        const nextDuration =
+            selectedSubjectGradePrice?.durationMinutesPerSession &&
+            selectedSubjectGradePrice.durationMinutesPerSession > 0
+                ? selectedSubjectGradePrice.durationMinutesPerSession / 60
+                : null;
+
+        if (nextDuration && Number.isFinite(nextDuration) && slotDuration !== nextDuration) {
+            setSlotDuration(nextDuration);
+        }
+
+        setFormData((d) =>
+            d.tutorSubjectGradePriceId === nextPriceId ? d : { ...d, tutorSubjectGradePriceId: nextPriceId },
+        );
+    }, [
+        selectedSubjectGradePrice?.id,
+        selectedSubjectGradePrice?.durationMinutesPerSession,
+        setFormData,
+        setSlotDuration,
+        slotDuration,
+    ]);
+
+    useEffect(() => {
+        setFormData((d) => (d.packageId === selectedPackageId ? d : { ...d, packageId: selectedPackageId }));
+    }, [selectedPackageId, setFormData]);
+
+    const scheduling = useBookingSchedule({
+        availabilities: availabilities || [],
+        sessionHours,
+        selectedCombo,
+        subjectId: formData.subjectId,
+        bookingMode: formData.bookingMode,
+        comboId: formData.comboId,
+        schedule: formData.schedule,
+        startDate: formData.startDate,
+        setFormData,
+    });
+
+    // Khoá scroll nền khi modal mở.
+    useEffect(() => {
+        if (!isOpen) return;
+        const previous = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        return () => {
+            document.body.style.overflow = previous;
+        };
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
     const canNext = () => {
         switch (step) {
             case 0:
-                // Student role: only need subject selected (studentId is auto-set)
                 if (userRole === "Student") return formData.subjectId !== 0;
-                // Parent role: need both student and subject selected + grade khớp.
-                return formData.studentId !== "" && formData.subjectId !== 0 && gradeMatches;
+                // TẠM THỜI: bỏ check khớp lớp (gradeMatches) — khôi phục khi cần.
+                return formData.studentId !== "" && formData.subjectId !== 0;
             case 1:
-                // BookingMode: nếu "package" thì phải chọn combo nào đó.
-                if (formData.bookingMode === "package") return formData.comboId !== null;
-                return true; // "schedule" mode không cần input gì ở step này
-            case 2: return formData.schedule.length > 0;
-            case 3: return true;
-            default: return false;
+                return formData.bookingMode === "schedule" || formData.bookingMode === "package";
+            case 2:
+                if (formData.bookingMode === "package" && formData.comboId === null) return false;
+                return formData.schedule.length > 0;
+            case 3:
+                return true;
+            default:
+                return false;
         }
     };
 
@@ -91,20 +175,39 @@ const BookingModal: React.FC<BookingModalProps> = ({
                         toast.warning("Vui lòng chọn học sinh trước khi tiếp tục.");
                     } else if (!formData.subjectId) {
                         toast.warning("Vui lòng chọn môn học trước khi tiếp tục.");
-                    } else if (!gradeMatches) {
-                        toast.warning("Học sinh và khối lớp gia sư dạy không khớp. Hãy đổi học sinh hoặc môn khác.");
                     }
                     break;
                 case 1:
-                    toast.warning("Vui lòng chọn 1 combo gói trước khi tiếp tục.");
+                    toast.warning("Vui lòng chọn cách đặt lịch trước khi tiếp tục.");
                     break;
                 case 2:
-                    toast.warning("Vui lòng chọn ít nhất 1 slot lịch học trước khi tiếp tục.");
+                    if (formData.bookingMode === "package" && formData.comboId === null) {
+                        toast.warning("Vui lòng chọn 1 gói cố định trước khi tiếp tục.");
+                    } else {
+                        toast.warning("Vui lòng chọn ít nhất 1 buổi học trước khi tiếp tục.");
+                    }
                     break;
             }
             return;
         }
         setStep((s) => s + 1);
+    };
+
+    const hasBookingProgress =
+        !bookingSuccess &&
+        (formData.subjectId !== 0 ||
+            formData.studentId !== "" ||
+            formData.comboId !== null ||
+            scheduling.selectedSlots.length > 0 ||
+            step > 0);
+
+    // Đóng giữa chừng (chưa gửi) → hỏi xác nhận tránh mất lựa chọn do lỡ click nền.
+    const requestClose = () => {
+        if (hasBookingProgress) {
+            setCloseConfirmOpen(true);
+            return;
+        }
+        onClose();
     };
 
     const stepProps: StepProps = {
@@ -114,70 +217,162 @@ const BookingModal: React.FC<BookingModalProps> = ({
         students,
         loadingStudents,
         availableSubjects,
+        subjectGradePrices,
         availabilities: availabilities || [],
         slotDuration,
         setSlotDuration,
         userRole,
         tutorTeachingMode: tutorTeachingMode ?? null,
         combos,
+        scheduling,
+        sessionHours,
+        selectedCombo,
+        tutorName,
     };
 
     return (
-        <div className="bm-overlay" onClick={onClose}>
-            <div className="bm-modal" onClick={(e) => e.stopPropagation()}>
-                {bookingSuccess && (
-                    <BookingSuccessOverlay
-                        tutorName={tutorName}
-                        bookingId={successBookingId}
-                        onClose={onClose}
-                    />
-                )}
-
-                {submitError && (
-                    <BookingErrorToast
-                        message={submitError}
-                        onClose={() => setSubmitError(null)}
-                    />
-                )}
-
-                {/* Modal Header */}
-                <div className="bm-header">
-                    <div className="bm-header-info">
-                        <h2 className="bm-title">Đặt lịch với {tutorName}</h2>
-                    </div>
-                    <button className="bm-close" onClick={onClose} type="button">✕</button>
-                </div>
-
-                <BookingStepper step={step} />
-
-                {/* Step Content */}
-                <div className="bm-body">
-                    {step === 0 && <StepStudentSubject {...stepProps} />}
-                    {step === 1 && <StepBookingMode {...stepProps} />}
-                    {step === 2 && <StepSchedule {...stepProps} />}
-                    {step === 3 && <StepReview {...stepProps} />}
-                </div>
-
-                {/* Footer */}
-                <div className="bm-footer">
-                    {step > 0 && (
-                        <button className="bm-btn-back" onClick={() => setStep((s) => s - 1)} disabled={submitting} type="button">
-                            ← Quay lại
+        <div className={styles.modalBackdrop} onMouseDown={requestClose}>
+            <section
+                className={styles.bookingModal}
+                role="dialog"
+                aria-modal="true"
+                aria-label={`Đặt lịch học với ${tutorName}`}
+                onMouseDown={(e) => e.stopPropagation()}
+            >
+                {bookingSuccess ? (
+                    <div className={styles.modalSuccess}>
+                        <button type="button" className={styles.modalClose} onClick={onClose} aria-label="Đóng modal">
+                            <X size={22} />
                         </button>
-                    )}
-                    <div className="bm-footer-right">
-                        {step < STEPS.length - 1 ? (
-                            <button className="bm-btn-next" onClick={handleNext} type="button">
-                                Tiếp theo →
-                            </button>
-                        ) : (
-                            <button className="bm-btn-submit" onClick={handleSubmit} disabled={submitting} type="button">
-                                {submitting ? "Đang xử lý..." : "Xác nhận đặt lịch"}
-                            </button>
+                        <span className={styles.successIcon}>
+                            <CheckCircle2 size={42} />
+                        </span>
+                        <span className={styles.eyebrow}>Gửi yêu cầu thành công</span>
+                        <h2>Yêu cầu đặt lịch đã được gửi</h2>
+                        <p>Gia sư sẽ xem lịch học và phản hồi cho phụ huynh trong thời gian sớm nhất.</p>
+                        {successBookingId != null && (
+                            <div className={styles.bookingCode}>
+                                <span>Mã booking</span>
+                                <strong>#{successBookingId}</strong>
+                            </div>
                         )}
+                        {scheduling.bookingWindowStart && scheduling.bookingWindowEnd && (
+                            <div className={styles.successTerm}>
+                                <CalendarRange size={16} />
+                                <span>
+                                    Hiệu lực booking: {formatFullDate(scheduling.bookingWindowStart)} -{" "}
+                                    {formatFullDate(scheduling.bookingWindowEnd)}
+                                </span>
+                            </div>
+                        )}
+                        <button type="button" className={styles.primaryButton} onClick={onClose}>
+                            <RotateCcw size={16} />
+                            Hoàn tất
+                        </button>
                     </div>
-                </div>
-            </div>
+                ) : (
+                    <>
+                        <header className={styles.modalHeader}>
+                            <div>
+                                <h2>Đặt lịch học</h2>
+                                <p>
+                                    với <strong>{tutorName}</strong>
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                className={styles.modalClose}
+                                onClick={requestClose}
+                                aria-label="Đóng modal"
+                            >
+                                <X size={22} />
+                            </button>
+                        </header>
+
+                        <BookingStepper step={step} />
+
+                        <div className={styles.modalBody}>
+                            {submitError && (
+                                <div className={styles.warningBox}>
+                                    <AlertTriangle size={19} />
+                                    <div>
+                                        <strong>{submitError}</strong>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        className={styles.modalClose}
+                                        onClick={() => setSubmitError(null)}
+                                        aria-label="Đóng cảnh báo"
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                </div>
+                            )}
+
+                            {step === 0 && <StepStudentSubject {...stepProps} />}
+                            {step === 1 && <StepBookingMode {...stepProps} />}
+                            {step === 2 && <StepSchedule {...stepProps} />}
+                            {step === 3 && <StepReview {...stepProps} />}
+                        </div>
+
+                        <footer className={styles.modalFooter}>
+                            <button
+                                type="button"
+                                className={styles.secondaryButton}
+                                onClick={() => setStep((s) => Math.max(0, s - 1))}
+                                disabled={step === 0 || submitting}
+                            >
+                                <ArrowLeft size={16} />
+                                Quay lại
+                            </button>
+                            {step < STEPS.length - 1 ? (
+                                <button type="button" className={styles.primaryButton} onClick={handleNext}>
+                                    Tiếp theo
+                                    <ArrowRight size={16} />
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    className={styles.primaryButton}
+                                    onClick={() => handleSubmit(scheduling.selectedSlots)}
+                                    disabled={submitting}
+                                >
+                                    {submitting ? "Đang xử lý..." : "Gửi yêu cầu"}
+                                    <ArrowRight size={16} />
+                                </button>
+                            )}
+                        </footer>
+                    </>
+                )}
+
+                {closeConfirmOpen && (
+                    <div className={styles.closeConfirm}>
+                        <div className={styles.closeConfirmCard}>
+                            <h3>Thoát đặt lịch?</h3>
+                            <p>Các lựa chọn hiện tại (môn, trẻ, gói, lịch học) sẽ bị xoá. Bạn có chắc muốn thoát?</p>
+                            <div className={styles.closeConfirmActions}>
+                                <button
+                                    type="button"
+                                    className={styles.secondaryButton}
+                                    onClick={() => {
+                                        setCloseConfirmOpen(false);
+                                        onClose();
+                                    }}
+                                >
+                                    Thoát, bỏ lựa chọn
+                                </button>
+                                <button
+                                    type="button"
+                                    className={styles.primaryButton}
+                                    onClick={() => setCloseConfirmOpen(false)}
+                                >
+                                    Tiếp tục đặt
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </section>
         </div>
     );
 };

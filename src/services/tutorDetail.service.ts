@@ -28,6 +28,19 @@ export interface SubjectInfo {
     tags?: string[] | null;
 }
 
+export interface TutorSubjectGradePrice {
+    id: number;
+    subjectId: number;
+    subjectName?: string | null;
+    gradeLevelId: number;
+    gradeLevelName?: string | null;
+    pricePerHour: number;
+    durationMinutesPerSession: number;
+    sessionsPerWeek: number;
+    currency: string;
+    isActive: boolean;
+}
+
 export interface CertificateInfo {
     certificateId: string;
     certificateName: string;
@@ -50,6 +63,28 @@ export interface AvailabilitySlot {
     endtime: string;
     createdat: string;
     dayName: string;
+}
+
+export interface TutorPackageFixedSlot {
+    fixedSlotId?: number;
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+}
+
+export interface TutorPackageResponse {
+    packageId: number;
+    tutorId?: string;
+    name: string;
+    packageType: 1 | 2;
+    isActive: boolean;
+    fixedSlots: TutorPackageFixedSlot[];
+}
+
+export interface TutorSchedule {
+    tutorId: string;
+    availabilities: AvailabilitySlot[];
+    packages: TutorPackageResponse[];
 }
 
 export interface FeedbackItem {
@@ -89,6 +124,7 @@ export interface TutorFullProfile {
     teachingAreaDistrict: string | null;
     teachingMode: string | null;
     subjects: SubjectInfo[] | null;
+    subjectGradePrices?: TutorSubjectGradePrice[] | null;
 
     // Introduction
     bio: string | null;
@@ -107,6 +143,7 @@ export interface TutorFullProfile {
 
     // Schedule
     availabilities: AvailabilitySlot[] | null;
+    packages?: TutorPackageResponse[] | null;
 
     // Feedback Statistics
     totalFeedbacks: number;
@@ -131,6 +168,65 @@ export interface ApiResponse<T> {
     error: string | null;
 }
 
+const pad2 = (n: number) => String(n).padStart(2, '0');
+
+const normalizeTimeToHHmm = (time: string): string => {
+    const trimmed = (time || '').trim();
+    const amPm = trimmed.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)$/i);
+    if (amPm) {
+        let hour = Number(amPm[1]);
+        const minute = Number(amPm[2]);
+        const suffix = amPm[3].toUpperCase();
+        if (suffix === 'AM' && hour === 12) hour = 0;
+        if (suffix === 'PM' && hour !== 12) hour += 12;
+        return `${pad2(hour)}:${pad2(minute)}`;
+    }
+
+    const twentyFourHour = trimmed.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+    if (twentyFourHour) {
+        return `${pad2(Number(twentyFourHour[1]))}:${pad2(Number(twentyFourHour[2]))}`;
+    }
+
+    return '';
+};
+
+const timeToMinutes = (time: string): number => {
+    const normalized = normalizeTimeToHHmm(time);
+    if (!normalized) return NaN;
+    const [hour, minute] = normalized.split(':').map(Number);
+    return hour * 60 + minute;
+};
+
+const isoDayToComboDay = (dayOfWeek: number): number => (dayOfWeek === 7 ? 0 : dayOfWeek);
+
+export const mapPackagesToFixedCombos = (packages: TutorPackageResponse[] | null | undefined): Combo[] =>
+    (packages ?? [])
+        .filter((pkg) => pkg.isActive && pkg.packageType === 2 && (pkg.fixedSlots ?? []).length > 0)
+        .map((pkg) => {
+            const sessions = pkg.fixedSlots
+                .map((slot) => {
+                    const start = normalizeTimeToHHmm(slot.startTime);
+                    const end = normalizeTimeToHHmm(slot.endTime);
+                    const startMinutes = timeToMinutes(start);
+                    const endMinutes = timeToMinutes(end);
+                    return {
+                        dayOfWeek: isoDayToComboDay(slot.dayOfWeek),
+                        startHour: Math.floor(startMinutes / 60),
+                        startMinute: (startMinutes % 60) as 0 | 30,
+                        durationHours: (endMinutes - startMinutes) / 60,
+                    };
+                })
+                .filter((slot) => Number.isFinite(slot.durationHours) && slot.durationHours > 0);
+
+            return {
+                id: `pkg_${pkg.packageId}`,
+                type: 'fixed' as const,
+                name: pkg.name,
+                sessions,
+            };
+        })
+        .filter((combo) => combo.sessions.length > 0);
+
 // ============================================
 // API Function
 // ============================================
@@ -153,6 +249,45 @@ export const getTutorFullProfile = async (
         return response.data;
     } catch (error: unknown) {
         console.error('❌ Error fetching tutor full profile:', error);
+        throw error;
+    }
+};
+
+/**
+ * Get fresh public tutor schedule (packages + weekly availability).
+ * GET /api/tutors/{tutorId}/schedule
+ */
+export const getTutorSchedule = async (
+    tutorId: string
+): Promise<ApiResponse<TutorSchedule>> => {
+    try {
+        const response = await api.get<ApiResponse<TutorSchedule>>(
+            `/tutors/${tutorId}/schedule`
+        );
+
+        return response.data;
+    } catch (error: unknown) {
+        console.error('❌ Error fetching tutor schedule:', error);
+        throw error;
+    }
+};
+
+/**
+ * Get public tutor availability through the dedicated endpoint.
+ * This endpoint returns local display time (HH:mm), unlike the schedule field currently cached in full-profile.
+ * GET /api/tutor/availabilities/{tutorId}
+ */
+export const getTutorAvailabilities = async (
+    tutorId: string
+): Promise<ApiResponse<AvailabilitySlot[]>> => {
+    try {
+        const response = await api.get<ApiResponse<AvailabilitySlot[]>>(
+            `/tutor/availabilities/${tutorId}`
+        );
+
+        return response.data;
+    } catch (error: unknown) {
+        console.error('❌ Error fetching tutor availabilities:', error);
         throw error;
     }
 };

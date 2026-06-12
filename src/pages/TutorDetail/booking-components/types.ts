@@ -1,11 +1,56 @@
 import type { StudentType } from "../../../types/student.type";
-import type { AvailabilitySlot, SubjectInfo } from "../../../services/tutorDetail.service";
+import type {
+    AvailabilitySlot,
+    SubjectInfo,
+    TutorPackageResponse,
+    TutorSubjectGradePrice,
+} from "../../../services/tutorDetail.service";
 import type { Combo } from "../../../types/combo.types";
 
 export interface ScheduleSlot {
     dayOfWeek: number;
     startTime: string;
     endTime: string;
+}
+
+// ─── Scheduling model (ported from ParentBookingDemo) ───
+// dayOfWeek dùng quy ước demo: 1=T2 … 6=T7, 7=CN (KHÁC backend 0=CN..6=T7).
+export interface WeeklySlot {
+    dayOfWeek: number;
+    startTime: string; // "HH:mm"
+    durationHours: number;
+    available?: boolean;
+}
+
+export interface BookingSlot extends WeeklySlot {
+    date: string; // "YYYY-MM-DD"
+}
+
+export interface WeeklyPatternSlot {
+    dayOfWeek: number;
+    startTime: string;
+    durationHours: number;
+}
+
+// API trả về từ hook useBookingSchedule — truyền xuống Step Lịch học & Xác nhận.
+export interface BookingScheduleApi {
+    today: Date;
+    bookingDeadline: Date;
+    visibleWeekIndex: number;
+    setVisibleWeekIndex: React.Dispatch<React.SetStateAction<number>>;
+    visibleWeekStart: Date;
+    visibleDays: Date[];
+    maxVisibleWeekIndex: number;
+    calendarTimes: string[];
+    calendarAvailability: WeeklySlot[];
+    pickedWeekSlots: BookingSlot[];
+    selectedSlots: BookingSlot[];
+    bookingWindowStart: Date | null;
+    bookingWindowEnd: Date | null;
+    navLocked: boolean;
+    toggleAvailabilityPick: (dateKey: string, dayOfWeek: number, startTime: string) => void;
+    pickFixedStartWeek: (weekMonday: Date) => void;
+    clearPicks: () => void;
 }
 
 export interface Subject {
@@ -46,6 +91,7 @@ export interface StepProps {
     students: StudentType[];
     loadingStudents: boolean;
     availableSubjects: Subject[];
+    subjectGradePrices: TutorSubjectGradePrice[];
     availabilities: AvailabilitySlot[];
     slotDuration: number;
     setSlotDuration: React.Dispatch<React.SetStateAction<number>>;
@@ -60,6 +106,14 @@ export interface StepProps {
     // Combos hiện có của gia sư — dùng cho step BookingMode + Schedule (package mode).
     // Hiện đang mock trong TutorDetailPage.
     combos: Combo[];
+    // Trạng thái lịch học (week-pick/lock/project) — Step Lịch học & Xác nhận dùng.
+    scheduling: BookingScheduleApi;
+    // Số giờ mỗi buổi đang áp dụng, lấy từ cấu hình môn/lớp của gia sư.
+    sessionHours: number;
+    // Combo đang chọn (nếu bookingMode = package).
+    selectedCombo: Combo | undefined;
+    // Tên gia sư — dùng ở bước Xác nhận.
+    tutorName: string;
 }
 
 export interface BookingModalProps {
@@ -69,6 +123,8 @@ export interface BookingModalProps {
     tutorId: string;
     hourlyRate: number;
     subjects: SubjectInfo[];
+    subjectGradePrices?: TutorSubjectGradePrice[] | null;
+    packages?: TutorPackageResponse[] | null;
     availabilities?: AvailabilitySlot[] | null;
     /**
      * Tutor's preferred teaching mode. Drives whether student/parent can pick a mode.
