@@ -18,7 +18,7 @@ const StepCombos: React.FC<StepCombosProps> = ({ onboarding, onCreatePackage, on
     <div className={styles.comboStep}>
       <div className={styles.comboIntro}>
         <div className={styles.comboIntroMain}>
-          <span className={styles.comboEyebrow}>Bước gợi ý, không bắt buộc</span>
+          <span className={styles.comboEyebrow}>Mục gợi ý, không bắt buộc</span>
           <h2 className={styles.stepHeading}>Tạo gói lịch học để phụ huynh chọn nhanh hơn</h2>
         </div>
       </div>

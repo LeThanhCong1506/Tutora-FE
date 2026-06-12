@@ -113,13 +113,14 @@ export interface UserKYCData {
 }
 
 /**
- * Get user's KYC verification data from /api/users/{id}
- * @param userId - User ID
+ * Get the current user's KYC verification data.
+ * BE resolves the user from the auth token — endpoint changed from
+ * GET /users/{id} to GET /users/profile.
  * @returns UserKYCData with verification status and eKYC data
  */
-export const getUserKYCData = async (userId: string): Promise<UserKYCData | null> => {
+export const getUserKYCData = async (): Promise<UserKYCData | null> => {
     try {
-        const response = await api.get(`/users/${userId}`);
+        const response = await api.get(`/users/profile`);
         const responseData = response.data;
 
         // API returns { content: { ... } } format
