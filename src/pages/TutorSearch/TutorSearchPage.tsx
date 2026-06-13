@@ -6,7 +6,6 @@ import Footer from "../../components/Footer";
 import { isZaloMiniApp } from "../../services/zalo-env";
 import {
     SearchHero,
-    CategoryTabs,
     FilterBar,
     ActiveFilters,
     ResultsSection,
@@ -17,6 +16,8 @@ import {
 import type { Tutor, SearchFilters } from "./components";
 import "../../styles/pages/tutor-search.css";
 
+const CLIENT_FILTER_PAGE_SIZE = 500;
+
 const TutorSearchPage = () => {
     const [filters, setFilters] = useState<SearchFilters>(defaultFilters);
     const [inputSearchTerm, setInputSearchTerm] = useState("");
@@ -25,9 +26,10 @@ const TutorSearchPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [totalCount, setTotalCount] = useState(0);
-    const [hasNext, setHasNext] = useState(false);
+    const [totalPages, setTotalPages] = useState(1);
+    const [isFilterStuck, setIsFilterStuck] = useState(false);
 
-    const isLoadMore = useRef(false);
+    const filterSentinelRef = useRef<HTMLDivElement | null>(null);
 
     // Build API params from filters.
     // NOTE: Backend only supports single `category` and `gradeLevel` values.
@@ -73,33 +75,57 @@ const TutorSearchPage = () => {
     }, []);
 
     useEffect(() => {
+        const sentinel = filterSentinelRef.current;
+        if (!sentinel) return;
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setIsFilterStuck(!entry.isIntersecting && entry.boundingClientRect.top < 0);
+            },
+            { threshold: 0 }
+        );
+
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, []);
+
+    useEffect(() => {
         const fetchTutors = async () => {
             try {
                 setLoading(true);
                 setError(null);
-                const apiParams = buildApiParams(filters);
+                const needsClientFilter = filters.categories.length > 1 || filters.gradeLevels.length > 1;
+                const apiParams = buildApiParams(
+                    needsClientFilter
+                        ? { ...filters, pageNumber: 1, pageSize: CLIENT_FILTER_PAGE_SIZE }
+                        : filters
+                );
                 const response = await searchTutors(apiParams);
                 let mapped = response.content.items.map(mapApiTutorToUi);
-                mapped = applyClientSideFilters(mapped, filters);
 
-                if (isLoadMore.current) {
-                    setTutors((prev) => [...prev, ...mapped]);
-                    isLoadMore.current = false;
+                if (needsClientFilter) {
+                    mapped = applyClientSideFilters(mapped, filters);
+                    const startIndex = (filters.pageNumber - 1) * filters.pageSize;
+                    setTutors(mapped.slice(startIndex, startIndex + filters.pageSize));
+                    setTotalCount(mapped.length);
+                    setTotalPages(Math.max(1, Math.ceil(mapped.length / filters.pageSize)));
                 } else {
                     setTutors(mapped);
+                    setTotalCount(response.content.totalCount);
+                    setTotalPages(
+                        Math.max(
+                            1,
+                            response.content.totalPages ||
+                            Math.ceil(response.content.totalCount / filters.pageSize)
+                        )
+                    );
                 }
-
-                const needsClientFilter = filters.categories.length > 1 || filters.gradeLevels.length > 1;
-                setTotalCount(needsClientFilter ? mapped.length : response.content.totalCount);
-                setHasNext(needsClientFilter ? false : response.content.hasNext);
             } catch (err) {
                 console.error("Failed to fetch tutors:", err);
                 setError("Không thể tải danh sách gia sư. Vui lòng thử lại.");
-                if (!isLoadMore.current) {
-                    setTutors([]);
-                    setTotalCount(0);
-                }
-                isLoadMore.current = false;
+                setTutors([]);
+                setTotalCount(0);
+                setTotalPages(1);
             } finally {
                 setLoading(false);
             }
@@ -152,15 +178,25 @@ const TutorSearchPage = () => {
         setFilters({ ...defaultFilters });
     }, []);
 
-    const handleLoadMore = useCallback(() => {
-        isLoadMore.current = true;
-        setFilters((prev) => ({ ...prev, pageNumber: prev.pageNumber + 1 }));
-    }, []);
+    const handlePageChange = useCallback((page: number) => {
+        const nextPage = Math.max(1, Math.min(page, totalPages));
+        setFilters((prev) => {
+            if (prev.pageNumber === nextPage) return prev;
+            return { ...prev, pageNumber: nextPage };
+        });
+
+        window.setTimeout(() => {
+            document.querySelector(".results-section")?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+            });
+        }, 0);
+    }, [totalPages]);
 
     const inMiniApp = isZaloMiniApp();
 
     return (
-        <div className="tutor-search-page">
+        <div className={`tutor-search-page ${isFilterStuck ? "filter-stuck" : ""}`}>
             {!inMiniApp && <Header />}
 
             <main style={inMiniApp ? { paddingTop: 0 } : undefined}>
@@ -170,16 +206,15 @@ const TutorSearchPage = () => {
                     onSearch={handleSearchSubmit}
                     onTrendingClick={handleTrendingClick}
                 />
-                <CategoryTabs
-                    activeCategories={filters.categories}
-                    onCategoryToggle={handleCategoryToggle}
-                />
+                <div ref={filterSentinelRef} className="filter-sticky-sentinel" aria-hidden="true"></div>
                 <FilterBar
+                    activeCategories={filters.categories}
                     gradeLevels={filters.gradeLevels}
                     budgetRange={filters.budgetRange}
                     teachingMode={filters.teachingMode}
                     city={filters.city}
                     sortBy={filters.sortBy}
+                    onCategoryToggle={handleCategoryToggle}
                     onGradeLevelToggle={handleGradeLevelToggle}
                     onBudgetRangeChange={(v) => updateFilter("budgetRange", v)}
                     onTeachingModeChange={(v) => updateFilter("teachingMode", v)}
@@ -201,8 +236,10 @@ const TutorSearchPage = () => {
                     loading={loading}
                     error={error}
                     totalCount={totalCount}
-                    hasNext={hasNext}
-                    onLoadMore={handleLoadMore}
+                    currentPage={filters.pageNumber}
+                    pageSize={filters.pageSize}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
                 />
             </main>
             {!inMiniApp && <Footer />}
