@@ -40,5 +40,5 @@ export const defaultFilters: SearchFilters = {
     city: "",
     sortBy: "rating_desc",
     pageNumber: 1,
-    pageSize: 10,
+    pageSize: 9,
 };

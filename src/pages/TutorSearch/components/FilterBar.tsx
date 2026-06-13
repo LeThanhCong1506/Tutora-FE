@@ -3,6 +3,7 @@ import CustomDropdown from "../../../components/CustomDropdown/CustomDropdown";
 import { FilterIcon } from "./icons";
 import {
     budgetRangeOptions,
+    categories,
     teachingModeOptions,
     cityOptions,
     gradeLevelChips,
@@ -10,11 +11,13 @@ import {
 } from "./constants";
 
 interface FilterBarProps {
+    activeCategories: string[];
     gradeLevels: string[];
     budgetRange: string;
     teachingMode: string;
     city: string;
     sortBy: string;
+    onCategoryToggle: (category: string) => void;
     onGradeLevelToggle: (value: string) => void;
     onBudgetRangeChange: (value: string) => void;
     onTeachingModeChange: (value: string) => void;
@@ -23,12 +26,28 @@ interface FilterBarProps {
     onResetFilters: () => void;
 }
 
+type OpenPanel = "subjects" | "grades" | null;
+
+const Chevron = ({ open }: { open: boolean }) => (
+    <svg
+        width="10"
+        height="6"
+        viewBox="0 0 10 6"
+        fill="none"
+        style={{ transform: open ? "rotate(180deg)" : "none" }}
+    >
+        <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+);
+
 const FilterBar = ({
+    activeCategories,
     gradeLevels,
     budgetRange,
     teachingMode,
     city,
     sortBy,
+    onCategoryToggle,
     onGradeLevelToggle,
     onBudgetRangeChange,
     onTeachingModeChange,
@@ -36,78 +55,166 @@ const FilterBar = ({
     onSortByChange,
     onResetFilters,
 }: FilterBarProps) => {
-    const [showGrades, setShowGrades] = useState(false);
+    const [openPanel, setOpenPanel] = useState<OpenPanel>(null);
     const hasActiveFilters =
+        activeCategories.length > 0 ||
         gradeLevels.length > 0 ||
         budgetRange !== "all" ||
         teachingMode !== "" ||
         city !== "" ||
         sortBy !== "rating_desc";
 
+    const getSubjectLabel = () => {
+        if (activeCategories.length === 0) return "Tất cả";
+        if (activeCategories.length === 1) {
+            return categories.find((category) => category.id === activeCategories[0])?.name || "Tất cả";
+        }
+        return `${activeCategories.length} môn`;
+    };
+
+    const getSubjectIcon = () => {
+        if (activeCategories.length === 1) {
+            return categories.find((category) => category.id === activeCategories[0])?.icon || categories[0].icon;
+        }
+        return categories[0].icon;
+    };
+
     const getGradeLabel = () => {
         if (gradeLevels.length === 0) return "Tất cả";
-        if (gradeLevels.length === 1) return gradeLevelChips.find(g => g.value === gradeLevels[0])?.label || "Tất cả";
+        if (gradeLevels.length === 1) {
+            return gradeLevelChips.find((grade) => grade.value === gradeLevels[0])?.label || "Tất cả";
+        }
         return `${gradeLevels.length} lớp`;
     };
 
+    const togglePanel = (panel: Exclude<OpenPanel, null>) => {
+        setOpenPanel((current) => (current === panel ? null : panel));
+    };
+
+    const handleSubjectToggle = (category: string) => {
+        onCategoryToggle(category);
+        if (category === "all") setOpenPanel(null);
+    };
+
+    const handleGradeToggle = (grade: string) => {
+        onGradeLevelToggle(grade);
+        if (grade === "all") setOpenPanel(null);
+    };
+
+    const handleReset = () => {
+        setOpenPanel(null);
+        onResetFilters();
+    };
+
     return (
-        <section className="filter-section">
+        <section className={`filter-section ${openPanel ? "panel-open" : ""}`}>
             <div className="filter-container">
                 <div className="filter-row-main">
-                    <div className="filter-groups">
-                        <div className="filter-group">
-                            <span className="filter-label">Cấp học</span>
-                            <button
-                                className={`filter-toggle-btn ${showGrades ? "active" : ""} ${gradeLevels.length > 0 ? "has-value" : ""}`}
-                                onClick={() => setShowGrades(!showGrades)}
-                            >
-                                <span>{getGradeLabel()}</span>
-                                <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style={{ transform: showGrades ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
-                                    <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                            </button>
-                        </div>
-                        <div className="filter-divider"></div>
-                        <div className="filter-group">
+                    <div className="filter-primary">
+                        <button
+                            type="button"
+                            className={`filter-summary-pill subject-pill ${openPanel === "subjects" ? "active" : ""} ${activeCategories.length > 0 ? "has-value" : ""}`}
+                            onClick={() => togglePanel("subjects")}
+                            aria-expanded={openPanel === "subjects"}
+                            aria-controls="subject-filter-panel"
+                        >
+                            <span className="filter-pill-icon">{getSubjectIcon()}</span>
+                            <span className="filter-pill-copy">
+                                <span className="filter-label">Môn học</span>
+                                <strong>{getSubjectLabel()}</strong>
+                            </span>
+                            <span className="filter-pill-chevron">
+                                <Chevron open={openPanel === "subjects"} />
+                            </span>
+                        </button>
+
+                        <button
+                            type="button"
+                            className={`filter-summary-pill ${openPanel === "grades" ? "active" : ""} ${gradeLevels.length > 0 ? "has-value" : ""}`}
+                            onClick={() => togglePanel("grades")}
+                            aria-expanded={openPanel === "grades"}
+                            aria-controls="grade-filter-panel"
+                        >
+                            <span className="filter-pill-copy">
+                                <span className="filter-label">Cấp học</span>
+                                <strong>{getGradeLabel()}</strong>
+                            </span>
+                            <span className="filter-pill-chevron">
+                                <Chevron open={openPanel === "grades"} />
+                            </span>
+                        </button>
+
+                        <div className={`filter-dropdown-pill ${city ? "has-value" : ""}`}>
                             <span className="filter-label">Khu vực</span>
                             <CustomDropdown variant="filter" value={city} onChange={onCityChange} options={cityOptions} />
                         </div>
-                        <div className="filter-divider"></div>
-                        <div className="filter-group">
+
+                        <div className={`filter-dropdown-pill ${budgetRange !== "all" ? "has-value" : ""}`}>
                             <span className="filter-label">Ngân sách</span>
                             <CustomDropdown variant="filter" value={budgetRange} onChange={onBudgetRangeChange} options={budgetRangeOptions} />
                         </div>
-                        <div className="filter-divider"></div>
-                        <div className="filter-group">
+
+                        <div className={`filter-dropdown-pill ${teachingMode ? "has-value" : ""}`}>
                             <span className="filter-label">Hình thức</span>
                             <CustomDropdown variant="filter" value={teachingMode} onChange={onTeachingModeChange} options={teachingModeOptions} />
                         </div>
                     </div>
+
                     <div className="filter-actions">
                         <div className="sort-group">
                             <span className="sort-label">Sort by</span>
                             <CustomDropdown variant="sort" value={sortBy} onChange={onSortByChange} options={sortByOptions} />
                         </div>
-                        <button className="btn-filter" onClick={onResetFilters} title={hasActiveFilters ? "Xóa bộ lọc" : "Bộ lọc"}>
+                        <button
+                            type="button"
+                            className={`btn-filter ${hasActiveFilters ? "has-value" : ""}`}
+                            onClick={handleReset}
+                            title={hasActiveFilters ? "Xóa bộ lọc" : "Bộ lọc"}
+                        >
                             <span className="btn-filter-icon"><FilterIcon /></span>
                             <span className="btn-filter-text">{hasActiveFilters ? "Xóa lọc" : "Filters"}</span>
                         </button>
                     </div>
                 </div>
 
-                {showGrades && (
-                    <div className="grade-chips-row">
+                {openPanel === "subjects" && (
+                    <div id="subject-filter-panel" className="filter-options-panel subject-options-panel">
+                        {categories.map((category) => {
+                            const isAll = category.id === "all";
+                            const isActive = isAll ? activeCategories.length === 0 : activeCategories.includes(category.id);
+                            return (
+                                <button
+                                    key={category.id}
+                                    type="button"
+                                    className={`filter-option-chip subject-option ${isActive ? "active" : ""}`}
+                                    onClick={() => handleSubjectToggle(isAll ? "all" : category.id)}
+                                    aria-pressed={isActive}
+                                >
+                                    <span className="filter-option-icon">{category.icon}</span>
+                                    <span>{category.name}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {openPanel === "grades" && (
+                    <div id="grade-filter-panel" className="filter-options-panel grade-options-panel">
                         <button
-                            className={`grade-chip ${gradeLevels.length === 0 ? "active" : ""}`}
-                            onClick={() => onGradeLevelToggle("all")}
+                            type="button"
+                            className={`filter-option-chip ${gradeLevels.length === 0 ? "active" : ""}`}
+                            onClick={() => handleGradeToggle("all")}
+                            aria-pressed={gradeLevels.length === 0}
                         >
                             Tất cả
                         </button>
                         {gradeLevelChips.map((chip) => (
                             <button
                                 key={chip.value}
-                                className={`grade-chip ${gradeLevels.includes(chip.value) ? "active" : ""}`}
-                                onClick={() => onGradeLevelToggle(chip.value)}
+                                type="button"
+                                className={`filter-option-chip ${gradeLevels.includes(chip.value) ? "active" : ""}`}
+                                onClick={() => handleGradeToggle(chip.value)}
+                                aria-pressed={gradeLevels.includes(chip.value)}
                             >
                                 {chip.label}
                             </button>
