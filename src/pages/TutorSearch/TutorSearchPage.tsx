@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { searchTutors } from "../../services/tutorSearch.service";
 import type { TutorSearchParams } from "../../services/tutorSearch.service";
+import { useProvinces } from "../../hooks/useVietnamLocations";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { isZaloMiniApp } from "../../services/zalo-env";
@@ -30,6 +31,17 @@ const TutorSearchPage = () => {
     const [isFilterStuck, setIsFilterStuck] = useState(false);
 
     const filterSentinelRef = useRef<HTMLDivElement | null>(null);
+
+    // Tỉnh/thành cho bộ lọc "Khu vực" — lấy từ API v2 (provinces.open-api.vn).
+    // Giá trị filter = TÊN tỉnh, khớp đúng teachingAreaCity mà hồ sơ gia sư lưu (BE so khớp chính xác).
+    const { provinces } = useProvinces();
+    const cityOptions = useMemo(
+        () => [
+            { value: "", label: "Tất cả" },
+            ...provinces.map((p) => ({ value: p.name, label: p.name })),
+        ],
+        [provinces]
+    );
 
     // Build API params from filters.
     // NOTE: Backend only supports single `category` and `gradeLevel` values.
@@ -213,6 +225,7 @@ const TutorSearchPage = () => {
                     budgetRange={filters.budgetRange}
                     teachingMode={filters.teachingMode}
                     city={filters.city}
+                    cityOptions={cityOptions}
                     sortBy={filters.sortBy}
                     onCategoryToggle={handleCategoryToggle}
                     onGradeLevelToggle={handleGradeLevelToggle}

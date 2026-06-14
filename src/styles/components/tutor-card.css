@@ -1,7 +1,8 @@
 /* ===== TUTOR CARD COMPONENT (Tutor Search Page) ===== */
 
 .tutor-search-page .tutor-card {
-    width: 430px;
+    width: 100%;
+    min-width: 0;
     box-shadow: 0px 3px 3px rgba(0, 0, 0, 0.1);
     border-radius: 24px;
     background-color: var(--color-white);
@@ -9,7 +10,6 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 

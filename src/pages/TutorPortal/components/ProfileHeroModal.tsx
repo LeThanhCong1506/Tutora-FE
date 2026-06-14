@@ -13,10 +13,7 @@ import {
     validateDistrict,
     validateTeachingMode
 } from '../utils/validation';
-import {
-    VIETNAM_PROVINCES,
-    VIETNAM_DISTRICTS
-} from '../data/vietnamLocations';
+import { useProvinces, useWards } from '../../../hooks/useVietnamLocations';
 import { useFormDraft } from '../../../hooks/useFormDraft';
 import styles from './ProfileHeroModal.module.css';
 
@@ -76,6 +73,12 @@ const ProfileHeroModal: React.FC<ProfileHeroModalProps> = ({
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
     const { saveDraft, loadDraft, clearDraft } = useFormDraft<ProfileHeroData>('draft_hero');
 
+    // Địa danh từ API v2 (provinces.open-api.vn). teachingAreaCity giờ lưu TÊN tỉnh
+    // (vd "Thành phố Hồ Chí Minh") nên suy ngược ra mã để nạp danh sách phường/xã.
+    const { provinces } = useProvinces();
+    const selectedProvinceCode = provinces.find(p => p.name === formData.teachingAreaCity)?.code ?? null;
+    const { wards, loading: wardsLoading } = useWards(selectedProvinceCode);
+
     // Reset form when modal opens — prioritize draft over initialData
     useEffect(() => {
         if (isOpen) {
@@ -84,11 +87,9 @@ const ProfileHeroModal: React.FC<ProfileHeroModalProps> = ({
             setFormData(dataToUse);
             setAvatarPreview(dataToUse.avatarUrl);
             setErrors({});
-            // Set initial search values from saved data
-            const selectedCity = VIETNAM_PROVINCES.find(p => p.value === dataToUse.teachingAreaCity);
-            setCitySearch(selectedCity?.label || '');
-            const selectedDistrict = VIETNAM_DISTRICTS[dataToUse.teachingAreaCity]?.find(d => d.value === dataToUse.teachingAreaDistrict);
-            setDistrictSearch(selectedDistrict?.label || '');
+            // teachingAreaCity/District giờ lưu thẳng TÊN (tỉnh & phường/xã) nên hiển thị trực tiếp.
+            setCitySearch(dataToUse.teachingAreaCity || '');
+            setDistrictSearch(dataToUse.teachingAreaDistrict || '');
         }
     }, [isOpen, initialData, loadDraft]);
 
@@ -345,22 +346,20 @@ const ProfileHeroModal: React.FC<ProfileHeroModalProps> = ({
                         </label>
                         <AutoComplete
                             value={citySearch}
-                            options={VIETNAM_PROVINCES.map(p => ({
-                                value: p.label,
-                                key: p.value
+                            options={provinces.map(p => ({
+                                value: p.name,
+                                key: String(p.code)
                             }))}
                             onSelect={(value) => {
-                                const province = VIETNAM_PROVINCES.find(p => p.label === value);
-                                if (province) {
-                                    setCitySearch(value);
-                                    handleCityChange(province.value);
-                                    setDistrictSearch('');
-                                }
+                                // Lưu tên tỉnh, reset phường/xã (useWards sẽ nạp lại theo tỉnh mới).
+                                setCitySearch(value);
+                                handleCityChange(value);
+                                setDistrictSearch('');
                             }}
                             onChange={(value) => {
                                 setCitySearch(value);
                             }}
-                            placeholder="Nhập tên thành phố..."
+                            placeholder="Nhập tên tỉnh/thành phố..."
                             className={styles.autocomplete}
                             filterOption={(inputValue, option) =>
                                 option?.value?.toLowerCase().includes(inputValue.toLowerCase()) ?? false
@@ -376,26 +375,23 @@ const ProfileHeroModal: React.FC<ProfileHeroModalProps> = ({
                     </div>
                     <div className={styles.formGroup}>
                         <label className={styles.label}>
-                            Quận/Huyện <span className={styles.required}>*</span>
+                            Phường/Xã <span className={styles.required}>*</span>
                         </label>
                         <AutoComplete
                             value={districtSearch}
-                            options={(VIETNAM_DISTRICTS[formData.teachingAreaCity] || []).map(d => ({
-                                value: d.label,
-                                key: d.value
+                            options={wards.map(w => ({
+                                value: w.name,
+                                key: String(w.code)
                             }))}
                             onSelect={(value) => {
-                                const district = (VIETNAM_DISTRICTS[formData.teachingAreaCity] || []).find(d => d.label === value);
-                                if (district) {
-                                    setDistrictSearch(value);
-                                    setFormData(prev => ({ ...prev, teachingAreaDistrict: district.value }));
-                                }
+                                setDistrictSearch(value);
+                                setFormData(prev => ({ ...prev, teachingAreaDistrict: value }));
                             }}
                             onChange={(value) => {
                                 setDistrictSearch(value);
                             }}
-                            placeholder="Nhập tên quận/huyện..."
-                            disabled={!formData.teachingAreaCity}
+                            placeholder={wardsLoading ? 'Đang tải phường/xã...' : 'Nhập tên phường/xã...'}
+                            disabled={!formData.teachingAreaCity || wardsLoading}
                             className={styles.autocomplete}
                             filterOption={(inputValue, option) =>
                                 option?.value?.toLowerCase().includes(inputValue.toLowerCase()) ?? false
