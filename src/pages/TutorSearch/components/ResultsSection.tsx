@@ -35,11 +35,6 @@ const ResultsSection = ({
     totalPages,
     onPageChange,
 }: ResultsSectionProps) => {
-    const rows: Tutor[][] = [];
-    for (let i = 0; i < tutors.length; i += 3) {
-        rows.push(tutors.slice(i, i + 3));
-    }
-
     const pageItems = useMemo(() => {
         const pages: Array<number | string> = [];
         if (totalPages <= 5) {
@@ -103,12 +98,8 @@ const ResultsSection = ({
             </div>
 
             <div className="tutor-grid">
-                {rows.map((row, rowIndex) => (
-                    <div className="tutor-row" key={rowIndex}>
-                        {row.map((tutor, index) => (
-                            <TutorCard key={`${tutor.id}-${index}`} tutor={tutor} />
-                        ))}
-                    </div>
+                {tutors.map((tutor) => (
+                    <TutorCard key={tutor.id} tutor={tutor} />
                 ))}
             </div>
 

@@ -32,16 +32,8 @@ export const teachingModeOptions = [
     { value: "hybrid", label: "LINH HOẠT" },
 ];
 
-export const cityOptions = [
-    { value: "", label: "Tất cả" },
-    { value: "hochiminh", label: "TP. Hồ Chí Minh" },
-    { value: "hanoi", label: "Hà Nội" },
-    { value: "danang", label: "Đà Nẵng" },
-    { value: "cantho", label: "Cần Thơ" },
-    { value: "haiphong", label: "Hải Phòng" },
-    { value: "binhduong", label: "Bình Dương" },
-    { value: "dongnai", label: "Đồng Nai" },
-];
+// cityOptions không còn hardcode tại đây — danh sách tỉnh/thành được lấy từ API v2
+// (provinces.open-api.vn) qua hook useProvinces và truyền vào FilterBar dưới dạng prop.
 
 export const gradeLevelChips = [
     { value: "Grade_1", label: "Lớp 1" },

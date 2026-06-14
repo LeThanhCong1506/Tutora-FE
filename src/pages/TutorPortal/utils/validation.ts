@@ -50,10 +50,10 @@ export const validateCity = (value: string): ValidationResult => {
     return { isValid: true };
 };
 
-// District validation
+// Ward validation (phường/xã — mô hình hành chính sau sáp nhập 07/2025)
 export const validateDistrict = (value: string): ValidationResult => {
     if (!value || value.trim().length === 0) {
-        return { isValid: false, error: 'Vui lòng chọn quận/huyện' };
+        return { isValid: false, error: 'Vui lòng chọn phường/xã' };
     }
     return { isValid: true };
 };
