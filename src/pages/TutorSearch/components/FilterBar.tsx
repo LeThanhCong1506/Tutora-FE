@@ -1,11 +1,10 @@
 import { useState } from "react";
-import CustomDropdown from "../../../components/CustomDropdown/CustomDropdown";
+import CustomDropdown, { type DropdownOption } from "../../../components/CustomDropdown/CustomDropdown";
 import { FilterIcon } from "./icons";
 import {
     budgetRangeOptions,
     categories,
     teachingModeOptions,
-    cityOptions,
     gradeLevelChips,
     sortByOptions,
 } from "./constants";
@@ -16,6 +15,7 @@ interface FilterBarProps {
     budgetRange: string;
     teachingMode: string;
     city: string;
+    cityOptions: DropdownOption[];
     sortBy: string;
     onCategoryToggle: (category: string) => void;
     onGradeLevelToggle: (value: string) => void;
@@ -46,6 +46,7 @@ const FilterBar = ({
     budgetRange,
     teachingMode,
     city,
+    cityOptions,
     sortBy,
     onCategoryToggle,
     onGradeLevelToggle,

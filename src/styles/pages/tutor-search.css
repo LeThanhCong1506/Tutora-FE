@@ -172,8 +172,8 @@
 
 /* Tutor Grid */
 .tutor-grid {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 24px;
 }
 
@@ -280,8 +280,8 @@
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1200px) {
-    .tutor-row {
-        flex-wrap: wrap;
+    .tutor-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
@@ -332,7 +332,7 @@
     }
 
     .tutor-grid {
-        flex-direction: column;
+        grid-template-columns: 1fr;
         gap: 14px;
     }
 
@@ -886,14 +886,8 @@
 /* ===== RESPONSIVE — CARDS ===== */
 
 @media (max-width: 1100px) {
-    .tutor-row {
-        flex-wrap: wrap;
-    }
-
     .tutor-card {
-        /* 2 cards per row, 1 gap of 24px */
-        flex: 0 0 calc((100% - 24px) / 2);
-        width: calc((100% - 24px) / 2);
+        width: 100%;
     }
 }
 
@@ -1188,12 +1182,6 @@
 /* ===== ULTRAWIDE (1900px+) ===== */
 @media (min-width: 1900px) {
     .results-section {
-        max-width: var(--container-2xl);
-    }
-
-    .tutor-card {
-        /* 4 cards per row */
-        flex: 0 0 calc((100% - 72px) / 4);
-        width: calc((100% - 72px) / 4);
+        max-width: 1400px;
     }
 }
