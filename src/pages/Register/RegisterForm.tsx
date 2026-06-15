@@ -62,9 +62,9 @@ const RegisterForm: React.FC = () => {
             return;
         }
 
-        // Validate phone number
+        // Validate phone number — TÙY CHỌN: bỏ trống thì bỏ qua, chỉ kiểm tra khi có nhập.
         const phoneDigits = formData.phone.replace(/\D/g, "");
-        if (phoneDigits.length < 9 || phoneDigits.length > 11) {
+        if (phoneDigits.length > 0 && (phoneDigits.length < 9 || phoneDigits.length > 11)) {
             toast.warning("Số điện thoại không hợp lệ!");
             return;
         }
@@ -84,9 +84,19 @@ const RegisterForm: React.FC = () => {
                 role: formData.role,
             });
 
-            const data = response.data;
-            const token = data.content?.token;
+            const content = response.data?.content;
 
+            // BE flow mới: đăng ký bằng email YÊU CẦU xác thực OTP trước khi cấp token.
+            // Lúc này token = null, requiresEmailVerification = true (BE đã gửi mã OTP qua email)
+            // → KHÔNG coi là lỗi, chuyển sang trang nhập OTP.
+            if (content?.requiresEmailVerification) {
+                toast.success("Đăng ký thành công! Vui lòng kiểm tra email để lấy mã xác thực.");
+                navigate(`/verify-email?email=${encodeURIComponent(content.email || formData.email)}`);
+                return;
+            }
+
+            // Trường hợp được cấp token ngay (vd tài khoản nội bộ) → đăng nhập luôn.
+            const token = content?.token;
             if (!token) {
                 throw new Error("Không nhận được token từ server");
             }

@@ -327,7 +327,7 @@ export const parseEKYCData = (ekycRawData: string | null) => {
   if (!ekycRawData) return null;
   try {
     return JSON.parse(ekycRawData);
-  } catch (error) {
+  } catch {
     return null;
   }
 };
@@ -404,6 +404,33 @@ export const simpleLogin = async (emailOrPhone: string, password: string) => {
     return response.data;
   } catch (error: any) {
     console.error("❌ Login error:", error.response?.data);
+    throw error;
+  }
+};
+
+/**
+ * Xác thực email bằng mã OTP (gửi qua email khi đăng ký).
+ * Thành công → BE trả { token, refreshToken } và tài khoản được đăng nhập.
+ */
+export const verifyEmailOtp = async (email: string, otp: string) => {
+  try {
+    const response = await api.post("/auth/verify-email", { email, otp });
+    return response.data;
+  } catch (error: any) {
+    console.error("❌ Verify email error:", error.response?.data);
+    throw error;
+  }
+};
+
+/**
+ * Gửi lại mã OTP xác thực email (khi mã cũ hết hạn / không nhận được).
+ */
+export const resendVerificationEmail = async (email: string) => {
+  try {
+    const response = await api.post("/auth/resend-verification-email", { email });
+    return response.data;
+  } catch (error: any) {
+    console.error("❌ Resend verification email error:", error.response?.data);
     throw error;
   }
 };
