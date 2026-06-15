@@ -198,14 +198,13 @@
     border-radius: 14px;
     background: rgba(242, 240, 228, 0.42);
     color: rgba(26, 34, 56, 0.76);
-    display: -webkit-box;
     font-size: 14px;
     font-weight: 650;
     line-height: 1.55;
     letter-spacing: 0;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
+    /* Giới hạn độ dài do JS (truncateBio) lo — không dùng -webkit-line-clamp nữa
+       để tránh xén ngang dòng cuối khi text xuống dòng. Hộp tự co theo nội dung. */
+    overflow-wrap: break-word;
 }
 
 .tutor-search-page .tutor-card-meta {
@@ -235,7 +234,7 @@
 
 .tutor-search-page .university-icon svg {
     width: 13px;
-    height: 8px;
+    height: 13px;
 }
 
 .tutor-search-page .university-name {
@@ -311,7 +310,9 @@
 
 .tutor-search-page .tutor-card-footer {
     margin-top: auto;
-    padding: 0 28px 26px;
+    padding: 6px 28px 26px;
+    /* Bỏ đường kẻ rò rỉ từ tutor-search.css cũ (.tutor-card-footer { border-top }) */
+    border-top: none;
     background-color: var(--color-white);
     display: flex;
     align-items: center;
