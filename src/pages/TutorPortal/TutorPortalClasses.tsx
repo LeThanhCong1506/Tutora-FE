@@ -363,7 +363,7 @@ const TutorPortalClasses: React.FC = () => {
                             </p>
                             <button
                                 className={styles.emptyAction}
-                                onClick={() => navigate('/tutor-portal/schedule')}
+                                onClick={() => navigate('/tutor-portal/onboarding')}
                             >
                                 <CalendarIcon />
                                 <span>Thiết lập lịch rảnh</span>

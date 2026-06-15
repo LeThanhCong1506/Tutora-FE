@@ -1,21 +1,21 @@
 /* ===== PROFILE COMPLETENESS CARD ===== */
 
 .card {
-    padding: 27px 28px 28px;
-    border-radius: 21px;
+    padding: 24px 24px 22px;
+    border-radius: 20px;
     background-color: #fff;
     border: 1px solid rgba(62, 47, 40, 0.1);
-    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 18px rgba(26, 34, 56, 0.06);
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
 }
 
 /* Header */
 .header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: baseline;
 }
 
 .label {
@@ -26,19 +26,25 @@
     color: #1a2238;
 }
 
-.percent {
+.count {
     font-family: 'Bricolage Grotesque', serif;
-    font-size: 18px;
-    font-weight: 700;
-    line-height: 24px;
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
     color: #1a2238;
+}
+
+.countTotal {
+    font-size: 14px;
+    font-weight: 700;
+    color: rgba(26, 34, 56, 0.4);
 }
 
 /* Progress Bar */
 .progressBar {
-    height: 8px;
+    height: 9px;
     border-radius: 9999px;
-    background-color: #f2f0e4;
+    background-color: #f0eee2;
     overflow: hidden;
 }
 
@@ -46,8 +52,7 @@
     height: 100%;
     border-radius: 9999px;
     background: linear-gradient(90deg, #1a2238 0%, #3d4a3e 100%);
-    box-shadow: 0px 0px 10px rgba(26, 34, 56, 0.3);
-    transition: width 0.5s ease;
+    transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Status Message */
@@ -56,95 +61,169 @@
     font-size: 12px;
     font-weight: 600;
     line-height: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .complete {
     color: #3d4a3e;
 }
 
-.good {
-    color: #1a2238;
+.complete::before {
+    content: '✓';
+    font-weight: 800;
 }
 
 .needsWork {
     color: #92700c;
 }
 
-/* Checklist */
-.checklist {
+.needsWork::before {
+    content: '⚠';
+}
+
+/* ===== Vertical stepper checklist ===== */
+.steps {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 8px 0;
+    padding: 4px 0;
 }
 
-.checklistItem {
+.step {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 10px;
-    border-radius: 8px;
+    gap: 12px;
+    width: 100%;
+    padding: 9px 8px;
+    background: none;
+    border: none;
+    font: inherit;
+    text-align: left;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    border-radius: 10px;
+    transition: background-color 0.18s ease;
 }
 
-.checklistItem:hover {
-    background-color: rgba(242, 240, 228, 0.5);
+.step:hover {
+    background-color: rgba(242, 240, 228, 0.55);
 }
 
-.checklistItem svg {
-    width: 14px;
-    height: 14px;
-    color: rgba(62, 47, 40, 0.3);
+/* Connecting line behind the dots (dot center x = padding-left 8 + radius 13 = 21px).
+   Spans full row height; opaque dots break it; trimmed at the first/last dot. */
+.step::before {
+    content: '';
+    position: absolute;
+    left: 21px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: rgba(62, 47, 40, 0.14);
+    transform: translateX(-50%);
+}
+
+.step:first-child::before {
+    top: 50%;
+}
+
+.step:last-child::before {
+    bottom: 50%;
+}
+
+.stepDot {
+    position: relative;
+    z-index: 1;
     flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff;
+    border: 2px solid rgba(62, 47, 40, 0.18);
+    color: rgba(62, 47, 40, 0.4);
+    transition: all 0.2s ease;
 }
 
-.checklistItem.completed svg {
-    color: #3d4a3e;
+.stepNum {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
 }
 
-.itemLabel {
+.stepDone .stepDot {
+    background: linear-gradient(135deg, #1a2238 0%, #3d4a3e 100%);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(26, 34, 56, 0.22);
+}
+
+.stepCurrent .stepDot {
+    border-color: #92700c;
+    color: #92700c;
+    box-shadow: 0 0 0 4px rgba(146, 112, 12, 0.12);
+}
+
+.stepLabel {
     flex: 1;
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
-    line-height: 16px;
+    line-height: 18px;
     color: #1a2238;
 }
 
-.checklistItem.completed .itemLabel {
-    color: rgba(26, 34, 56, 0.5);
-    text-decoration: line-through;
+.stepDone .stepLabel {
+    color: rgba(26, 34, 56, 0.45);
 }
 
-.itemPercent {
+.stepCurrent .stepLabel {
+    font-weight: 700;
+}
+
+.stepNext {
+    flex-shrink: 0;
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: 10px;
     font-weight: 700;
-    line-height: 14px;
-    color: rgba(62, 47, 40, 0.4);
-}
-
-.checklistItem.completed .itemPercent {
-    color: #3d4a3e;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #92700c;
+    background: rgba(146, 112, 12, 0.12);
+    border-radius: 999px;
+    padding: 3px 8px;
 }
 
 /* Action Button */
 .actionBtn {
     width: 100%;
     padding: 12px 0;
-    border-radius: 10px;
+    border-radius: 12px;
     background-color: #1a2238;
     border: none;
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 12px;
+    font-size: 12.5px;
     font-weight: 700;
     line-height: 16px;
     color: #fff;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
 .actionBtn:hover {
     background-color: #2a3248;
+}
+
+.actionBtn:active {
+    transform: translateY(1px);
+}
+
+.actionBtn svg {
+    color: #ffd166;
 }

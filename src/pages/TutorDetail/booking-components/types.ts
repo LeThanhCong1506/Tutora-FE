@@ -114,6 +114,9 @@ export interface StepProps {
     selectedCombo: Combo | undefined;
     // Tên gia sư — dùng ở bước Xác nhận.
     tutorName: string;
+    // Lỗi submit booking — hiển thị ở bước Xác nhận, ngay dưới box học phí.
+    submitError?: string | null;
+    onDismissSubmitError?: () => void;
 }
 
 export interface BookingModalProps {

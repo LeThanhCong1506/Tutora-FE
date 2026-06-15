@@ -67,13 +67,6 @@ export const typeLabels: Record<TutorType, string> = {
     elite: "ELITE TUTOR",
 };
 
-export const statsLabels: Record<TutorType, { experience: string; result: string }> = {
-    intensive: { experience: "THÂM NIÊN", result: "KẾT QUẢ" },
-    guided: { experience: "THÂM NIÊN", result: "HÀI LÒNG" },
-    basic: { experience: "THÂM NIÊN", result: "CHỨNG CHỈ" },
-    elite: { experience: "THÂM NIÊN", result: "CHUYÊN MÔN" },
-};
-
 export const categoryNameMap: Record<string, string> = {
     math: "Toán Học",
     physics: "Vật Lý",

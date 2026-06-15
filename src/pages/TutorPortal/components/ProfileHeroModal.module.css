@@ -76,6 +76,50 @@
     color: rgba(62, 47, 40, 0.8);
 }
 
+/* Teaching mode — hiện chỉ hỗ trợ Online; offline/both hiển thị nhưng disabled + badge */
+.teachingModeGroup {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 20px;
+}
+
+.teachingModeOption {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    color: rgba(62, 47, 40, 0.85);
+    cursor: pointer;
+}
+
+.teachingModeOption input {
+    accent-color: #3d4a3e;
+    cursor: pointer;
+}
+
+.teachingModeOptionDisabled {
+    color: rgba(62, 47, 40, 0.38);
+    cursor: not-allowed;
+}
+
+.teachingModeOptionDisabled input {
+    cursor: not-allowed;
+}
+
+.comingSoonBadge {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #9a6a25;
+    background: rgba(212, 180, 131, 0.18);
+    border: 1px solid rgba(212, 180, 131, 0.45);
+    border-radius: 999px;
+    padding: 2px 7px;
+}
+
 /* AutoComplete Styles */
 .autocomplete {
     width: 100%;
