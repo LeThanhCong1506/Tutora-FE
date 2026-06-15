@@ -1,3 +1,6 @@
+/* eslint-disable react-refresh/only-export-components -- module dùng chung: icon-component + hằng SubjectIcons + helper subjectIcon */
+import type { ReactNode } from "react";
+
 export const SearchIcon = () => (
     <svg width="16" height="16" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M9.625 17.5C13.9773 17.5 17.5 13.9773 17.5 9.625C17.5 5.27269 13.9773 1.75 9.625 1.75C5.27269 1.75 1.75 5.27269 1.75 9.625C1.75 13.9773 5.27269 17.5 9.625 17.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -12,9 +15,9 @@ export const VerifiedIcon = () => (
 );
 
 export const UniversityIcon = () => (
-    <svg width="13" height="8" viewBox="0 0 13 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M6.5 1L1 3.5L6.5 6L12 3.5L6.5 1Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M1 3.5V6.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22 10 12 5 2 10l10 5 10-5Z" />
+        <path d="M6 12v5c0 1 2.7 2.4 6 2.4s6-1.4 6-2.4v-5" />
     </svg>
 );
 
@@ -52,4 +55,21 @@ export const SubjectIcons = {
     language: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 8l6 6" /><path d="M4 14l6-6 2-3" /><path d="M2 5h12" /><path d="M7 2h1" /><path d="M22 22l-5-10-5 10" /><path d="M14 18h6" /></svg>,
     art: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" /><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.7-.8 1.7-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.8-1.7 1.7-1.7H16c3.3 0 6-2.7 6-6 0-5.5-4.5-9.6-10-9.6z" /></svg>,
     it_tech: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /><line x1="14" y1="4" x2="10" y2="20" /></svg>,
+};
+
+const normalizeName = (s: string) =>
+    (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+
+// Map tên môn (từ API) → icon phù hợp; không khớp thì dùng icon mặc định (sách).
+export const subjectIcon = (name: string): ReactNode => {
+    const n = normalizeName(name);
+    if (n.includes("toan")) return SubjectIcons.math;
+    if (n.includes("vat ly")) return SubjectIcons.physics;
+    if (n.includes("hoa hoc")) return SubjectIcons.chemistry;
+    if (n.includes("anh") || n.includes("ielts") || n.includes("toeic") || n.includes("toefl")) return SubjectIcons.english;
+    if (n.includes("sinh")) return SubjectIcons.science;
+    if (n.includes("tin hoc") || n.includes("lap trinh") || n.includes("cong nghe")) return SubjectIcons.it_tech;
+    if (n.includes("nhac") || n.includes("my thuat") || n.includes("nghe thuat") || n.includes("hoi hoa")) return SubjectIcons.art;
+    if (n.includes("phap") || n.includes("nhat") || n.includes("han") || n.includes("trung") || n.includes("ngoai ngu")) return SubjectIcons.language;
+    return SubjectIcons.all;
 };

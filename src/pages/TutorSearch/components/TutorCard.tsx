@@ -1,8 +1,22 @@
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import type { Tutor } from "./types";
-import { typeLabels } from "./constants";
 import { VerifiedIcon, UniversityIcon, ArrowIcon } from "./icons";
 import { formatGradeLevelRanges } from "./utils";
+import { createChannel } from "../../../services/chat.service";
+import { getCurrentUser, getCurrentUserRole } from "../../../services/auth.service";
+
+// Giới hạn độ dài phần giới thiệu trên thẻ — cắt theo ranh giới từ rồi thêm "…".
+const MAX_BIO_CHARS = 150;
+
+const truncateBio = (text: string, max: number): string => {
+    if (text.length <= max) return text;
+    const sliced = text.slice(0, max);
+    const lastSpace = sliced.lastIndexOf(" ");
+    // Tránh cắt giữa một từ dài: nếu khoảng trắng cuối quá gần đầu thì cắt thẳng.
+    const cut = lastSpace > max * 0.6 ? sliced.slice(0, lastSpace) : sliced;
+    return cut.trimEnd() + "…";
+};
 
 interface TutorCardProps {
     tutor: Tutor;
@@ -20,7 +34,48 @@ const TutorCard = ({ tutor }: TutorCardProps) => {
         navigate(`/tutor-detail/${tutor.id}`);
     };
 
-    const bio = tutor.bio.trim();
+    // Nhắn tin: tạo/lấy kênh chat với gia sư rồi mở thẳng cuộc trò chuyện ở trang Tin nhắn.
+    const handleMessageClick = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+
+        const role = (getCurrentUserRole() || "").toLowerCase();
+        if (!getCurrentUser() || !role) {
+            toast.info("Vui lòng đăng nhập để nhắn tin với gia sư.");
+            navigate("/login");
+            return;
+        }
+
+        try {
+            const res = await createChannel(tutor.id);
+            const channelId = res.content?.channelId;
+            if (!channelId) throw new Error("Thiếu channelId");
+
+            const messagesPath =
+                role === "student" ? "/student-portal/messages"
+                    : role === "tutor" ? "/tutor-portal/messages"
+                        : "/parent-portal/messages";
+
+            // Truyền sẵn thông tin kênh để trang Tin nhắn mở đúng cuộc trò chuyện ngay.
+            navigate(messagesPath, {
+                state: {
+                    openChannel: {
+                        channelId,
+                        bookingId: 0,
+                        otherUserId: tutor.id,
+                        otherUserName: tutor.name,
+                        otherUserAvatarUrl: tutor.avatar,
+                        status: "active",
+                        lastMessageAt: "",
+                        lastMessagePreview: "",
+                    },
+                },
+            });
+        } catch {
+            toast.error("Không mở được cuộc trò chuyện. Vui lòng thử lại.");
+        }
+    };
+
+    const bio = truncateBio(tutor.bio.trim(), MAX_BIO_CHARS);
     const university = tutor.university.trim();
     const gradeLevelRange = formatGradeLevelRanges(tutor.gradeLevels);
     const visibleSubjects = tutor.subjects.slice(0, 3);
@@ -45,19 +100,9 @@ const TutorCard = ({ tutor }: TutorCardProps) => {
                                     <span className="rating-value">{tutor.rating.toFixed(1)}</span>
                                 </div>
                             </div>
-                            <div className="tutor-badges">
-                                <span className={`tutor-type-badge ${tutor.type}`}>
-                                    {typeLabels[tutor.type]}
-                                </span>
-                                <span className="tutor-credential">{tutor.credential}</span>
-                            </div>
                         </div>
                     </div>
                 </div>
-
-                {bio && (
-                    <p className="tutor-bio">{bio}</p>
-                )}
 
                 {(university || gradeLevelRange) && (
                     <div className="tutor-card-meta">
@@ -90,13 +135,17 @@ const TutorCard = ({ tutor }: TutorCardProps) => {
                         )}
                     </div>
                 )}
+
+                {bio && (
+                    <p className="tutor-bio">{bio}</p>
+                )}
             </div>
 
             <div className="tutor-card-footer">
                 <div className="tutor-actions">
-                    <button className="btn-details" onClick={handleButtonClick}>Chi tiết</button>
+                    <button className="btn-details" onClick={handleMessageClick}>Nhắn tin</button>
                     <button className="btn-start-plan" onClick={handleButtonClick}>
-                        <span className="btn-start-plan-text">BẮT ĐẦU KẾ HOẠCH</span>
+                        <span className="btn-start-plan-text">BẮT ĐẦU</span>
                         <span className="btn-start-plan-icon"><ArrowIcon /></span>
                     </button>
                 </div>
