@@ -160,36 +160,34 @@ export const getVerificationProgress = async (userId: string): Promise<Verificat
 };
 
 /**
- * Upload/Update intro video
- * PUT /api/tutors/{id}/profile/video
+ * Update intro video (YouTube link)
+ * PUT /api/tutors/{id}/profile/video — body: { videoUrl: string }
+ *
+ * BE đã đổi: không còn upload file nữa, chỉ nhận 1 URL YouTube.
  *
  * @param userId - User ID (same as tutor ID)
- * @param videoFile - Video file to upload
+ * @param videoUrl - Link YouTube video giới thiệu
  * @returns API response
  */
-export const updateVideo = async (userId: string, videoFile: File): Promise<ApiResponse> => {
+export const updateVideo = async (userId: string, videoUrl: string): Promise<ApiResponse> => {
   try {
-    console.log('🎥 Uploading video for:', userId);
-    console.log('File info:', {
-      name: videoFile.name,
-      size: `${(videoFile.size / 1024 / 1024).toFixed(2)} MB`,
-      type: videoFile.type,
-    });
+    console.log('🎥 Updating intro video URL for:', userId, videoUrl);
 
-    const formData = new FormData();
-    formData.append('VideoFile', videoFile);
-
-    const response = await api.put(`/tutors/${userId}/profile/video`, formData, {
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'multipart/form-data',
+    const response = await api.put(
+      `/tutors/${userId}/profile/video`,
+      { videoUrl },
+      {
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
       },
-    });
+    );
 
-    console.log('✅ Video uploaded successfully:', response.data);
+    console.log('✅ Video URL updated successfully:', response.data);
     return response.data;
   } catch (error: any) {
-    console.error('❌ Error uploading video:', {
+    console.error('❌ Error updating video URL:', {
       status: error.response?.status,
       data: error.response?.data,
       message: error.message,

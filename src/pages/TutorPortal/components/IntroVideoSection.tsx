@@ -1,248 +1,252 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
+import { YoutubeFilled } from '@ant-design/icons';
+import { Check, CirclePlay, Link2, LoaderCircle, Pencil, Video, X } from 'lucide-react';
 import styles from './IntroVideoSection.module.css';
-
-// Constants
-const MAX_FILE_SIZE_MB = 100;
-const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
-const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo'];
-
-// Icons
-const VideoIcon = () => (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path d="M9 5L12 7L9 9V5Z" fill="currentColor" />
-        <path d="M2 4C2 3.44772 2.44772 3 3 3H8C8.55228 3 9 3.44772 9 4V10C9 10.5523 8.55228 11 8 11H3C2.44772 11 2 10.5523 2 10V4Z" fill="currentColor" />
-    </svg>
-);
-
-const EditIcon = () => (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-        <path d="M12.75 2.25L15.75 5.25M9.75 5.25L2.25 12.75V15.75H5.25L12.75 8.25M9.75 5.25L12.75 2.25L15.75 5.25L12.75 8.25M9.75 5.25L12.75 8.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-);
-
-const UploadIcon = () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <path d="M12 16V4M12 4L7 9M12 4L17 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M4 16V18C4 19.1046 4.89543 20 6 20H18C19.1046 20 20 19.1046 20 18V16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-);
-
-const LoadingSpinner = () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className={styles.spinner}>
-        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25" />
-        <path d="M22 12C22 6.47715 17.5228 2 12 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-);
+import { getYouTubeEmbedUrl, isValidYouTubeUrl } from '../../../utils/youtube';
 
 interface IntroVideoSectionProps {
-    videoUrl: string | null;
-    onChange: (url: string | null) => void;
-    onUploadVideo?: (file: File) => Promise<string | null>;
-    isEditMode: boolean;
-    isUploading?: boolean;
+  videoUrl: string | null;
+  /** Lưu link YouTube qua API. Trả về URL đã lưu, hoặc null nếu thất bại. */
+  onSave: (url: string) => Promise<string | null>;
+  isEditMode: boolean;
+  isSaving?: boolean;
 }
 
-const IntroVideoSection: React.FC<IntroVideoSectionProps> = ({
-    videoUrl,
-    onChange: _onChange,
-    onUploadVideo,
-    isEditMode,
-    isUploading = false
-}) => {
-    const [error, setError] = useState<string | null>(null);
-    const [isDragging, setIsDragging] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+const Label = () => (
+  <div className={styles.label}>
+    <Video size={15} strokeWidth={2.4} />
+    <span>Video giới thiệu</span>
+  </div>
+);
 
-    // Validate and process file
-    const processFile = async (file: File) => {
-        // Validate file type
-        if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
-            setError('Định dạng không hợp lệ. Chỉ chấp nhận MP4, WebM, MOV, AVI.');
-            return;
-        }
+const PlatformBadge = () => (
+  <div className={styles.platformBadge} title="YouTube" aria-label="YouTube">
+    <YoutubeFilled className={styles.youtubeLogo} />
+  </div>
+);
 
-        // Validate file size
-        if (file.size > MAX_FILE_SIZE_BYTES) {
-            setError(`File quá lớn. Kích thước tối đa là ${MAX_FILE_SIZE_MB}MB.`);
-            return;
-        }
+const IntroVideoSection: React.FC<IntroVideoSectionProps> = ({ videoUrl, onSave, isEditMode, isSaving = false }) => {
+  const [inputValue, setInputValue] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isEditingUrl, setIsEditingUrl] = useState(false);
 
-        setError(null);
+  const embedUrl = getYouTubeEmbedUrl(videoUrl);
+  // Xem trước trực tiếp theo link đang gõ (null nếu chưa hợp lệ).
+  const previewEmbedUrl = getYouTubeEmbedUrl(inputValue);
 
-        // Upload file
-        if (onUploadVideo) {
-            const uploadedUrl = await onUploadVideo(file);
-            if (!uploadedUrl) {
-                setError('Upload thất bại. Vui lòng thử lại.');
-            }
-        }
-    };
-
-    // Handle file selection from input
-    const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        await processFile(file);
-
-        // Reset file input
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
-    };
-
-    // Drag & Drop handlers
-    const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(true);
-    };
-
-    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
-    };
-
-    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-    };
-
-    const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
-
-        const files = e.dataTransfer.files;
-        if (files && files.length > 0) {
-            await processFile(files[0]);
-        }
-    };
-
-    // Trigger file input
-    const triggerFileInput = () => {
-        setError(null);
-        fileInputRef.current?.click();
-    };
-
-    // Preview mode - just show video
-    if (!isEditMode) {
-        if (!videoUrl) {
-            return (
-                <div className={styles.container}>
-                    <div className={styles.noVideo}>
-                        <VideoIcon />
-                        <span>Chưa có video giới thiệu</span>
-                    </div>
-                </div>
-            );
-        }
-
-        return (
-            <div className={styles.container}>
-                <div className={styles.videoWrapper}>
-                    <div className={styles.label}>
-                        <VideoIcon />
-                        <span>Video giới thiệu</span>
-                    </div>
-                    <video
-                        src={videoUrl}
-                        controls
-                        className={styles.videoPlayer}
-                    />
-                </div>
-            </div>
-        );
+  const handleSave = async () => {
+    const url = inputValue.trim();
+    if (!url) {
+      setError('Vui lòng nhập link video YouTube.');
+      return;
     }
-
-    // Edit mode - uploading state
-    if (isUploading) {
-        return (
-            <div className={styles.container}>
-                <div className={styles.uploadingState}>
-                    <div className={styles.label}>
-                        <VideoIcon />
-                        <span>Video giới thiệu</span>
-                    </div>
-                    <div className={styles.uploadingContent}>
-                        <LoadingSpinner />
-                        <span className={styles.uploadingText}>Đang tải lên video...</span>
-                        <span className={styles.uploadingHint}>Vui lòng đợi trong giây lát</span>
-                    </div>
-                </div>
-            </div>
-        );
+    if (!isValidYouTubeUrl(url)) {
+      setError('Link YouTube không hợp lệ. Ví dụ: https://www.youtube.com/watch?v=...');
+      return;
     }
-
-    // Edit mode - has video
-    if (videoUrl) {
-        return (
-            <div className={styles.container}>
-                <div className={styles.videoWrapper}>
-                    <div className={styles.label}>
-                        <VideoIcon />
-                        <span>Video giới thiệu</span>
-                    </div>
-                    <div className={styles.actionButtons}>
-                        <button className={styles.editBtn} onClick={triggerFileInput} title="Thay đổi video">
-                            <EditIcon />
-                        </button>
-                    </div>
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="video/mp4,video/webm,video/quicktime,video/x-msvideo"
-                        onChange={handleFileSelect}
-                        className={styles.fileInput}
-                    />
-                    <video
-                        src={videoUrl}
-                        controls
-                        className={styles.videoPlayer}
-                    />
-                </div>
-                {error && <div className={styles.errorMessage}>{error}</div>}
-            </div>
-        );
+    setError(null);
+    const saved = await onSave(url);
+    if (saved) {
+      setIsEditingUrl(false);
+      setInputValue('');
+    } else {
+      setError('Lưu video thất bại. Vui lòng thử lại.');
     }
+  };
 
-    // Edit mode - no video (upload area)
-    return (
+  const startEditing = () => {
+    setInputValue(videoUrl ?? '');
+    setError(null);
+    setIsEditingUrl(true);
+  };
+
+  const cancelEditing = () => {
+    setIsEditingUrl(false);
+    setInputValue('');
+    setError(null);
+  };
+
+  // ===== Preview mode (read-only) =====
+  if (!isEditMode) {
+    if (!embedUrl) {
+      return (
         <div className={styles.container}>
-            <div
-                className={`${styles.uploadContainer} ${isDragging ? styles.uploadContainerDragging : ''}`}
-                onDragEnter={handleDragEnter}
-                onDragLeave={handleDragLeave}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-            >
-                <div className={styles.label}>
-                    <VideoIcon />
-                    <span>Video giới thiệu</span>
-                </div>
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="video/mp4,video/webm,video/quicktime,video/x-msvideo"
-                    onChange={handleFileSelect}
-                    className={styles.fileInput}
-                />
-                <div className={styles.uploadDropzone} onClick={triggerFileInput}>
-                    <div className={`${styles.uploadIconWrapper} ${isDragging ? styles.uploadIconDragging : ''}`}>
-                        <UploadIcon />
-                    </div>
-                    <span className={styles.uploadTitle}>
-                        {isDragging ? 'Thả video để tải lên' : 'Kéo thả hoặc click để tải video'}
-                    </span>
-                    <span className={styles.uploadHint}>
-                        MP4, WebM, MOV, AVI - Tối đa {MAX_FILE_SIZE_MB}MB
-                    </span>
-                    {error && <span className={styles.error}>{error}</span>}
-                </div>
+          <div className={styles.noVideo}>
+            <div className={styles.noVideoIcon}>
+              <CirclePlay size={30} strokeWidth={1.8} />
             </div>
+            <div>
+              <span>Chưa có video giới thiệu</span>
+              <p>Video sẽ hiển thị ở đây sau khi gia sư cập nhật.</p>
+            </div>
+          </div>
         </div>
+      );
+    }
+
+    return (
+      <div className={styles.container}>
+        <div className={styles.videoCard}>
+          <div className={styles.cardHeader}>
+            <Label />
+            <PlatformBadge />
+          </div>
+          <div className={styles.videoSurface}>
+            <iframe
+              className={styles.iframe}
+              src={embedUrl}
+              title="Video giới thiệu"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      </div>
     );
+  }
+
+  // ===== Edit mode - saving =====
+  if (isSaving) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.uploadingState}>
+          <div className={styles.cardHeader}>
+            <Label />
+            <PlatformBadge />
+          </div>
+          <div className={styles.uploadingContent}>
+            <LoaderCircle className={styles.spinner} size={34} strokeWidth={2.2} />
+            <span className={styles.uploadingText}>Đang lưu video...</span>
+            <span className={styles.uploadingHint}>Vui lòng đợi trong giây lát</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ===== Edit mode - has video, not editing → show embed + edit button =====
+  if (embedUrl && !isEditingUrl) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.videoCard}>
+          <div className={styles.cardHeader}>
+            <Label />
+            <div className={styles.headerActions}>
+              <PlatformBadge />
+              <button
+                type="button"
+                className={styles.editBtn}
+                onClick={startEditing}
+                title="Đổi link video"
+                aria-label="Đổi link video"
+              >
+                <Pencil size={18} strokeWidth={2.2} />
+              </button>
+            </div>
+          </div>
+          <div className={styles.videoSurface}>
+            <iframe
+              className={styles.iframe}
+              src={embedUrl}
+              title="Video giới thiệu"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+          <div className={styles.cardFooter}>
+            <span className={styles.liveDot} />
+            <span>Đang hiển thị trên hồ sơ marketplace</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ===== Edit mode - URL input (no video, or editing) =====
+  const canCancel = !!embedUrl;
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.urlEditCard}>
+        <div className={styles.cardHeader}>
+          <div className={styles.titleBlock}>
+            <Label />
+            <h3>Giới thiệu bằng video</h3>
+          </div>
+          <PlatformBadge />
+        </div>
+
+        <div className={styles.previewArea}>
+          {previewEmbedUrl ? (
+            <iframe
+              className={styles.iframe}
+              src={previewEmbedUrl}
+              title="Xem trước video"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          ) : (
+            <div className={styles.previewPlaceholder}>
+              <div className={styles.previewIcon}>
+                <YoutubeFilled className={styles.previewYoutubeLogo} />
+                <CirclePlay size={26} strokeWidth={1.8} />
+              </div>
+              <strong>Chưa có video</strong>
+              <span>Thêm link YouTube để xem trước</span>
+            </div>
+          )}
+        </div>
+
+        <div className={styles.urlPanel}>
+          <label className={styles.inputLabel} htmlFor="intro-video-url">
+            Link YouTube
+          </label>
+          <div className={styles.urlRow}>
+            <div className={styles.inputWrapper}>
+              <Link2 className={styles.inputIcon} size={18} strokeWidth={2.1} />
+              <input
+                id="intro-video-url"
+                type="url"
+                className={`${styles.input} ${error ? styles.inputError : ''}`}
+                placeholder="https://www.youtube.com/watch?v=..."
+                value={inputValue}
+                onChange={(e) => {
+                  setInputValue(e.target.value);
+                  if (error) setError(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSave();
+                }}
+              />
+            </div>
+            <div className={styles.editActions}>
+              {canCancel && (
+                <button type="button" className={styles.cancelBtn} onClick={cancelEditing} title="Hủy" aria-label="Hủy">
+                  <X size={20} strokeWidth={2.3} />
+                </button>
+              )}
+              <button
+                type="button"
+                className={styles.saveBtn}
+                onClick={handleSave}
+                title="Lưu video"
+                aria-label="Lưu video"
+              >
+                <Check size={21} strokeWidth={2.5} />
+              </button>
+            </div>
+          </div>
+          <div className={styles.helperRow}>
+            {error ? (
+              <span className={styles.error}>{error}</span>
+            ) : (
+              <span>Video sẽ xuất hiện trên hồ sơ marketplace của bạn.</span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default IntroVideoSection;
