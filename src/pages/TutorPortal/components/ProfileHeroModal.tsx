@@ -1,13 +1,9 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import Cropper from 'react-easy-crop';
-import type { Area } from 'react-easy-crop';
-import getCroppedImg from '../utils/cropImage';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { AutoComplete } from 'antd';
 import EditModal from './EditModal';
 import FormField from './FormField';
 import {
-    validateAvatar,
     validateHeadline,
     validateCity,
     validateDistrict,
@@ -17,9 +13,9 @@ import { useProvinces, useWards } from '../../../hooks/useVietnamLocations';
 import { useFormDraft } from '../../../hooks/useFormDraft';
 import styles from './ProfileHeroModal.module.css';
 
-// NOTE: Môn học, cấp độ & giá KHÔNG còn chỉnh sửa ở đây nữa — gia sư thiết lập tại
-// trang Onboarding (/tutor-portal/onboarding) theo model SubjectGradePrices.
-// Modal này chỉ còn: avatar, tiêu đề, khu vực dạy, hình thức dạy.
+// Modal này chỉ còn: tiêu đề, khu vực dạy, hình thức dạy.
+// - Ảnh đại diện đã tách sang AvatarModal (gọi API riêng updateAvatar).
+// - Môn học, cấp độ & giá thiết lập tại Onboarding (model SubjectGradePrices).
 
 const TEACHING_MODES = [
     { value: 'online', label: 'Dạy Online' },
@@ -27,17 +23,7 @@ const TEACHING_MODES = [
     { value: 'both', label: 'Cả hai hình thức' },
 ];
 
-// Icons
-const UploadIcon = () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <path d="M4 16V18C4 19.1046 4.89543 20 6 20H18C19.1046 20 20 19.1046 20 18V16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M12 4V14M12 4L8 8M12 4L16 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-);
-
 interface ProfileHeroData {
-    avatarUrl: string;
-    avatarFile: File | null;
     headline: string;
     teachingAreaCity: string;
     teachingAreaDistrict: string;
@@ -59,18 +45,9 @@ const ProfileHeroModal: React.FC<ProfileHeroModalProps> = ({
 }) => {
     const [formData, setFormData] = useState<ProfileHeroData>(initialData);
     const [errors, setErrors] = useState<Record<string, string>>({});
-    const [avatarPreview, setAvatarPreview] = useState<string>(initialData.avatarUrl);
     const [isLoading, setIsLoading] = useState(false);
     const [citySearch, setCitySearch] = useState<string>('');
     const [districtSearch, setDistrictSearch] = useState<string>('');
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    // Cropper state
-    const [showCropper, setShowCropper] = useState(false);
-    const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
-    const [crop, setCrop] = useState({ x: 0, y: 0 });
-    const [zoom, setZoom] = useState(1);
-    const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
     const { saveDraft, loadDraft, clearDraft } = useFormDraft<ProfileHeroData>('draft_hero');
 
     // Địa danh từ API v2 (provinces.open-api.vn). teachingAreaCity giờ lưu TÊN tỉnh
@@ -83,9 +60,11 @@ const ProfileHeroModal: React.FC<ProfileHeroModalProps> = ({
     useEffect(() => {
         if (isOpen) {
             const draft = loadDraft();
-            const dataToUse = draft ? { ...draft, avatarFile: null } : initialData;
+            const base = draft ?? initialData;
+            // Hiện chỉ hỗ trợ 1 hình thức dạy: Online → ép teachingMode = 'online' khi mở modal
+            // (Dạy trực tiếp & Cả hai hình thức sẽ mở trong tương lai).
+            const dataToUse: ProfileHeroData = { ...base, teachingMode: 'online' };
             setFormData(dataToUse);
-            setAvatarPreview(dataToUse.avatarUrl);
             setErrors({});
             // teachingAreaCity/District giờ lưu thẳng TÊN (tỉnh & phường/xã) nên hiển thị trực tiếp.
             setCitySearch(dataToUse.teachingAreaCity || '');
@@ -99,68 +78,6 @@ const ProfileHeroModal: React.FC<ProfileHeroModalProps> = ({
             saveDraft(formData);
         }
     }, [formData, isOpen, saveDraft]);
-
-    // Handle avatar upload — opens cropper instead of directly setting preview
-    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const validation = validateAvatar(file);
-            if (!validation.isValid) {
-                setErrors(prev => ({ ...prev, avatar: validation.error || '' }));
-                return;
-            }
-
-            setErrors(prev => ({ ...prev, avatar: '' }));
-
-            // Read file as base64 and open cropper
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                setCropImageSrc(e.target?.result as string);
-                setCrop({ x: 0, y: 0 });
-                setZoom(1);
-                setShowCropper(true);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
-    // Cropper: track crop area
-    const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
-        setCroppedAreaPixels(croppedAreaPixels);
-    }, []);
-
-    // Cropper: confirm crop
-    const handleCropConfirm = async () => {
-        if (!cropImageSrc || !croppedAreaPixels) return;
-
-        try {
-            const croppedFile = await getCroppedImg(cropImageSrc, croppedAreaPixels, 'avatar.jpg');
-
-            // Create preview from cropped file
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                setAvatarPreview(e.target?.result as string);
-            };
-            reader.readAsDataURL(croppedFile);
-
-            setFormData(prev => ({ ...prev, avatarFile: croppedFile }));
-            setShowCropper(false);
-            setCropImageSrc(null);
-
-            // Reset file input so same file can be re-selected
-            if (fileInputRef.current) fileInputRef.current.value = '';
-        } catch (err) {
-            console.error('Crop failed:', err);
-            toast.error('Không thể cắt ảnh. Vui lòng thử lại.');
-        }
-    };
-
-    // Cropper: cancel
-    const handleCropCancel = () => {
-        setShowCropper(false);
-        setCropImageSrc(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
-    };
 
     // Handle city change (reset district)
     const handleCityChange = (value: string) => {
@@ -211,7 +128,7 @@ const ProfileHeroModal: React.FC<ProfileHeroModalProps> = ({
 
         setIsLoading(true);
         try {
-            // Call onSave - parent handles API call and closing modal
+            // Call onSave - parent handles API call (updateBasicInfo) and closing modal
             await onSave(formData);
             clearDraft();
         } finally {
@@ -229,101 +146,6 @@ const ProfileHeroModal: React.FC<ProfileHeroModalProps> = ({
             size="large"
         >
             <div className={styles.form}>
-                {/* Avatar Upload */}
-                <div className={styles.avatarSection}>
-                    <label className={styles.sectionLabel}>Ảnh đại diện</label>
-                    <div className={styles.avatarUpload}>
-                        <div
-                            className={styles.avatarPreview}
-                            onClick={() => fileInputRef.current?.click()}
-                        >
-                            {avatarPreview ? (
-                                <img src={avatarPreview} alt="Avatar preview" />
-                            ) : (
-                                <div className={styles.avatarPlaceholder}>
-                                    <UploadIcon />
-                                    <span>Tải ảnh lên</span>
-                                </div>
-                            )}
-                            <div className={styles.avatarOverlay}>
-                                <UploadIcon />
-                            </div>
-                        </div>
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/jpeg,image/png"
-                            onChange={handleAvatarChange}
-                            className={styles.fileInput}
-                        />
-                        <div className={styles.avatarHint}>
-                            <p>Định dạng: JPG, PNG</p>
-                            <p>Kích thước tối đa: 5MB</p>
-                        </div>
-                    </div>
-                    {errors.avatar && <span className={styles.error}>{errors.avatar}</span>}
-                </div>
-
-                {/* Cropper Overlay */}
-                {showCropper && cropImageSrc && (
-                    <div className={styles.cropperOverlay}>
-                        <div className={styles.cropperModal}>
-                            <div className={styles.cropperHeader}>
-                                <h3>Cắt ảnh đại diện</h3>
-                            </div>
-                            <div className={styles.cropperContainer}>
-                                <Cropper
-                                    image={cropImageSrc}
-                                    crop={crop}
-                                    zoom={zoom}
-                                    aspect={1}
-                                    cropShape="round"
-                                    showGrid={false}
-                                    onCropChange={setCrop}
-                                    onZoomChange={setZoom}
-                                    onCropComplete={onCropComplete}
-                                />
-                            </div>
-                            <div className={styles.cropperControls}>
-                                <label className={styles.zoomLabel}>
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                        <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.5" />
-                                        <path d="M11 11L14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                                        <path d="M5 7H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                                        <path d="M7 5V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                                    </svg>
-                                    Thu phóng
-                                </label>
-                                <input
-                                    type="range"
-                                    min={1}
-                                    max={3}
-                                    step={0.05}
-                                    value={zoom}
-                                    onChange={(e) => setZoom(Number(e.target.value))}
-                                    className={styles.zoomSlider}
-                                />
-                            </div>
-                            <div className={styles.cropperActions}>
-                                <button
-                                    type="button"
-                                    className={styles.cropCancelBtn}
-                                    onClick={handleCropCancel}
-                                >
-                                    Hủy
-                                </button>
-                                <button
-                                    type="button"
-                                    className={styles.cropConfirmBtn}
-                                    onClick={handleCropConfirm}
-                                >
-                                    Xác nhận
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
                 {/* Headline */}
                 <FormField
                     type="textarea"
@@ -406,17 +228,36 @@ const ProfileHeroModal: React.FC<ProfileHeroModalProps> = ({
                     </div>
                 </div>
 
-                {/* Teaching Mode */}
-                <FormField
-                    type="radio"
-                    name="teachingMode"
-                    label="Hình thức dạy học"
-                    value={formData.teachingMode}
-                    onChange={(value) => setFormData(prev => ({ ...prev, teachingMode: value as ProfileHeroData['teachingMode'] }))}
-                    options={TEACHING_MODES}
-                    required
-                    error={errors.teachingMode}
-                />
+                {/* Teaching Mode — hiện chỉ hỗ trợ Online; Dạy trực tiếp & Cả hai sẽ mở trong tương lai. */}
+                <div className={styles.formGroup}>
+                    <label className={styles.label}>
+                        Hình thức dạy học <span className={styles.required}>*</span>
+                    </label>
+                    <div className={styles.teachingModeGroup}>
+                        {TEACHING_MODES.map((mode) => {
+                            const available = mode.value === 'online';
+                            return (
+                                <label
+                                    key={mode.value}
+                                    className={`${styles.teachingModeOption} ${available ? '' : styles.teachingModeOptionDisabled}`}
+                                    title={available ? undefined : 'Tính năng sẽ được hỗ trợ trong tương lai'}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="teachingMode"
+                                        value={mode.value}
+                                        checked={formData.teachingMode === mode.value}
+                                        disabled={!available}
+                                        onChange={() => setFormData(prev => ({ ...prev, teachingMode: 'online' }))}
+                                    />
+                                    <span>{mode.label}</span>
+                                    {!available && <span className={styles.comingSoonBadge}>Sắp hỗ trợ</span>}
+                                </label>
+                            );
+                        })}
+                    </div>
+                    {errors.teachingMode && <span className={styles.error}>{errors.teachingMode}</span>}
+                </div>
 
                 {/* Gợi ý: môn học, cấp độ & giá được thiết lập ở trang Onboarding. */}
                 <p style={{ fontSize: 13, color: 'rgba(62, 47, 40, 0.6)', marginTop: 4 }}>

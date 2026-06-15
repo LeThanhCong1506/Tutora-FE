@@ -1,10 +1,6 @@
 import type { AvailabilitySlot } from '../../../services/tutorDetail.service';
-import { VerifyIcon } from './icons';
-import { formatCurrency } from './utils';
 
 interface BookingSidebarProps {
-    hourlyRate: number | null;
-    trialLessonPrice: number | null;
     availabilities: AvailabilitySlot[] | null;
     onBooking: () => void;
 }
@@ -20,40 +16,58 @@ const DAY_LABELS: Record<number, string> = {
     7: "Chủ Nhật",
 };
 
-const BookingSidebar = ({ hourlyRate, trialLessonPrice, availabilities, onBooking }: BookingSidebarProps) => {
-    const availabilityByDay = (availabilities || []).reduce((acc, slot) => {
-        const key = DAY_LABELS[slot.dayofweek] || slot.dayName || `Thứ ${slot.dayofweek + 1}`;
-        if (!acc[key]) acc[key] = [];
-        acc[key].push(slot);
-        return acc;
-    }, {} as Record<string, AvailabilitySlot[]>);
+const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0, 7];
 
-    const hasAvailability = Object.keys(availabilityByDay).length > 0;
+const timeToMinutes = (time: string) => {
+    const [hour = "0", minute = "0"] = time.split(":");
+    return Number(hour) * 60 + Number(minute);
+};
+
+const BookingSidebar = ({ availabilities, onBooking }: BookingSidebarProps) => {
+    const availabilityGroups = DAY_ORDER
+        .map((day) => {
+            const slots = (availabilities || [])
+                .filter((slot) => slot.dayofweek === day)
+                .sort((a, b) => timeToMinutes(a.starttime) - timeToMinutes(b.starttime));
+
+            return {
+                day,
+                dayName: DAY_LABELS[day],
+                slots,
+            };
+        })
+        .filter((group) => group.slots.length > 0);
+
+    const totalSlots = availabilityGroups.reduce((sum, group) => sum + group.slots.length, 0);
+    const hasAvailability = availabilityGroups.length > 0;
 
     return (
         <aside className="booking-sidebar">
             <div className="booking-card">
                 <div className="booking-header">
                     <span className="booking-label">Bắt đầu lộ trình học thuật</span>
-                    <div className="price-display">
-                        <b className="price-amount">{formatCurrency(hourlyRate ? Math.round(hourlyRate * 1.05) : null)}</b>
-                        <b className="price-unit">/ GIỜ HỌC</b>
-                    </div>
-                    {trialLessonPrice != null && trialLessonPrice > 0 && (
-                        <div className="trial-price-label" title="Học phí ưu đãi cho buổi học đầu tiên">
-                            ✨ Buổi học thử: {formatCurrency(trialLessonPrice)}
-                        </div>
-                    )}
                 </div>
 
                 <div className="booking-card-body">
                     {hasAvailability ? (
                         <div className="availability-schedule-container">
-                            <div className="schedule-label">LỊCH DẠY</div>
+                            <div className="schedule-heading">
+                                <div>
+                                    <div className="schedule-label">Lịch dạy</div>
+                                    <div className="schedule-count">
+                                        {availabilityGroups.length} ngày · {totalSlots} khung giờ
+                                    </div>
+                                </div>
+                            </div>
                             <div className="schedule-list">
-                                {Object.entries(availabilityByDay).map(([dayName, slots]) => (
-                                    <div key={dayName} className="schedule-day-row">
-                                        <div className="schedule-day-name">{dayName}</div>
+                                {availabilityGroups.map(({ day, dayName, slots }) => (
+                                    <div key={day} className="schedule-day-row">
+                                        <div className="schedule-day-summary">
+                                            <div className="schedule-day-name">{dayName}</div>
+                                            <div className="schedule-day-count">
+                                                {slots.length} khung giờ
+                                            </div>
+                                        </div>
                                         <div className="schedule-slots">
                                             {slots.map((s, idx) => (
                                                 <span key={idx} className="schedule-time-chip">
@@ -77,14 +91,6 @@ const BookingSidebar = ({ hourlyRate, trialLessonPrice, availabilities, onBookin
                         <b>ĐẶT LỊCH NGAY</b>
                     </button>
                 </div>
-            </div>
-
-            <div className="verification-note">
-                <div className="note-header">
-                    <VerifyIcon />
-                    <b>Đã xác minh bởi TUTORA Council</b>
-                </div>
-                <i className="note-text">Hoàn học phí nếu không hài lòng sau buổi học đầu tiên.</i>
             </div>
         </aside>
     );

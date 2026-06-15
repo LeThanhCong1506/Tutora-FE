@@ -133,8 +133,6 @@ const TutorDetailSkeleton = () => (
                     <div className="booking-card">
                         <div className="skeleton-booking-header">
                             <div className="skeleton-box skeleton-booking-label" />
-                            <div className="skeleton-box skeleton-booking-price" />
-                            <div className="skeleton-box skeleton-booking-trial" />
                         </div>
                         <div className="skeleton-booking-body">
                             <div className="skeleton-box skeleton-schedule-label" />
@@ -152,13 +150,6 @@ const TutorDetailSkeleton = () => (
                         </div>
                         <div className="skeleton-booking-actions">
                             <div className="skeleton-box skeleton-primary-button" />
-                        </div>
-                    </div>
-                    <div className="skeleton-verification-note">
-                        <div className="skeleton-box skeleton-note-icon" />
-                        <div className="skeleton-note-copy">
-                            <div className="skeleton-box skeleton-note-title" />
-                            <div className="skeleton-box skeleton-note-text" />
                         </div>
                     </div>
                 </aside>

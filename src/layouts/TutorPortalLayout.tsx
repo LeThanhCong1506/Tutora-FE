@@ -15,13 +15,6 @@ const MESSAGES_PATH = '/tutor-portal/messages';
 // (đã có `useUnreadMessageBadge` đếm chat unread riêng).
 const NOTIFICATION_TYPES_BY_PATH: Record<string, string[]> = {
     '/tutor-portal/bookings': ['booking_new', 'booking_accepted', 'booking_declined'],
-    '/tutor-portal/schedule': [
-        'lesson_reminder',
-        'lesson_checkin',
-        'lesson_confirmed',
-        'lesson_no_show',
-        'lesson_report',
-    ],
     '/tutor-portal/finance': ['payment_success'],
 };
 
@@ -40,12 +33,6 @@ const ProfileIcon = () => (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
         <path d="M9 8C10.6569 8 12 6.65685 12 5C12 3.34315 10.6569 2 9 2C7.34315 2 6 3.34315 6 5C6 6.65685 7.34315 8 9 8Z" />
         <path d="M2 16C2 12.6863 5.13401 10 9 10C12.866 10 16 12.6863 16 16H2Z" />
-    </svg>
-);
-
-const ScheduleIcon = () => (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-        <path d="M5 1C4.44772 1 4 1.44772 4 2V3H3C1.89543 3 1 3.89543 1 5V15C1 16.1046 1.89543 17 3 17H15C16.1046 17 17 16.1046 17 15V5C17 3.89543 16.1046 3 15 3H14V2C14 1.44772 13.5523 1 13 1C12.4477 1 12 1.44772 12 2V3H6V2C6 1.44772 5.55228 1 5 1ZM3 7H15V15H3V7Z" />
     </svg>
 );
 
@@ -106,7 +93,6 @@ const baseNavItems: NavItem[] = [
     { path: '/tutor-portal/onboarding', label: 'Thiết lập giảng dạy', icon: TeachingSetupIcon, dataTour: 'nav-onboarding' },
     { path: MESSAGES_PATH, label: 'Tin nhắn', icon: MessagesIcon, dataTour: 'nav-messages' },
     { path: '/tutor-portal/bookings', label: 'Yêu cầu đặt lịch', icon: BookingIcon, dataTour: 'nav-bookings' },
-    { path: '/tutor-portal/schedule', label: 'Lịch dạy', icon: ScheduleIcon, dataTour: 'nav-schedule' },
     { path: '/tutor-portal/classes', label: 'Quản lý lớp học', icon: ClassIcon, dataTour: 'nav-classes' },
     { path: '/tutor-portal/finance', label: 'Tài chính', icon: FinanceIcon, dataTour: 'nav-finance' },
     { path: '/tutor-portal/account', label: 'Tài khoản', icon: AccountIcon, dataTour: 'nav-account' },
@@ -161,12 +147,6 @@ const tourSteps: TourStep[] = [
         target: '[data-tour="nav-bookings"]',
         title: '📥 Yêu cầu đặt lịch',
         description: 'Xem và phản hồi yêu cầu đặt lịch từ phụ huynh. Chấp nhận hoặc từ chối lịch học.',
-        placement: 'right',
-    },
-    {
-        target: '[data-tour="nav-schedule"]',
-        title: '🗓️ Lịch dạy',
-        description: 'Cài đặt lịch rảnh để phụ huynh có thể đặt lịch. Kéo thả trên lưới để tạo nhanh!',
         placement: 'right',
     },
     {
@@ -259,7 +239,6 @@ const TutorPortalLayout: React.FC = () => {
         const timer = setTimeout(() => {
             import('../pages/TutorPortal/TutorPortalProfile');
             import('../pages/TutorPortal/TutorPortalDashboard');
-            import('../pages/TutorPortal/TutorPortalSchedule');
             import('../pages/TutorPortal/TutorPortalMessages');
             import('../pages/TutorPortal/TutorPortalClasses');
             import('../pages/TutorPortal/TutorPortalBookings');

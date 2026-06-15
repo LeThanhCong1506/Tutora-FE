@@ -432,14 +432,14 @@ export const updatePricing = async (userId: string, data: UpdatePricingData): Pr
 
 /**
  * Thêm một cấu hình môn × khối lớp.
- * POST /api/tutors/{id}/profile/pricing/subject-grade
+ * POST /api/tutors/{id}/profile/pricing
  */
 export const addSubjectGradePrice = async (
   userId: string,
   data: SubjectGradePriceData,
 ): Promise<ApiResponse<SubjectGradePriceItem>> => {
   try {
-    const response = await api.post(`/tutors/${userId}/profile/pricing/subject-grade`, data, {
+    const response = await api.post(`/tutors/${userId}/profile/pricing`, data, {
       headers: {
         ...getAuthHeaders(),
         'Content-Type': 'application/json',

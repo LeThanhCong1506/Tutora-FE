@@ -1,4 +1,4 @@
-import { CheckCircle2, ShieldCheck } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ShieldCheck, X } from "lucide-react";
 import type { StepProps } from "./types";
 import MonthSimulation from "./MonthSimulation";
 import { formatDuration, formatPrice, studentInitials } from "./utils";
@@ -13,6 +13,8 @@ const StepReview: React.FC<StepProps> = ({
     sessionHours,
     selectedCombo,
     tutorName,
+    submitError,
+    onDismissSubmitError,
 }) => {
     const selectedSubject = availableSubjects.find((s) => s.id === formData.subjectId);
     const selectedStudent = students.find((s) => s.studentId === formData.studentId);
@@ -74,24 +76,43 @@ const StepReview: React.FC<StepProps> = ({
                     />
                 </div>
 
-                <aside className={styles.priceSummary}>
-                    <div className={styles.priceSummaryHead}>
-                        <span className={styles.eyebrow}>Học phí dự kiến</span>
-                        <strong>{formatPrice(total)}</strong>
-                        <small>Tổng thanh toán</small>
+                <aside className={styles.confirmAside}>
+                    <div className={styles.priceSummary}>
+                        <div className={styles.priceSummaryHead}>
+                            <span className={styles.eyebrow}>Học phí dự kiến</span>
+                            <strong>{formatPrice(total)}</strong>
+                            <small>Tổng thanh toán</small>
+                        </div>
+                        <div className={styles.priceLine}>
+                            <span>Học phí · {chosenHours} giờ</span>
+                            <strong>{formatPrice(subtotal)}</strong>
+                        </div>
+                        <div className={styles.priceLine}>
+                            <span>Phí dịch vụ (5%)</span>
+                            <strong>{formatPrice(serviceFee)}</strong>
+                        </div>
+                        <p className={styles.priceSummaryNote}>
+                            <ShieldCheck size={14} />
+                            Thanh toán sau khi gia sư xác nhận lịch học.
+                        </p>
                     </div>
-                    <div className={styles.priceLine}>
-                        <span>Học phí · {chosenHours} giờ</span>
-                        <strong>{formatPrice(subtotal)}</strong>
-                    </div>
-                    <div className={styles.priceLine}>
-                        <span>Phí dịch vụ (5%)</span>
-                        <strong>{formatPrice(serviceFee)}</strong>
-                    </div>
-                    <p className={styles.priceSummaryNote}>
-                        <ShieldCheck size={14} />
-                        Thanh toán sau khi gia sư xác nhận lịch học.
-                    </p>
+
+                    {submitError && (
+                        <div className={`${styles.warningBox} ${styles.reviewErrorBox}`} role="alert">
+                            <AlertTriangle size={18} />
+                            <div>
+                                <strong>{submitError}</strong>
+                            </div>
+                            <button
+                                type="button"
+                                className={styles.warningDismiss}
+                                onClick={onDismissSubmitError}
+                                aria-label="Đóng cảnh báo"
+                            >
+                                <X size={15} />
+                            </button>
+                        </div>
+                    )}
                 </aside>
             </div>
         </>

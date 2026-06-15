@@ -154,6 +154,21 @@ const LoginForm: React.FC = () => {
         error.response?.data?.content ||
         error.message ||
         "Đăng nhập thất bại";
+
+      // BE chặn đăng nhập khi email chưa xác thực → đưa sang trang nhập OTP và tự gửi lại mã mới.
+      // Chỉ áp dụng khi đăng nhập bằng email (có "@"); login qua SĐT/username thì bỏ qua.
+      if (
+        typeof errorMessage === "string" &&
+        errorMessage.includes("chưa được xác minh") &&
+        formData.email.includes("@")
+      ) {
+        toast.info("Email chưa được xác thực. Vui lòng nhập mã OTP để hoàn tất.");
+        navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`, {
+          state: { autoResend: true },
+        });
+        return;
+      }
+
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
