@@ -292,7 +292,7 @@ export function useTutorProfileForm() {
     const [pricingItems, setPricingItems] = useState<SubjectGradePriceItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isInitialLoading, setIsInitialLoading] = useState(true);
-    const [isVideoUploading, setIsVideoUploading] = useState(false);
+    const [isVideoSaving, setIsVideoSaving] = useState(false);
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -588,62 +588,56 @@ export function useTutorProfileForm() {
         }
     }, [userId]);
 
-    // Update video URL (for URL input)
-    const updateVideoUrl = useCallback((url: string | null) => {
-        setFormData(prev => ({ ...prev, videoIntroUrl: url }));
-    }, []);
-
-    // Upload video file via API
-    const uploadVideo = useCallback(async (file: File): Promise<string | null> => {
+    // Lưu link YouTube video giới thiệu qua API (BE: { videoUrl }).
+    // Trả về URL đã lưu nếu thành công, null nếu thất bại.
+    const saveVideoUrl = useCallback(async (videoUrl: string): Promise<string | null> => {
         if (!userId) {
-            console.error('❌ Cannot upload video: userId not found');
+            console.error('❌ Cannot save video: userId not found');
             return null;
         }
 
-        setIsVideoUploading(true);
+        setIsVideoSaving(true);
         setError(null);
 
         try {
-            // Call the API to upload video
-            const response = await updateVideo(userId, file);
+            const response = await updateVideo(userId, videoUrl);
 
             if (response.statusCode === 200) {
-                console.log('✅ Video uploaded successfully');
+                console.log('✅ Video URL saved successfully');
+                toast.success(response.message || 'Cập nhật video giới thiệu thành công!');
 
-                // Show success toast with API message
-                toast.success(response.message || 'Video uploaded successfully!');
-
-                // Refetch progress to get the new video URL
+                // Refetch progress để lấy URL + trạng thái section mới nhất từ BE.
                 const progressResponse = await getVerificationProgress(userId);
 
                 if (progressResponse.statusCode === 200 && progressResponse.content?.sections) {
-                    const videoUrl = progressResponse.content.sections.video.videoUrl;
+                    const newUrl = progressResponse.content.sections.video.videoUrl;
                     const statuses = mapSectionStatuses(progressResponse.content.sections);
 
-                    setFormData(prev => ({ ...prev, videoIntroUrl: videoUrl }));
-                    setSavedData(prev => ({ ...prev, videoIntroUrl: videoUrl }));
+                    setFormData(prev => ({ ...prev, videoIntroUrl: newUrl }));
+                    setSavedData(prev => ({ ...prev, videoIntroUrl: newUrl }));
                     setSectionStatuses(statuses);
                     setLastSaved(new Date());
 
-                    return videoUrl;
+                    return newUrl ?? videoUrl;
                 }
-            } else {
-                // Show error toast if statusCode is not 200
-                toast.error(response.message || 'Failed to upload video');
+
+                // BE trả 200 nhưng progress không có sections → vẫn coi như đã lưu URL vừa nhập.
+                setFormData(prev => ({ ...prev, videoIntroUrl: videoUrl }));
+                setSavedData(prev => ({ ...prev, videoIntroUrl: videoUrl }));
+                setLastSaved(new Date());
+                return videoUrl;
             }
 
+            toast.error(response.message || 'Không thể cập nhật video');
             return null;
         } catch (err: any) {
-            console.error('❌ Error uploading video:', err);
-            const errorMessage = err.response?.data?.message || 'Failed to upload video';
+            console.error('❌ Error saving video:', err);
+            const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật video';
             setError(errorMessage);
-
-            // Show error toast
             toast.error(errorMessage);
-
             return null;
         } finally {
-            setIsVideoUploading(false);
+            setIsVideoSaving(false);
         }
     }, [userId]);
 
@@ -841,7 +835,7 @@ export function useTutorProfileForm() {
         isDirty,
         isLoading,
         isInitialLoading,
-        isVideoUploading,
+        isVideoSaving,
         lastSaved,
         error,
         canPublish,
@@ -849,8 +843,7 @@ export function useTutorProfileForm() {
         fetchAvailability: fetchAvailabilityData,
         updateHeroSection,
         updateAbout,
-        updateVideoUrl,
-        uploadVideo,
+        saveVideoUrl,
         saveAvatar,
         saveBasicInfo,
         addCredential,

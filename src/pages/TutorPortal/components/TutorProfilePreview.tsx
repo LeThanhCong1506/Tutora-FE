@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { TutorProfileFormData } from '../hooks/useTutorProfileForm';
+import { getYouTubeEmbedUrl, getYouTubeThumbnail } from '../../../utils/youtube';
 import '../../../styles/pages/tutor-detail.css';
 
 // Close Icon for modal
@@ -127,7 +128,8 @@ const VideoModal: React.FC<{
     onClose: () => void;
     videoUrl: string;
 }> = ({ isOpen, onClose, videoUrl }) => {
-    if (!isOpen) return null;
+    const embedUrl = getYouTubeEmbedUrl(videoUrl);
+    if (!isOpen || !embedUrl) return null;
 
     return (
         <div
@@ -166,18 +168,24 @@ const VideoModal: React.FC<{
             >
                 <CloseIcon />
             </button>
-            <video
-                src={videoUrl}
-                controls
-                autoPlay
-                style={{
-                    maxWidth: '90%',
-                    maxHeight: '80vh',
-                    borderRadius: '12px',
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
-                }}
+            <div
+                style={{ width: '90%', maxWidth: '960px', aspectRatio: '16 / 9' }}
                 onClick={(e) => e.stopPropagation()}
-            />
+            >
+                <iframe
+                    src={`${embedUrl}?autoplay=1`}
+                    title="Video giới thiệu"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                        border: 'none',
+                        borderRadius: '12px',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                    }}
+                />
+            </div>
         </div>
     );
 };
@@ -201,16 +209,19 @@ const HeroSection: React.FC<{ data: TutorProfileFormData; onPlayVideo: () => voi
             gradeLevels: s.gradeLevels || [],
         }));
 
+    // Ảnh thumbnail YouTube cho phần hero (null nếu chưa có / link không hợp lệ).
+    const videoThumbnail = getYouTubeThumbnail(data.videoIntroUrl);
+
     return (
         <section className="tutor-hero-section">
             <div className="component-2">
                 {/* Video thumbnail or gradient background */}
-                {data.videoIntroUrl ? (
-                    <video
+                {videoThumbnail ? (
+                    <img
                         className="interview-thumbnail"
-                        src={data.videoIntroUrl}
+                        src={videoThumbnail}
+                        alt="Video giới thiệu"
                         style={{ objectFit: 'cover', width: '100%', height: '351.4px' }}
-                        muted
                     />
                 ) : (
                     <div
@@ -225,7 +236,7 @@ const HeroSection: React.FC<{ data: TutorProfileFormData; onPlayVideo: () => voi
                 <div className="gradient-overlay"></div>
 
                 {/* Play Button */}
-                {data.videoIntroUrl && (
+                {videoThumbnail && (
                     <div className="play-button-container" onClick={onPlayVideo} style={{ cursor: 'pointer' }}>
                         <div className="play-button">
                             <PlayIcon />
