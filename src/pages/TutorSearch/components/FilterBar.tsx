@@ -1,23 +1,29 @@
 import { useState } from "react";
 import CustomDropdown, { type DropdownOption } from "../../../components/CustomDropdown/CustomDropdown";
-import { FilterIcon } from "./icons";
+import { FilterIcon, SubjectIcons, subjectIcon } from "./icons";
 import {
     budgetRangeOptions,
-    categories,
     teachingModeOptions,
     gradeLevelChips,
     sortByOptions,
 } from "./constants";
 
+interface SubjectItem {
+    subjectId: number;
+    subjectName: string;
+}
+
 interface FilterBarProps {
-    activeCategories: string[];
+    subjects: SubjectItem[];
+    activeSubjectIds: number[];
     gradeLevels: string[];
     budgetRange: string;
     teachingMode: string;
     city: string;
     cityOptions: DropdownOption[];
     sortBy: string;
-    onCategoryToggle: (category: string) => void;
+    onSubjectToggle: (subjectId: number) => void;
+    onClearSubjects: () => void;
     onGradeLevelToggle: (value: string) => void;
     onBudgetRangeChange: (value: string) => void;
     onTeachingModeChange: (value: string) => void;
@@ -41,14 +47,16 @@ const Chevron = ({ open }: { open: boolean }) => (
 );
 
 const FilterBar = ({
-    activeCategories,
+    subjects,
+    activeSubjectIds,
     gradeLevels,
     budgetRange,
     teachingMode,
     city,
     cityOptions,
     sortBy,
-    onCategoryToggle,
+    onSubjectToggle,
+    onClearSubjects,
     onGradeLevelToggle,
     onBudgetRangeChange,
     onTeachingModeChange,
@@ -58,7 +66,7 @@ const FilterBar = ({
 }: FilterBarProps) => {
     const [openPanel, setOpenPanel] = useState<OpenPanel>(null);
     const hasActiveFilters =
-        activeCategories.length > 0 ||
+        activeSubjectIds.length > 0 ||
         gradeLevels.length > 0 ||
         budgetRange !== "all" ||
         teachingMode !== "" ||
@@ -66,18 +74,19 @@ const FilterBar = ({
         sortBy !== "rating_desc";
 
     const getSubjectLabel = () => {
-        if (activeCategories.length === 0) return "Tất cả";
-        if (activeCategories.length === 1) {
-            return categories.find((category) => category.id === activeCategories[0])?.name || "Tất cả";
+        if (activeSubjectIds.length === 0) return "Tất cả";
+        if (activeSubjectIds.length === 1) {
+            return subjects.find((s) => s.subjectId === activeSubjectIds[0])?.subjectName || "Tất cả";
         }
-        return `${activeCategories.length} môn`;
+        return `${activeSubjectIds.length} môn`;
     };
 
     const getSubjectIcon = () => {
-        if (activeCategories.length === 1) {
-            return categories.find((category) => category.id === activeCategories[0])?.icon || categories[0].icon;
+        if (activeSubjectIds.length === 1) {
+            const s = subjects.find((x) => x.subjectId === activeSubjectIds[0]);
+            return s ? subjectIcon(s.subjectName) : SubjectIcons.all;
         }
-        return categories[0].icon;
+        return SubjectIcons.all;
     };
 
     const getGradeLabel = () => {
@@ -92,9 +101,9 @@ const FilterBar = ({
         setOpenPanel((current) => (current === panel ? null : panel));
     };
 
-    const handleSubjectToggle = (category: string) => {
-        onCategoryToggle(category);
-        if (category === "all") setOpenPanel(null);
+    const handleClearSubjects = () => {
+        onClearSubjects();
+        setOpenPanel(null);
     };
 
     const handleGradeToggle = (grade: string) => {
@@ -114,7 +123,7 @@ const FilterBar = ({
                     <div className="filter-primary">
                         <button
                             type="button"
-                            className={`filter-summary-pill subject-pill ${openPanel === "subjects" ? "active" : ""} ${activeCategories.length > 0 ? "has-value" : ""}`}
+                            className={`filter-summary-pill subject-pill ${openPanel === "subjects" ? "active" : ""} ${activeSubjectIds.length > 0 ? "has-value" : ""}`}
                             onClick={() => togglePanel("subjects")}
                             aria-expanded={openPanel === "subjects"}
                             aria-controls="subject-filter-panel"
@@ -180,19 +189,27 @@ const FilterBar = ({
 
                 {openPanel === "subjects" && (
                     <div id="subject-filter-panel" className="filter-options-panel subject-options-panel">
-                        {categories.map((category) => {
-                            const isAll = category.id === "all";
-                            const isActive = isAll ? activeCategories.length === 0 : activeCategories.includes(category.id);
+                        <button
+                            type="button"
+                            className={`filter-option-chip subject-option ${activeSubjectIds.length === 0 ? "active" : ""}`}
+                            onClick={handleClearSubjects}
+                            aria-pressed={activeSubjectIds.length === 0}
+                        >
+                            <span className="filter-option-icon">{SubjectIcons.all}</span>
+                            <span>Tất cả</span>
+                        </button>
+                        {subjects.map((subject) => {
+                            const isActive = activeSubjectIds.includes(subject.subjectId);
                             return (
                                 <button
-                                    key={category.id}
+                                    key={subject.subjectId}
                                     type="button"
                                     className={`filter-option-chip subject-option ${isActive ? "active" : ""}`}
-                                    onClick={() => handleSubjectToggle(isAll ? "all" : category.id)}
+                                    onClick={() => onSubjectToggle(subject.subjectId)}
                                     aria-pressed={isActive}
                                 >
-                                    <span className="filter-option-icon">{category.icon}</span>
-                                    <span>{category.name}</span>
+                                    <span className="filter-option-icon">{subjectIcon(subject.subjectName)}</span>
+                                    <span>{subject.subjectName}</span>
                                 </button>
                             );
                         })}

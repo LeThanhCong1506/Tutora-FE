@@ -140,15 +140,16 @@ export const searchTutors = async (
     try {
         console.log('🔍 Searching tutors with params:', params);
 
-        // Build query params, filtering out undefined values
-        const queryParams: Record<string, string> = {};
+        // Build query params, filtering out undefined values.
+        // Mảng (vd subjectIds) phải gửi dạng KEY LẶP `subjectIds=1&subjectIds=2`
+        // — BE bind List<int> theo cách này; dạng phẩy "1,2" KHÔNG parse được.
+        const queryParams = new URLSearchParams();
         Object.entries(params).forEach(([key, value]) => {
-            if (value !== undefined && value !== null) {
-                if (Array.isArray(value)) {
-                    queryParams[key] = value.join(',');
-                } else {
-                    queryParams[key] = String(value);
-                }
+            if (value === undefined || value === null) return;
+            if (Array.isArray(value)) {
+                value.forEach((v) => queryParams.append(key, String(v)));
+            } else {
+                queryParams.append(key, String(value));
             }
         });
 
