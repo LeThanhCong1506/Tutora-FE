@@ -647,9 +647,49 @@ export function useTutorProfileForm() {
         }
     }, [userId]);
 
-    // Save basic info to API (calls both avatar and basic-info endpoints)
+    // Update avatar only — gọi đúng 1 API (updateAvatar). Tách khỏi saveBasicInfo
+    // để AvatarModal có trách nhiệm/endpoint riêng.
+    const saveAvatar = useCallback(async (file: File): Promise<boolean> => {
+        if (!userId) {
+            toast.error('Không tìm thấy thông tin người dùng');
+            return false;
+        }
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const avatarResponse = await updateAvatar(userId, file);
+            if (avatarResponse.statusCode !== 200) {
+                toast.error(avatarResponse.message || 'Không thể tải lên ảnh đại diện');
+                return false;
+            }
+            toast.success(avatarResponse.message || 'Cập nhật ảnh đại diện thành công!');
+
+            // Refetch progress để lấy avatarUrl mới.
+            const progressResponse = await getVerificationProgress(userId);
+            if (progressResponse.statusCode === 200 && progressResponse.content?.sections) {
+                const mappedData = mapSectionsToFormData(progressResponse.content.sections);
+                const statuses = mapSectionStatuses(progressResponse.content.sections);
+                setFormData(prev => ({ ...prev, ...mappedData }));
+                setSavedData(prev => ({ ...prev, ...mappedData }));
+                setSectionStatuses(statuses);
+                setLastSaved(new Date());
+            }
+            return true;
+        } catch (err: any) {
+            console.error('❌ Error saving avatar:', err);
+            const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật ảnh đại diện';
+            setError(errorMessage);
+            toast.error(errorMessage);
+            return false;
+        } finally {
+            setIsLoading(false);
+        }
+    }, [userId]);
+
+    // Save basic info to API (chỉ gọi updateBasicInfo — avatar đã tách sang saveAvatar)
     const saveBasicInfo = useCallback(async (data: {
-        avatarFile: File | null;
         headline: string;
         teachingAreaCity: string;
         teachingAreaDistrict: string;
@@ -671,18 +711,6 @@ export function useTutorProfileForm() {
         try {
             console.log('📝 Saving basic info...');
 
-            // Step 1: Upload avatar if provided
-            if (data.avatarFile) {
-                console.log('🖼️ Uploading avatar first...');
-                const avatarResponse = await updateAvatar(userId, data.avatarFile);
-                if (avatarResponse.statusCode !== 200) {
-                    toast.error(avatarResponse.message || 'Không thể tải lên ảnh đại diện');
-                    return false;
-                }
-                console.log('✅ Avatar uploaded successfully');
-            }
-
-            // Step 2: Update basic info (JSON)
             const apiData: BasicInfoUpdateData = {
                 headline: data.headline,
                 teachingAreaCity: data.teachingAreaCity,
@@ -823,6 +851,7 @@ export function useTutorProfileForm() {
         updateAbout,
         updateVideoUrl,
         uploadVideo,
+        saveAvatar,
         saveBasicInfo,
         addCredential,
         updateCredential,

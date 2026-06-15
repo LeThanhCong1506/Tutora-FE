@@ -490,7 +490,7 @@ const TutorPortalDashboard: React.FC = () => {
                     <CheckInIcon />
                     <span>Bắt đầu điểm danh</span>
                 </button>
-                <button className={styles.actionBtn} onClick={() => navigate('/tutor-portal/schedule')}>
+                <button className={styles.actionBtn} onClick={() => navigate('/tutor-portal/onboarding')}>
                     <PlusIcon />
                     <span>Thêm lịch rảnh</span>
                 </button>

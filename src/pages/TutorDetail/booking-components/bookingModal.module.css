@@ -1107,23 +1107,43 @@
 }
 
 .subjectPrice {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
   padding-top: 2px;
 }
 
-.subjectPrice span {
-  color: var(--color-navy-40);
-  font-size: 10px;
-  font-weight: 700;
+.subjectPriceIcon {
+  display: grid;
+  width: 34px;
+  height: 24px;
+  place-items: center;
+  color: var(--color-green);
 }
 
-.subjectPrice strong {
-  color: #9a6a25;
-  font-size: 12px;
+.subjectPriceText {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 6px;
+}
+
+.subjectPriceText strong {
+  color: var(--color-navy);
+  font-size: 15px;
   font-weight: 800;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.subjectPriceText small {
+  color: var(--color-navy-50);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.15;
   white-space: nowrap;
 }
 
@@ -1131,7 +1151,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
-  margin-top: auto;
+  margin-top: 8px;
 }
 
 .subjectSetupGrid > span {
@@ -1302,7 +1322,7 @@
 
 .warningBox {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   min-height: 48px;
@@ -1314,7 +1334,7 @@
   color: var(--color-burgundy);
 }
 
-.warningBox svg {
+.warningBox > svg {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
@@ -1336,6 +1356,29 @@
   margin: 2px 0 0;
   font-size: 10px;
   line-height: 1.55;
+}
+
+.warningDismiss {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(99, 27, 27, 0.7);
+  cursor: pointer;
+}
+
+.warningDismiss:hover {
+  background: rgba(99, 27, 27, 0.08);
+  color: var(--color-burgundy);
+}
+
+.warningDismiss svg {
+  width: 15px;
+  height: 15px;
 }
 
 .bookingModeGrid {
@@ -2044,6 +2087,13 @@
   gap: 10px;
 }
 
+.confirmAside {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .reviewHero {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -2381,6 +2431,13 @@
   border: 1px solid rgba(62, 47, 40, 0.1);
   border-radius: 12px;
   background: var(--color-white);
+}
+
+.reviewErrorBox {
+  min-height: auto;
+  margin-top: 0;
+  align-items: flex-start;
+  padding: 11px;
 }
 
 .priceSummaryHead {

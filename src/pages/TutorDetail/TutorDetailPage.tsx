@@ -23,7 +23,6 @@ import {
     TestimonialsSection,
     BookingSidebar,
     TutorDetailSkeleton,
-    formatCurrency,
 } from './components';
 import '../../styles/pages/tutor-detail.css';
 
@@ -175,8 +174,6 @@ const TutorDetailPage = () => {
 
                     {!inMiniApp && (
                         <BookingSidebar
-                            hourlyRate={profile.hourlyRate}
-                            trialLessonPrice={profile.trialLessonPrice}
                             availabilities={profile.availabilities}
                             onBooking={() => requireLogin(() => setShowBooking(true))}
                         />
@@ -186,10 +183,6 @@ const TutorDetailPage = () => {
             {!inMiniApp && <Footer />}
 
             <div className="mobile-sticky-cta">
-                <div className="mobile-cta-price">
-                    <span className="mobile-cta-price-amount">{formatCurrency(profile.hourlyRate ? Math.round(profile.hourlyRate * 1.05) : null)}</span>
-                    <span className="mobile-cta-price-unit">/ buổi học</span>
-                </div>
                 <button className="mobile-cta-book" onClick={() => requireLogin(() => setShowBooking(true))}>
                     <b>ĐẶT LỊCH</b>
                 </button>

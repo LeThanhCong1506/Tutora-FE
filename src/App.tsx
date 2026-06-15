@@ -31,6 +31,7 @@ const ParentBookingDemo = lazy(() => import('./pages/ParentBookingDemo'));
 const LoginPage = lazy(() => import('./pages/Login/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/Register/RegisterPage'));
 const ResetPasswordPage = lazy(() => import('./pages/Login/ResetPasswordPage'));
+const VerifyEmailPage = lazy(() => import('./pages/VerifyEmail/VerifyEmailPage'));
 
 // Error pages
 const NotFoundPage = lazy(() => import('./pages/Error/NotFoundPage'));
@@ -43,7 +44,6 @@ const ForbiddenPage = lazy(() => import('./pages/Error/ForbiddenPage'));
 const TutorOnboarding = lazy(() => import('./pages/TutorOnboarding'));
 const TutorPortalProfile = lazy(() => import('./pages/TutorPortal/TutorPortalProfile'));
 const TutorPortalDashboard = lazy(() => import('./pages/TutorPortal/TutorPortalDashboard'));
-const TutorPortalSchedule = lazy(() => import('./pages/TutorPortal/TutorPortalSchedule'));
 const TutorPortalMessages = lazy(() => import('./pages/TutorPortal/TutorPortalMessages'));
 const TutorPortalClasses = lazy(() => import('./pages/TutorPortal/TutorPortalClasses'));
 const TutorPortalClassDetail = lazy(() => import('./pages/TutorPortal/TutorPortalClassDetail'));
@@ -188,7 +188,8 @@ function App() {
                 <Route path="onboarding" element={<TutorOnboarding />} />
                 <Route path="dashboard" element={<TutorPortalDashboard />} />
                 <Route path="profile" element={<TutorPortalProfile />} />
-                <Route path="schedule" element={<TutorPortalSchedule />} />
+                {/* Lịch dạy đã gộp vào Onboarding — mọi URL /tutor-portal/schedule điều hướng sang onboarding */}
+                <Route path="schedule" element={<Navigate to="/tutor-portal/onboarding" replace />} />
                 <Route path="messages" element={<TutorPortalMessages />} />
                 <Route path="classes" element={<TutorPortalClasses />} />
                 <Route path="classes/:classId" element={<TutorPortalClassDetail />} />
@@ -263,6 +264,7 @@ function App() {
             <>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/verify-email" element={<VerifyEmailPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
             </>
           )}

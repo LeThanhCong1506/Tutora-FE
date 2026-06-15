@@ -12,16 +12,6 @@ export const mapSubscriptionToType = (sub: string | null | undefined): TutorType
     return map[(sub || "").toLowerCase()] || "basic";
 };
 
-export const getResultType = (type: TutorType): "success" | "primary" | "muted" | "warning" => {
-    const map: Record<TutorType, "success" | "primary" | "muted" | "warning"> = {
-        intensive: "success",
-        guided: "primary",
-        basic: "muted",
-        elite: "warning",
-    };
-    return map[type];
-};
-
 export const formatGradeLevel = (grade: string): string => {
     const match = grade.match(/^Grade_(\d+)$/i);
     if (match) return `Lớp ${match[1]}`;
@@ -93,16 +83,10 @@ export const mapApiTutorToUi = (apiTutor: TutorSearchResultResponse): Tutor => {
         avatar: apiTutor.avatarUrl || "https://randomuser.me/api/portraits/lego/1.jpg",
         type,
         credential: apiTutor.degreeLevel || "",
+        bio: apiTutor.bio || "",
         rating: apiTutor.averageRating || 0,
         university: apiTutor.education || "",
         subjects: subjects.length > 0 ? subjects : ["Chưa cập nhật"],
         gradeLevels: sortedGradeLevels,
-        experience: apiTutor.yearsOfExperience ? `${apiTutor.yearsOfExperience} Năm` : "N/A",
-        result: apiTutor.successRate || apiTutor.specialty || "—",
-        resultType: getResultType(type),
-        highlights: apiTutor.highlights || [],
-        price: apiTutor.hourlyRate ? Math.round(Number(apiTutor.hourlyRate) * 1.05) : 0,
-        trialLessonPrice: apiTutor.trialLessonPrice ?? null,
-        allowPriceNegotiation: apiTutor.allowPriceNegotiation ?? false,
     };
 };

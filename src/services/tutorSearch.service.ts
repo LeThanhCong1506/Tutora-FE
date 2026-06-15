@@ -38,6 +38,7 @@ export interface TutorSearchResultResponse {
     fullName: string | null;
     avatarUrl: string | null;
     headline: string | null;
+    bio: string | null;
     education: string | null;
     degreeLevel: string | null;
     averageRating: number | null;

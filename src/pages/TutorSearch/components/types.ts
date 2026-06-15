@@ -6,17 +6,11 @@ export interface Tutor {
     avatar: string;
     type: TutorType;
     credential: string;
+    bio: string;
     rating: number;
     university: string;
     subjects: string[];
     gradeLevels: string[];
-    experience: string;
-    result: string;
-    resultType: "success" | "primary" | "muted" | "warning";
-    highlights: string[];
-    price: number;
-    trialLessonPrice: number | null;
-    allowPriceNegotiation: boolean;
 }
 
 export interface SearchFilters {

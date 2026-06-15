@@ -4,6 +4,7 @@ import { Popconfirm } from 'antd';
 import { toast } from 'react-toastify';
 import { useTutorProfileForm, type CredentialData } from './hooks/useTutorProfileForm';
 import ProfileHeroModal from './components/ProfileHeroModal';
+import AvatarModal from './components/AvatarModal';
 import AboutMeModal from './components/AboutMeModal';
 import CredentialModal from './components/CredentialModal';
 import type { CredentialData as ModalCredentialData } from './components/CredentialModal';
@@ -56,6 +57,13 @@ const PlusIcon = () => (
 const EditPencilIcon = () => (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <path d="M11.5 2.5L13.5 4.5M9 5L2.5 11.5V13.5H4.5L11 7M9 5L11.5 2.5L13.5 4.5L11 7M9 5L11 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+);
+
+const CameraIcon = () => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+        <path d="M3 8C3 6.9 3.9 6 5 6H6.5L7.7 4.2C7.9 3.8 8.3 3.5 8.8 3.5H15.2C15.7 3.5 16.1 3.8 16.3 4.2L17.5 6H19C20.1 6 21 6.9 21 8V18C21 19.1 20.1 20 19 20H5C3.9 20 3 19.1 3 18V8Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+        <circle cx="12" cy="13" r="3.2" stroke="currentColor" strokeWidth="1.8" />
     </svg>
 );
 
@@ -151,6 +159,7 @@ const TutorPortalProfile: React.FC = () => {
 
     // Modal states
     const [isHeroModalOpen, setIsHeroModalOpen] = useState(false);
+    const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
     const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
     const [isCredentialModalOpen, setIsCredentialModalOpen] = useState(false);
     const [editingCredential, setEditingCredential] = useState<ModalCredentialData | null>(null);
@@ -161,7 +170,6 @@ const TutorPortalProfile: React.FC = () => {
     // Form hook
     const {
         formData,
-        pricingItems,
         sectionStatuses: _sectionStatuses,
         isDirty,
         isLoading: _isLoading,
@@ -175,6 +183,7 @@ const TutorPortalProfile: React.FC = () => {
         updateAbout,
         updateVideoUrl,
         uploadVideo,
+        saveAvatar,
         saveBasicInfo,
         addCredential,
         updateCredential,
@@ -212,8 +221,8 @@ const TutorPortalProfile: React.FC = () => {
                 navigate('/tutor-portal/onboarding');
                 break;
             case 'schedule':
-                // Navigate to schedule page
-                window.location.href = '/tutor-portal/schedule';
+                // Lịch dạy đã gộp vào trang Thiết lập giảng dạy (Onboarding).
+                window.location.href = '/tutor-portal/onboarding';
                 break;
             case 'identity':
                 setIsIdentityModalOpen(true);
@@ -346,13 +355,23 @@ const TutorPortalProfile: React.FC = () => {
                                     )}
                                 </div>
                                 <div className={styles.heroContent}>
-                                    {/* Avatar */}
-                                    <div className={styles.avatarContainer}>
+                                    {/* Avatar — click để đổi ảnh (mở AvatarModal, gọi API riêng updateAvatar) */}
+                                    <div
+                                        className={`${styles.avatarContainer} ${isEditMode ? styles.avatarEditable : ''}`}
+                                        onClick={isEditMode ? () => setIsAvatarModalOpen(true) : undefined}
+                                        role={isEditMode ? 'button' : undefined}
+                                        title={isEditMode ? 'Đổi ảnh đại diện' : undefined}
+                                    >
                                         <div className={styles.avatar}>
                                             {formData.avatarUrl && (
                                                 <img src={formData.avatarUrl} alt={formData.fullName} />
                                             )}
                                         </div>
+                                        {isEditMode && (
+                                            <span className={styles.avatarCameraBadge}>
+                                                <CameraIcon />
+                                            </span>
+                                        )}
                                     </div>
 
                                     {/* Info */}
@@ -629,7 +648,7 @@ const TutorPortalProfile: React.FC = () => {
                                             <p className={styles.noScheduleMessage}>Chưa cập nhật lịch</p>
                                             <button
                                                 className={styles.updateScheduleLink}
-                                                onClick={() => navigate('/tutor-portal/schedule')}
+                                                onClick={() => navigate('/tutor-portal/onboarding')}
                                             >
                                                 Cập nhật lịch ngay
                                             </button>
@@ -658,7 +677,6 @@ const TutorPortalProfile: React.FC = () => {
                             {isEditMode && (
                                 <ProfileCompleteness
                                     profileData={formData}
-                                    hasPricing={pricingItems.length > 0}
                                     onSectionClick={handleCompletenessClick}
                                 />
                             )}
@@ -716,9 +734,8 @@ const TutorPortalProfile: React.FC = () => {
                 isOpen={isHeroModalOpen}
                 onClose={() => setIsHeroModalOpen(false)}
                 onSave={async (data) => {
-                    // Call API to save basic info
+                    // Chỉ lưu thông tin cơ bản (updateBasicInfo). Ảnh đại diện có modal riêng.
                     const success = await saveBasicInfo({
-                        avatarFile: data.avatarFile,
                         headline: data.headline,
                         teachingAreaCity: data.teachingAreaCity,
                         teachingAreaDistrict: data.teachingAreaDistrict,
@@ -730,13 +747,23 @@ const TutorPortalProfile: React.FC = () => {
                     }
                 }}
                 initialData={{
-                    avatarUrl: formData.avatarUrl,
-                    avatarFile: formData.avatarFile,
                     headline: formData.headline,
                     teachingAreaCity: formData.teachingAreaCity,
                     teachingAreaDistrict: formData.teachingAreaDistrict,
                     teachingMode: formData.teachingMode,
                 }}
+            />
+
+            <AvatarModal
+                isOpen={isAvatarModalOpen}
+                onClose={() => setIsAvatarModalOpen(false)}
+                onSave={async (file) => {
+                    const success = await saveAvatar(file);
+                    if (success) {
+                        setIsAvatarModalOpen(false);
+                    }
+                }}
+                currentAvatarUrl={formData.avatarUrl}
             />
 
             <AboutMeModal
@@ -785,7 +812,7 @@ const TutorPortalProfile: React.FC = () => {
                 trialLessonPrice={formData.trialLessonPrice}
                 onNavigateToSchedule={() => {
                     setIsBookingModalOpen(false);
-                    navigate('/tutor-portal/schedule');
+                    navigate('/tutor-portal/onboarding');
                 }}
             />
         </div>

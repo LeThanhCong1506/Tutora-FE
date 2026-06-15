@@ -45,12 +45,19 @@ const getPackageIdFromComboId = (comboId: string): number | null => {
 const slotKey = (slot: { dayOfWeek: number; startTime: string; endTime: string }) =>
   `${isoDayToFe(slot.dayOfWeek)}|${normalizeHHmm(slot.startTime)}|${normalizeHHmm(slot.endTime)}`;
 
-// Bóc message lỗi từ envelope APIResponse của BE. Message overlap của POST là tiếng Anh
-// ("... overlaps with existing slot: HH:mm - HH:mm") → dịch sang tiếng Việt; các message
-// còn lại (PATCH/DELETE: trùng giờ, đang có buổi học, không tìm thấy, không có quyền) đã là
-// tiếng Việt → hiển thị trực tiếp.
+// Bóc field `message` từ envelope APIResponse của BE ({ content, statusCode, message, error }).
+// Phần lớn message BE đã là tiếng Việt (vd validation giá) → hiển thị trực tiếp; trả về
+// `fallback` khi không có message.
+const extractApiError = (err: unknown, fallback: string): string => {
+  const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+  return msg && msg.trim() ? msg : fallback;
+};
+
+// Như extractApiError nhưng dịch riêng message overlap của POST lịch rảnh (tiếng Anh:
+// "... overlaps with existing slot: HH:mm - HH:mm") sang tiếng Việt; các message còn lại
+// (PATCH/DELETE) đã là tiếng Việt → giữ nguyên.
 const extractAvailabilityError = (err: unknown, fallback: string): string => {
-  const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? '';
+  const msg = extractApiError(err, '');
   if (!msg) return fallback;
   if (/overlaps with/i.test(msg)) {
     const m = msg.match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
@@ -232,7 +239,7 @@ export function useOnboardingSync(hydrate: HydrateFn) {
         return created;
       } catch (err) {
         console.error('[Onboarding] createSubjectRecord:', err);
-        toast.error('Thêm cấu hình thất bại.');
+        toast.error(extractApiError(err, 'Thêm cấu hình thất bại.'));
         return null;
       } finally {
         setSaving(false);
@@ -253,7 +260,7 @@ export function useOnboardingSync(hydrate: HydrateFn) {
       return true;
     } catch (err) {
       console.error('[Onboarding] savePricing:', err);
-      toast.error('Lưu môn học & giá thất bại.');
+      toast.error(extractApiError(err, 'Lưu môn học & giá thất bại.'));
       return false;
     } finally {
       setSaving(false);

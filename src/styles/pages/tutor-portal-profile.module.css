@@ -246,6 +246,28 @@
     opacity: 1;
 }
 
+/* Avatar có thể click để đổi ảnh (chế độ chỉnh sửa) */
+.avatarEditable {
+    cursor: pointer;
+}
+
+.avatarCameraBadge {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #1a2238;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+}
+
 .heroInfo {
     flex: 1;
     display: flex;
