@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import styles from './styles.module.css';
 import ChatArea from './ChatArea';
 import MessageListSidebar from './MessageListSidebar';
@@ -9,7 +10,12 @@ const MOBILE_BREAKPOINT = 768;
 
 const ParentMessage = () => {
   const userId = getUserIdFromToken();
-  const [selectedChannel, setSelectedChannel] = useState<ChatChannel | null>(null);
+  const location = useLocation();
+  // Mở thẳng cuộc trò chuyện khi được điều hướng kèm `openChannel`
+  // (vd bấm "Nhắn tin" trên thẻ gia sư ở trang tìm kiếm).
+  const [selectedChannel, setSelectedChannel] = useState<ChatChannel | null>(
+    () => (location.state as { openChannel?: ChatChannel } | null)?.openChannel ?? null,
+  );
   const [isMobile, setIsMobile] = useState(window.innerWidth <= MOBILE_BREAKPOINT);
 
   // Track viewport size

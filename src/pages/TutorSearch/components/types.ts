@@ -15,7 +15,7 @@ export interface Tutor {
 
 export interface SearchFilters {
     searchTerm: string;
-    categories: string[];
+    subjectIds: number[];
     gradeLevels: string[];
     budgetRange: string;
     teachingMode: string;
@@ -27,7 +27,7 @@ export interface SearchFilters {
 
 export const defaultFilters: SearchFilters = {
     searchTerm: "",
-    categories: [],
+    subjectIds: [],
     gradeLevels: [],
     budgetRange: "all",
     teachingMode: "",

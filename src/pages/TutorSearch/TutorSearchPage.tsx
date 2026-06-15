@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { searchTutors } from "../../services/tutorSearch.service";
 import type { TutorSearchParams } from "../../services/tutorSearch.service";
 import { useProvinces } from "../../hooks/useVietnamLocations";
+import { useSubjects } from "../../hooks/useSubjects";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { isZaloMiniApp } from "../../services/zalo-env";
@@ -11,7 +12,6 @@ import {
     ActiveFilters,
     ResultsSection,
     mapApiTutorToUi,
-    categoryNameMap,
     defaultFilters,
 } from "./components";
 import type { Tutor, SearchFilters } from "./components";
@@ -43,9 +43,12 @@ const TutorSearchPage = () => {
         [provinces]
     );
 
+    // Danh sách môn học cho bộ lọc — lấy từ API (GET /api/subjects) thay vì hardcode.
+    const { subjects } = useSubjects();
+
     // Build API params from filters.
-    // NOTE: Backend only supports single `category` and `gradeLevel` values.
-    // For multi-select, we fetch all results and filter client-side.
+    // NOTE: subjectIds hỗ trợ multi-select SERVER-SIDE (BE lọc theo List<int>).
+    // Riêng gradeLevel BE chỉ nhận 1 giá trị → multi-select lớp vẫn lọc client-side.
     const buildApiParams = useCallback((f: SearchFilters): TutorSearchParams => {
         const params: TutorSearchParams = {
             pageNumber: f.pageNumber,
@@ -54,7 +57,7 @@ const TutorSearchPage = () => {
         };
 
         if (f.searchTerm.trim()) params.searchTerm = f.searchTerm.trim();
-        if (f.categories.length === 1) params.category = f.categories[0];
+        if (f.subjectIds.length > 0) params.subjectIds = f.subjectIds;
         if (f.gradeLevels.length === 1) params.gradeLevel = f.gradeLevels[0];
         if (f.budgetRange && f.budgetRange !== "all") params.budgetRange = f.budgetRange;
         if (f.teachingMode) params.teachingMode = f.teachingMode;
@@ -65,13 +68,6 @@ const TutorSearchPage = () => {
 
     const applyClientSideFilters = useCallback((tutorsList: Tutor[], f: SearchFilters): Tutor[] => {
         let filtered = tutorsList;
-
-        if (f.categories.length > 1) {
-            const selectedNames = f.categories.map(id => categoryNameMap[id]).filter(Boolean);
-            filtered = filtered.filter(tutor =>
-                selectedNames.every(name => tutor.subjects.includes(name))
-            );
-        }
 
         if (f.gradeLevels.length > 1) {
             const selectedGradeLabels = f.gradeLevels.map(gl => {
@@ -106,7 +102,7 @@ const TutorSearchPage = () => {
             try {
                 setLoading(true);
                 setError(null);
-                const needsClientFilter = filters.categories.length > 1 || filters.gradeLevels.length > 1;
+                const needsClientFilter = filters.gradeLevels.length > 1;
                 const apiParams = buildApiParams(
                     needsClientFilter
                         ? { ...filters, pageNumber: 1, pageSize: CLIENT_FILTER_PAGE_SIZE }
@@ -159,17 +155,17 @@ const TutorSearchPage = () => {
         updateFilter("searchTerm", tag);
     }, [updateFilter]);
 
-    const handleCategoryToggle = useCallback((category: string) => {
-        if (category === "all") {
-            updateFilter("categories", []);
-        } else {
-            setFilters(prev => {
-                const next = prev.categories.includes(category)
-                    ? prev.categories.filter(c => c !== category)
-                    : [...prev.categories, category];
-                return { ...prev, categories: next, pageNumber: 1 };
-            });
-        }
+    const handleSubjectToggle = useCallback((subjectId: number) => {
+        setFilters(prev => {
+            const next = prev.subjectIds.includes(subjectId)
+                ? prev.subjectIds.filter(id => id !== subjectId)
+                : [...prev.subjectIds, subjectId];
+            return { ...prev, subjectIds: next, pageNumber: 1 };
+        });
+    }, []);
+
+    const handleClearSubjects = useCallback(() => {
+        updateFilter("subjectIds", []);
     }, [updateFilter]);
 
     const handleGradeLevelToggle = useCallback((value: string) => {
@@ -220,14 +216,16 @@ const TutorSearchPage = () => {
                 />
                 <div ref={filterSentinelRef} className="filter-sticky-sentinel" aria-hidden="true"></div>
                 <FilterBar
-                    activeCategories={filters.categories}
+                    subjects={subjects}
+                    activeSubjectIds={filters.subjectIds}
                     gradeLevels={filters.gradeLevels}
                     budgetRange={filters.budgetRange}
                     teachingMode={filters.teachingMode}
                     city={filters.city}
                     cityOptions={cityOptions}
                     sortBy={filters.sortBy}
-                    onCategoryToggle={handleCategoryToggle}
+                    onSubjectToggle={handleSubjectToggle}
+                    onClearSubjects={handleClearSubjects}
                     onGradeLevelToggle={handleGradeLevelToggle}
                     onBudgetRangeChange={(v) => updateFilter("budgetRange", v)}
                     onTeachingModeChange={(v) => updateFilter("teachingMode", v)}
@@ -236,12 +234,13 @@ const TutorSearchPage = () => {
                     onResetFilters={handleResetFilters}
                 />
                 <ActiveFilters
-                    categories={filters.categories}
+                    subjects={subjects}
+                    subjectIds={filters.subjectIds}
                     gradeLevels={filters.gradeLevels}
-                    onRemoveCategory={handleCategoryToggle}
+                    onRemoveSubject={handleSubjectToggle}
                     onRemoveGradeLevel={handleGradeLevelToggle}
                     onClearAll={() => {
-                        setFilters(prev => ({ ...prev, categories: [], gradeLevels: [], pageNumber: 1 }));
+                        setFilters(prev => ({ ...prev, subjectIds: [], gradeLevels: [], pageNumber: 1 }));
                     }}
                 />
                 <ResultsSection
