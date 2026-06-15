@@ -1,6 +1,6 @@
-import { BookOpen, CalendarDays, Clock3, GraduationCap } from "lucide-react";
+import { BookOpen, CalendarDays, Clock3, GraduationCap, Wallet } from "lucide-react";
 import type { StepProps } from "./types";
-import { formatDuration, formatGrade, normalizeGradeToken, studentInitials } from "./utils";
+import { formatDuration, formatGrade, formatPrice, normalizeGradeToken, studentInitials } from "./utils";
 import styles from "./bookingModal.module.css";
 
 // Compact grade label cho chip (vd ["grade_10", "grade_11", "grade_12"] → "Lớp 10-12").
@@ -64,6 +64,7 @@ const StepStudentSubject: React.FC<StepProps> = ({
                                 setup?.durationMinutesPerSession && setup.durationMinutesPerSession > 0
                                     ? formatDuration(setup.durationMinutesPerSession / 60)
                                     : "—";
+                            const pricePerHour = setup?.pricePerHour ?? 0;
                             return (
                                 <button
                                     key={subj.id}
@@ -82,6 +83,18 @@ const StepStudentSubject: React.FC<StepProps> = ({
                                             {gradeText && <small>{gradeText}</small>}
                                         </div>
                                     </div>
+
+                                    {pricePerHour > 0 && (
+                                        <div className={styles.subjectPrice}>
+                                            <span className={styles.subjectPriceIcon}>
+                                                <Wallet size={14} />
+                                            </span>
+                                            <span className={styles.subjectPriceText}>
+                                                <strong>{formatPrice(pricePerHour)}</strong>
+                                                <small>/giờ</small>
+                                            </span>
+                                        </div>
+                                    )}
 
                                     <div className={styles.subjectSetupGrid}>
                                         <span>

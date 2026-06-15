@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { AlertTriangle, ArrowLeft, ArrowRight, CalendarRange, CheckCircle2, RotateCcw, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarRange, CheckCircle2, RotateCcw, X } from "lucide-react";
 import {
     BookingStepper,
     StepBookingMode,
@@ -57,8 +57,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
     } = useBookingForm({ isOpen, tutorId, onClose, tutorTeachingMode });
 
     const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
-    const subjectGradePrices = rawSubjectGradePrices ?? [];
-    const packages = rawPackages ?? [];
+    const subjectGradePrices = useMemo(() => rawSubjectGradePrices ?? [], [rawSubjectGradePrices]);
+    const packages = useMemo(() => rawPackages ?? [], [rawPackages]);
 
     // Compute available subjects (intersection of SUBJECT_MAPPING and tutor's subjects).
     // Enrich với gradeLevels của tutor để StepStudentSubject hiển thị + check khớp lớp.
@@ -210,10 +210,14 @@ const BookingModal: React.FC<BookingModalProps> = ({
         onClose();
     };
 
+    // Giá tính theo môn/lớp ĐANG CHỌN (pricePerHour), không dùng hourlyRate phẳng của
+    // gia sư — BE suy hourlyRate = giá thấp nhất trong các môn nên dễ lệch khi đặt môn khác.
+    const effectiveHourlyRate = selectedSubjectGradePrice?.pricePerHour ?? hourlyRate;
+
     const stepProps: StepProps = {
         formData,
         setFormData,
-        hourlyRate,
+        hourlyRate: effectiveHourlyRate,
         students,
         loadingStudents,
         availableSubjects,
@@ -228,6 +232,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
         sessionHours,
         selectedCombo,
         tutorName,
+        submitError,
+        onDismissSubmitError: () => setSubmitError(null),
     };
 
     return (
@@ -292,23 +298,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
                         <BookingStepper step={step} />
 
                         <div className={styles.modalBody}>
-                            {submitError && (
-                                <div className={styles.warningBox}>
-                                    <AlertTriangle size={19} />
-                                    <div>
-                                        <strong>{submitError}</strong>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        className={styles.modalClose}
-                                        onClick={() => setSubmitError(null)}
-                                        aria-label="Đóng cảnh báo"
-                                    >
-                                        <X size={16} />
-                                    </button>
-                                </div>
-                            )}
-
                             {step === 0 && <StepStudentSubject {...stepProps} />}
                             {step === 1 && <StepBookingMode {...stepProps} />}
                             {step === 2 && <StepSchedule {...stepProps} />}
