@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import EditModal from './EditModal';
-import { uploadIdCard } from '../../../services/supabase.service';
+import { uploadCccd } from '../../../services/tutorProfile.service';
 import { submitVerification } from '../../../services/verification.service';
+import { getUserIdFromToken } from '../../../services/auth.service';
 import styles from './IdentityVerificationModal.module.css';
 
 // Icons
@@ -37,13 +38,6 @@ const PendingIcon = () => (
     </svg>
 );
 
-const SpinnerIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className={styles.spinner}>
-        <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="2" strokeOpacity="0.3" />
-        <path d="M10 2C14.4183 2 18 5.58172 18 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-);
-
 export interface IdentityVerificationData {
     idNumber: string;
     fullNameOnId: string;
@@ -67,19 +61,14 @@ interface IdentityVerificationModalProps {
 }
 
 // Validation functions
-const validateIdImage = (file: File | null, existingUrl?: string): { isValid: boolean; error?: string } => {
-    if (!file && !existingUrl) {
-        return { isValid: false, error: 'Vui lòng tải lên ảnh' };
+const validateIdImage = (file: File): { isValid: boolean; error?: string } => {
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+        return { isValid: false, error: 'Kích thước ảnh không được vượt quá 5MB' };
     }
-    if (file) {
-        const maxSize = 5 * 1024 * 1024; // 5MB
-        if (file.size > maxSize) {
-            return { isValid: false, error: 'Kích thước ảnh không được vượt quá 5MB' };
-        }
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-        if (!allowedTypes.includes(file.type)) {
-            return { isValid: false, error: 'Chỉ chấp nhận định dạng JPG hoặc PNG' };
-        }
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowedTypes.includes(file.type)) {
+        return { isValid: false, error: 'Chỉ chấp nhận định dạng JPG hoặc PNG' };
     }
     return { isValid: true };
 };
@@ -102,10 +91,6 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
     const [formData, setFormData] = useState<IdentityVerificationData>(initialData || defaultData);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = useState(false);
-    const [isFrontUploading, setIsFrontUploading] = useState(false);
-    const [isBackUploading, setIsBackUploading] = useState(false);
-    const [frontPath, setFrontPath] = useState<string | null>(null);
-    const [backPath, setBackPath] = useState<string | null>(null);
     const [previews, setPreviews] = useState<{
         front: string | null;
         back: string | null;
@@ -126,166 +111,92 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
                 back: initialData?.idBackImageUrl || null
             });
             setErrors({});
-            setFrontPath(null);
-            setBackPath(null);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, initialData]);
 
-    // Handle file upload for front image
-    const handleFrontSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Pick a file → validate + preview locally. Ảnh chỉ được upload khi bấm "Gửi xác minh"
+    // (endpoint CCCD yêu cầu cả 2 mặt cùng lúc).
+    const handleFileSelected = (side: 'front' | 'back') => (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         const validation = validateIdImage(file);
         if (!validation.isValid) {
-            setErrors(prev => ({ ...prev, front: validation.error || '' }));
+            setErrors(prev => ({ ...prev, [side]: validation.error || '' }));
             return;
         }
 
-        // Create preview immediately
         const reader = new FileReader();
         reader.onloadend = () => {
-            setPreviews(prev => ({ ...prev, front: reader.result as string }));
+            setPreviews(prev => ({ ...prev, [side]: reader.result as string }));
         };
         reader.readAsDataURL(file);
-
-        setFormData(prev => ({ ...prev, idFrontImage: file }));
-        setErrors(prev => ({ ...prev, front: '' }));
-        setIsFrontUploading(true);
-
-        // Upload to Supabase
-        const result = await uploadIdCard(file, 'front');
-
-        if (result.error) {
-            toast.error(result.error);
-            setFormData(prev => ({ ...prev, idFrontImage: null }));
-            setPreviews(prev => ({ ...prev, front: null }));
-            setIsFrontUploading(false);
-            return;
-        }
-
-        toast.success('Upload ảnh mặt trước thành công!');
-        setFrontPath(result.publicUrl || result.path);
-        setIsFrontUploading(false);
-    };
-
-    // Handle file upload for back image
-    const handleBackSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        const validation = validateIdImage(file);
-        if (!validation.isValid) {
-            setErrors(prev => ({ ...prev, back: validation.error || '' }));
-            return;
-        }
-
-        // Create preview immediately
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setPreviews(prev => ({ ...prev, back: reader.result as string }));
-        };
-        reader.readAsDataURL(file);
-
-        setFormData(prev => ({ ...prev, idBackImage: file }));
-        setErrors(prev => ({ ...prev, back: '' }));
-        setIsBackUploading(true);
-
-        // Upload to Supabase
-        const result = await uploadIdCard(file, 'back');
-
-        if (result.error) {
-            toast.error(result.error);
-            setFormData(prev => ({ ...prev, idBackImage: null }));
-            setPreviews(prev => ({ ...prev, back: null }));
-            setIsBackUploading(false);
-            return;
-        }
-
-        toast.success('Upload ảnh mặt sau thành công!');
-        setBackPath(result.publicUrl || result.path);
-        setIsBackUploading(false);
-    };
-
-    // Remove uploaded file
-    const handleRemoveFile = (type: 'front' | 'back') => {
-        const fieldMap = {
-            front: 'idFrontImage',
-            back: 'idBackImage'
-        } as const;
-
-        const urlMap = {
-            front: 'idFrontImageUrl',
-            back: 'idBackImageUrl'
-        } as const;
 
         setFormData(prev => ({
             ...prev,
-            [fieldMap[type]]: null,
-            [urlMap[type]]: undefined
+            [side === 'front' ? 'idFrontImage' : 'idBackImage']: file,
         }));
-        setPreviews(prev => ({ ...prev, [type]: null }));
-
-        if (type === 'front') {
-            setFrontPath(null);
-            if (frontInputRef.current) frontInputRef.current.value = '';
-        } else {
-            setBackPath(null);
-            if (backInputRef.current) backInputRef.current.value = '';
-        }
+        setErrors(prev => ({ ...prev, [side]: '' }));
     };
 
-    // Validate form before submit
+    // Remove a staged file
+    const handleRemoveFile = (side: 'front' | 'back') => {
+        setFormData(prev => ({
+            ...prev,
+            [side === 'front' ? 'idFrontImage' : 'idBackImage']: null,
+            [side === 'front' ? 'idFrontImageUrl' : 'idBackImageUrl']: undefined,
+        }));
+        setPreviews(prev => ({ ...prev, [side]: null }));
+
+        const ref = side === 'front' ? frontInputRef : backInputRef;
+        if (ref.current) ref.current.value = '';
+    };
+
+    // Validate that both images are staged before submitting.
     const validateForm = (): boolean => {
         const newErrors: Record<string, string> = {};
-
-        // Validate front image - must have uploaded path
-        if (!frontPath && !formData.idFrontImageUrl) {
-            newErrors.front = 'Vui lòng tải lên ảnh mặt trước CCCD';
-        }
-
-        // Validate back image - must have uploaded path
-        if (!backPath && !formData.idBackImageUrl) {
-            newErrors.back = 'Vui lòng tải lên ảnh mặt sau CCCD';
-        }
-
+        if (!formData.idFrontImage) newErrors.front = 'Vui lòng tải lên ảnh mặt trước CCCD';
+        if (!formData.idBackImage) newErrors.back = 'Vui lòng tải lên ảnh mặt sau CCCD';
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
-    // Handle submit verification
+    // Submit: upload cả 2 ảnh CCCD lên Cloudinary (BE) → lấy URL → gửi eKYC.
     const handleSave = async () => {
         if (!validateForm()) return;
 
-        // Check if still uploading
-        if (isFrontUploading || isBackUploading) {
-            toast.warning('Vui lòng chờ upload ảnh hoàn tất!');
+        const userId = getUserIdFromToken();
+        if (!userId) {
+            toast.error('Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.');
             return;
         }
 
-        // Use uploaded paths or existing URLs
-        const frontImagePath = frontPath || formData.idFrontImageUrl;
-        const backImagePath = backPath || formData.idBackImageUrl;
-
-        if (!frontImagePath || !backImagePath) {
-            toast.error('Vui lòng upload đầy đủ ảnh CCCD cả 2 mặt!');
-            return;
-        }
+        const frontFile = formData.idFrontImage;
+        const backFile = formData.idBackImage;
+        if (!frontFile || !backFile) return;
 
         setIsLoading(true);
 
         try {
-            const response = await submitVerification(frontImagePath, backImagePath);
+            // 1. Upload ảnh CCCD lên Cloudinary qua BE.
+            const uploadRes = await uploadCccd(userId, frontFile, backFile);
+            if (uploadRes.statusCode !== 200 || !uploadRes.content) {
+                toast.error(uploadRes.message || 'Tải ảnh CCCD thất bại. Vui lòng thử lại.');
+                return;
+            }
+
+            const { frontImageUrl, backImageUrl } = uploadRes.content;
+
+            // 2. Gửi eKYC với URL ảnh vừa upload.
+            const response = await submitVerification(frontImageUrl, backImageUrl);
 
             if (response.success) {
-                // Check if eKYC returned data immediately (verified)
                 const isVerified = response.status === 'approved' && response.content;
 
                 if (isVerified && response.content) {
                     toast.success('Xác thực danh tính thành công!');
-
-                    // Update form data with verified status and eKYC data
-                    const updatedData: IdentityVerificationData = {
+                    onSave({
                         ...formData,
                         idNumber: response.content.id || '',
                         fullNameOnId: response.content.name || '',
@@ -293,24 +204,18 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
                         address: response.content.address || '',
                         hometown: response.content.home || '',
                         gender: response.content.sex || '',
-                        idFrontImageUrl: frontImagePath,
-                        idBackImageUrl: backImagePath,
-                        verificationStatus: 'verified'
-                    };
-
-                    onSave(updatedData);
+                        idFrontImageUrl: frontImageUrl,
+                        idBackImageUrl: backImageUrl,
+                        verificationStatus: 'verified',
+                    });
                 } else {
                     toast.success('Đã gửi yêu cầu xác thực. Admin sẽ xét duyệt trong 24-48h.');
-
-                    // Update form data with pending status
-                    const updatedData: IdentityVerificationData = {
+                    onSave({
                         ...formData,
-                        idFrontImageUrl: frontImagePath,
-                        idBackImageUrl: backImagePath,
-                        verificationStatus: 'pending'
-                    };
-
-                    onSave(updatedData);
+                        idFrontImageUrl: frontImageUrl,
+                        idBackImageUrl: backImageUrl,
+                        verificationStatus: 'pending',
+                    });
                 }
                 onClose();
             } else {
@@ -358,9 +263,8 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
     };
 
     const isAlreadyVerified = formData.verificationStatus === 'verified';
-    const isReadyToSubmit = (frontPath || formData.idFrontImageUrl) &&
-        (backPath || formData.idBackImageUrl) &&
-        !isFrontUploading && !isBackUploading;
+    // Sẵn sàng gửi khi đã chọn đủ ảnh 2 mặt (File mới — endpoint cần upload cả 2).
+    const isReadyToSubmit = !!formData.idFrontImage && !!formData.idBackImage;
 
     // When verified, clicking "Đóng" just closes the modal
     const handleSaveOrClose = () => {
@@ -369,6 +273,59 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
         } else {
             handleSave();
         }
+    };
+
+    const renderUploadSection = (side: 'front' | 'back') => {
+        const preview = previews[side];
+        const hasFile = side === 'front' ? !!formData.idFrontImage : !!formData.idBackImage;
+        const ref = side === 'front' ? frontInputRef : backInputRef;
+        const label = side === 'front' ? 'Mặt trước CCCD/CMND' : 'Mặt sau CCCD/CMND';
+        const uploadLabel = side === 'front' ? 'Tải lên mặt trước' : 'Tải lên mặt sau';
+
+        return (
+            <div className={styles.uploadSection}>
+                <label className={styles.sectionLabel}>
+                    {label} {!isAlreadyVerified && <span className={styles.required}>*</span>}
+                </label>
+                {preview ? (
+                    <div className={styles.imagePreview}>
+                        <img src={preview} alt={label} />
+                        {!isAlreadyVerified && (
+                            <button
+                                type="button"
+                                className={styles.removeBtn}
+                                onClick={() => handleRemoveFile(side)}
+                            >
+                                <CloseIcon />
+                            </button>
+                        )}
+                        {hasFile && (
+                            <div className={styles.uploadSuccess}>
+                                <CheckIcon />
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div
+                        className={styles.uploadArea}
+                        onClick={() => !isAlreadyVerified && ref.current?.click()}
+                    >
+                        <IdCardIcon />
+                        <span>{uploadLabel}</span>
+                        <span className={styles.uploadHint}>JPG, PNG - Tối đa 5MB</span>
+                    </div>
+                )}
+                <input
+                    ref={ref}
+                    type="file"
+                    accept="image/jpeg,image/png"
+                    onChange={handleFileSelected(side)}
+                    className={styles.fileInput}
+                    disabled={isAlreadyVerified}
+                />
+                {errors[side] && <span className={styles.error}>{errors[side]}</span>}
+            </div>
+        );
     };
 
     return (
@@ -410,105 +367,8 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
 
                 {/* ID Card Images */}
                 <div className={styles.imageUploads}>
-                    {/* Front Image */}
-                    <div className={styles.uploadSection}>
-                        <label className={styles.sectionLabel}>
-                            Mặt trước CCCD/CMND {!isAlreadyVerified && <span className={styles.required}>*</span>}
-                        </label>
-                        {previews.front ? (
-                            <div className={styles.imagePreview}>
-                                <img src={previews.front} alt="ID Front" />
-                                {isFrontUploading && (
-                                    <div className={styles.uploadOverlay}>
-                                        <SpinnerIcon />
-                                        <span>Đang upload...</span>
-                                    </div>
-                                )}
-                                {!isAlreadyVerified && !isFrontUploading && (
-                                    <button
-                                        type="button"
-                                        className={styles.removeBtn}
-                                        onClick={() => handleRemoveFile('front')}
-                                    >
-                                        <CloseIcon />
-                                    </button>
-                                )}
-                                {frontPath && !isFrontUploading && (
-                                    <div className={styles.uploadSuccess}>
-                                        <CheckIcon />
-                                    </div>
-                                )}
-                            </div>
-                        ) : (
-                            <div
-                                className={styles.uploadArea}
-                                onClick={() => !isAlreadyVerified && frontInputRef.current?.click()}
-                            >
-                                <IdCardIcon />
-                                <span>Tải lên mặt trước</span>
-                                <span className={styles.uploadHint}>JPG, PNG - Tối đa 5MB</span>
-                            </div>
-                        )}
-                        <input
-                            ref={frontInputRef}
-                            type="file"
-                            accept="image/jpeg,image/png"
-                            onChange={handleFrontSelected}
-                            className={styles.fileInput}
-                            disabled={isAlreadyVerified || isFrontUploading}
-                        />
-                        {errors.front && <span className={styles.error}>{errors.front}</span>}
-                    </div>
-
-                    {/* Back Image */}
-                    <div className={styles.uploadSection}>
-                        <label className={styles.sectionLabel}>
-                            Mặt sau CCCD/CMND {!isAlreadyVerified && <span className={styles.required}>*</span>}
-                        </label>
-                        {previews.back ? (
-                            <div className={styles.imagePreview}>
-                                <img src={previews.back} alt="ID Back" />
-                                {isBackUploading && (
-                                    <div className={styles.uploadOverlay}>
-                                        <SpinnerIcon />
-                                        <span>Đang upload...</span>
-                                    </div>
-                                )}
-                                {!isAlreadyVerified && !isBackUploading && (
-                                    <button
-                                        type="button"
-                                        className={styles.removeBtn}
-                                        onClick={() => handleRemoveFile('back')}
-                                    >
-                                        <CloseIcon />
-                                    </button>
-                                )}
-                                {backPath && !isBackUploading && (
-                                    <div className={styles.uploadSuccess}>
-                                        <CheckIcon />
-                                    </div>
-                                )}
-                            </div>
-                        ) : (
-                            <div
-                                className={styles.uploadArea}
-                                onClick={() => !isAlreadyVerified && backInputRef.current?.click()}
-                            >
-                                <IdCardIcon />
-                                <span>Tải lên mặt sau</span>
-                                <span className={styles.uploadHint}>JPG, PNG - Tối đa 5MB</span>
-                            </div>
-                        )}
-                        <input
-                            ref={backInputRef}
-                            type="file"
-                            accept="image/jpeg,image/png"
-                            onChange={handleBackSelected}
-                            className={styles.fileInput}
-                            disabled={isAlreadyVerified || isBackUploading}
-                        />
-                        {errors.back && <span className={styles.error}>{errors.back}</span>}
-                    </div>
+                    {renderUploadSection('front')}
+                    {renderUploadSection('back')}
                 </div>
 
                 {/* eKYC Extracted Data - show below images when verified */}
