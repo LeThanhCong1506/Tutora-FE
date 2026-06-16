@@ -14,6 +14,7 @@ import {
 } from "./styles";
 import { formatDate, genderDisplay } from "./utils";
 import type { EditForm, UserProfileData } from "./types";
+import type { UserProfileFieldErrors } from "../../../utils/userProfileForm";
 
 interface Props {
     profile: UserProfileData | null;
@@ -21,9 +22,14 @@ interface Props {
     setForm: React.Dispatch<React.SetStateAction<EditForm>>;
     editing: boolean;
     saving: boolean;
+    errors: UserProfileFieldErrors;
+    setErrors: React.Dispatch<React.SetStateAction<UserProfileFieldErrors>>;
     onSave: () => void;
     onCancel: () => void;
 }
+
+const required = <span style={{ color: "#dc2626" }}> *</span>;
+const errorTextStyle: React.CSSProperties = { fontSize: 12, color: "#dc2626", marginTop: 2 };
 
 const PersonalInfoSection: React.FC<Props> = ({
     profile,
@@ -31,9 +37,18 @@ const PersonalInfoSection: React.FC<Props> = ({
     setForm,
     editing,
     saving,
+    errors,
+    setErrors,
     onSave,
     onCancel,
-}) => (
+}) => {
+    // Cập nhật 1 field + xóa lỗi của field đó.
+    const updateField = (field: keyof EditForm, value: string) => {
+        setForm(f => ({ ...f, [field]: value }));
+        setErrors(e => (e[field] ? { ...e, [field]: undefined } : e));
+    };
+
+    return (
     <div className={styles.sectionCard}>
         <div style={sectionHeader}>
             <h3 style={sectionTitle}>Thông tin cá nhân</h3>
@@ -54,62 +69,75 @@ const PersonalInfoSection: React.FC<Props> = ({
             </div>
 
             <div style={fieldGroup}>
-                <label style={fieldLabel}>Họ và tên</label>
+                <label style={fieldLabel}>Họ và tên{editing && required}</label>
                 {editing ? (
-                    <input
-                        style={fieldInput}
-                        value={form.fullname}
-                        onChange={e => setForm(f => ({ ...f, fullname: e.target.value }))}
-                        maxLength={100}
-                        placeholder="Nhập họ và tên"
-                    />
+                    <>
+                        <input
+                            style={{ ...fieldInput, ...(errors.fullname ? { borderColor: "#dc2626" } : {}) }}
+                            value={form.fullname}
+                            onChange={e => updateField("fullname", e.target.value)}
+                            maxLength={100}
+                            placeholder="Nhập họ và tên"
+                        />
+                        {errors.fullname && <span style={errorTextStyle}>{errors.fullname}</span>}
+                    </>
                 ) : (
                     <p style={fieldValue}>{profile?.fullname || "—"}</p>
                 )}
             </div>
 
             <div style={fieldGroup}>
-                <label style={fieldLabel}>Ngày sinh</label>
+                <label style={fieldLabel}>Ngày sinh{editing && required}</label>
                 {editing ? (
-                    <input
-                        style={fieldInput}
-                        type="date"
-                        value={form.birthdate}
-                        onChange={e => setForm(f => ({ ...f, birthdate: e.target.value }))}
-                    />
+                    <>
+                        <input
+                            style={{ ...fieldInput, ...(errors.birthdate ? { borderColor: "#dc2626" } : {}) }}
+                            type="date"
+                            value={form.birthdate}
+                            max={new Date().toISOString().slice(0, 10)}
+                            onChange={e => updateField("birthdate", e.target.value)}
+                        />
+                        {errors.birthdate && <span style={errorTextStyle}>{errors.birthdate}</span>}
+                    </>
                 ) : (
                     <p style={fieldValue}>{formatDate(profile?.birthdate)}</p>
                 )}
             </div>
 
             <div style={fieldGroup}>
-                <label style={fieldLabel}>Giới tính</label>
+                <label style={fieldLabel}>Giới tính{editing && required}</label>
                 {editing ? (
-                    <select
-                        style={fieldInput}
-                        value={form.gender}
-                        onChange={e => setForm(f => ({ ...f, gender: e.target.value }))}
-                    >
-                        <option value="">Chọn giới tính</option>
-                        <option value="Male">Nam</option>
-                        <option value="Female">Nữ</option>
-                        <option value="Other">Khác</option>
-                    </select>
+                    <>
+                        <select
+                            style={{ ...fieldInput, ...(errors.gender ? { borderColor: "#dc2626" } : {}) }}
+                            value={form.gender}
+                            onChange={e => updateField("gender", e.target.value)}
+                        >
+                            <option value="">Chọn giới tính</option>
+                            <option value="Male">Nam</option>
+                            <option value="Female">Nữ</option>
+                            <option value="Other">Khác</option>
+                        </select>
+                        {errors.gender && <span style={errorTextStyle}>{errors.gender}</span>}
+                    </>
                 ) : (
                     <p style={fieldValue}>{genderDisplay(profile?.gender)}</p>
                 )}
             </div>
 
             <div style={{ ...fieldGroup, gridColumn: "1 / -1" }}>
-                <label style={fieldLabel}>Địa chỉ</label>
+                <label style={fieldLabel}>Địa chỉ{editing && required}</label>
                 {editing ? (
-                    <input
-                        style={fieldInput}
-                        value={form.address}
-                        onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
-                        maxLength={255}
-                        placeholder="Nhập địa chỉ"
-                    />
+                    <>
+                        <input
+                            style={{ ...fieldInput, ...(errors.address ? { borderColor: "#dc2626" } : {}) }}
+                            value={form.address}
+                            onChange={e => updateField("address", e.target.value)}
+                            maxLength={255}
+                            placeholder="Nhập địa chỉ"
+                        />
+                        {errors.address && <span style={errorTextStyle}>{errors.address}</span>}
+                    </>
                 ) : (
                     <p style={fieldValue}>{profile?.address || "—"}</p>
                 )}
@@ -130,6 +158,7 @@ const PersonalInfoSection: React.FC<Props> = ({
             </div>
         )}
     </div>
-);
+    );
+};
 
 export default PersonalInfoSection;
