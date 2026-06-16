@@ -4,6 +4,7 @@ export type StudentType = {
   fullName: string;
   birthDate: string;
   school: string;
+  gradeLevelId: number | null;
   gradeLevel: string;
   learningGoals: string;
   avatarURL: string;
