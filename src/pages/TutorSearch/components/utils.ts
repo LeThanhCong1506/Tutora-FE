@@ -1,92 +1,107 @@
-import type { TutorSearchResultResponse } from "../../../services/tutorSearch.service";
-import type { Tutor, TutorType } from "./types";
+import type { TutorSearchResultResponse } from '../../../services/tutorSearch.service';
+import type { Tutor, TutorType } from './types';
 
 export const mapSubscriptionToType = (sub: string | null | undefined): TutorType => {
-    const map: Record<string, TutorType> = {
-        intensive: "intensive",
-        guided: "guided",
-        basic: "basic",
-        free: "basic",
-        elite: "elite",
-    };
-    return map[(sub || "").toLowerCase()] || "basic";
-};
-
-export const formatGradeLevel = (grade: string): string => {
-    const match = grade.match(/^Grade_(\d+)$/i);
-    if (match) return `Lớp ${match[1]}`;
-    return grade;
+  const map: Record<string, TutorType> = {
+    intensive: 'intensive',
+    guided: 'guided',
+    basic: 'basic',
+    free: 'basic',
+    elite: 'elite',
+  };
+  return map[(sub || '').toLowerCase()] || 'basic';
 };
 
 export const formatGradeLevelRanges = (grades: string[]): string => {
-    if (grades.length === 0) return "";
+  if (grades.length === 0) return '';
 
-    const nums = grades.map(g => {
-        const m = g.match(/\d+/);
-        return m ? parseInt(m[0]) : 0;
-    }).filter(n => n > 0).sort((a, b) => a - b);
+  const nums = grades
+    .map((g) => {
+      const m = g.match(/\d+/);
+      return m ? parseInt(m[0]) : 0;
+    })
+    .filter((n) => n > 0)
+    .sort((a, b) => a - b);
 
-    if (nums.length === 0) return "";
+  if (nums.length === 0) return '';
 
-    const ranges: string[] = [];
-    let start = nums[0];
-    let end = nums[0];
+  const ranges: string[] = [];
+  let start = nums[0];
+  let end = nums[0];
 
-    for (let i = 1; i < nums.length; i++) {
-        if (nums[i] === end + 1) {
-            end = nums[i];
-        } else {
-            ranges.push(start === end ? `${start}` : `${start}-${end}`);
-            start = nums[i];
-            end = nums[i];
-        }
+  for (let i = 1; i < nums.length; i++) {
+    if (nums[i] === end + 1) {
+      end = nums[i];
+    } else {
+      ranges.push(start === end ? `${start}` : `${start}-${end}`);
+      start = nums[i];
+      end = nums[i];
     }
-    ranges.push(start === end ? `${start}` : `${start}-${end}`);
+  }
+  ranges.push(start === end ? `${start}` : `${start}-${end}`);
 
-    return `Lớp ${ranges.join(", ")}`;
+  return `Lớp ${ranges.join(', ')}`;
 };
 
 export const mapApiTutorToUi = (apiTutor: TutorSearchResultResponse): Tutor => {
-    const type = mapSubscriptionToType(apiTutor.subscriptionType);
+  const type = mapSubscriptionToType(apiTutor.subscriptionType);
 
-    const subjects: string[] = [];
-    const gradeLevelSet = new Set<string>();
-    if (apiTutor.subjects) {
-        apiTutor.subjects.forEach((s) => {
-            if (s.subjectName && !subjects.includes(s.subjectName)) {
-                subjects.push(s.subjectName);
-            }
-            if (s.gradeLevels) {
-                s.gradeLevels.forEach((gl) => {
-                    if (/^Grade_(\d+)$/i.test(gl)) {
-                        const num = parseInt(gl.match(/^Grade_(\d+)$/i)![1]);
-                        if (num >= 1 && num <= 12) {
-                            gradeLevelSet.add(gl);
-                        }
-                    }
-                });
-            }
+  const subjects: string[] = [];
+  const subjectGradeMap = new Map<string, Set<string>>();
+  // BE trả gradeLevels theo TÊN ("Lớp 10") — gom trực tiếp, không suy diễn "Grade_N".
+  const gradeLevelSet = new Set<string>();
+  if (apiTutor.subjects) {
+    apiTutor.subjects.forEach((s) => {
+      const subjectName = (s.subjectName || '').trim();
+      if (subjectName && !subjects.includes(subjectName)) {
+        subjects.push(subjectName);
+      }
+      if (subjectName && !subjectGradeMap.has(subjectName)) {
+        subjectGradeMap.set(subjectName, new Set<string>());
+      }
+      if (s.gradeLevels) {
+        s.gradeLevels.forEach((gl) => {
+          const name = (gl || '').trim();
+          if (name) {
+            gradeLevelSet.add(name);
+            if (subjectName) subjectGradeMap.get(subjectName)?.add(name);
+          }
         });
-    }
+      }
+    });
+  }
 
-    const sortedGradeLevels = Array.from(gradeLevelSet)
-        .sort((a, b) => {
-            const numA = parseInt(a.match(/\d+/)![0]);
-            const numB = parseInt(b.match(/\d+/)![0]);
-            return numA - numB;
-        })
-        .map(formatGradeLevel);
+  const sortedGradeLevels = Array.from(gradeLevelSet).sort((a, b) => {
+    const numA = parseInt(a.match(/\d+/)?.[0] ?? '0', 10);
+    const numB = parseInt(b.match(/\d+/)?.[0] ?? '0', 10);
+    return numA - numB;
+  });
+
+  const subjectGradeLevels = Array.from(subjectGradeMap.entries()).map(([subjectName, grades]) => {
+    const gradeLevels = Array.from(grades).sort((a, b) => {
+      const numA = parseInt(a.match(/\d+/)?.[0] ?? '0', 10);
+      const numB = parseInt(b.match(/\d+/)?.[0] ?? '0', 10);
+      return numA - numB;
+    });
 
     return {
-        id: apiTutor.tutorId,
-        name: apiTutor.fullName || "Gia sư",
-        avatar: apiTutor.avatarUrl || "https://randomuser.me/api/portraits/lego/1.jpg",
-        type,
-        credential: apiTutor.degreeLevel || "",
-        bio: apiTutor.bio || "",
-        rating: apiTutor.averageRating || 0,
-        university: apiTutor.education || "",
-        subjects: subjects.length > 0 ? subjects : ["Chưa cập nhật"],
-        gradeLevels: sortedGradeLevels,
+      subjectName,
+      gradeLevels,
+      gradeLabel: formatGradeLevelRanges(gradeLevels) || 'Chưa cập nhật lớp',
     };
+  });
+
+  return {
+    id: apiTutor.tutorId,
+    name: apiTutor.fullName || 'Gia sư',
+    avatar: apiTutor.avatarUrl || 'https://randomuser.me/api/portraits/lego/1.jpg',
+    type,
+    credential: apiTutor.degreeLevel || '',
+    bio: apiTutor.bio || '',
+    rating: apiTutor.averageRating || 0,
+    university: apiTutor.education || '',
+    subjects: subjects.length > 0 ? subjects : ['Chưa cập nhật'],
+    gradeLevels: sortedGradeLevels,
+    subjectGradeLevels,
+  };
 };

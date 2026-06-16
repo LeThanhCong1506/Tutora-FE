@@ -1,5 +1,3 @@
-import { gradeLevelChips } from "./constants";
-
 interface SubjectItem {
     subjectId: number;
     subjectName: string;
@@ -37,10 +35,9 @@ const ActiveFilters = ({ subjects, subjectIds, gradeLevels, onRemoveSubject, onR
                         );
                     })}
                     {gradeLevels.map((gl) => {
-                        const chip = gradeLevelChips.find((g) => g.value === gl);
                         return (
                             <span key={`gl-${gl}`} className="active-filter-chip grade-chip">
-                                {chip?.label || gl}
+                                {gl}
                                 <button className="chip-remove" onClick={() => onRemoveGradeLevel(gl)} aria-label="Xóa">
                                     <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
                                         <path d="M9 3L3 9M3 3l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
