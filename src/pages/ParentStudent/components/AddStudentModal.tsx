@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import styles from './AddStudentModal.module.css';
 import { Trash2, AlertCircle } from 'lucide-react';
 import type { ICreateParentStudent } from '../../../services/student.service';
+import { useGradeLevels } from '../../../hooks/useGradeLevels';
 
 interface AddStudentModalProps {
     isOpen: boolean;
@@ -13,24 +14,25 @@ const FIELD_LABELS: Record<string, string> = {
     fullName: 'Họ và tên',
     birthDate: 'Ngày sinh',
     school: 'Trường',
-    gradeLevel: 'Khối lớp',
+    gradeLevelId: 'Khối lớp',
     learningGoals: 'Mục tiêu học tập',
     general: 'Lỗi',
 };
 
 const AddStudentModal = ({ isOpen, onClose, onSubmit }: AddStudentModalProps) => {
+    const { gradeLevels } = useGradeLevels();
     const [formData, setFormData] = useState({
         fullName: '',
         birthDate: '',
         school: '',
-        gradeLevel: '',
+        gradeLevelId: '',
         learningGoals: '',
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [submitting, setSubmitting] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
         // Clear error when user types
@@ -75,7 +77,7 @@ const AddStudentModal = ({ isOpen, onClose, onSubmit }: AddStudentModalProps) =>
                 fullname: formData.fullName,
                 birthdate: formData.birthDate,
                 school: formData.school,
-                gradelevel: formData.gradeLevel || undefined,
+                gradeLevelId: formData.gradeLevelId ? Number(formData.gradeLevelId) : undefined,
                 learninggoals: formData.learningGoals || undefined,
             });
             // Reset form after successful submission
@@ -83,7 +85,7 @@ const AddStudentModal = ({ isOpen, onClose, onSubmit }: AddStudentModalProps) =>
                 fullName: '',
                 birthDate: '',
                 school: '',
-                gradeLevel: '',
+                gradeLevelId: '',
                 learningGoals: '',
             });
             setErrors({});
@@ -204,15 +206,20 @@ const AddStudentModal = ({ isOpen, onClose, onSubmit }: AddStudentModalProps) =>
                         <label className={styles.formLabel}>
                             Khối lớp
                         </label>
-                        <input
-                            type="text"
-                            name="gradeLevel"
-                            value={formData.gradeLevel}
+                        <select
+                            name="gradeLevelId"
+                            value={formData.gradeLevelId}
                             onChange={handleChange}
                             className={styles.formInput}
-                            placeholder="Nhập khối lớp (ví dụ: Lớp 8)"
                             disabled={submitting}
-                        />
+                        >
+                            <option value="">-- Chọn khối lớp --</option>
+                            {gradeLevels.map((grade) => (
+                                <option key={grade.gradeLevelId} value={grade.gradeLevelId}>
+                                    {grade.gradeName}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     <div className={styles.formRow}>

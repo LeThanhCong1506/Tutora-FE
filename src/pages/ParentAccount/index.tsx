@@ -6,6 +6,12 @@ import { getUserIdFromToken, changePassword } from '../../services/auth.service'
 import { getUserProfile, updateUserProfile, updateUserAvatar, updateZaloNotifyEnabled } from '../../services/user.service';
 import { isZaloMiniApp } from '../../services/zalo-env';
 import { formatDateTime } from '../../utils/formatters';
+import {
+    validateUserProfileForm,
+    mapApiFieldErrors,
+    toDateInputValue,
+    type UserProfileFieldErrors,
+} from '../../utils/userProfileForm';
 import styles from './styles.module.css';
 
 const inMiniApp = isZaloMiniApp();
@@ -93,6 +99,7 @@ const ParentAccount = () => {
         address: '',
         gender: '',
     });
+    const [errors, setErrors] = useState<UserProfileFieldErrors>({});
     const [showPasswordSection, setShowPasswordSection] = useState(false);
     const [passwordForm, setPasswordForm] = useState<PasswordForm>({
         oldPassword: '',
@@ -122,7 +129,7 @@ const ParentAccount = () => {
                 setZaloNotifyEnabled(data.zabornotifyenabled !== false);
                 setForm({
                     fullname: data.fullname || '',
-                    birthdate: data.birthdate || '',
+                    birthdate: toDateInputValue(data.birthdate),
                     address: data.address || '',
                     gender: data.gender || '',
                 });
@@ -135,26 +142,44 @@ const ParentAccount = () => {
         loadProfile();
     }, []);
 
+    const updateField = (field: keyof EditForm, value: string) => {
+        setForm(f => ({ ...f, [field]: value }));
+        setErrors(e => (e[field] ? { ...e, [field]: undefined } : e));
+    };
+
     const handleSave = async () => {
         if (!profile) return;
-        if (!form.fullname.trim()) {
-            toast.warning('Họ tên không được để trống');
+
+        // BE yêu cầu đủ tất cả các trường — validate trước để báo rõ field thiếu/sai.
+        const fieldErrors = validateUserProfileForm(form);
+        if (Object.keys(fieldErrors).length > 0) {
+            setErrors(fieldErrors);
+            toast.warning('Vui lòng điền đầy đủ và đúng các thông tin bắt buộc.');
             return;
         }
+        setErrors({});
+
         setSaving(true);
         try {
             await updateUserProfile(profile.userid, {
-                fullname: form.fullname,
-                birthdate: form.birthdate || '',
-                address: form.address || '',
-                gender: form.gender || '',
+                fullname: form.fullname.trim(),
+                birthdate: form.birthdate,
+                address: form.address.trim(),
+                gender: form.gender,
                 avatarurl: profile.avatarurl,
             });
             setProfile(prev => prev ? { ...prev, ...form } : null);
             setEditing(false);
             toast.success('Cập nhật thông tin thành công!');
-        } catch {
-            toast.error('Cập nhật thất bại. Vui lòng thử lại.');
+        } catch (err: unknown) {
+            const apiError = (err as { response?: { data?: { error?: unknown; message?: string } } })?.response?.data;
+            const mapped = mapApiFieldErrors(apiError?.error);
+            if (Object.keys(mapped).length > 0) {
+                setErrors(mapped);
+                toast.error('Vui lòng kiểm tra lại các thông tin được đánh dấu.');
+            } else {
+                toast.error(apiError?.message || 'Cập nhật thất bại. Vui lòng thử lại.');
+            }
         } finally {
             setSaving(false);
         }
@@ -164,11 +189,12 @@ const ParentAccount = () => {
         if (profile) {
             setForm({
                 fullname: profile.fullname || '',
-                birthdate: profile.birthdate || '',
+                birthdate: toDateInputValue(profile.birthdate),
                 address: profile.address || '',
                 gender: profile.gender || '',
             });
         }
+        setErrors({});
         setEditing(false);
     };
 
@@ -479,62 +505,75 @@ const ParentAccount = () => {
                     </div>
 
                     <div style={fieldGroup}>
-                        <label style={fieldLabel}>Họ và tên</label>
+                        <label style={fieldLabel}>Họ và tên{editing && <span style={{ color: '#dc2626' }}> *</span>}</label>
                         {editing ? (
-                            <input
-                                style={fieldInput}
-                                value={form.fullname}
-                                onChange={e => setForm(f => ({ ...f, fullname: e.target.value }))}
-                                maxLength={100}
-                                placeholder="Nhập họ và tên"
-                            />
+                            <>
+                                <input
+                                    style={{ ...fieldInput, ...(errors.fullname ? { borderColor: '#dc2626' } : {}) }}
+                                    value={form.fullname}
+                                    onChange={e => updateField('fullname', e.target.value)}
+                                    maxLength={100}
+                                    placeholder="Nhập họ và tên"
+                                />
+                                {errors.fullname && <span style={errorTextStyle}>{errors.fullname}</span>}
+                            </>
                         ) : (
                             <p style={fieldValue}>{profile?.fullname || '—'}</p>
                         )}
                     </div>
 
                     <div style={fieldGroup}>
-                        <label style={fieldLabel}>Ngày sinh</label>
+                        <label style={fieldLabel}>Ngày sinh{editing && <span style={{ color: '#dc2626' }}> *</span>}</label>
                         {editing ? (
-                            <input
-                                style={fieldInput}
-                                type="date"
-                                value={form.birthdate}
-                                onChange={e => setForm(f => ({ ...f, birthdate: e.target.value }))}
-                            />
+                            <>
+                                <input
+                                    style={{ ...fieldInput, ...(errors.birthdate ? { borderColor: '#dc2626' } : {}) }}
+                                    type="date"
+                                    value={form.birthdate}
+                                    max={new Date().toISOString().slice(0, 10)}
+                                    onChange={e => updateField('birthdate', e.target.value)}
+                                />
+                                {errors.birthdate && <span style={errorTextStyle}>{errors.birthdate}</span>}
+                            </>
                         ) : (
                             <p style={fieldValue}>{formatDate(profile?.birthdate)}</p>
                         )}
                     </div>
 
                     <div style={fieldGroup}>
-                        <label style={fieldLabel}>Giới tính</label>
+                        <label style={fieldLabel}>Giới tính{editing && <span style={{ color: '#dc2626' }}> *</span>}</label>
                         {editing ? (
-                            <select
-                                style={fieldInput}
-                                value={form.gender}
-                                onChange={e => setForm(f => ({ ...f, gender: e.target.value }))}
-                            >
-                                <option value="">Chọn giới tính</option>
-                                <option value="Male">Nam</option>
-                                <option value="Female">Nữ</option>
-                                <option value="Other">Khác</option>
-                            </select>
+                            <>
+                                <select
+                                    style={{ ...fieldInput, ...(errors.gender ? { borderColor: '#dc2626' } : {}) }}
+                                    value={form.gender}
+                                    onChange={e => updateField('gender', e.target.value)}
+                                >
+                                    <option value="">Chọn giới tính</option>
+                                    <option value="Male">Nam</option>
+                                    <option value="Female">Nữ</option>
+                                    <option value="Other">Khác</option>
+                                </select>
+                                {errors.gender && <span style={errorTextStyle}>{errors.gender}</span>}
+                            </>
                         ) : (
                             <p style={fieldValue}>{genderDisplay(profile?.gender)}</p>
                         )}
                     </div>
 
                     <div style={{ ...fieldGroup, gridColumn: '1 / -1' }}>
-                        <label style={fieldLabel}>Địa chỉ</label>
+                        <label style={fieldLabel}>Địa chỉ{editing && <span style={{ color: '#dc2626' }}> *</span>}</label>
                         {editing ? (
-                            <input
-                                style={fieldInput}
-                                value={form.address}
-                                onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
-                                maxLength={255}
-                                placeholder="Nhập địa chỉ"
-                            />
+                            <>
+                                <input
+                                    style={{ ...fieldInput, ...(errors.address ? { borderColor: '#dc2626' } : {}) }}
+                                    value={form.address}
+                                    onChange={e => updateField('address', e.target.value)}
+                                    maxLength={255}
+                                    placeholder="Nhập địa chỉ"
+                                />
+                                {errors.address && <span style={errorTextStyle}>{errors.address}</span>}
+                            </>
                         ) : (
                             <p style={fieldValue}>{profile?.address || '—'}</p>
                         )}
@@ -851,6 +890,12 @@ const saveBtn: React.CSSProperties = {
 const disabledStyle: React.CSSProperties = {
     opacity: 0.6,
     cursor: 'not-allowed',
+};
+
+const errorTextStyle: React.CSSProperties = {
+    fontSize: 12,
+    color: '#dc2626',
+    marginTop: 2,
 };
 
 const toggleBtn: React.CSSProperties = {

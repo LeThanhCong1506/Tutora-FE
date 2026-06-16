@@ -18,7 +18,8 @@ export interface ICreateParentStudent {
   fullname: string;
   birthdate: string;
   school: string;
-  gradelevel?: string;
+  // BE đổi: nhận id khối lớp (GradeLevelId) thay vì chuỗi tên lớp.
+  gradeLevelId?: number;
   learninggoals?: string;
 }
 
@@ -88,6 +89,28 @@ export const updateParentStudent = async (id: string, payload: IUpdateParentStud
     return response.data;
   } catch (error: any) {
     console.error('❌ Error fetching verification progress:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
+    throw error;
+  }
+};
+
+/**
+ * Student tự cập nhật hồ sơ của chính mình (họ tên, ngày sinh, trường, khối lớp, mục tiêu).
+ * PUT /api/students/me
+ */
+export const updateMyStudentProfile = async (
+  payload: IUpdateParentStudent,
+): Promise<ApiResponse<StudentType>> => {
+  try {
+    const response = await api.put<ApiResponse<StudentType>>(`/students/me`, payload, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ Error updating own student profile:', {
       status: error.response?.status,
       data: error.response?.data,
       message: error.message,

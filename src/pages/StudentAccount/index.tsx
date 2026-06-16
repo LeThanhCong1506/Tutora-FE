@@ -28,6 +28,8 @@ const StudentAccount = () => {
         setEditing,
         form,
         setForm,
+        errors,
+        setErrors,
         handleSave,
         handleCancel,
     } = useUserProfile();
@@ -109,6 +111,8 @@ const StudentAccount = () => {
                 setForm={setForm}
                 editing={editing}
                 saving={saving}
+                errors={errors}
+                setErrors={setErrors}
                 onSave={handleSave}
                 onCancel={handleCancel}
             />

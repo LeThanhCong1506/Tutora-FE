@@ -148,17 +148,25 @@ export const getUserKYCData = async (): Promise<UserKYCData | null> => {
             userData.IdCardBackUrl ||
             null;
 
-        // Parse ekycRawData JSON string
+        // Parse ekycRawData JSON string.
+        // BE lưu dạng bọc: { OcrResult: { id, name, dob, home, address, sex, ... }, VerifiedAt }.
+        // UI cần dạng phẳng (ekyc.id, ekyc.name…) → bóc lớp OcrResult nếu có; vẫn chấp
+        // nhận dạng phẳng sẵn (vd content trả về trực tiếp từ /verification/submit).
         let ekycData: EKYCContent | null = null;
         const ekycRaw = userData.ekycRawData || userData.EkycRawData || userData.ekycrawdata;
+        let parsed: unknown = null;
         if (ekycRaw && typeof ekycRaw === 'string') {
             try {
-                ekycData = JSON.parse(ekycRaw);
+                parsed = JSON.parse(ekycRaw);
             } catch {
                 console.error('Failed to parse ekycRawData');
             }
         } else if (ekycRaw && typeof ekycRaw === 'object') {
-            ekycData = ekycRaw;
+            parsed = ekycRaw;
+        }
+        if (parsed && typeof parsed === 'object') {
+            const wrapper = parsed as { OcrResult?: EKYCContent; ocrResult?: EKYCContent };
+            ekycData = (wrapper.OcrResult ?? wrapper.ocrResult ?? (parsed as EKYCContent));
         }
 
         return {

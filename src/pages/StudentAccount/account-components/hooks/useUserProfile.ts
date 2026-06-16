@@ -2,6 +2,12 @@ import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { getUserIdFromToken } from "../../../../services/auth.service";
 import { getUserProfile, updateUserProfile } from "../../../../services/user.service";
+import {
+    validateUserProfileForm,
+    mapApiFieldErrors,
+    toDateInputValue,
+    type UserProfileFieldErrors,
+} from "../../../../utils/userProfileForm";
 import type { EditForm, UserProfileData } from "../types";
 
 /**
@@ -20,6 +26,7 @@ export function useUserProfile() {
         address: "",
         gender: "",
     });
+    const [errors, setErrors] = useState<UserProfileFieldErrors>({});
 
     useEffect(() => {
         const loadProfile = async () => {
@@ -37,7 +44,7 @@ export function useUserProfile() {
                 setProfile(data);
                 setForm({
                     fullname: data.fullname || "",
-                    birthdate: data.birthdate || "",
+                    birthdate: toDateInputValue(data.birthdate),
                     address: data.address || "",
                     gender: data.gender || "",
                 });
@@ -52,24 +59,38 @@ export function useUserProfile() {
 
     const handleSave = async () => {
         if (!profile) return;
-        if (!form.fullname.trim()) {
-            toast.warning("Họ tên không được để trống");
+
+        // BE yêu cầu đủ tất cả các trường — validate trước để báo rõ field thiếu/sai.
+        const fieldErrors = validateUserProfileForm(form);
+        if (Object.keys(fieldErrors).length > 0) {
+            setErrors(fieldErrors);
+            toast.warning("Vui lòng điền đầy đủ và đúng các thông tin bắt buộc.");
             return;
         }
+        setErrors({});
+
         setSaving(true);
         try {
             await updateUserProfile(profile.userid, {
-                fullname: form.fullname,
-                birthdate: form.birthdate || "",
-                address: form.address || "",
-                gender: form.gender || "",
+                fullname: form.fullname.trim(),
+                birthdate: form.birthdate,
+                address: form.address.trim(),
+                gender: form.gender,
                 avatarurl: profile.avatarurl,
             });
             setProfile(prev => prev ? { ...prev, ...form } : null);
             setEditing(false);
             toast.success("Cập nhật thông tin thành công!");
-        } catch {
-            toast.error("Cập nhật thất bại. Vui lòng thử lại.");
+        } catch (err: unknown) {
+            // Dịch lỗi field từ BE (nếu có) sang tiếng Việt theo từng ô.
+            const apiError = (err as { response?: { data?: { error?: unknown; message?: string } } })?.response?.data;
+            const mapped = mapApiFieldErrors(apiError?.error);
+            if (Object.keys(mapped).length > 0) {
+                setErrors(mapped);
+                toast.error("Vui lòng kiểm tra lại các thông tin được đánh dấu.");
+            } else {
+                toast.error(apiError?.message || "Cập nhật thất bại. Vui lòng thử lại.");
+            }
         } finally {
             setSaving(false);
         }
@@ -79,11 +100,12 @@ export function useUserProfile() {
         if (profile) {
             setForm({
                 fullname: profile.fullname || "",
-                birthdate: profile.birthdate || "",
+                birthdate: toDateInputValue(profile.birthdate),
                 address: profile.address || "",
                 gender: profile.gender || "",
             });
         }
+        setErrors({});
         setEditing(false);
     };
 
@@ -96,6 +118,8 @@ export function useUserProfile() {
         setEditing,
         form,
         setForm,
+        errors,
+        setErrors,
         handleSave,
         handleCancel,
     };

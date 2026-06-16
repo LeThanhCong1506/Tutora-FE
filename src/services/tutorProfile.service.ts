@@ -197,6 +197,53 @@ export const updateVideo = async (userId: string, videoUrl: string): Promise<Api
 };
 
 // ============================================
+// CCCD (Citizen ID) Upload
+// ============================================
+
+export interface CccdUploadResult {
+  frontImageUrl: string;
+  backImageUrl: string;
+}
+
+/**
+ * Upload ảnh CCCD (2 mặt) lên Cloudinary qua BE và lưu URL vào hồ sơ.
+ * PUT /api/tutors/{id}/profile/cccd — multipart: FrontImage + BackImage (JPG/PNG, ≤5MB mỗi ảnh).
+ *
+ * @param userId - User ID (cũng là tutor ID, phải khớp người đang đăng nhập)
+ * @param frontImage - Ảnh mặt trước CCCD
+ * @param backImage - Ảnh mặt sau CCCD
+ * @returns { frontImageUrl, backImageUrl } đã upload
+ */
+export const uploadCccd = async (
+  userId: string,
+  frontImage: File,
+  backImage: File,
+): Promise<ApiResponse<CccdUploadResult>> => {
+  try {
+    const formData = new FormData();
+    formData.append('FrontImage', frontImage);
+    formData.append('BackImage', backImage);
+
+    const response = await api.put(`/tutors/${userId}/profile/cccd`, formData, {
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    console.log('✅ CCCD uploaded successfully:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ Error uploading CCCD:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
+    throw error;
+  }
+};
+
+// ============================================
 // Basic Info Update Types
 // ============================================
 

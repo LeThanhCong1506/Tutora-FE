@@ -4,7 +4,8 @@ import Footer from '../../../components/Footer';
 const tagWidths = [92, 116, 84, 108, 76, 96];
 const introLineWidths = [98, 92, 96, 86, 74];
 const experienceLineWidths = [95, 88, 91, 68];
-const scheduleRows = [1, 2, 3, 4];
+// Số "khung giờ" giả lập cho 7 cột T2 → CN — lệch nhau để giống lịch rảnh thật.
+const scheduleColumns = [3, 2, 4, 2, 3, 4, 1];
 
 const TutorDetailSkeleton = () => (
     <div className="tutor-detail-page">
@@ -135,14 +136,18 @@ const TutorDetailSkeleton = () => (
                             <div className="skeleton-box skeleton-booking-label" />
                         </div>
                         <div className="skeleton-booking-body">
-                            <div className="skeleton-box skeleton-schedule-label" />
-                            <div className="skeleton-schedule-list">
-                                {scheduleRows.map((row) => (
-                                    <div key={row} className="skeleton-schedule-row">
-                                        <div className="skeleton-box skeleton-schedule-day" />
-                                        <div className="skeleton-schedule-times">
-                                            <div className="skeleton-box skeleton-time-chip" />
-                                            <div className="skeleton-box skeleton-time-chip skeleton-time-chip-short" />
+                            <div className="skeleton-schedule-heading">
+                                <div className="skeleton-box skeleton-schedule-icon" />
+                                <div className="skeleton-box skeleton-schedule-label" />
+                            </div>
+                            <div className="skeleton-schedule-week-grid">
+                                {scheduleColumns.map((chipCount, dayIndex) => (
+                                    <div key={dayIndex} className="skeleton-schedule-day-col">
+                                        <div className="skeleton-box skeleton-schedule-weekday" />
+                                        <div className="skeleton-schedule-chip-list">
+                                            {Array.from({ length: chipCount }).map((_, chipIndex) => (
+                                                <div key={chipIndex} className="skeleton-box skeleton-schedule-chip" />
+                                            ))}
                                         </div>
                                     </div>
                                 ))}
