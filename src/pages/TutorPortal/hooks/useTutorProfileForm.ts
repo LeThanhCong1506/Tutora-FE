@@ -236,15 +236,11 @@ function mapSectionsToFormData(sections: VerificationSections): Partial<TutorPro
         }),
 
         // Identity card section is INTENTIONALLY OMITTED here.
-        // The progress endpoint only carries the bare-bones identity status
-        // (image URLs + verification flag), while /api/users/{id} returns the
-        // full eKYC payload (idNumber, name on ID, DOB, address, etc.). Letting
-        // both endpoints populate the same field caused a race where a
-        // late-arriving progress response overwrote the richer KYC data with
-        // empty strings. Initial load now reads identity exclusively from KYC
-        // (see the mount useEffect below); post-save refetches no longer
-        // touch identity at all (which is correct — saving basic info / pricing
-        // / etc. has no business resetting identity fields).
+        // identityVerification được xây ở mount useEffect (bước 3) bằng cách KẾT HỢP
+        // progress.identityCard (trạng thái xác minh + URL ảnh — đáng tin) với eKYC
+        // details từ /api/users/profile (số CCCD, tên, DOB…). Tách khỏi mapper này để
+        // các lần refetch progress sau khi lưu (basic info / pricing…) KHÔNG vô tình
+        // reset identity về rỗng.
         //
         // Pricing: model mới theo môn × lớp — lấy riêng qua getPricing (mapPricingToForm).
     };
@@ -405,16 +401,22 @@ export function useTutorProfileForm() {
                 // Build the merged update incrementally.
                 let mergedForm: Partial<TutorProfileFormData> = {};
                 let mergedStatuses: SectionStatuses | null = null;
+                // identityCard từ progress là nguồn ĐÁNG TIN cho trạng thái xác minh +
+                // URL ảnh CCCD. (Endpoint /users/profile hiện trả UserResponse KHÔNG có
+                // các trường KYC — isidentityverified / idcardfronturl / idcardbackurl —
+                // nên KHÔNG dùng riêng KYC để quyết định đã xác minh hay chưa.)
+                let identitySection: VerificationSections['identityCard'] | null = null;
 
                 // 1) Verification progress — basicInfo / video / introduction /
                 //    credentials / pricing. mapSectionsToFormData no longer
-                //    returns identityVerification (see comment in mapper).
+                //    returns identityVerification (xây riêng ở bước 3).
                 if (progressR.status === 'fulfilled' &&
                     progressR.value.statusCode === 200 &&
                     progressR.value.content?.sections) {
                     const sections = progressR.value.content.sections;
                     mergedForm = { ...mergedForm, ...mapSectionsToFormData(sections) };
                     mergedStatuses = mapSectionStatuses(sections);
+                    identitySection = sections.identityCard;
                 }
 
                 // 2) Availability slots
@@ -431,28 +433,41 @@ export function useTutorProfileForm() {
                     }));
                 }
 
-                // 3) KYC — single source of truth for identityVerification + fullName.
-                if (kycR.status === 'fulfilled' && kycR.value) {
-                    const kycData = kycR.value;
-                    if (kycData.fullName) {
+                // 3) Identity — kết hợp 2 nguồn:
+                //    • progress.identityCard: trạng thái xác minh (isVerified) + URL ảnh — ĐÁNG TIN.
+                //    • KYC (/users/profile): chi tiết eKYC (số CCCD, tên, ngày sinh…) + fullName — DÙNG NẾU CÓ.
+                //    Quyết định "đã xác minh" ưu tiên progress, fallback KYC, để FE không bắt
+                //    xác minh lại khi gia sư đã verified nhưng KYC trả thiếu trường.
+                {
+                    const kycData = kycR.status === 'fulfilled' ? kycR.value : null;
+                    if (kycData?.fullName) {
                         mergedForm.fullName = kycData.fullName;
                     }
-                    mergedForm.identityVerification = {
-                        idNumber: kycData.ekycData?.id || '',
-                        fullNameOnId: kycData.ekycData?.name || '',
-                        dateOfBirth: kycData.ekycData?.dob || '',
-                        address: kycData.ekycData?.address || '',
-                        hometown: kycData.ekycData?.home || '',
-                        gender: kycData.ekycData?.sex || '',
-                        idFrontImage: null,
-                        idFrontImageUrl: kycData.idCardFrontUrl || undefined,
-                        idBackImage: null,
-                        idBackImageUrl: kycData.idCardBackUrl || undefined,
-                        verificationStatus: kycData.isIdentityVerified ? 'verified' :
-                            (kycData.idCardFrontUrl && kycData.idCardBackUrl) ? 'pending' : 'not_submitted'
-                    };
-                    if (kycData.isIdentityVerified && mergedStatuses) {
-                        mergedStatuses = { ...mergedStatuses, identityCard: 'updated' };
+
+                    if (identitySection || kycData) {
+                        const ekyc = kycData?.ekycData ?? null;
+                        const frontUrl = identitySection?.frontImageUrl ?? kycData?.idCardFrontUrl ?? null;
+                        const backUrl = identitySection?.backImageUrl ?? kycData?.idCardBackUrl ?? null;
+                        const isVerified = (identitySection?.isVerified ?? false) || (kycData?.isIdentityVerified ?? false);
+
+                        mergedForm.identityVerification = {
+                            idNumber: ekyc?.id || '',
+                            fullNameOnId: ekyc?.name || '',
+                            dateOfBirth: ekyc?.dob || '',
+                            address: ekyc?.address || '',
+                            hometown: ekyc?.home || '',
+                            gender: ekyc?.sex || '',
+                            idFrontImage: null,
+                            idFrontImageUrl: frontUrl || undefined,
+                            idBackImage: null,
+                            idBackImageUrl: backUrl || undefined,
+                            verificationStatus: isVerified
+                                ? 'verified'
+                                : (frontUrl && backUrl) ? 'pending' : 'not_submitted',
+                        };
+                        if (isVerified && mergedStatuses) {
+                            mergedStatuses = { ...mergedStatuses, identityCard: 'updated' };
+                        }
                     }
                 }
 

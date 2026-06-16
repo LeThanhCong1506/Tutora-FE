@@ -24,8 +24,8 @@ const api = axios.create({
 export interface SubjectInfo {
     subjectId: number;
     subjectName?: string | null;
-    gradeLevels?: string[] | null;
-    tags?: string[] | null;
+    gradeLevels?: string[] | string | null;
+    tags?: string[] | string | null;
 }
 
 export interface TutorSubjectGradePrice {
