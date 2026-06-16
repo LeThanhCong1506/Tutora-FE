@@ -3,6 +3,7 @@ import { searchTutors } from "../../services/tutorSearch.service";
 import type { TutorSearchParams } from "../../services/tutorSearch.service";
 import { useProvinces } from "../../hooks/useVietnamLocations";
 import { useSubjects } from "../../hooks/useSubjects";
+import { useGradeLevels } from "../../hooks/useGradeLevels";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { isZaloMiniApp } from "../../services/zalo-env";
@@ -46,9 +47,14 @@ const TutorSearchPage = () => {
     // Danh sách môn học cho bộ lọc — lấy từ API (GET /api/subjects) thay vì hardcode.
     const { subjects } = useSubjects();
 
+    // Danh sách cấp học cho bộ lọc — lấy từ API (GET /api/grade-levels) thay vì hardcode.
+    const { gradeLevels: gradeLevelOptions } = useGradeLevels();
+
     // Build API params from filters.
     // NOTE: subjectIds hỗ trợ multi-select SERVER-SIDE (BE lọc theo List<int>).
-    // Riêng gradeLevel BE chỉ nhận 1 giá trị → multi-select lớp vẫn lọc client-side.
+    // Cấp học KHÔNG gửi lên server: BE lọc gradeLevel bằng ILIKE substring trên
+    // gradeName nên "Lớp 1" sẽ dính cả "Lớp 10/11/12". Vì vậy lọc cấp học hoàn toàn
+    // ở client (khớp chính xác theo tên) — xem applyClientSideFilters.
     const buildApiParams = useCallback((f: SearchFilters): TutorSearchParams => {
         const params: TutorSearchParams = {
             pageNumber: f.pageNumber,
@@ -58,7 +64,6 @@ const TutorSearchPage = () => {
 
         if (f.searchTerm.trim()) params.searchTerm = f.searchTerm.trim();
         if (f.subjectIds.length > 0) params.subjectIds = f.subjectIds;
-        if (f.gradeLevels.length === 1) params.gradeLevel = f.gradeLevels[0];
         if (f.budgetRange && f.budgetRange !== "all") params.budgetRange = f.budgetRange;
         if (f.teachingMode) params.teachingMode = f.teachingMode;
         if (f.city) params.teachingAreaCity = f.city;
@@ -67,19 +72,13 @@ const TutorSearchPage = () => {
     }, []);
 
     const applyClientSideFilters = useCallback((tutorsList: Tutor[], f: SearchFilters): Tutor[] => {
-        let filtered = tutorsList;
+        if (f.gradeLevels.length === 0) return tutorsList;
 
-        if (f.gradeLevels.length > 1) {
-            const selectedGradeLabels = f.gradeLevels.map(gl => {
-                const match = gl.match(/^Grade_(\d+)$/i);
-                return match ? `Lớp ${match[1]}` : gl;
-            });
-            filtered = filtered.filter(tutor =>
-                selectedGradeLabels.every(gl => tutor.gradeLevels.includes(gl))
-            );
-        }
-
-        return filtered;
+        // Giá trị filter chính là gradeName ("Lớp 10") — khớp chính xác với
+        // tutor.gradeLevels (cũng là gradeName). Gia sư phải dạy TẤT CẢ cấp đã chọn.
+        return tutorsList.filter(tutor =>
+            f.gradeLevels.every(gl => tutor.gradeLevels.includes(gl))
+        );
     }, []);
 
     useEffect(() => {
@@ -102,7 +101,7 @@ const TutorSearchPage = () => {
             try {
                 setLoading(true);
                 setError(null);
-                const needsClientFilter = filters.gradeLevels.length > 1;
+                const needsClientFilter = filters.gradeLevels.length > 0;
                 const apiParams = buildApiParams(
                     needsClientFilter
                         ? { ...filters, pageNumber: 1, pageSize: CLIENT_FILTER_PAGE_SIZE }
@@ -218,6 +217,7 @@ const TutorSearchPage = () => {
                 <FilterBar
                     subjects={subjects}
                     activeSubjectIds={filters.subjectIds}
+                    gradeLevelOptions={gradeLevelOptions}
                     gradeLevels={filters.gradeLevels}
                     budgetRange={filters.budgetRange}
                     teachingMode={filters.teachingMode}
