@@ -98,7 +98,7 @@ const ProfileCompleteness: React.FC<ProfileCompletenessProps> = ({
         <div className={styles.card}>
             {/* Header */}
             <div className={styles.header}>
-                <span className={styles.label}>Tiến trình hồ sơ (bắt buộc)</span>
+                <span className={styles.label}>Tiến trình hồ sơ</span>
                 <span className={styles.count}>
                     {completedCount}
                     <span className={styles.countTotal}>/{total}</span>
