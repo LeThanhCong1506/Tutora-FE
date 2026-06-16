@@ -17,9 +17,12 @@
 }
 
 /* Main Content Area */
+/* KHÔNG đặt overflow ở đây: trang cuộn ở `.contentArea` của PortalLayout.
+   Nếu `.mainContent` có overflow:auto thì nó trở thành scroll-container "giả"
+   (không thực sự cuộn vì `.profilePage` min-height:100vh tự cao theo nội dung),
+   khiến `position: sticky` của `.rightColumn` bám nhầm vào đây và bị cuộn mất. */
 .mainContent {
   flex: 1;
-  overflow-y: auto;
   padding-bottom: 70px;
 }
 
@@ -47,6 +50,16 @@
   display: flex;
   flex-direction: column;
   gap: 21px;
+  /* Sticky sidebar — theo người dùng cuộn trang. align-self: flex-start để cột
+     lấy chiều cao tự nhiên (không stretch full hàng) thì sticky mới có chỗ chạy.
+     Scroll-container thực sự là `.contentArea` của PortalLayout (cao ~100vh - 56px
+     header). top:24px chừa khoảng cách dưới header; max-height trừ thêm phần
+     header + offset + thanh chỉnh sửa dưới cùng để card cao không bị che. */
+  position: sticky;
+  top: 24px;
+  align-self: flex-start;
+  max-height: calc(100vh - 150px);
+  overflow-y: auto;
 }
 
 /* ===== INTRO VIDEO SECTION ===== */
@@ -1863,6 +1876,10 @@
     width: 100%;
     flex-direction: row;
     flex-wrap: wrap;
+    /* Khi xếp dọc (sidebar nằm dưới nội dung) thì bỏ sticky. */
+    position: static;
+    max-height: none;
+    overflow-y: visible;
   }
 
   .pricingCard,
