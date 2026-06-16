@@ -44,6 +44,15 @@ export const VerifyIcon = () => (
     </svg>
 );
 
+export const CalendarIcon = () => (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="3" width="12" height="11" rx="2.5" stroke="currentColor" strokeWidth="1.4" />
+        <path d="M2 6.5H14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        <path d="M5.5 1.5V4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        <path d="M10.5 1.5V4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+);
+
 export const QuoteIcon = () => (
     <svg width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
         <text x="5" y="32" fontSize="36" fontFamily="Georgia, serif" fill="#E4DED5">"</text>

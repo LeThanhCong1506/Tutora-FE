@@ -1,4 +1,5 @@
 import type { AvailabilitySlot } from '../../../services/tutorDetail.service';
+import { CalendarIcon } from './icons';
 
 interface BookingSidebarProps {
     availabilities: AvailabilitySlot[] | null;
@@ -82,25 +83,22 @@ const expandAvailabilityTimes = (slot: AvailabilitySlot): string[] => {
 };
 
 const buildWeekSchedule = (availabilities: AvailabilitySlot[] | null) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const todayIsoDay = toIsoDay(new Date());
 
-    return Array.from({ length: 7 }, (_, offset) => {
-        const date = new Date(today);
-        date.setDate(today.getDate() + offset);
-
-        const isoDay = toIsoDay(date);
+    // Tuần cố định: T2 (1) → Chủ Nhật (7).
+    return Array.from({ length: 7 }, (_, index) => {
+        const isoDay = index + 1;
         const times = (availabilities || [])
             .filter((slot) => isSameAvailabilityDay(slot.dayofweek, isoDay))
             .flatMap(expandAvailabilityTimes)
-            .filter((time, index, list) => list.indexOf(time) === index)
+            .filter((time, idx, list) => list.indexOf(time) === idx)
             .sort((a, b) => timeToMinutes(a) - timeToMinutes(b));
 
         return {
             isoDay,
             shortDayName: SHORT_DAY_LABELS[isoDay],
             fullDayName: DAY_LABELS[isoDay],
-            dateLabel: String(date.getDate()),
+            isToday: isoDay === todayIsoDay,
             times,
         };
     });
@@ -108,9 +106,7 @@ const buildWeekSchedule = (availabilities: AvailabilitySlot[] | null) => {
 
 const BookingSidebar = ({ availabilities, onBooking }: BookingSidebarProps) => {
     const weekSchedule = buildWeekSchedule(availabilities);
-    const availableDays = weekSchedule.filter((day) => day.times.length > 0).length;
-    const totalSlots = weekSchedule.reduce((sum, day) => sum + day.times.length, 0);
-    const hasAvailability = totalSlots > 0;
+    const hasAvailability = weekSchedule.some((day) => day.times.length > 0);
 
     return (
         <aside className="booking-sidebar">
@@ -123,24 +119,21 @@ const BookingSidebar = ({ availabilities, onBooking }: BookingSidebarProps) => {
                     {hasAvailability ? (
                         <div className="availability-schedule-container">
                             <div className="schedule-heading">
-                                <div>
-                                    <div className="schedule-label">Lịch rảnh</div>
-                                    <div className="schedule-count">
-                                        7 ngày tới · {availableDays} ngày có lịch · {totalSlots} khung giờ rảnh
-                                    </div>
-                                </div>
+                                <span className="schedule-label">
+                                    <CalendarIcon />
+                                    Lịch rảnh của gia sư
+                                </span>
                             </div>
 
-                            <div className="schedule-week-strip" aria-label="Lịch rảnh 7 ngày tới">
+                            <div className="schedule-week-strip" aria-label="Lịch rảnh của gia sư theo tuần">
                                 <div className="schedule-week-grid">
                                     {weekSchedule.map((day) => (
                                         <div
-                                            key={`${day.isoDay}-${day.dateLabel}`}
-                                            className={`schedule-week-day ${day.times.length > 0 ? 'has-slots' : 'is-empty'}`}
+                                            key={day.isoDay}
+                                            className={`schedule-week-day ${day.times.length > 0 ? 'has-slots' : 'is-empty'}${day.isToday ? ' is-today' : ''}`}
                                         >
                                             <div className="schedule-week-day-header" title={day.fullDayName}>
                                                 <span className="schedule-weekday">{day.shortDayName}</span>
-                                                <span className="schedule-date">{day.dateLabel}</span>
                                             </div>
 
                                             <div className="schedule-time-list">
@@ -149,7 +142,7 @@ const BookingSidebar = ({ availabilities, onBooking }: BookingSidebarProps) => {
                                                         <span
                                                             key={time}
                                                             className="schedule-time-chip"
-                                                            aria-label={`${day.fullDayName} ngày ${day.dateLabel}, ${time}`}
+                                                            aria-label={`${day.fullDayName}, ${time}`}
                                                         >
                                                             {time}
                                                         </span>
