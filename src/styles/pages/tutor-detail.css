@@ -289,95 +289,50 @@
     transform: scale(1.05);
 }
 
-/* Subject Tags */
-.tutor-detail-page .subject-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
-    padding: 0 7px;
-}
-
-.tutor-detail-page .subject-group {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-    background-color: rgba(255, 255, 255, 0.5);
-    border: 1px dashed rgba(62, 47, 40, 0.2);
-    padding: 6px;
-    border-radius: 20px;
-}
-
-.tutor-detail-page .subject-tag {
-    border-radius: 14px;
-    padding: 9.6px 20.9px 11.2px;
-    font-size: 10px;
-    letter-spacing: 2px;
-    line-height: 15px;
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-
-.tutor-detail-page .subject-name-tag {
-    box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1), 0px 4px 6px -4px rgba(0, 0, 0, 0.1);
-    background-color: var(--color-navy);
-    border: 1px solid var(--color-navy);
-    color: var(--color-gold);
-}
-
-.tutor-detail-page .child-tag {
-    background-color: rgba(26, 34, 56, 0.06);
-    border: 1px solid rgba(26, 34, 56, 0.12);
-    color: var(--color-navy);
-    letter-spacing: 1.5px;
-    padding: 7px 16px 8px;
-    font-size: 9px;
-}
-
-.tutor-detail-page .grade-level-tag {
-    background-color: rgba(61, 74, 62, 0.08);
-    border: 1px solid rgba(61, 74, 62, 0.18);
-    color: #3d4a3e;
-    letter-spacing: 1.5px;
-    padding: 7px 16px 8px;
-    font-size: 9px;
-}
-
-.tutor-detail-page .grade-levels-section {
-    padding: 12px 7px 0;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.tutor-detail-page .grade-levels-label {
-    font-family: 'Bricolage Grotesque', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: rgba(62, 47, 40, 0.4);
-}
-
-.tutor-detail-page .grade-levels-list {
+/* Subject + grade chips */
+.tutor-detail-page .subject-grade-tags {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
+    padding: 0 7px;
 }
 
-.tutor-detail-page .grade-level-group {
-    display: flex;
+.tutor-detail-page .subject-grade-chip {
+    max-width: 100%;
+    min-width: 0;
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
+    gap: 8px;
+    padding: 7px 8px 7px 12px;
+    border-radius: 9px;
+    background-color: var(--color-navy, #1a2238);
+    border: 1px solid rgba(26, 34, 56, 0.9);
+    color: #f2f0e4;
+    box-shadow: 0 4px 10px -6px rgba(26, 34, 56, 0.45);
 }
 
-.tutor-detail-page .grade-level-subject {
-    font-family: 'IBM Plex Sans', sans-serif;
+.tutor-detail-page .subject-grade-name {
+    min-width: 0;
+    max-width: 112px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-size: 11px;
-    font-weight: 600;
-    color: #1a2238;
-    letter-spacing: 0.5px;
+    font-weight: 850;
+    letter-spacing: 0;
+    line-height: 1.35;
+}
+
+.tutor-detail-page .subject-grade-level {
+    flex-shrink: 0;
+    padding: 3px 7px;
+    border-radius: 7px;
+    background: rgba(242, 240, 228, 0.12);
+    color: #f0d59a;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.2;
+    white-space: nowrap;
 }
 
 /* ===== ABOUT SECTION ===== */
@@ -1246,7 +1201,7 @@
 .tutor-detail-page .availability-schedule-container {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
 }
 
 .tutor-detail-page .schedule-heading {
@@ -1267,75 +1222,137 @@
 }
 
 .tutor-detail-page .schedule-count {
-    margin-top: 5px;
-    color: rgba(26, 34, 56, 0.42);
+    margin-top: 6px;
+    color: rgba(26, 34, 56, 0.52);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.3px;
     line-height: 1.35;
 }
 
-.tutor-detail-page .schedule-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+.tutor-detail-page .schedule-week-strip {
+    overflow: visible;
+    padding-bottom: 0;
+    scrollbar-width: none;
 }
 
-.tutor-detail-page .schedule-day-row {
+.tutor-detail-page .schedule-week-strip::-webkit-scrollbar {
+    display: none;
+}
+
+.tutor-detail-page .schedule-week-strip::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.tutor-detail-page .schedule-week-strip::-webkit-scrollbar-thumb {
+    background: rgba(26, 34, 56, 0.18);
+    border-radius: 9999px;
+}
+
+.tutor-detail-page .schedule-week-grid {
+    width: 100%;
+    min-width: 0;
     display: grid;
-    grid-template-columns: minmax(86px, 0.34fr) minmax(0, 1fr);
+    grid-template-columns: repeat(7, minmax(36px, 1fr));
+    gap: 8px;
     align-items: start;
-    gap: 14px;
-    padding: 14px;
-    background: linear-gradient(135deg, rgba(250, 249, 246, 0.96), rgba(242, 240, 228, 0.58));
-    border-radius: 14px;
-    border: 1px solid rgba(62, 47, 40, 0.1);
-    box-shadow: 0 10px 22px -20px rgba(26, 34, 56, 0.4);
 }
 
-.tutor-detail-page .schedule-day-summary {
+.tutor-detail-page .schedule-week-day {
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    align-items: stretch;
+    gap: 10px;
+    padding: 11px 4px 8px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(26, 34, 56, 0.08);
+    border-radius: 8px;
+    background: linear-gradient(180deg, rgba(250, 249, 246, 0.9) 0%, rgba(255, 255, 255, 0.72) 100%);
 }
 
-.tutor-detail-page .schedule-day-name {
-    font-size: 14px;
-    font-weight: 900;
-    letter-spacing: 0;
-    color: #1a2238;
+.tutor-detail-page .schedule-week-day::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(26, 34, 56, 0.14);
 }
 
-.tutor-detail-page .schedule-day-count {
-    color: rgba(26, 34, 56, 0.38);
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.5px;
-    line-height: 1.35;
-    text-transform: uppercase;
+.tutor-detail-page .schedule-week-day.has-slots {
+    border-color: rgba(212, 180, 131, 0.34);
+    background: linear-gradient(180deg, rgba(250, 249, 246, 0.98) 0%, rgba(255, 255, 255, 0.82) 100%);
 }
 
-.tutor-detail-page .schedule-slots {
+.tutor-detail-page .schedule-week-day.has-slots::before {
+    background: linear-gradient(90deg, var(--color-gold) 0%, rgba(61, 74, 62, 0.72) 100%);
+}
+
+.tutor-detail-page .schedule-week-day.is-empty::before {
+    background: rgba(26, 34, 56, 0.14);
+}
+
+.tutor-detail-page .schedule-week-day-header {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    min-height: 31px;
+    padding-top: 2px;
+    color: #1a2238;
+    line-height: 1.1;
+}
+
+.tutor-detail-page .schedule-weekday {
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.tutor-detail-page .schedule-date {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(26, 34, 56, 0.72);
+}
+
+.tutor-detail-page .schedule-time-list {
+    min-height: 94px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
 }
 
 .tutor-detail-page .schedule-time-chip {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 32px;
-    padding: 6px 11px;
-    background-color: #fff;
-    border-radius: 9px;
-    font-size: 12px;
+    min-height: 22px;
+    padding: 4px 3px;
+    border: 1px solid rgba(212, 180, 131, 0.38);
+    border-radius: 7px;
+    background: rgba(212, 180, 131, 0.16);
+    color: #3e2f28;
+    font-family: inherit;
+    font-size: 11px;
     font-weight: 800;
-    color: rgba(26, 34, 56, 0.76);
-    border: 1px solid rgba(62, 47, 40, 0.12);
-    box-shadow: 0 8px 14px -14px rgba(26, 34, 56, 0.5);
+    line-height: 1;
+    letter-spacing: 0;
+    font-variant-numeric: tabular-nums;
+    text-decoration: none;
+    cursor: default;
+    user-select: text;
+    pointer-events: none;
+}
+
+.tutor-detail-page .schedule-empty-mark {
+    width: 6px;
+    height: 6px;
+    margin: 8px auto 0;
+    border-radius: 9999px;
+    background: rgba(26, 34, 56, 0.18);
 }
 
 .tutor-detail-page .empty-availability {
@@ -1733,8 +1750,8 @@
         border-radius: 10px;
     }
 
-    /* Subject Tags - horizontal scroll on mobile */
-    .tutor-detail-page .subject-tags {
+    /* Subject + grade chips - horizontal scroll on mobile */
+    .tutor-detail-page .subject-grade-tags {
         flex-wrap: nowrap;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
@@ -1743,17 +1760,19 @@
         gap: 6px;
     }
 
-    .tutor-detail-page .subject-tags::-webkit-scrollbar {
+    .tutor-detail-page .subject-grade-tags::-webkit-scrollbar {
         display: none;
     }
 
-    .tutor-detail-page .subject-tag {
-        padding: 7px 14px;
-        font-size: 8px;
-        letter-spacing: 1.5px;
-        border-radius: 10px;
+    .tutor-detail-page .subject-grade-chip {
         flex-shrink: 0;
+        max-width: 210px;
+        gap: 8px;
         box-shadow: 0px 4px 8px -2px rgba(0, 0, 0, 0.08);
+    }
+
+    .tutor-detail-page .subject-grade-name {
+        max-width: 96px;
     }
 
     /* --- ABOUT SECTION --- */
@@ -2132,37 +2151,31 @@
         font-size: 10px;
     }
 
-    .tutor-detail-page .schedule-list {
+    .tutor-detail-page .schedule-week-grid {
+        min-width: 0;
+        grid-template-columns: repeat(7, minmax(34px, 1fr));
+        gap: 5px;
+    }
+
+    .tutor-detail-page .schedule-week-day {
         gap: 8px;
+        padding: 10px 3px 7px;
     }
 
-    .tutor-detail-page .schedule-day-row {
-        grid-template-columns: 1fr;
-        padding: 12px;
-        border-radius: 12px;
-        gap: 10px;
+    .tutor-detail-page .schedule-weekday,
+    .tutor-detail-page .schedule-date {
+        font-size: 11px;
     }
 
-    .tutor-detail-page .schedule-day-summary {
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-    }
-
-    .tutor-detail-page .schedule-day-name {
-        font-size: 13px;
-    }
-
-    .tutor-detail-page .schedule-day-count {
-        font-size: 9px;
+    .tutor-detail-page .schedule-time-list {
+        gap: 5px;
+        min-height: 78px;
     }
 
     .tutor-detail-page .schedule-time-chip {
-        min-height: 30px;
-        padding: 5px 9px;
-        font-size: 11px;
-        border-radius: 8px;
+        min-height: 20px;
+        padding: 3px 2px;
+        font-size: 10px;
     }
 
     /* Booking Actions - HIDDEN on mobile (sticky CTA replaces these) */
