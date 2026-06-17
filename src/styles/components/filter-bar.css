@@ -170,6 +170,8 @@
 
 .tutor-search-page .filter-dropdown-pill {
     min-width: 138px;
+    position: relative;
+    --filter-chevron-inset: 11px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -180,6 +182,8 @@
 
 .tutor-search-page .filter-section .custom-dropdown {
     min-width: 0;
+    width: 100%;
+    position: static;
 }
 
 .tutor-search-page .filter-section .custom-dropdown.filter .custom-dropdown-trigger,
@@ -202,10 +206,23 @@
 
 .tutor-search-page .filter-section .custom-dropdown-value {
     min-width: 0;
-    max-width: 164px;
+    max-width: 100%;
+    padding-right: 22px;
+    box-sizing: border-box;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.tutor-search-page .filter-section .custom-dropdown-chevron {
+    position: absolute;
+    top: 50%;
+    right: var(--filter-chevron-inset, 11px);
+    transform: translateY(-50%);
+}
+
+.tutor-search-page .filter-section .custom-dropdown-chevron.rotated {
+    transform: translateY(-50%) rotate(180deg);
 }
 
 .tutor-search-page .filter-actions {
@@ -217,6 +234,8 @@
 
 .tutor-search-page .sort-group {
     min-width: 206px;
+    position: relative;
+    --filter-chevron-inset: 12px;
     display: flex;
     flex-direction: column;
     justify-content: center;
