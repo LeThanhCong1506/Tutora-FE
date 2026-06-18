@@ -1,6 +1,7 @@
 import type { ScheduleSlot, WeeklySlot, BookingSlot, WeeklyPatternSlot } from "./types";
-import type { AvailabilitySlot } from "../../../services/tutorDetail.service";
+import type { AvailabilitySlot, TutorSubjectGradePrice } from "../../../services/tutorDetail.service";
 import type { FixedCombo } from "../../../types/combo.types";
+import type { StudentType } from "../../../types/student.type";
 
 export const formatPrice = (amount: number) =>
     new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
@@ -37,6 +38,48 @@ export const normalizeGradeToken = (value?: string | null): string => {
         .replace(/[\u0300-\u036f]/g, "");
     const gradeNumber = normalized.match(/\d+/)?.[0];
     return gradeNumber ?? normalized.replace(/[^a-z0-9]/g, "");
+};
+
+export interface GradeMatchInfo {
+    matches: boolean;
+    missingStudentGrade: boolean;
+    studentGrade: string;
+    tutorGrades: string[];
+}
+
+export const getGradeMatchInfo = (
+    student: StudentType | undefined,
+    subjectId: number,
+    subjectGradePrices: TutorSubjectGradePrice[],
+    fallbackTutorGrades: string[] = [],
+): GradeMatchInfo | null => {
+    if (!student || subjectId === 0) return null;
+
+    const activePrices = subjectGradePrices.filter(
+        (price) => price.isActive !== false && price.subjectId === subjectId,
+    );
+    const tutorGrades = activePrices.length > 0
+        ? activePrices.map((price) => price.gradeLevelName ?? "").filter(Boolean)
+        : fallbackTutorGrades;
+
+    if (activePrices.length === 0 && tutorGrades.length === 0) return null;
+
+    const studentGradeToken = normalizeGradeToken(student.gradeLevel);
+    const missingStudentGrade = student.gradeLevelId == null && !studentGradeToken;
+    const matches = !missingStudentGrade && (activePrices.length > 0
+        ? activePrices.some(
+            (price) =>
+                (student.gradeLevelId != null && price.gradeLevelId === student.gradeLevelId) ||
+                (!!studentGradeToken && normalizeGradeToken(price.gradeLevelName) === studentGradeToken),
+        )
+        : tutorGrades.some((grade) => normalizeGradeToken(grade) === studentGradeToken));
+
+    return {
+        matches,
+        missingStudentGrade,
+        studentGrade: formatGrade(student.gradeLevel),
+        tutorGrades: [...new Set(tutorGrades)],
+    };
 };
 
 /**

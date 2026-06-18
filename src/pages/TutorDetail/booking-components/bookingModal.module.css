@@ -1358,6 +1358,11 @@
   line-height: 1.55;
 }
 
+.gradeWarning div {
+  align-items: flex-start;
+  flex-direction: column;
+}
+
 .warningDismiss {
   display: grid;
   width: 30px;
@@ -2060,6 +2065,30 @@
 .slotUnavailable {
   background: rgba(26, 34, 56, 0.02);
   color: rgba(26, 34, 56, 0.14);
+}
+
+.slotBooked,
+.slotConflict {
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.slotBooked {
+  border-color: rgba(116, 31, 31, 0.34);
+  background: rgba(116, 31, 31, 0.1);
+  color: var(--color-burgundy);
+}
+
+.slotConflict {
+  border-color: rgba(166, 105, 23, 0.38);
+  background: rgba(217, 171, 92, 0.17);
+  color: #875817;
+}
+
+.slotBooked svg,
+.slotConflict svg {
+  flex-shrink: 0;
+  stroke-width: 2.4;
 }
 
 .calendarTip {

@@ -7,6 +7,7 @@ import {
     ChevronLeft,
     ChevronRight,
     Clock3,
+    LockKeyhole,
     Repeat2,
     RotateCcw,
 } from "lucide-react";
@@ -59,6 +60,12 @@ const StepSchedule: React.FC<StepProps> = ({
         bookingWindowStart,
         bookingWindowEnd,
         navLocked,
+        bookedSlotsLoading,
+        bookedSlotsError,
+        hasSelectedSlotConflict,
+        isBookedCell,
+        wouldAvailabilityPickConflict,
+        fixedWeekHasConflict,
         toggleAvailabilityPick,
         pickFixedStartWeek,
         clearPicks,
@@ -146,6 +153,27 @@ const StepSchedule: React.FC<StepProps> = ({
                                 đầu.
                             </span>
                         </section>
+                    )}
+
+                    {bookedSlotsLoading && (
+                        <section className={styles.durationInfo}>
+                            <Clock3 size={15} />
+                            <span>Đang kiểm tra các khung giờ gia sư đã có lịch…</span>
+                        </section>
+                    )}
+
+                    {bookedSlotsError && (
+                        <p className={styles.noFitNotice}>
+                            <AlertTriangle size={15} />
+                            Chưa thể tải lịch đã đặt. Hệ thống vẫn sẽ kiểm tra lại khi gửi yêu cầu.
+                        </p>
+                    )}
+
+                    {hasSelectedSlotConflict && (
+                        <p className={styles.noFitNotice} role="alert">
+                            <AlertTriangle size={15} />
+                            Lịch đã chọn trùng với một buổi học hiện có. Vui lòng bỏ buổi đang chọn và chọn giờ khác.
+                        </p>
                     )}
 
                     <section className={styles.packageSetup}>
@@ -252,10 +280,12 @@ const StepSchedule: React.FC<StepProps> = ({
                                                     const isSelected = Boolean(selectedCovering);
                                                     const isSelectedStart = selectedCovering?.startTime === time;
                                                     const isSelectedContinuation = isSelected && !isSelectedStart;
+                                                    const bookedCell = isBookedCell(dateKey, time);
 
                                                     let clickable = false;
                                                     let isOpenButCannotStart = false;
                                                     let isBlockedBySelectedSession = false;
+                                                    let conflictsWithExistingBooking = false;
                                                     let onCellClick: (() => void) | null = null;
                                                     if (!isPast && (isOpen || isSelected)) {
                                                         if (isAvailabilityMode) {
@@ -278,8 +308,18 @@ const StepSchedule: React.FC<StepProps> = ({
                                                                         sessionHours,
                                                                     ),
                                                             );
+                                                            conflictsWithExistingBooking =
+                                                                wouldAvailabilityPickConflict(
+                                                                    dateKey,
+                                                                    demoDow,
+                                                                    time,
+                                                                );
                                                             const canStartSession =
-                                                                isOpen && fits && date <= bookingDeadline;
+                                                                isOpen &&
+                                                                fits &&
+                                                                date <= bookingDeadline &&
+                                                                !bookedSlotsLoading &&
+                                                                !conflictsWithExistingBooking;
 
                                                             clickable =
                                                                 isSelectedStart ||
@@ -300,12 +340,22 @@ const StepSchedule: React.FC<StepProps> = ({
                                                                         cellMin,
                                                                     ),
                                                             );
+                                                            conflictsWithExistingBooking =
+                                                                isComboCell && fixedWeekHasConflict(mondayOf(date));
                                                             clickable =
-                                                                !navLocked && isComboCell && date <= bookingDeadline;
+                                                                !navLocked &&
+                                                                isComboCell &&
+                                                                date <= bookingDeadline &&
+                                                                !bookedSlotsLoading &&
+                                                                !conflictsWithExistingBooking;
                                                             onCellClick = () => pickFixedStartWeek(mondayOf(date));
                                                         }
                                                     }
                                                     const showAvailable = clickable && !isSelected;
+                                                    const showBooked =
+                                                        !isSelected &&
+                                                        isOpen &&
+                                                        (bookedCell || conflictsWithExistingBooking);
                                                     const showBlockedChoose =
                                                         isAvailabilityMode && isBlockedBySelectedSession && !isSelected;
                                                     const showSelectedState = isSelected;
@@ -316,6 +366,18 @@ const StepSchedule: React.FC<StepProps> = ({
                                                         </>
                                                     ) : showAvailable ? (
                                                         "+ Chọn"
+                                                    ) : showBooked ? (
+                                                        bookedCell ? (
+                                                            <>
+                                                                <LockKeyhole size={11} />
+                                                                Đã có lịch
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <AlertTriangle size={11} />
+                                                                Trùng lịch
+                                                            </>
+                                                        )
                                                     ) : showBlockedChoose ? (
                                                         "Chọn"
                                                     ) : isOpenButCannotStart ? (
@@ -336,6 +398,10 @@ const StepSchedule: React.FC<StepProps> = ({
                                                                         ? styles.slotSelected
                                                                         : showAvailable
                                                                           ? styles.slotAvailable
+                                                                          : showBooked
+                                                                            ? bookedCell
+                                                                                ? styles.slotBooked
+                                                                                : styles.slotConflict
                                                                           : showBlockedChoose || isOpenButCannotStart
                                                                             ? styles.slotOpen
                                                                             : styles.slotUnavailable
@@ -346,6 +412,10 @@ const StepSchedule: React.FC<StepProps> = ({
                                                                 title={
                                                                     isSelectedContinuation
                                                                         ? `Thuộc buổi học bắt đầu lúc ${selectedCovering?.startTime}.`
+                                                                        : showBooked
+                                                                          ? bookedCell
+                                                                              ? "Gia sư đã có buổi học tại khung giờ này."
+                                                                              : "Buổi học lặp theo tuần sẽ trùng với lịch hiện có của gia sư."
                                                                         : showBlockedChoose
                                                                         ? "Khung này đã được khóa theo buổi đã chọn. Bấm ô bắt đầu đã chọn để bỏ buổi."
                                                                         : isOpenButCannotStart

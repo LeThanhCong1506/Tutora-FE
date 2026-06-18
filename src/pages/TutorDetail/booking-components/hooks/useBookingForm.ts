@@ -3,8 +3,9 @@ import { getStudents, getMyLinkStatus } from "../../../../services/student.servi
 import { createBooking } from "../../../../services/booking.service";
 import { getCurrentUserRole, getUserIdFromToken } from "../../../../services/auth.service";
 import { useFormDraft } from "../../../../hooks/useFormDraft";
+import { toUtcIso } from "../../../../utils/datetime";
 import type { StudentType } from "../../../../types/student.type";
-import type { CreateBookingPayload } from "../../../../services/booking.service";
+import type { CreateBookingPayload, FlexibleBookingSlotPayload } from "../../../../services/booking.service";
 import type { BookingFormData, BookingSlot } from "../types";
 
 interface Args {
@@ -34,20 +35,16 @@ function resolveLockedMode(raw?: string | null): "online" | "offline" | null {
     return null; // "both", "hybrid", null, or anything else — student picks
 }
 
-const pad2 = (n: number) => String(n).padStart(2, "0");
-
-const toLocalDateTimeString = (date: Date): string =>
-    `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}T${pad2(date.getHours())}:${pad2(
-        date.getMinutes(),
-    )}:00`;
-
-const slotToLocalDateTimes = (slot: BookingSlot) => {
+// Một buổi học cụ thể = thời điểm TUYỆT ĐỐI → gửi BE dạng UTC ISO (có Z).
+// `new Date("YYYY-MM-DDTHH:mm:ss")` parse theo giờ local của người dùng; toUtcIso
+// (≡ toISOString) đổi sang UTC. Vd VN 18:00 → "...T11:00:00.000Z".
+const slotToUtcDateTimes = (slot: BookingSlot): FlexibleBookingSlotPayload => {
     const start = new Date(`${slot.date}T${slot.startTime}:00`);
     const end = new Date(start);
     end.setMinutes(end.getMinutes() + Math.round(slot.durationHours * 60));
     return {
-        scheduledStart: toLocalDateTimeString(start),
-        scheduledEnd: toLocalDateTimeString(end),
+        scheduledStart: toUtcIso(start),
+        scheduledEnd: toUtcIso(end),
     };
 };
 
@@ -101,12 +98,20 @@ export function useBookingForm({ isOpen, tutorId, onClose, tutorTeachingMode }: 
     // Fetch student profile for Student role (to get correct studentId)
     useEffect(() => {
         if (!isOpen || userRole !== "Student") return;
+        setLoadingStudents(true);
         getMyLinkStatus().then(res => {
             const profile = res?.content?.studentProfile;
             if (profile?.studentId) {
+                setStudents([profile]);
                 setFormData(d => ({ ...d, studentId: profile.studentId }));
+            } else {
+                setStudents([]);
             }
-        }).catch(() => {/* ignore */ });
+        }).catch(() => {
+            setStudents([]);
+        }).finally(() => {
+            setLoadingStudents(false);
+        });
     }, [isOpen, userRole]);
 
     // Fetch students on modal open (only for Parent role)
@@ -195,7 +200,7 @@ export function useBookingForm({ isOpen, tutorId, onClose, tutorTeachingMode }: 
                 totalSessions: sortedSelectedSlots.length,
                 startDate: formData.startDate,
                 ...(isFlexibleBooking
-                    ? { flexibleSlots: sortedSelectedSlots.map(slotToLocalDateTimes) }
+                    ? { flexibleSlots: sortedSelectedSlots.map(slotToUtcDateTimes) }
                     : {}),
                 locationCity: formData.locationCity || undefined,
                 locationDistrict: formData.locationDistrict || undefined,

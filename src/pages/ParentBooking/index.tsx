@@ -1,58 +1,185 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, User, BookOpen, Filter, ChevronLeft, ChevronRight, Plus, Eye } from 'lucide-react';
+import {
+  BookOpen,
+  Calendar,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Eye,
+  Plus,
+  Search,
+  User,
+  Wallet,
+} from 'lucide-react';
+import { toast } from 'react-toastify';
 import { getParentBookings, type BookingResponseDTO } from '../../services/booking.service';
 import styles from './styles.module.css';
-import { Spin } from 'antd';
-import { toast } from 'react-toastify';
 
-// ===== TYPES =====
-
-// ===== MOCK DATA REMOVED =====
-
-// ===== HELPERS =====
 const STATUS_TABS = [
   { key: 'all', label: 'Tất cả' },
   { key: 'pending_tutor', label: 'Chờ gia sư' },
   { key: 'accepted', label: 'Chờ đặt cọc' },
-  { key: 'deposit_paid', label: 'Đã cọc (50%)' },
-  { key: 'pending_remaining_payment', label: 'TT còn lại' },
-  { key: 'active', label: 'Đang học' },
+  { key: 'deposit_paid', label: 'Đã đặt cọc' },
+  { key: 'pending_remaining_payment', label: 'Thanh toán còn lại' },
+  { key: 'ongoing', label: 'Đang học' },
   { key: 'completed', label: 'Hoàn thành' },
   { key: 'cancelled', label: 'Đã hủy' },
 ];
 
-const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  pending_tutor: { label: 'Chờ gia sư', className: 'statusPending' },
-  accepted: { label: 'Chờ đặt cọc', className: 'statusWarning' },
-  deposit_paid: { label: 'Đã cọc (50%)', className: 'statusActive' },
-  pending_remaining_payment: { label: 'TT còn lại', className: 'statusWarning' },
-  active: { label: 'Đang học', className: 'statusActive' },
-  completed: { label: 'Hoàn thành', className: 'statusCompleted' },
-  cancelled: { label: 'Đã hủy', className: 'statusCancelled' },
-  payment_timeout: { label: 'Hết hạn TT', className: 'statusCancelled' },
+const STATUS_CONFIG: Record<string, { label: string; tone: string }> = {
+  pending_tutor: { label: 'Chờ gia sư xác nhận', tone: 'pending' },
+  accepted: { label: 'Chờ đặt cọc', tone: 'warning' },
+  pending_payment: { label: 'Chờ thanh toán', tone: 'warning' },
+  deposit_paid: { label: 'Đã đặt cọc 50%', tone: 'paid' },
+  pending_remaining_payment: { label: 'Thanh toán còn lại', tone: 'warning' },
+  paid: { label: 'Đã thanh toán', tone: 'paid' },
+  ongoing: { label: 'Đang học', tone: 'active' },
+  completed: { label: 'Hoàn thành', tone: 'completed' },
+  cancelled: { label: 'Đã hủy', tone: 'cancelled' },
+  cancelled_noshow: { label: 'Đã hủy', tone: 'cancelled' },
+  payment_timeout: { label: 'Hết hạn thanh toán', tone: 'cancelled' },
 };
 
-const DAY_NAMES = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+const EMPTY_STATE_COPY: Record<string, { title: string; description: string }> = {
+  all: {
+    title: 'Chưa có lịch học nào',
+    description: 'Tìm một gia sư phù hợp và bắt đầu lên lịch học cho con bạn.',
+  },
+  pending_tutor: {
+    title: 'Không có yêu cầu đang chờ',
+    description: 'Các yêu cầu đang chờ gia sư xác nhận sẽ xuất hiện tại đây.',
+  },
+  accepted: {
+    title: 'Không có lịch chờ đặt cọc',
+    description: 'Lịch được gia sư chấp nhận và chờ đặt cọc sẽ xuất hiện tại đây.',
+  },
+  deposit_paid: {
+    title: 'Chưa có lịch đã đặt cọc',
+    description: 'Các lịch đã hoàn tất khoản đặt cọc sẽ xuất hiện tại đây.',
+  },
+  pending_remaining_payment: {
+    title: 'Không có khoản cần thanh toán',
+    description: 'Hiện không có booking nào cần hoàn tất phần thanh toán còn lại.',
+  },
+  ongoing: {
+    title: 'Chưa có lớp đang học',
+    description: 'Các booking đang diễn ra sẽ xuất hiện tại đây.',
+  },
+  completed: {
+    title: 'Chưa có lớp hoàn thành',
+    description: 'Những lớp đã hoàn thành sẽ được lưu tại đây.',
+  },
+  cancelled: {
+    title: 'Chưa có lịch đã hủy',
+    description: 'Các booking bị hủy hoặc hết hạn sẽ được lưu tại đây.',
+  },
+};
 
 const formatPrice = (amount: number) =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+  new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+  }).format(Math.max(0, amount));
 
-const formatDate = (dateStr: string) => {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const formatDate = (value?: string) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
-const formatPackage = (pkg: string) => {
-  const map: Record<string, string> = {
-    '4_sessions': '4 buổi',
-    '8_sessions': '8 buổi',
-    '12_sessions': '12 buổi',
+const formatTime = (value?: string) => (value ? value.slice(0, 5) : '');
+
+const formatDayName = (dayOfWeek: number) => {
+  if (dayOfWeek === 0 || dayOfWeek === 7) return 'Chủ nhật';
+  return `Thứ ${dayOfWeek + 1}`;
+};
+
+const formatGrade = (grade?: string) => {
+  if (!grade) return 'Chưa cập nhật lớp';
+  return grade.toLowerCase().includes('lớp') ? grade : `Lớp ${grade}`;
+};
+
+const formatTeachingMode = (mode?: string) => {
+  if (!mode) return 'Theo thỏa thuận';
+  const normalized = mode.toLowerCase();
+  if (normalized.includes('online')) return 'Trực tuyến';
+  if (
+    normalized.includes('offline') ||
+    normalized.includes('person') ||
+    normalized.includes('home') ||
+    normalized.includes('student') ||
+    normalized.includes('tutor')
+  ) {
+    return 'Trực tiếp';
+  }
+  return mode;
+};
+
+const getUniqueSchedule = (booking: BookingResponseDTO) => {
+  const uniqueSlots = new Map<string, BookingResponseDTO['schedule'][number]>();
+
+  (booking.schedule ?? []).forEach((slot) => {
+    const key = `${slot.dayOfWeek}-${slot.startTime}-${slot.endTime}`;
+    if (!uniqueSlots.has(key)) uniqueSlots.set(key, slot);
+  });
+
+  return Array.from(uniqueSlots.values());
+};
+
+const getBookingPeriod = (booking: BookingResponseDTO) => {
+  const bookingWithLessons = booking as BookingResponseDTO & {
+    lessons?: Array<{ scheduledStart: string; scheduledEnd: string }>;
   };
-  return map[pkg] || pkg;
+  const lessons = [...(bookingWithLessons.lessons ?? [])].sort(
+    (first, second) => new Date(first.scheduledStart).getTime() - new Date(second.scheduledStart).getTime(),
+  );
+
+  return {
+    startDate: lessons[0]?.scheduledStart ?? booking.startDate,
+    endDate: lessons.at(-1)?.scheduledEnd,
+  };
 };
 
-// ===== COMPONENT =====
+const getPaymentAction = (booking: BookingResponseDTO) => {
+  if (booking.status === 'accepted' || booking.status === 'pending_payment') {
+    return {
+      label: 'Thanh toán đặt cọc',
+      summaryLabel: 'Cần đặt cọc',
+      amount: booking.depositAmount ?? Math.ceil(booking.finalPrice * 0.5),
+    };
+  }
+
+  if (booking.status === 'deposit_paid' || booking.status === 'pending_remaining_payment') {
+    return {
+      label: 'Thanh toán còn lại',
+      summaryLabel: 'Còn lại cần trả',
+      amount: booking.remainingAmount ?? Math.max(0, booking.finalPrice - (booking.depositAmount ?? 0)),
+    };
+  }
+
+  return null;
+};
+
+const getStatusHint = (status: string) => {
+  const hints: Record<string, string> = {
+    pending_tutor: 'Yêu cầu đang chờ gia sư xem lịch và xác nhận.',
+    accepted: 'Gia sư đã xác nhận. Hoàn tất đặt cọc để giữ lịch học.',
+    pending_payment: 'Hoàn tất thanh toán để giữ lịch học đã chọn.',
+    deposit_paid: 'Bạn đã đặt cọc. Hãy hoàn tất khoản còn lại đúng hạn.',
+    pending_remaining_payment: 'Vui lòng hoàn tất khoản thanh toán còn lại.',
+    paid: 'Booking đã được thanh toán đầy đủ.',
+    ongoing: 'Lớp học đang diễn ra theo lịch đã thống nhất.',
+    completed: 'Lớp học đã hoàn thành.',
+    cancelled: 'Booking này đã được hủy.',
+    payment_timeout: 'Booking đã hết hạn thanh toán.',
+  };
+  return hints[status] ?? 'Theo dõi chi tiết booking để cập nhật trạng thái mới nhất.';
+};
+
 const ParentBooking = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('all');
@@ -62,19 +189,16 @@ const ParentBooking = () => {
   const [loading, setLoading] = useState(true);
   const pageSize = 5;
 
-  // Server-side stat counts (fetched once on mount)
-  const [statCounts, setStatCounts] = useState({ total: 0, active: 0, pending: 0 });
-
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const res = await getParentBookings({
+      const response = await getParentBookings({
         status: activeTab === 'all' ? undefined : activeTab,
         page: currentPage,
-        pageSize: pageSize,
+        pageSize,
       });
-      setBookings(res.content.items || []);
-      setTotalItems(res.content.totalCount || 0);
+      setBookings(response.content.items || []);
+      setTotalItems(response.content.totalCount || 0);
     } catch {
       toast.error('Không thể tải danh sách đặt lịch.');
     } finally {
@@ -82,265 +206,275 @@ const ParentBooking = () => {
     }
   };
 
-  // Fetch accurate stat counts from server (lightweight calls with pageSize=1)
-  const fetchStatCounts = async () => {
-    try {
-      const [allRes, activeRes, pendingRes] = await Promise.all([
-        getParentBookings({ page: 1, pageSize: 1 }),
-        getParentBookings({ page: 1, pageSize: 1, status: 'active' }),
-        getParentBookings({ page: 1, pageSize: 1, status: 'pending_tutor' }),
-      ]);
-      setStatCounts({
-        total: allRes.content.totalCount || 0,
-        active: activeRes.content.totalCount || 0,
-        pending: pendingRes.content.totalCount || 0,
-      });
-    } catch {
-      // Stats are non-critical, silently fail
-    }
-  };
-
-  useEffect(() => {
-    fetchStatCounts();
-  }, []);
-
   useEffect(() => {
     fetchBookings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, currentPage]);
 
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  const paginated = bookings;
+  const emptyCopy = EMPTY_STATE_COPY[activeTab] ?? EMPTY_STATE_COPY.all;
 
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
+  const handleTabChange = (tabKey: string) => {
     setCurrentPage(1);
+    setActiveTab(tabKey);
   };
 
   return (
     <div className={styles.page}>
-      {/* Header */}
       <header className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.title}>Đặt lịch</h1>
-          <p className={styles.subtitle}>Quản lý các lịch đặt gia sư của bạn</p>
+        <div>
+          <h1>Đặt lịch</h1>
+          <p>Quản lý lịch học, thanh toán và tiến độ các booking của bạn.</p>
         </div>
         <button className={styles.newBookingBtn} type="button" onClick={() => navigate('/tutor-search')}>
-          <Plus size={18} />
-          <span>Đặt gia sư mới</span>
+          <Plus size={17} />
+          Đặt gia sư mới
         </button>
       </header>
 
-      {/* Stats Strip */}
-      <div className={styles.statsStrip}>
-        <div className={styles.statCard}>
-          <div className={styles.statIcon + ' ' + styles.statIconBlue}>
-            <BookOpen size={20} />
-          </div>
-          <div className={styles.statInfo}>
-            <span className={styles.statValue}>{statCounts.total}</span>
-            <span className={styles.statLabel}>Tổng bookings</span>
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statIcon + ' ' + styles.statIconGreen}>
-            <Calendar size={20} />
-          </div>
-          <div className={styles.statInfo}>
-            <span className={styles.statValue}>{statCounts.active}</span>
-            <span className={styles.statLabel}>Đang học</span>
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statIcon + ' ' + styles.statIconAmber}>
-            <Clock size={20} />
-          </div>
-          <div className={styles.statInfo}>
-            <span className={styles.statValue}>{statCounts.pending}</span>
-            <span className={styles.statLabel}>Đang chờ</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Filter Tabs */}
-      <div className={styles.filterBar}>
-        <Filter size={16} className={styles.filterIcon} />
-        <div className={styles.tabs}>
+      <main className={styles.content}>
+        <div className={styles.tabBar} role="tablist" aria-label="Lọc booking theo trạng thái">
           {STATUS_TABS.map((tab) => (
             <button
               key={tab.key}
-              className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ''}`}
-              onClick={() => handleTabChange(tab.key)}
               type="button"
+              role="tab"
+              aria-selected={activeTab === tab.key}
+              className={`${styles.tabButton} ${activeTab === tab.key ? styles.tabButtonActive : ''}`}
+              onClick={() => handleTabChange(tab.key)}
             >
+              <span className={styles.tabDot} aria-hidden="true" />
               {tab.label}
-              {tab.key !== 'all' && activeTab === tab.key && (
-                <span className={styles.tabCount}>
-                  {totalItems}
-                </span>
-              )}
+              {activeTab === tab.key && !loading && <span className={styles.tabCount}>{totalItems}</span>}
             </button>
           ))}
         </div>
-      </div>
 
-      {/* Bookings List */}
-      <main className={styles.mainContent}>
         {loading ? (
           <div className={styles.loadingContainer}>
-            <Spin size="large" tip="Đang tải danh sách đặt lịch..." />
+            <div className={styles.spinner} aria-hidden="true" />
+            <div>
+              <strong>Đang tải lịch học</strong>
+              <p>Thông tin booking mới nhất sẽ hiển thị trong giây lát.</p>
+            </div>
           </div>
-        ) : paginated.length === 0 ? (
+        ) : bookings.length === 0 ? (
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>
-              <BookOpen size={48} />
+              <Search size={28} />
             </div>
-            <h3 className={styles.emptyTitle}>Chưa có booking nào</h3>
-            <p className={styles.emptyText}>Hãy tìm gia sư phù hợp và đặt lịch học cho con bạn.</p>
-            <button className={styles.emptyBtn} type="button" onClick={() => navigate('/tutor-search')}>
-              <Plus size={18} />
-              <span>Đặt gia sư ngay</span>
-            </button>
+            <h2>{emptyCopy.title}</h2>
+            <p>{emptyCopy.description}</p>
+            {activeTab === 'all' && (
+              <button type="button" onClick={() => navigate('/tutor-search')}>
+                <Plus size={17} /> Đặt gia sư ngay
+              </button>
+            )}
           </div>
         ) : (
-          <>
-            <div className={styles.bookingsList}>
-              {paginated.map((booking) => {
-                const statusCfg = STATUS_CONFIG[booking.status] || {
-                  label: booking.status,
-                  className: 'statusPending',
-                };
-                return (
-                  <div
-                    key={booking.bookingId}
-                    className={styles.bookingCard}
-                    onClick={() => navigate(`/parent-portal/booking/${booking.bookingId}`)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && navigate(`/parent-portal/booking/${booking.bookingId}`)}
-                  >
-                    {/* Card Header */}
-                    <div className={styles.cardHeader}>
-                      <div className={styles.cardHeaderLeft}>
-                        <div className={styles.tutorAvatar}>
-                          {booking.tutor?.avatarUrl ? (
-                            <img src={booking.tutor.avatarUrl} alt={booking.tutor?.fullName} />
-                          ) : (
-                            <span>{booking.tutor?.fullName?.charAt(0) || 'G'}</span>
+          <div className={styles.bookingList}>
+            {bookings.map((booking) => {
+              const status = STATUS_CONFIG[booking.status] ?? {
+                label: booking.status,
+                tone: 'pending',
+              };
+              const schedule = getUniqueSchedule(booking);
+              const bookingPeriod = getBookingPeriod(booking);
+              const paymentAction = getPaymentAction(booking);
+              const requestDate = formatDate(booking.createdAt);
+
+              return (
+                <article key={booking.bookingId} className={styles.bookingCard}>
+                  <header className={styles.cardHeader}>
+                    <div className={styles.tutorInfo}>
+                      <div className={styles.tutorAvatar} aria-hidden="true">
+                        {booking.tutor?.avatarUrl ? (
+                          <img src={booking.tutor.avatarUrl} alt="" />
+                        ) : (
+                          <span>{booking.tutor?.fullName?.trim().charAt(0).toUpperCase() || 'G'}</span>
+                        )}
+                      </div>
+                      <div className={styles.tutorIdentity}>
+                        <div className={styles.tutorNameRow}>
+                          <h2>{booking.tutor?.fullName || 'Gia sư chưa cập nhật tên'}</h2>
+                          <span className={`${styles.statusBadge} ${styles[`status_${status.tone}`]}`}>
+                            {status.label}
+                          </span>
+                        </div>
+                        <p>
+                          Học sinh: {booking.student?.fullName || 'Chưa cập nhật'}
+                          <span aria-hidden="true">•</span>
+                          {formatGrade(booking.student?.gradeLevel)}
+                          {requestDate && (
+                            <>
+                              <span aria-hidden="true">•</span>
+                              Đặt ngày {requestDate}
+                            </>
                           )}
-                        </div>
-                        <div className={styles.cardTitleGroup}>
-                          <h3 className={styles.cardTitle}>{booking.subject?.subjectName || 'N/A'}</h3>
-                          <p className={styles.cardSubtitle}>
-                            với {booking.tutor?.fullName || 'Gia sư'} • cho {booking.student?.fullName || 'Học sinh'}
-                          </p>
-                        </div>
-                      </div>
-                      <span className={`${styles.statusBadge} ${styles[statusCfg.className]}`}>
-                        {statusCfg.label}
-                      </span>
-                    </div>
-
-                    {/* Card Body */}
-                    <div className={styles.cardBody}>
-                      <div className={styles.cardMeta}>
-                        <div className={styles.metaItem}>
-                          <BookOpen size={14} />
-                          <span>{formatPackage(booking.packageType)}</span>
-                        </div>
-                        <div className={styles.metaItem}>
-                          <Calendar size={14} />
-                          <span>
-                            {booking.schedule
-                              .map((s) => `${DAY_NAMES[s.dayOfWeek]} ${s.startTime}-${s.endTime}`)
-                              .join(', ')}
-                          </span>
-                        </div>
-                        <div className={styles.metaItem}>
-                          <User size={14} />
-                          <span>
-                            {booking.student?.fullName || 'N/A'} ({booking.student?.gradeLevel || ''})
-                          </span>
-                        </div>
+                        </p>
                       </div>
                     </div>
+                  </header>
 
-                    {/* Card Footer */}
-                    <div className={styles.cardFooter}>
-                      <div className={styles.priceGroup}>
+                  <div className={styles.cardContent}>
+                    <div className={styles.bookingDetails}>
+                      <div className={styles.infoGrid}>
+                        <div className={styles.infoItem}>
+                          <span className={styles.infoIcon}>
+                            <BookOpen size={18} />
+                          </span>
+                          <div>
+                            <span className={styles.infoLabel}>Môn học</span>
+                            <strong>{booking.subject?.subjectName || 'Chưa cập nhật'}</strong>
+                          </div>
+                        </div>
+                        <div className={styles.infoItem}>
+                          <span className={styles.infoIcon}>
+                            <Calendar size={18} />
+                          </span>
+                          <div>
+                            <span className={styles.infoLabel}>Thời lượng</span>
+                            <strong>{booking.sessionCount} buổi học</strong>
+                          </div>
+                        </div>
+                        <div className={styles.infoItem}>
+                          <span className={styles.infoIcon}>
+                            <User size={18} />
+                          </span>
+                          <div>
+                            <span className={styles.infoLabel}>Hình thức</span>
+                            <strong>{formatTeachingMode(booking.teachingMode)}</strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      <section className={styles.scheduleSection} aria-label="Lịch học dự kiến">
+                        <div className={styles.sectionHeading}>
+                          <Calendar size={17} />
+                          <h3>Lịch học dự kiến</h3>
+                        </div>
+                        <div className={styles.bookingPeriod}>
+                          <div>
+                            <span>Bắt đầu</span>
+                            <strong>{formatDate(bookingPeriod.startDate) || 'Chưa xác định'}</strong>
+                          </div>
+                          <span className={styles.periodDivider} aria-hidden="true">
+                            →
+                          </span>
+                          <div>
+                            <span>Kết thúc</span>
+                            <strong>{formatDate(bookingPeriod.endDate) || 'Chưa xác định'}</strong>
+                          </div>
+                        </div>
+                        {schedule.length > 0 ? (
+                          <div className={styles.scheduleList}>
+                            {schedule.map((slot) => (
+                              <div
+                                key={`${slot.dayOfWeek}-${slot.startTime}-${slot.endTime}`}
+                                className={styles.scheduleTag}
+                              >
+                                <span>{formatDayName(slot.dayOfWeek)}</span>
+                                <strong>
+                                  {formatTime(slot.startTime)}
+                                  {slot.endTime ? ` – ${formatTime(slot.endTime)}` : ''}
+                                </strong>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className={styles.noSchedule}>Chưa có khung giờ học.</p>
+                        )}
+                      </section>
+                    </div>
+
+                    <aside className={styles.paymentCard} aria-label="Thông tin học phí">
+                      <div className={styles.paymentTitle}>
+                        <span>
+                          <Wallet size={18} />
+                        </span>
+                        <div>
+                          <p>Tổng học phí</p>
+                          <strong>{formatPrice(booking.finalPrice)}</strong>
+                        </div>
+                      </div>
+                      <div className={styles.priceBreakdown}>
+                        <div>
+                          <span>Giá gốc</span>
+                          <strong>{formatPrice(booking.price)}</strong>
+                        </div>
                         {booking.discountApplied > 0 && (
-                          <span className={styles.priceOriginal}>{formatPrice(booking.price)}</span>
+                          <div>
+                            <span>Ưu đãi</span>
+                            <strong className={styles.discountValue}>− {formatPrice(booking.discountApplied)}</strong>
+                          </div>
                         )}
-                        <span className={styles.priceFinal}>{formatPrice(booking.finalPrice)}</span>
+                        {paymentAction && (
+                          <div className={styles.paymentDue}>
+                            <span>{paymentAction.summaryLabel}</span>
+                            <strong>{formatPrice(paymentAction.amount)}</strong>
+                          </div>
+                        )}
                       </div>
-                      <div className={styles.cardActions}>
-                        {(booking.status === 'accepted' || booking.status === 'pending_payment') && (
-                          <button
-                            className={styles.actionBtnPrimary}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/parent-portal/booking/${booking.bookingId}/payment`);
-                            }}
-                            type="button"
-                          >
-                            Thanh toán cọc
-                          </button>
-                        )}
-                        {(booking.status === 'pending_remaining_payment' || booking.status === 'deposit_paid') && (
-                          <button
-                            className={styles.actionBtnPrimary}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/parent-portal/booking/${booking.bookingId}/payment`);
-                            }}
-                            type="button"
-                          >
-                            Thanh toán nốt
-                          </button>
-                        )}
-                        <span className={styles.cardDate}>{formatDate(booking.createdAt)}</span>
-                        <button
-                          className={styles.viewBtn}
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/parent-portal/booking/${booking.bookingId}`);
-                          }}
-                        >
-                          <Eye size={14} />
-                          <span>Chi tiết</span>
-                        </button>
-                      </div>
-                    </div>
+                      <p className={styles.paymentNote}>Khoản thanh toán được bảo vệ theo chính sách của Tutora.</p>
+                    </aside>
                   </div>
-                );
-              })}
-            </div>
 
-            {/* Pagination */}
+                  <footer className={styles.cardFooter}>
+                    <div className={styles.statusHint}>
+                      {booking.status === 'completed' || booking.status === 'paid' ? (
+                        <Check size={16} />
+                      ) : (
+                        <Clock size={16} />
+                      )}
+                      <span>{getStatusHint(booking.status)}</span>
+                    </div>
+                    <div className={styles.cardActions}>
+                      <button
+                        type="button"
+                        className={styles.viewBtn}
+                        onClick={() => navigate(`/parent-portal/booking/${booking.bookingId}`)}
+                      >
+                        <Eye size={16} /> Chi tiết
+                      </button>
+                      {paymentAction && (
+                        <button
+                          type="button"
+                          className={styles.paymentBtn}
+                          onClick={() => navigate(`/parent-portal/booking/${booking.bookingId}/payment`)}
+                        >
+                          {paymentAction.label} <ChevronRight size={16} />
+                        </button>
+                      )}
+                    </div>
+                  </footer>
+                </article>
+              );
+            })}
+
             {totalPages > 1 && (
               <div className={styles.pagination}>
                 <button
-                  className={styles.pageBtn}
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((p) => p - 1)}
                   type="button"
+                  aria-label="Trang trước"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((page) => page - 1)}
                 >
                   <ChevronLeft size={16} />
                 </button>
-                <span className={styles.pageInfo}>
+                <span>
                   Trang {currentPage} / {totalPages}
                 </span>
                 <button
-                  className={styles.pageBtn}
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((p) => p + 1)}
                   type="button"
+                  aria-label="Trang sau"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((page) => page + 1)}
                 >
                   <ChevronRight size={16} />
                 </button>
               </div>
             )}
-          </>
+          </div>
         )}
       </main>
     </div>
