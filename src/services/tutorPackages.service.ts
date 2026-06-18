@@ -2,6 +2,19 @@
 import axios from 'axios';
 import { getAuthHeaders, type ApiResponse } from './tutorProfile.service';
 import { setupAuthInterceptor } from './apiClient';
+import { localTimeOfDayToUtc, utcTimeOfDayToLocal } from '../utils/datetime';
+
+// Fixed slot là giờ recurring → gửi UTC, nhận về convert sang local (giữ nguyên thứ).
+const fixedSlotToUtc = <T extends { startTime: string; endTime: string }>(s: T): T => ({
+  ...s,
+  startTime: localTimeOfDayToUtc(s.startTime),
+  endTime: localTimeOfDayToUtc(s.endTime),
+});
+const fixedSlotToLocal = <T extends { startTime: string; endTime: string }>(s: T): T => ({
+  ...s,
+  startTime: utcTimeOfDayToLocal(s.startTime),
+  endTime: utcTimeOfDayToLocal(s.endTime),
+});
 
 const API_BASE_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5166') + '/api';
 
@@ -60,7 +73,11 @@ export const getPackages = async (
       headers: getAuthHeaders(),
       params: { includeInactive },
     });
-    return response.data;
+    const data = response.data as ApiResponse<TutorPackageResponse[]>;
+    return {
+      ...data,
+      content: (data.content ?? []).map((p) => ({ ...p, fixedSlots: (p.fixedSlots ?? []).map(fixedSlotToLocal) })),
+    };
   } catch (error: any) {
     console.error('❌ Error fetching packages:', {
       status: error.response?.status,
@@ -77,13 +94,22 @@ export const createPackage = async (
   data: CreateTutorPackageData,
 ): Promise<ApiResponse<TutorPackageResponse>> => {
   try {
-    const response = await api.post(`/tutors/${userId}/profile/packages`, data, {
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/json',
+    const response = await api.post(
+      `/tutors/${userId}/profile/packages`,
+      { ...data, fixedSlots: data.fixedSlots.map(fixedSlotToUtc) },
+      {
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
       },
-    });
-    return response.data;
+    );
+    // Response cũng trả fixedSlots theo UTC → convert ngược về local (đối xứng với getPackages),
+    // để combo dựng từ response hiển thị đúng giờ local.
+    const resp = response.data as ApiResponse<TutorPackageResponse>;
+    return resp.content
+      ? { ...resp, content: { ...resp.content, fixedSlots: (resp.content.fixedSlots ?? []).map(fixedSlotToLocal) } }
+      : resp;
   } catch (error: any) {
     console.error('❌ Error creating package:', {
       status: error.response?.status,

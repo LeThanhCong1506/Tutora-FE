@@ -1,5 +1,18 @@
 import axios from 'axios';
 import type { Combo } from '../types/combo.types';
+import { utcTimeOfDayToLocal } from '../utils/datetime';
+
+// Lịch rảnh + fixed slot lưu UTC ở BE → convert sang giờ local để hiển thị (giữ nguyên thứ).
+const availSlotToLocal = (s: AvailabilitySlot): AvailabilitySlot => ({
+    ...s,
+    starttime: utcTimeOfDayToLocal(s.starttime),
+    endtime: utcTimeOfDayToLocal(s.endtime),
+});
+const fixedSlotToLocal = (s: TutorPackageFixedSlot): TutorPackageFixedSlot => ({
+    ...s,
+    startTime: utcTimeOfDayToLocal(s.startTime),
+    endTime: utcTimeOfDayToLocal(s.endTime),
+});
 
 // ============================================
 // Tutor Detail API Service
@@ -265,7 +278,15 @@ export const getTutorSchedule = async (
             `/tutors/${tutorId}/schedule`
         );
 
-        return response.data;
+        const data = response.data;
+        if (data?.content) {
+            data.content.availabilities = (data.content.availabilities ?? []).map(availSlotToLocal);
+            data.content.packages = (data.content.packages ?? []).map((p) => ({
+                ...p,
+                fixedSlots: (p.fixedSlots ?? []).map(fixedSlotToLocal),
+            }));
+        }
+        return data;
     } catch (error: unknown) {
         console.error('❌ Error fetching tutor schedule:', error);
         throw error;
@@ -285,7 +306,8 @@ export const getTutorAvailabilities = async (
             `/tutor/availabilities/${tutorId}`
         );
 
-        return response.data;
+        const data = response.data;
+        return { ...data, content: (data.content ?? []).map(availSlotToLocal) };
     } catch (error: unknown) {
         console.error('❌ Error fetching tutor availabilities:', error);
         throw error;

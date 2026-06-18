@@ -2,6 +2,7 @@
 import axios from 'axios';
 import { getAuthHeaders, type ApiResponse } from './tutorProfile.service';
 import { setupAuthInterceptor } from './apiClient';
+import { utcTimeOfDayToLocal } from '../utils/datetime';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -21,10 +22,16 @@ export interface ScheduleItemPayload {
     endTime: string;    // HH:mm
 }
 
+export interface BookedSlotPayload {
+    scheduledStart: string;
+    scheduledEnd: string;
+}
+
 /** Gói flexible: parent tự chọn từng buổi cụ thể (ngày + giờ). */
 export interface FlexibleBookingSlotPayload {
-    scheduledStart: string; // ISO datetime, vd "2026-06-10T18:00:00"
-    scheduledEnd: string;   // ISO datetime
+    // Thời điểm TUYỆT ĐỐI → UTC ISO-8601 có Z, vd "2026-06-10T11:00:00.000Z" (= 18:00 VN).
+    scheduledStart: string;
+    scheduledEnd: string;
 }
 
 /**
@@ -42,7 +49,9 @@ export interface CreateBookingPayload {
     tutorSubjectGradePriceId: number;
     packageId: number;
     totalSessions?: number;
-    startDate: string; // ISO datetime
+    // Ngày-neo lịch (calendar date, "YYYY-MM-DD") — giữ giờ LOCAL vì là mốc của
+    // pattern lặp hằng tuần, KHÔNG đổi UTC (đổi sẽ làm lệch ngày).
+    startDate: string;
     schedule?: ScheduleItemPayload[];
     flexibleSlots?: FlexibleBookingSlotPayload[];
     locationCity?: string;
@@ -97,13 +106,25 @@ export interface PromotionValidateResult {
 
 // ===== API FUNCTIONS =====
 
+// schedule[] (tóm tắt lịch lặp tuần) BE trả theo giờ UTC → đổi sang local để hiển thị
+// (giữ nguyên dayOfWeek). Buổi học cụ thể (ISO) hiển thị qua new Date() ở chỗ khác.
+const bookingToLocal = (b: BookingResponseDTO): BookingResponseDTO => ({
+    ...b,
+    schedule: (b.schedule ?? []).map((s) => ({
+        ...s,
+        startTime: utcTimeOfDayToLocal(s.startTime),
+        endTime: utcTimeOfDayToLocal(s.endTime),
+    })),
+});
+
 /** POST /api/bookings — Create a new booking */
 export const createBooking = async (payload: CreateBookingPayload): Promise<ApiResponse<BookingResponseDTO>> => {
     try {
         const response = await api.post('/bookings', payload, {
             headers: getAuthHeaders(),
         });
-        return response.data;
+        const data = response.data as ApiResponse<BookingResponseDTO>;
+        return data.content ? { ...data, content: bookingToLocal(data.content) } : data;
     } catch (error: any) {
         console.error('❌ Error creating booking:', {
             status: error.response?.status,
@@ -115,20 +136,21 @@ export const createBooking = async (payload: CreateBookingPayload): Promise<ApiR
 };
 
 /**
- * GET /api/bookings/tutor/:tutorId/booked-slots?startDate=
- * Trả các slot đã book (gộp theo tuần, trong 4 tuần kể từ startDate) để FE disable.
+ * GET /api/bookings/tutor/:tutorId/booked-slots?startDate=&endDate=
+ * Trả các khoảng thời gian tuyệt đối đã book để FE disable đúng ngày/giờ.
  * Role: Parent,Student.
  */
 export const getTutorBookedSlots = async (
     tutorId: string,
-    startDate?: string,
-): Promise<ApiResponse<ScheduleItemPayload[]>> => {
+    startDate: string,
+    endDate: string,
+): Promise<ApiResponse<BookedSlotPayload[]>> => {
     try {
         const response = await api.get(`/bookings/tutor/${tutorId}/booked-slots`, {
             headers: getAuthHeaders(),
-            params: startDate ? { startDate } : undefined,
+            params: { startDate, endDate },
         });
-        return response.data;
+        return response.data as ApiResponse<BookedSlotPayload[]>;
     } catch (error: any) {
         console.error('❌ Error fetching booked slots:', {
             status: error.response?.status,
@@ -163,7 +185,8 @@ export const getBookingById = async (id: number): Promise<ApiResponse<BookingRes
         const response = await api.get(`/bookings/${id}`, {
             headers: getAuthHeaders(),
         });
-        return response.data;
+        const data = response.data as ApiResponse<BookingResponseDTO>;
+        return data.content ? { ...data, content: bookingToLocal(data.content) } : data;
     } catch (error: any) {
         if (error.response?.status !== 404) {
             console.error('❌ Error fetching booking:', {
@@ -182,7 +205,8 @@ export const applyPromotion = async (bookingId: number, promotionCode: string): 
         const response = await api.post(`/bookings/${bookingId}/apply-promotion`, { promotionCode }, {
             headers: getAuthHeaders(),
         });
-        return response.data;
+        const data = response.data as ApiResponse<BookingResponseDTO>;
+        return data.content ? { ...data, content: bookingToLocal(data.content) } : data;
     } catch (error: any) {
         console.error('❌ Error applying promotion:', {
             status: error.response?.status,
@@ -218,7 +242,9 @@ export const getParentBookings = async (params: { page?: number; pageSize?: numb
             headers: getAuthHeaders(),
             params,
         });
-        return response.data;
+        const data = response.data as ApiResponse<{ items: BookingResponseDTO[]; totalCount: number }>;
+        if (data.content?.items) data.content.items = data.content.items.map(bookingToLocal);
+        return data;
     } catch (error: any) {
         throw error;
     }
@@ -231,7 +257,9 @@ export const getTutorBookings = async (params: { page?: number; pageSize?: numbe
             headers: getAuthHeaders(),
             params,
         });
-        return response.data;
+        const data = response.data as ApiResponse<{ items: BookingResponseDTO[]; totalCount: number }>;
+        if (data.content?.items) data.content.items = data.content.items.map(bookingToLocal);
+        return data;
     } catch (error: any) {
         throw error;
     }

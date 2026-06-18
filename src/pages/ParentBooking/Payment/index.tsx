@@ -37,6 +37,7 @@ const PaymentPage = () => {
     const [isPaying, setIsPaying] = useState(false);
     const [paymentSuccess, setPaymentSuccess] = useState(false);
     const [waitingForPayOS, setWaitingForPayOS] = useState(false);
+    const [qrImageError, setQrImageError] = useState(false);
     const payosWindowRef = useRef<Window | null>(null);
 
     const bookingId = Number(id);
@@ -103,6 +104,32 @@ const PaymentPage = () => {
         window.addEventListener('storage', handleStorage);
         return () => window.removeEventListener('storage', handleStorage);
     }, [waitingForPayOS]);
+
+    // Phòng hờ: lắng nghe postMessage (BE callback dùng window.opener.postMessage).
+    // Nhờ vậy chạy đúng dù returnUrl trỏ về BE (postMessage) hay FE (localStorage/storage),
+    // và hoạt động cross-origin (BE 5166 ↔ FE 5173).
+    useEffect(() => {
+        if (paymentSuccess) return;
+
+        const handleMessage = (event: MessageEvent) => {
+            const data = event.data;
+            if (!data || data.type !== 'PAYOS_PAYMENT_RESULT') return;
+            if (data.isPaid) {
+                setWaitingForPayOS(false);
+                localStorage.removeItem('payos_payment_result');
+                try { payosWindowRef.current?.close(); } catch { /* popup có thể đã đóng */ }
+                setPaymentSuccess(true);
+                antMessage.success('Thanh toán thành công!');
+            } else if (data.cancel) {
+                setWaitingForPayOS(false);
+                localStorage.removeItem('payos_payment_result');
+                antMessage.info('Thanh toán đã bị hủy.');
+            }
+        };
+
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, [paymentSuccess]);
 
     // Check if new tab was closed by user
     useEffect(() => {
@@ -196,6 +223,18 @@ const PaymentPage = () => {
 
     const formatPrice = (amount: number) =>
         new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+
+    // Dựng ảnh QR VietQR ngay trong app từ thông tin BE trả về (không cần mở trang PayOS).
+    const getQrUrl = (info: PaymentInfoResponse): string => {
+        if (info.bin && info.accountNumber) {
+            const params = new URLSearchParams();
+            if (info.amount) params.set('amount', String(info.amount));
+            if (info.description) params.set('addInfo', info.description);
+            if (info.accountName) params.set('accountName', info.accountName);
+            return `https://img.vietqr.io/image/${info.bin}-${info.accountNumber}-compact2.png?${params.toString()}`;
+        }
+        return info.qrCode ?? ''; // fallback: QR do PayOS trả về
+    };
 
     if (loading) {
         return (
@@ -385,33 +424,59 @@ const PaymentPage = () => {
                                 </div>
                             ) : paymentMethod === 'payos' ? (
                                 <div className={styles.payosArea}>
-                                    <div className={styles.qrContainer} style={{ marginBottom: '20px' }}>
-                                        <p className={styles.qrHint} style={{ fontSize: '16px' }}>
-                                            Hệ thống sử dụng cổng thanh toán an toàn PayOS. Vui lòng nhấn nút bên dưới để mở trang thanh toán và lấy mã QR chuyển khoản chính xác.
-                                        </p>
+                                    <p className={styles.qrHint} style={{ fontSize: 14, marginBottom: 16, textAlign: 'center' }}>
+                                        Quét mã QR bằng app ngân hàng, hoặc chuyển khoản theo thông tin bên dưới.
+                                        Hệ thống tự động xác nhận ngay khi bạn thanh toán — bạn không cần rời khỏi trang này.
+                                    </p>
+
+                                    {paymentInfo && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                                            {/* QR ngay trong app */}
+                                            <div style={{ width: 220, height: 220, background: '#fff', borderRadius: 12, border: '1px solid #eee', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                                                {!qrImageError ? (
+                                                    <img
+                                                        src={getQrUrl(paymentInfo)}
+                                                        alt="Mã QR thanh toán"
+                                                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                                        onError={() => setQrImageError(true)}
+                                                    />
+                                                ) : (
+                                                    <span style={{ fontSize: 13, color: '#888', padding: 12, textAlign: 'center' }}>
+                                                        Không tải được mã QR. Vui lòng chuyển khoản theo thông tin bên dưới.
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* Thông tin chuyển khoản */}
+                                            <div style={{ width: '100%', maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                <div className={styles.priceRow}><span>Số tài khoản:</span><strong>{paymentInfo.accountNumber}</strong></div>
+                                                <div className={styles.priceRow}><span>Chủ tài khoản:</span><strong>{paymentInfo.accountName}</strong></div>
+                                                <div className={styles.priceRow}><span>Số tiền:</span><strong>{formatPrice(paymentInfo.amount)}</strong></div>
+                                                <div className={styles.priceRow}><span>Nội dung:</span><strong>{paymentInfo.description || paymentInfo.paymentCode}</strong></div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className={styles.waitingStatus} style={{ marginTop: 16 }}>
+                                        <Spin size="small" />
+                                        <span>Đang chờ xác nhận thanh toán... Hệ thống sẽ tự động cập nhật.</span>
                                     </div>
-                                    <Button
-                                        type="primary"
-                                        size="large"
-                                        block
-                                        disabled={!paymentInfo?.checkoutUrl}
-                                        onClick={() => {
-                                            if (paymentInfo?.checkoutUrl) {
+
+                                    {/* Fallback: mở trang PayOS ở tab mới (cho ai cần) — listener storage/postMessage vẫn bắt kết quả */}
+                                    {paymentInfo?.checkoutUrl && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
                                                 storageAdapter.remove('payos_payment_result');
                                                 const w = window.open(paymentInfo.checkoutUrl, '_blank');
                                                 payosWindowRef.current = w;
                                                 setWaitingForPayOS(true);
-                                            }
-                                        }}
-                                        className={styles.payBtn}
-                                        style={{ marginTop: '16px', marginBottom: '16px' }}
-                                    >
-                                        Chuyển đến trang thanh toán PayOS
-                                    </Button>
-                                    <div className={styles.waitingStatus}>
-                                        <Spin size="small" />
-                                        <span>Đang chờ bạn thực hiện thanh toán... Hệ thống sẽ tự động cập nhật.</span>
-                                    </div>
+                                            }}
+                                            style={{ display: 'block', margin: '12px auto 0', background: 'none', border: 'none', color: '#2563eb', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
+                                        >
+                                            Hoặc mở trang thanh toán PayOS
+                                        </button>
+                                    )}
                                 </div>
                             ) : (
                                 <div className={styles.walletArea}>

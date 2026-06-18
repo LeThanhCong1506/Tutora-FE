@@ -179,20 +179,29 @@ export const getTotalUnreadMessageCount = async (): Promise<number> => {
  * POST /api/chat/channels — Create or get existing channel with a tutor.
  * Used by "CHAT TƯ VẤN" on TutorDetailPage (no booking required).
  */
-export const createChannel = async (
-  tutorId: string,
-): Promise<ApiResponse<{ channelId: number }>> => {
+export const createChannel = async (tutorId: string): Promise<ApiResponse<{ channelId: number }>> => {
   try {
-    const response = await api.post(
-      `/chat/channels`,
-      { tutorId },
-      { headers: getAuthHeaders() },
-    );
+    const response = await api.post(`/chat/channels`, { tutorId }, { headers: getAuthHeaders() });
 
     console.log('✅ Channel created/retrieved:', response.data);
     return response.data;
   } catch (error: any) {
     console.error('❌ Error creating channel:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
+    throw error;
+  }
+};
+
+/** POST /api/chat/channels/booking/:bookingId — Create or get the parent/tutor channel for a booking. */
+export const getOrCreateBookingChannel = async (bookingId: number): Promise<ApiResponse<{ channelId: number }>> => {
+  try {
+    const response = await api.post(`/chat/channels/booking/${bookingId}`, {}, { headers: getAuthHeaders() });
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ Error opening booking channel:', {
       status: error.response?.status,
       data: error.response?.data,
       message: error.message,
