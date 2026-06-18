@@ -8,7 +8,7 @@ import { useUnreadMessageBadge } from '../../hooks/useUnreadMessageBadge';
 import { useUnreadBadgesByTab } from '../../hooks/useUnreadBadgesByTab';
 import {
     DashboardIcon, ChildrenIcon, MessagesIcon, BookingIcon,
-    AccountIcon, LessonsIcon, CalendarIcon, ClockIcon,
+    AccountIcon, ClockIcon,
 } from '../shared/icons';
 
 const MESSAGES_PATH = '/parent-portal/messages';
@@ -17,20 +17,11 @@ const MESSAGES_PATH = '/parent-portal/messages';
 // `MV.DomainLayer/Constants/NotificationType.cs`.
 const NOTIFICATION_TYPES_BY_PATH: Record<string, string[]> = {
     '/parent-portal/booking': ['booking_new', 'booking_accepted', 'booking_declined'],
-    '/parent-portal/lessons': [
-        'lesson_reminder',
-        'lesson_checkin',
-        'lesson_confirmed',
-        'lesson_no_show',
-        'lesson_report',
-    ],
 };
 
 const baseParentNavItems: NavItem[] = [
     { path: '/parent-portal/dashboard', label: 'Tổng quan', icon: DashboardIcon },
-    { path: '/parent-portal/student', label: 'Quản lý con', icon: ChildrenIcon },
-    { path: '/parent-portal/lessons', label: 'Buổi học', icon: LessonsIcon },
-    { path: '/parent-portal/calendar', label: 'Thời khóa biểu', icon: CalendarIcon },
+    { path: '/parent-portal/student', label: 'Quản lý học sinh', icon: ChildrenIcon },
     { path: MESSAGES_PATH, label: 'Tin nhắn', icon: MessagesIcon },
     { path: '/parent-portal/booking', label: 'Đặt lịch', icon: BookingIcon },
     { path: '/parent-portal/account', label: 'Tài khoản', icon: AccountIcon },

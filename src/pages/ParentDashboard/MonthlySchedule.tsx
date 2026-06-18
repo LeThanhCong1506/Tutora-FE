@@ -306,7 +306,6 @@ const MonthlySchedule = () => {
             </span>
             <div>
               <h2>Lịch học theo tháng</h2>
-              <p>Theo dõi lịch học của các con trong cùng một nơi</p>
             </div>
           </div>
 

@@ -25,13 +25,117 @@
   box-shadow: 0 24px 52px -30px rgba(26, 34, 56, 0.55);
 }
 
+/* ===== 1) Video giới thiệu (đầu thẻ) ===== */
+.tutor-search-page .tutor-card-media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #1a2238;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.tutor-search-page .tutor-card-media-content {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Chân dung minh hoạ: hiển thị trọn hình, nền đồng màu với ảnh để banner gọn gàng. */
+.tutor-search-page .tutor-card-media-illustration {
+  object-fit: contain;
+  background: #b6e3f4;
+}
+
+.tutor-search-page .tutor-card-media.is-playable {
+  cursor: pointer;
+}
+
+.tutor-search-page .tutor-card-media.is-playable:hover .tutor-card-play {
+  transform: translate(-50%, -50%) scale(1.08);
+  background: #fff;
+}
+
+.tutor-search-page .tutor-card-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 46px;
+  height: 46px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #1a2238;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 18px -8px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+.tutor-search-page .tutor-card-play svg {
+  margin-left: 2px;
+}
+
+/* Nút thêm vào yêu thích — góc trên phải của video/cover */
+.tutor-search-page .tutor-card-wishlist {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #1a2238;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 16px -8px rgba(0, 0, 0, 0.5);
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.tutor-search-page .tutor-card-wishlist:hover {
+  transform: scale(1.08);
+  background: #fff;
+}
+
+.tutor-search-page .tutor-card-wishlist.is-saved {
+  color: #e0245e;
+}
+
 .tutor-search-page .tutor-card-body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 28px 28px 20px;
+  gap: 14px;
+  padding: 20px 24px 16px;
   min-width: 0;
+}
+
+/* ===== 2) Avatar + tên + học vấn ===== */
+.tutor-search-page .tutor-card-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.tutor-search-page .tutor-identity-text {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  flex: 1;
 }
 
 .tutor-search-page .tutor-card-header {
@@ -196,20 +300,62 @@
   line-height: 1;
 }
 
-.tutor-search-page .tutor-bio {
+/* ===== 4) Rating + số lượt đánh giá ===== */
+.tutor-search-page .tutor-rating-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tutor-search-page .tutor-rating-star {
+  display: flex;
+  align-items: center;
+  color: #fb923c;
+}
+
+.tutor-search-page .tutor-rating-value {
+  color: var(--color-navy);
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.tutor-search-page .tutor-rating-count {
+  color: #8c94a3;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.tutor-search-page .tutor-rating-dot {
+  color: #c2c8d2;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.tutor-search-page .tutor-lessons-count {
+  color: #697386;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ===== 5) Giá môn học thấp nhất ===== */
+.tutor-search-page .tutor-price {
+  display: flex;
+  align-items: baseline;
   margin: 0;
-  padding: 15px 17px;
-  border: 1px solid rgba(212, 180, 131, 0.26);
-  border-radius: 14px;
-  background: rgba(242, 240, 228, 0.42);
-  color: rgba(26, 34, 56, 0.76);
-  font-size: 14px;
-  font-weight: 650;
-  line-height: 1.55;
+}
+
+.tutor-search-page .tutor-price-value {
+  color: #1a2238;
+  font-family: var(--font-primary);
+  font-size: 22px;
+  font-weight: 800;
   letter-spacing: 0;
-  /* Giới hạn độ dài do JS (truncateBio) lo — không dùng -webkit-line-clamp nữa
-       để tránh xén ngang dòng cuối khi text xuống dòng. Hộp tự co theo nội dung. */
-  overflow-wrap: break-word;
+  line-height: 1.1;
 }
 
 .tutor-search-page .tutor-card-meta {
@@ -220,7 +366,7 @@
 
 .tutor-search-page .tutor-university-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 7px;
   min-width: 0;
 }
@@ -229,6 +375,7 @@
   flex-shrink: 0;
   width: 14px;
   height: 14px;
+  margin-top: 2px;
   color: #6b7280;
   display: flex;
   align-items: center;
@@ -242,9 +389,12 @@
 
 .tutor-search-page .university-name {
   min-width: 0;
+  /* Cho phép xuống tối đa 2 dòng nếu text quá dài, dòng thứ 2 sẽ "…" */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   color: #697386;
   font-size: 13px;
   font-weight: 700;
@@ -486,15 +636,29 @@
     font-size: 9px;
   }
 
-  .tutor-search-page .tutor-card-meta {
-    align-items: flex-start;
+  .tutor-search-page .tutor-card-wishlist {
+    top: 10px;
+    right: 10px;
+    width: 34px;
+    height: 34px;
   }
 
-  .tutor-search-page .tutor-bio {
-    padding: 12px 13px;
-    border-radius: 12px;
-    font-size: 12px;
-    line-height: 1.45;
+  .tutor-search-page .tutor-card-identity {
+    gap: 10px;
+  }
+
+  .tutor-search-page .tutor-rating-value {
+    font-size: 13px;
+  }
+
+  .tutor-search-page .tutor-rating-count,
+  .tutor-search-page .tutor-lessons-count,
+  .tutor-search-page .tutor-rating-dot {
+    font-size: 11px;
+  }
+
+  .tutor-search-page .tutor-price-value {
+    font-size: 18px;
   }
 
   .tutor-search-page .tutor-subjects {
@@ -576,4 +740,57 @@
   .tutor-search-page .btn-start-plan {
     width: 100%;
   }
+}
+
+/* ===== Modal xem video giới thiệu (render qua portal ở body) ===== */
+.tutor-video-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.tutor-video-modal-content {
+  position: relative;
+  width: min(900px, 92vw);
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 25px 60px -20px rgba(0, 0, 0, 0.6);
+}
+
+.tutor-video-modal-content iframe,
+.tutor-video-modal-content video {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+.tutor-video-modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.tutor-video-modal-close:hover {
+  background: rgba(255, 255, 255, 0.22);
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { isZaloMiniApp } from '../../services/zalo-env';
 import { getUserInfoFromToken } from '../../services/auth.service';
@@ -79,6 +79,7 @@ const inMiniApp = isZaloMiniApp();
 
 const ParentDashboard = () => {
   const navigate = useNavigate();
+  const scheduleRef = useRef<HTMLDivElement>(null);
   const [userName, setUserName] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -214,7 +215,7 @@ const ParentDashboard = () => {
                   <button
                     type="button"
                     className={styles.welcomeTutorAction}
-                    onClick={() => navigate('/parent-portal/lessons')}
+                    onClick={() => scheduleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
                   >
                     Xem lịch học
                   </button>
@@ -261,7 +262,7 @@ const ParentDashboard = () => {
             badge="Tuần này"
             badgeVariant="green"
             variant="quiet"
-            onClick={() => navigate('/parent-portal/lessons')}
+            onClick={() => scheduleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           />
           <StatCard
             icon={<PendingIcon />}
@@ -274,7 +275,9 @@ const ParentDashboard = () => {
           />
         </div>
 
-        <MonthlySchedule />
+        <div ref={scheduleRef}>
+          <MonthlySchedule />
+        </div>
       </div>
     </div>
   );
