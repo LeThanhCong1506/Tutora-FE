@@ -5,24 +5,9 @@ import { getUserInfoFromToken } from '../../services/auth.service';
 import { getStudents } from '../../services/student.service';
 import { getParentBookings } from '../../services/booking.service';
 import { getParentCalendar, type CalendarLessonDto } from '../../services/parent-lesson.service';
-import type { LessonResponse } from '../../services/lesson.service';
 import type { BookingResponseDTO } from '../../services/booking.service';
-
-/**
- * Adapt flat CalendarLessonDto → nested LessonResponse shape mà UI dashboard đang dùng.
- * `getParentLessons` endpoint không tồn tại ở BE — phải dùng `getParentCalendar` (đã có).
- */
-const adaptCalendarLesson = (cl: CalendarLessonDto): LessonResponse => ({
-  lessonId: cl.lessonId,
-  scheduledStart: cl.scheduledStart,
-  scheduledEnd: cl.scheduledEnd,
-  status: cl.status,
-  meetingLink: cl.meetingLink,
-  subject: cl.subjectName ? { subjectId: 0, subjectName: cl.subjectName } : undefined,
-  tutor: cl.tutorName ? { tutorId: '', fullName: cl.tutorName } : undefined,
-  student: cl.studentName ? { studentId: '', fullName: cl.studentName } : undefined,
-});
 import { StatCard } from '../../components/shared';
+import MonthlySchedule from './MonthlySchedule';
 import styles from './styles.module.css';
 
 // ===== SVG Icons =====
@@ -54,101 +39,40 @@ const PendingIcon = () => (
   </svg>
 );
 
-// Quick action icons
-const MessageIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#1a2238" strokeWidth="1.5">
-    <path d="M2 5l8 5 8-5M2 15V5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2z" strokeLinecap="round" />
-  </svg>
-);
-
-const ChildrenActionIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#1a2238" strokeWidth="1.5">
-    <path d="M10 9a3 3 0 100-6 3 3 0 000 6zM3 18c0-3.87 3.13-7 7-7s7 3.13 7 7" strokeLinecap="round" />
-  </svg>
-);
-
 const FindTutorIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#1a2238" strokeWidth="1.5">
-    <circle cx="9" cy="9" r="6" />
-    <path d="M16 16l-3.5-3.5" strokeLinecap="round" />
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 20 20"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    aria-hidden="true"
+  >
+    <circle cx="8.75" cy="8.75" r="5.75" />
+    <path d="M13 13l4 4" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
-// Lesson icon used in list
-const LessonListIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#1a2238" strokeWidth="1.5">
-    <rect x="2" y="3" width="14" height="13" rx="2" />
-    <path d="M2 7h14" />
-    <path d="M6 1v4M12 1v4" strokeLinecap="round" />
+const FamilyLearningIllustration = () => (
+  <svg className={styles.familyLearningIllustration} viewBox="0 0 240 220" fill="none" aria-hidden="true">
+    <circle cx="120" cy="54" r="20" />
+    <path d="M84 139c2-39 17-62 36-62s34 23 36 62" />
+
+    <circle cx="56" cy="99" r="15" />
+    <path d="M31 157c1-27 11-43 25-43 12 0 22 13 24 35" />
+
+    <circle cx="184" cy="99" r="15" />
+    <path d="M160 149c2-22 12-35 24-35 14 0 24 16 25 43" />
+
+    <path
+      className={styles.familyLearningBook}
+      d="M28 151c34-8 65-3 92 14 27-17 58-22 92-14l-5 48c-31-5-60 1-87 17-27-16-56-22-87-17l-5-48z"
+    />
+    <path d="M120 165v51" />
+    <path d="M44 169c25-3 46 1 63 12M196 169c-25-3-46 1-63 12" />
   </svg>
 );
-
-// Warning icon
-const WarningIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-    <path d="M9 1L1 16h16L9 1z" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1" />
-    <path d="M9 7v4M9 13v1" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-);
-
-// ===== Helpers =====
-const formatDate = (dateStr: string) => {
-  const d = new Date(dateStr);
-  const now = new Date();
-  const isToday = d.toDateString() === now.toDateString();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(now.getDate() + 1);
-  const isTomorrow = d.toDateString() === tomorrow.toDateString();
-
-  const time = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-
-  if (isToday) return `Hôm nay, ${time}`;
-  if (isTomorrow) return `Ngày mai, ${time}`;
-  return `${d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}, ${time}`;
-};
-
-const getWeekRange = () => {
-  const now = new Date();
-  const dayOfWeek = now.getDay();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-
-  const fmt = (d: Date) => d.toLocaleDateString('vi-VN', { day: '2-digit', month: 'short', year: 'numeric' });
-  return `${fmt(monday)} - ${fmt(sunday)}`;
-};
-
-const getLessonStatusLabel = (status: string) => {
-  const map: Record<string, string> = {
-    'Scheduled': 'Đã lên lịch',
-    'Confirmed': 'Đã xác nhận',
-    'InProgress': 'Đang diễn ra',
-    'Completed': 'Hoàn thành',
-    'Cancelled': 'Đã hủy',
-    'Pending': 'Chờ xử lý',
-  };
-  return map[status] || status;
-};
-
-const getLessonStatusType = (status: string): 'confirmed' | 'scheduled' => {
-  if (['Confirmed', 'InProgress', 'Completed'].includes(status)) return 'confirmed';
-  return 'scheduled';
-};
-
-const getBookingStatusLabel = (status: string) => {
-  const map: Record<string, string> = {
-    'Pending': 'Chờ gia sư xác nhận',
-    'TutorAccepted': 'Chờ thanh toán cọc',
-    'DepositPaid': 'Đã cọc — Chờ bắt đầu',
-    'DepositEscrowed': 'Đã cọc (50%)',
-    'Escrowed': 'Đã thanh toán nốt',
-    'InProgress': 'Đang học',
-    'Completed': 'Hoàn thành',
-    'Cancelled': 'Đã hủy',
-  };
-  return map[status] || status;
-};
 
 // ===== Component =====
 const inMiniApp = isZaloMiniApp();
@@ -164,10 +88,7 @@ const ParentDashboard = () => {
   const [childrenCount, setChildrenCount] = useState(0);
   const [weekLessonCount, setWeekLessonCount] = useState(0);
 
-  // Data
-  const [upcomingLessons, setUpcomingLessons] = useState<LessonResponse[]>([]);
   const [pendingBookings, setPendingBookings] = useState<BookingResponseDTO[]>([]);
-  const [nextLesson, setNextLesson] = useState<LessonResponse | null>(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -179,21 +100,19 @@ const ParentDashboard = () => {
         if (userInfo) {
           setUserName(userInfo.fullname || userInfo.firstName || userInfo.email?.split('@')[0] || 'Phụ huynh');
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
 
       // 2) Bookings
       try {
         const bookingsRes = await getParentBookings({ page: 1, pageSize: 100 });
         const items: BookingResponseDTO[] = bookingsRes?.content?.items || [];
         setTotalBookings(bookingsRes?.content?.totalCount || items.length);
-        const active = items.filter((b: BookingResponseDTO) =>
-          !['Cancelled', 'Completed'].includes(b.status || '')
-        );
+        const active = items.filter((b: BookingResponseDTO) => !['Cancelled', 'Completed'].includes(b.status || ''));
         setActiveBookings(active.length);
         // Bookings needing action (Pending, TutorAccepted)
-        const pending = items.filter((b: BookingResponseDTO) =>
-          ['Pending', 'TutorAccepted'].includes(b.status || '')
-        );
+        const pending = items.filter((b: BookingResponseDTO) => ['Pending', 'TutorAccepted'].includes(b.status || ''));
         setPendingBookings(pending.slice(0, 3));
       } catch (err) {
         console.error('Dashboard: failed to fetch bookings:', err);
@@ -219,7 +138,7 @@ const ParentDashboard = () => {
 
         // Flatten + sort tăng dần theo scheduledStart
         const flatLessons: CalendarLessonDto[] = calendarDays
-          .flatMap(d => d.lessons || [])
+          .flatMap((d) => d.lessons || [])
           .sort((a, b) => new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime());
 
         // Count lessons this week (Mon → Sun)
@@ -230,27 +149,11 @@ const ParentDashboard = () => {
         const sundayDate = new Date(mondayDate);
         sundayDate.setDate(mondayDate.getDate() + 7);
 
-        const thisWeekLessons = flatLessons.filter(l => {
+        const thisWeekLessons = flatLessons.filter((l) => {
           const d = new Date(l.scheduledStart);
           return d >= mondayDate && d < sundayDate;
         });
         setWeekLessonCount(thisWeekLessons.length);
-
-        // Upcoming lessons (loại completed/cancelled) — match cả lowercase từ BE
-        const upcomingRaw = flatLessons.filter(l => {
-          const s = (l.status || '').toLowerCase();
-          return s !== 'completed' && s !== 'cancelled' && s !== 'cancelled_noshow' && s !== 'no_show';
-        });
-
-        const upcoming = upcomingRaw.map(adaptCalendarLesson);
-        setUpcomingLessons(upcoming.slice(0, 5));
-
-        // Next lesson = upcoming đầu tiên có scheduledStart >= now (sort đã đảm bảo thứ tự)
-        const nextLessonRaw = upcomingRaw.find(l => new Date(l.scheduledStart).getTime() >= now.getTime())
-          ?? upcomingRaw[0]; // fallback: lesson đang chạy (status=in_progress)
-        if (nextLessonRaw) {
-          setNextLesson(adaptCalendarLesson(nextLessonRaw));
-        }
       } catch (err) {
         console.error('Dashboard: failed to fetch lessons:', err);
       }
@@ -272,8 +175,8 @@ const ParentDashboard = () => {
             </div>
           </div>
           <div className={styles.statsGrid}>
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className={styles.statCard} style={{ opacity: 0.4, minHeight: 120 }} />
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className={styles.statCardSkeleton} />
             ))}
           </div>
         </div>
@@ -286,26 +189,43 @@ const ParentDashboard = () => {
       <div className={styles.container}>
         {/* Welcome Banner */}
         <div className={styles.welcomeBanner}>
-          {!inMiniApp && <div className={styles.bannerDecorStrip} />}
-          {!inMiniApp && <div className={styles.bannerOrbSmall} />}
-          <div className={styles.welcomeContent}>
-            <span className={styles.welcomeGreeting}>Dashboard — Phụ huynh</span>
-            <h1 className={styles.welcomeTitle}>Xin chào, {userName}!</h1>
+          <div className={styles.welcomeLayout}>
+            <div className={styles.welcomeContent}>
+              <span className={styles.welcomeGreeting}>Cổng phụ huynh</span>
+              <h1 className={styles.welcomeTitle}>Xin chào, {userName}!</h1>
+
+              {!inMiniApp && (
+                <div className={styles.welcomeActions}>
+                  <button
+                    type="button"
+                    className={styles.welcomePrimaryAction}
+                    onClick={() => navigate('/tutor-search')}
+                  >
+                    <FindTutorIcon />
+                    <span>Tìm gia sư</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.welcomeSecondaryAction}
+                    onClick={() => navigate('/parent-portal/booking')}
+                  >
+                    Quản lý lịch hẹn
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.welcomeTutorAction}
+                    onClick={() => navigate('/parent-portal/lessons')}
+                  >
+                    Xem lịch học
+                  </button>
+                </div>
+              )}
+            </div>
+
             {!inMiniApp && (
-              <p className={styles.welcomeSubtitle}>
-                Tổng quan hoạt động học tập tuần này
-              </p>
-            )}
-            {!inMiniApp && (
-              <div className={styles.welcomeDatePill}>
-                <span className={styles.welcomeDateIcon}>
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3">
-                    <rect x="1.5" y="2.5" width="11" height="10" rx="1.5" />
-                    <path d="M1.5 5.5h11" />
-                    <path d="M4.5 1v2.5M9.5 1v2.5" strokeLinecap="round" />
-                  </svg>
-                </span>
-                <span className={styles.welcomeDate}>{getWeekRange()}</span>
+              <div className={styles.welcomeIllustration}>
+                <div className={styles.welcomeIllustrationHalo} />
+                <FamilyLearningIllustration />
               </div>
             )}
           </div>
@@ -316,12 +236,12 @@ const ParentDashboard = () => {
           <StatCard
             icon={<BookingIcon />}
             value={totalBookings}
-            label="Tổng Booking"
-            subLabel="Click để xem chi tiết"
+            label="Tổng lịch hẹn"
+            subLabel="Xem chi tiết lịch hẹn"
             badge={`${activeBookings} đang hoạt động`}
             badgeVariant="green"
+            variant="quiet"
             onClick={() => navigate('/parent-portal/booking')}
-            className={styles.statCard}
           />
           <StatCard
             icon={<ChildrenIcon />}
@@ -330,8 +250,8 @@ const ParentDashboard = () => {
             subLabel="Đã liên kết"
             badge="Đã liên kết"
             badgeVariant="blue"
+            variant="quiet"
             onClick={() => navigate('/parent-portal/student')}
-            className={styles.statCard}
           />
           <StatCard
             icon={<SessionsIcon />}
@@ -340,152 +260,21 @@ const ParentDashboard = () => {
             subLabel="Đã lên lịch tuần này"
             badge="Tuần này"
             badgeVariant="green"
+            variant="quiet"
             onClick={() => navigate('/parent-portal/lessons')}
-            className={styles.statCard}
           />
           <StatCard
             icon={<PendingIcon />}
             value={pendingBookings.length}
             label="Chờ xử lý"
-            subLabel="Booking cần phản hồi"
-            badge={pendingBookings.length > 0 ? 'Cần xử lý' : 'OK'}
+            subLabel="Yêu cầu đang chờ phản hồi"
+            badge={pendingBookings.length > 0 ? 'Cần xử lý' : 'Đã cập nhật'}
             badgeVariant={pendingBookings.length > 0 ? 'green' : 'blue'}
-            className={styles.statCard}
+            variant="quiet"
           />
         </div>
 
-        {/* Quick Actions */}
-        <div className={styles.quickActions}>
-          <button className={styles.quickActionBtn} onClick={() => navigate('/parent-portal/messages')}>
-            <MessageIcon />
-            <span>Tin nhắn</span>
-          </button>
-          <button className={styles.quickActionBtn} onClick={() => navigate('/parent-portal/student')}>
-            <ChildrenActionIcon />
-            <span>Quản lý học sinh</span>
-          </button>
-          <button className={styles.quickActionBtn} onClick={() => navigate('/tutor-search')}>
-            <FindTutorIcon />
-            <span>Tìm gia sư</span>
-          </button>
-        </div>
-
-        {/* Main Content Grid */}
-        <div className={styles.contentGrid} style={inMiniApp ? { gridTemplateColumns: '1fr' } : undefined}>
-          {/* Left: Upcoming Lessons */}
-          <div className={styles.lessonsCard}>
-            <div className={styles.lessonsHeader}>
-              <h3>Buổi học sắp tới</h3>
-              <a href="/parent-portal/lessons" className={styles.viewAllLink}>Xem lịch đầy đủ &rarr;</a>
-            </div>
-            <div className={styles.lessonsList}>
-              {upcomingLessons.length > 0 ? upcomingLessons.map((lesson) => (
-                <div
-                  key={lesson.lessonId}
-                  className={`${styles.lessonItem} ${lesson.lessonId === nextLesson?.lessonId ? styles.lessonHighlighted : ''}`}
-                >
-                  <div className={styles.lessonLeft}>
-                    <div className={styles.lessonIcon}>
-                      <LessonListIcon />
-                    </div>
-                    <div className={styles.lessonInfo}>
-                      <span className={styles.lessonSubject}>
-                        {lesson.subject?.subjectName || 'Buổi học'}
-                      </span>
-                      <span className={styles.lessonTime}>
-                        {formatDate(lesson.scheduledStart)} • {lesson.tutor?.fullName || 'Gia sư'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className={styles.lessonRight}>
-                    <span className={`${styles.lessonBadge} ${getLessonStatusType(lesson.status || '') === 'confirmed' ? styles.badgeConfirmed : styles.badgeScheduled}`}>
-                      {getLessonStatusLabel(lesson.status || '')}
-                    </span>
-                    <button
-                      className={styles.lessonViewBtn}
-                      onClick={() => navigate(`/parent-portal/lessons/${lesson.lessonId}`)}
-                    >
-                      Xem
-                    </button>
-                  </div>
-                </div>
-              )) : (
-                <div style={{ textAlign: 'center', padding: '24px 0', color: '#a3a3a3', fontSize: '14px' }}>
-                  Chưa có buổi học nào sắp tới
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right: Next Lesson + Pending Bookings */}
-          <div className={styles.rightColumn}>
-            {/* Next Lesson Card */}
-            <div className={styles.sessionCard}>
-              <div className={styles.sessionHeader}>
-                <h3>Buổi học kế tiếp</h3>
-                {nextLesson && (
-                  <span className={styles.sessionDate}>
-                    {new Date(nextLesson.scheduledStart).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}
-                  </span>
-                )}
-              </div>
-              <div className={styles.sessionContent}>
-                {nextLesson ? (
-                  <>
-                    <p className={styles.sessionDescription}>
-                      <strong>{nextLesson.subject?.subjectName || 'Buổi học'}</strong>
-                      {' '}với {nextLesson.tutor?.fullName || 'gia sư'} — {formatDate(nextLesson.scheduledStart)}
-                    </p>
-                    <div className={styles.sessionInfo}>
-                      <span className={styles.sessionInfoLabel}>Học sinh</span>
-                      <span className={styles.sessionInfoValue}>{nextLesson.student?.fullName || '—'}</span>
-                    </div>
-                    <button className={styles.sessionBtn} onClick={() => navigate(`/parent-portal/lessons/${nextLesson.lessonId}`)}>
-                      Xem chi tiết
-                    </button>
-                  </>
-                ) : (
-                  <p className={styles.sessionDescription} style={{ color: '#a3a3a3' }}>
-                    Chưa có buổi học nào được lên lịch
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Pending Bookings */}
-            <div className={styles.attentionCard}>
-              <h3>Booking cần xử lý</h3>
-              {pendingBookings.length > 0 ? (
-                pendingBookings.map(booking => (
-                  <div key={booking.bookingId} className={styles.attentionContent}>
-                    <div className={styles.attentionIcon}>
-                      <WarningIcon />
-                    </div>
-                    <div className={styles.attentionDetails}>
-                      <span className={styles.attentionTitle}>
-                        BK-{booking.bookingId}: {booking.subject?.subjectName || 'Booking'}
-                      </span>
-                      <span className={styles.attentionDesc}>
-                        {getBookingStatusLabel(booking.status || '')}
-                      </span>
-                      <a
-                        href="#"
-                        className={styles.attentionLink}
-                        onClick={(e) => { e.preventDefault(); navigate(`/parent-portal/booking/${booking.bookingId}`); }}
-                      >
-                        Xem chi tiết →
-                      </a>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div style={{ textAlign: 'center', padding: '16px 0', color: '#a3a3a3', fontSize: '14px' }}>
-                  ✅ Không có booking nào cần xử lý
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <MonthlySchedule />
       </div>
     </div>
   );
