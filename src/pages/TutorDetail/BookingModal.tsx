@@ -11,6 +11,7 @@ import {
     STEPS,
     parseStringArray,
     formatFullDate,
+    getGradeMatchInfo,
     normalizeGradeToken,
     useBookingForm,
     useBookingSchedule,
@@ -75,6 +76,14 @@ const BookingModal: React.FC<BookingModalProps> = ({
     const selectedPackageId =
         formData.bookingMode === "schedule" ? flexiblePackage?.packageId : packageIdFromComboId(formData.comboId);
     const selectedStudent = students.find((s) => s.studentId === formData.studentId);
+    const selectedSubjectInfo = availableSubjects.find((subject) => subject.id === formData.subjectId);
+    const gradeMatchInfo = getGradeMatchInfo(
+        selectedStudent,
+        formData.subjectId,
+        subjectGradePrices,
+        selectedSubjectInfo?.gradeLevels,
+    );
+    const gradeMatches = gradeMatchInfo?.matches ?? true;
     const selectedGradeToken = normalizeGradeToken(selectedStudent?.gradeLevel);
     const selectedSubjectGradePrice = useMemo(() => {
         const activePrices = subjectGradePrices.filter(
@@ -82,15 +91,18 @@ const BookingModal: React.FC<BookingModalProps> = ({
         );
         if (activePrices.length === 0) return undefined;
 
-        if (selectedGradeToken) {
+        if (selectedStudent?.gradeLevelId != null || selectedGradeToken) {
             const matchedByGrade = activePrices.find(
-                (price) => normalizeGradeToken(price.gradeLevelName) === selectedGradeToken,
+                (price) =>
+                    (selectedStudent?.gradeLevelId != null &&
+                        price.gradeLevelId === selectedStudent.gradeLevelId) ||
+                    normalizeGradeToken(price.gradeLevelName) === selectedGradeToken,
             );
             if (matchedByGrade) return matchedByGrade;
         }
 
         return activePrices[0];
-    }, [formData.subjectId, selectedGradeToken, subjectGradePrices]);
+    }, [formData.subjectId, selectedGradeToken, selectedStudent, subjectGradePrices]);
     const sessionHours =
         selectedSubjectGradePrice?.durationMinutesPerSession && selectedSubjectGradePrice.durationMinutesPerSession > 0
             ? selectedSubjectGradePrice.durationMinutesPerSession / 60
@@ -124,6 +136,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
     }, [selectedPackageId, setFormData]);
 
     const scheduling = useBookingSchedule({
+        isOpen,
+        tutorId,
         availabilities: availabilities || [],
         sessionHours,
         selectedCombo,
@@ -150,14 +164,19 @@ const BookingModal: React.FC<BookingModalProps> = ({
     const canNext = () => {
         switch (step) {
             case 0:
-                if (userRole === "Student") return formData.subjectId !== 0;
-                // TẠM THỜI: bỏ check khớp lớp (gradeMatches) — khôi phục khi cần.
-                return formData.studentId !== "" && formData.subjectId !== 0;
+                if (userRole === "Student") {
+                    return formData.subjectId !== 0 && selectedStudent != null && gradeMatches;
+                }
+                return formData.studentId !== "" && formData.subjectId !== 0 && gradeMatches;
             case 1:
                 return formData.bookingMode === "schedule" || formData.bookingMode === "package";
             case 2:
                 if (formData.bookingMode === "package" && formData.comboId === null) return false;
-                return formData.schedule.length > 0;
+                return (
+                    !scheduling.bookedSlotsLoading &&
+                    !scheduling.hasSelectedSlotConflict &&
+                    formData.schedule.length > 0
+                );
             case 3:
                 return true;
             default:
@@ -169,12 +188,20 @@ const BookingModal: React.FC<BookingModalProps> = ({
         if (!canNext()) {
             switch (step) {
                 case 0:
-                    if (userRole === "Student") {
+                    if (!formData.subjectId) {
                         toast.warning("Vui lòng chọn môn học trước khi tiếp tục.");
                     } else if (!formData.studentId) {
                         toast.warning("Vui lòng chọn học sinh trước khi tiếp tục.");
-                    } else if (!formData.subjectId) {
-                        toast.warning("Vui lòng chọn môn học trước khi tiếp tục.");
+                    } else if (loadingStudents) {
+                        toast.info("Đang tải thông tin khối lớp của học sinh.");
+                    } else if (!selectedStudent) {
+                        toast.warning("Không thể xác định hồ sơ học sinh. Vui lòng tải lại trang và thử lại.");
+                    } else if (!gradeMatches) {
+                        toast.warning(
+                            gradeMatchInfo?.missingStudentGrade
+                                ? "Học sinh chưa cập nhật khối lớp. Vui lòng cập nhật hồ sơ trước khi đặt lịch."
+                                : "Khối lớp của học sinh không phù hợp với môn gia sư đang dạy.",
+                        );
                     }
                     break;
                 case 1:
@@ -183,6 +210,10 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 case 2:
                     if (formData.bookingMode === "package" && formData.comboId === null) {
                         toast.warning("Vui lòng chọn 1 gói cố định trước khi tiếp tục.");
+                    } else if (scheduling.bookedSlotsLoading) {
+                        toast.info("Đang kiểm tra lịch đã đặt của gia sư.");
+                    } else if (scheduling.hasSelectedSlotConflict) {
+                        toast.warning("Lịch đã chọn trùng với một buổi học hiện có của gia sư.");
                     } else {
                         toast.warning("Vui lòng chọn ít nhất 1 buổi học trước khi tiếp tục.");
                     }
@@ -315,7 +346,12 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                 Quay lại
                             </button>
                             {step < STEPS.length - 1 ? (
-                                <button type="button" className={styles.primaryButton} onClick={handleNext}>
+                                <button
+                                    type="button"
+                                    className={styles.primaryButton}
+                                    onClick={handleNext}
+                                    disabled={submitting || (step === 0 && gradeMatchInfo?.matches === false)}
+                                >
                                     Tiếp theo
                                     <ArrowRight size={16} />
                                 </button>
