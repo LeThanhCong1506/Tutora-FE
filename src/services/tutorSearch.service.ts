@@ -23,6 +23,7 @@ const api = axios.create({
 export interface TutorSubjectInfo {
     subjectId: number;
     subjectName: string | null;
+    pricePerHour: number | null;
     gradeLevels: string[] | null;
     tags: string[] | null;
 }
@@ -39,10 +40,13 @@ export interface TutorSearchResultResponse {
     avatarUrl: string | null;
     headline: string | null;
     bio: string | null;
+    videoUrl: string | null;
     education: string | null;
     degreeLevel: string | null;
     averageRating: number | null;
     totalReviews: number | null;
+    totalLessons: number | null;
+    minPricePerHour: number | null;
     yearsOfExperience: number | null;
     completedHours: number | null;
     subjects: TutorSubjectInfo[] | null;

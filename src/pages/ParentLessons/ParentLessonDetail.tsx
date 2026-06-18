@@ -109,7 +109,7 @@ const ParentLessonDetail: React.FC = () => {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
         <button
-          onClick={() => navigate('/parent-portal/lessons')}
+          onClick={() => navigate('/parent-portal/dashboard')}
           style={{
             width: '36px', height: '36px', borderRadius: '8px',
             border: '1px solid #e8e8e8', background: '#fff',
@@ -356,7 +356,7 @@ const ParentLessonDetail: React.FC = () => {
           </Button>
         )}
 
-        <Button size="large" onClick={() => navigate('/parent-portal/lessons')}>
+        <Button size="large" onClick={() => navigate('/parent-portal/dashboard')}>
           Quay lại
         </Button>
       </div>

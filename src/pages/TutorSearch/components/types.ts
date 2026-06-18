@@ -4,6 +4,7 @@ export interface SubjectGradeSummary {
   subjectName: string;
   gradeLevels: string[];
   gradeLabel: string;
+  minPrice: number | null;
 }
 
 export interface Tutor {
@@ -13,11 +14,15 @@ export interface Tutor {
   type: TutorType;
   credential: string;
   bio: string;
+  videoUrl: string | null;
   rating: number;
+  totalReviews: number;
+  totalLessons: number;
   university: string;
   subjects: string[];
   gradeLevels: string[];
   subjectGradeLevels: SubjectGradeSummary[];
+  minPrice: number | null;
 }
 
 export interface SearchFilters {
