@@ -1,6 +1,14 @@
-import { BookOpen, CalendarDays, Clock3, GraduationCap, Wallet } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { AlertTriangle, BookOpen, CalendarDays, Clock3, GraduationCap, Wallet } from "lucide-react";
 import type { StepProps } from "./types";
-import { formatDuration, formatGrade, formatPrice, normalizeGradeToken, studentInitials } from "./utils";
+import {
+    formatDuration,
+    formatGrade,
+    formatPrice,
+    getGradeMatchInfo,
+    normalizeGradeToken,
+    studentInitials,
+} from "./utils";
 import styles from "./bookingModal.module.css";
 
 // Compact grade label cho chip (vd ["grade_10", "grade_11", "grade_12"] → "Lớp 10-12").
@@ -25,10 +33,27 @@ const StepStudentSubject: React.FC<StepProps> = ({
     subjectGradePrices,
     userRole,
 }) => {
+    const gradeWarningRef = useRef<HTMLDivElement>(null);
     const hasSubject = formData.subjectId !== 0;
     const selectedStudent = students.find((s) => s.studentId === formData.studentId);
     const selectedGradeToken = normalizeGradeToken(selectedStudent?.gradeLevel);
-    // TẠM THỜI: bỏ banner cảnh báo khớp lớp (gradeMatchInfo) — khôi phục khi cần.
+    const selectedSubject = availableSubjects.find((subject) => subject.id === formData.subjectId);
+    const gradeMatchInfo = getGradeMatchInfo(
+        selectedStudent,
+        formData.subjectId,
+        subjectGradePrices,
+        selectedSubject?.gradeLevels,
+    );
+
+    useEffect(() => {
+        if (gradeMatchInfo?.matches !== false) return;
+
+        const frameId = window.requestAnimationFrame(() => {
+            gradeWarningRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        });
+
+        return () => window.cancelAnimationFrame(frameId);
+    }, [formData.studentId, formData.subjectId, gradeMatchInfo?.matches]);
 
     return (
         <>
@@ -114,6 +139,26 @@ const StepStudentSubject: React.FC<StepProps> = ({
                     </div>
                 )}
             </section>
+
+            {gradeMatchInfo && !gradeMatchInfo.matches && (
+                <div
+                    ref={gradeWarningRef}
+                    className={`${styles.warningBox} ${styles.gradeWarning}`}
+                    role="alert"
+                >
+                    <AlertTriangle size={18} />
+                    <div>
+                        <strong>Khối lớp chưa phù hợp</strong>
+                        <p>
+                            {gradeMatchInfo.missingStudentGrade
+                                ? "Học sinh chưa cập nhật khối lớp. Vui lòng cập nhật hồ sơ trước khi đặt lịch."
+                                : `Học sinh đang học ${gradeMatchInfo.studentGrade}, nhưng gia sư chỉ dạy ${
+                                    formatGradeRange(gradeMatchInfo.tutorGrades) || "khối lớp khác"
+                                } cho môn ${selectedSubject?.name ?? "đã chọn"}. Vui lòng chọn học sinh hoặc môn học khác.`}
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {userRole === "Parent" && (
                 <section className={styles.formSection}>

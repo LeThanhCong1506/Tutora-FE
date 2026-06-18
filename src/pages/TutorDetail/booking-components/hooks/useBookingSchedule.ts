@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { getTutorBookedSlots } from "../../../../services/booking.service";
 import type { AvailabilitySlot } from "../../../../services/tutorDetail.service";
 import type { Combo } from "../../../../types/combo.types";
+import { parseUtc } from "../../../../utils/datetime";
 import type { BookingFormData, BookingScheduleApi, BookingSlot, ScheduleSlot, WeeklyPatternSlot } from "../types";
 import {
     addDays,
@@ -13,6 +15,7 @@ import {
     mondayOf,
     rangesOverlap,
     sessionFitsAvailability,
+    slotCoversCell,
     sortSlots,
     timeToMinutes,
     toCalendarAvailability,
@@ -21,6 +24,8 @@ import {
 } from "../utils";
 
 interface Args {
+    isOpen: boolean;
+    tutorId: string;
     availabilities: AvailabilitySlot[];
     // Số giờ mỗi buổi theo cấu hình môn/lớp đã chọn.
     sessionHours: number;
@@ -47,6 +52,8 @@ const endTimeOf = (startTime: string, durationHours: number) =>
  * đến hết cửa sổ 1 tháng. Đồng bộ formData.schedule (pattern tuần) + startDate để submit dùng.
  */
 export function useBookingSchedule({
+    isOpen,
+    tutorId,
     availabilities,
     sessionHours,
     selectedCombo,
@@ -63,12 +70,59 @@ export function useBookingSchedule({
         return d;
     }, []);
     const bookingDeadline = useMemo(() => getEndOfNextMonth(today), [today]);
+    const bookedSlotWindowEnd = useMemo(
+        () => addDays(getBookingValidityEnd(bookingDeadline), 1),
+        [bookingDeadline],
+    );
     const thisWeekStart = useMemo(() => mondayOf(today), [today]);
     const calendarAvailability = useMemo(() => toCalendarAvailability(availabilities), [availabilities]);
 
     const [visibleWeekIndex, setVisibleWeekIndex] = useState(0);
     const [pickedWeekSlots, setPickedWeekSlots] = useState<BookingSlot[]>([]);
     const [selectedSlots, setSelectedSlots] = useState<BookingSlot[]>([]);
+    const [bookedSlots, setBookedSlots] = useState<BookingSlot[]>([]);
+    const [bookedSlotsLoading, setBookedSlotsLoading] = useState(false);
+    const [bookedSlotsError, setBookedSlotsError] = useState(false);
+
+    useEffect(() => {
+        if (!isOpen || !tutorId) return;
+
+        let cancelled = false;
+        setBookedSlotsLoading(true);
+        setBookedSlotsError(false);
+
+        getTutorBookedSlots(tutorId, today.toISOString(), bookedSlotWindowEnd.toISOString())
+            .then((response) => {
+                if (cancelled) return;
+                const slots = (response.content ?? [])
+                    .map((slot): BookingSlot | null => {
+                        const start = parseUtc(slot.scheduledStart);
+                        const end = parseUtc(slot.scheduledEnd);
+                        if (!start || !end || end <= start) return null;
+
+                        return {
+                            date: toDateKey(start),
+                            dayOfWeek: toDemoWeekday(start.getDay()),
+                            startTime: minutesToTime(start.getHours() * 60 + start.getMinutes()),
+                            durationHours: (end.getTime() - start.getTime()) / (60 * 60 * 1000),
+                        };
+                    })
+                    .filter((slot): slot is BookingSlot => slot !== null);
+                setBookedSlots(slots);
+            })
+            .catch(() => {
+                if (cancelled) return;
+                setBookedSlots([]);
+                setBookedSlotsError(true);
+            })
+            .finally(() => {
+                if (!cancelled) setBookedSlotsLoading(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [bookedSlotWindowEnd, isOpen, today, tutorId]);
 
     // Đổi môn / cách đặt / gói → reset lựa chọn lịch. Bỏ qua lần mount (kể cả StrictMode
     // double-invoke) bằng cách so key đã lưu, để không xoá nhầm state vừa rehydrate.
@@ -149,6 +203,60 @@ export function useBookingSchedule({
     const bookingWindowEnd = bookingWindowStart ? getBookingValidityEnd(bookingWindowStart) : null;
     const navLocked = sortedPicks.length > 0;
 
+    const slotsOverlapBooked = (candidateSlots: BookingSlot[]): boolean =>
+        candidateSlots.some((candidate) =>
+            bookedSlots.some(
+                (booked) =>
+                    booked.date === candidate.date &&
+                    rangesOverlap(
+                        timeToMinutes(booked.startTime),
+                        booked.durationHours,
+                        timeToMinutes(candidate.startTime),
+                        candidate.durationHours,
+                    ),
+            ),
+        );
+
+    const isBookedCell = (dateKey: string, time: string): boolean => {
+        const cellMinutes = timeToMinutes(time);
+        return bookedSlots.some(
+            (slot) =>
+                slot.date === dateKey && slotCoversCell(slot.startTime, slot.durationHours, cellMinutes),
+        );
+    };
+
+    const wouldAvailabilityPickConflict = (
+        dateKey: string,
+        dayOfWeek: number,
+        startTime: string,
+    ): boolean => {
+        const projected = buildScheduleFromPattern(
+            [{ dayOfWeek, startTime, durationHours: sessionHours }],
+            fromDateKey(dateKey),
+        );
+        return slotsOverlapBooked(projected);
+    };
+
+    const fixedSlotsForWeek = (weekMonday: Date): BookingSlot[] => {
+        if (selectedCombo?.type !== "fixed") return [];
+        const pattern = comboToWeeklyPattern(selectedCombo);
+        const futureInWeek = pattern
+            .map((slot) => ({
+                dayOfWeek: slot.dayOfWeek,
+                startTime: slot.startTime,
+                durationHours: slot.durationHours,
+                date: toDateKey(addDays(weekMonday, slot.dayOfWeek - 1)),
+            }))
+            .filter((slot) => fromDateKey(slot.date) >= today);
+        if (!futureInWeek.length) return [];
+        return buildScheduleFromPattern(pattern, fromDateKey(sortSlots(futureInWeek)[0].date));
+    };
+
+    const fixedWeekHasConflict = (weekMonday: Date): boolean =>
+        slotsOverlapBooked(fixedSlotsForWeek(weekMonday));
+
+    const hasSelectedSlotConflict = slotsOverlapBooked(selectedSlots);
+
     // Đồng bộ formData.schedule (pattern tuần, dedupe) + startDate từ selectedSlots.
     useEffect(() => {
         const startKey = sortedPicks.length ? toDateKey(fromDateKey(sortedPicks[0].date)) : null;
@@ -202,6 +310,8 @@ export function useBookingSchedule({
                 rangesOverlap(timeToMinutes(p.startTime), p.durationHours, cellMin, sessionHours),
         );
         if (
+            bookedSlotsLoading ||
+            wouldAvailabilityPickConflict(dateKey, dayOfWeek, startTime) ||
             overlapsSelectedSession ||
             !sessionFitsAvailability(dayOfWeek, startTime, sessionHours, calendarAvailability)
         ) {
@@ -215,7 +325,11 @@ export function useBookingSchedule({
 
     // Gói cố định: bấm 1 buổi của gói = chọn cả pattern của tuần đó làm tuần bắt đầu (khóa tuần).
     const pickFixedStartWeek = (weekMonday: Date) => {
-        if (selectedCombo?.type !== "fixed") return;
+        if (
+            selectedCombo?.type !== "fixed" ||
+            bookedSlotsLoading ||
+            fixedWeekHasConflict(weekMonday)
+        ) return;
         const pattern = comboToWeeklyPattern(selectedCombo);
         const datedInWeek: BookingSlot[] = pattern.map((slot) => ({
             dayOfWeek: slot.dayOfWeek,
@@ -250,6 +364,12 @@ export function useBookingSchedule({
         bookingWindowStart,
         bookingWindowEnd,
         navLocked,
+        bookedSlotsLoading,
+        bookedSlotsError,
+        hasSelectedSlotConflict,
+        isBookedCell,
+        wouldAvailabilityPickConflict,
+        fixedWeekHasConflict,
         toggleAvailabilityPick,
         pickFixedStartWeek,
         clearPicks,

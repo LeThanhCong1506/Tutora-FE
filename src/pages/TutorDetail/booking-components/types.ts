@@ -48,6 +48,12 @@ export interface BookingScheduleApi {
     bookingWindowStart: Date | null;
     bookingWindowEnd: Date | null;
     navLocked: boolean;
+    bookedSlotsLoading: boolean;
+    bookedSlotsError: boolean;
+    hasSelectedSlotConflict: boolean;
+    isBookedCell: (dateKey: string, time: string) => boolean;
+    wouldAvailabilityPickConflict: (dateKey: string, dayOfWeek: number, startTime: string) => boolean;
+    fixedWeekHasConflict: (weekMonday: Date) => boolean;
     toggleAvailabilityPick: (dateKey: string, dayOfWeek: number, startTime: string) => void;
     pickFixedStartWeek: (weekMonday: Date) => void;
     clearPicks: () => void;
