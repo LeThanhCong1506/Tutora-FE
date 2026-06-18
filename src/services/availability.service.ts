@@ -2,6 +2,7 @@
 import axios from 'axios';
 import { getCurrentUser } from './auth.service';
 import { setupAuthInterceptor } from './apiClient';
+import { localTimeOfDayToUtc, utcTimeOfDayToLocal } from '../utils/datetime';
 
 const API_BASE_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5166') + '/api';
 
@@ -81,6 +82,24 @@ export const DAY_OF_WEEK_MAP_EN: Record<number, string> = {
 };
 
 // ============================================
+// UTC boundary (chuẩn: FE gửi UTC, hiển thị local)
+// Lịch rảnh lưu UTC ở BE; FE thao tác theo giờ local. Convert GIỜ ở đây, GIỮ NGUYÊN
+// thứ (dayofweek) — đúng cho khung 07:00–22:00 (xem utils/datetime).
+// ============================================
+
+const toUtcSlot = <T extends { starttime: string; endtime: string }>(d: T): T => ({
+    ...d,
+    starttime: localTimeOfDayToUtc(d.starttime),
+    endtime: localTimeOfDayToUtc(d.endtime),
+});
+
+const toLocalSlot = (s: AvailabilitySlot): AvailabilitySlot => ({
+    ...s,
+    starttime: utcTimeOfDayToLocal(s.starttime),
+    endtime: utcTimeOfDayToLocal(s.endtime),
+});
+
+// ============================================
 // API Functions
 // ============================================
 
@@ -95,7 +114,8 @@ export const getMyAvailability = async (): Promise<ApiResponse<AvailabilitySlot[
     const response = await api.get('/tutor/availabilities', {
         headers: getAuthHeaders()
     });
-    return response.data;
+    const data = response.data as ApiResponse<AvailabilitySlot[]>;
+    return { ...data, content: (data.content ?? []).map(toLocalSlot) };
 };
 
 /**
@@ -110,7 +130,8 @@ export const getAvailability = async (tutorId: string): Promise<ApiResponse<Avai
     const response = await api.get(`/tutor/availabilities/${tutorId}`, {
         headers: getAuthHeaders()
     });
-    return response.data;
+    const data = response.data as ApiResponse<AvailabilitySlot[]>;
+    return { ...data, content: (data.content ?? []).map(toLocalSlot) };
 };
 
 /**
@@ -125,7 +146,7 @@ export const createAvailability = async (
 ): Promise<ApiResponse<AvailabilitySlot>> => {
     const response = await api.post(
         '/tutor/availabilities',
-        data,
+        toUtcSlot(data),
         {
             headers: {
                 ...getAuthHeaders(),
@@ -133,7 +154,8 @@ export const createAvailability = async (
             }
         }
     );
-    return response.data;
+    const r = response.data as ApiResponse<AvailabilitySlot>;
+    return r.content ? { ...r, content: toLocalSlot(r.content) } : r;
 };
 
 /**
@@ -150,7 +172,7 @@ export const updateAvailability = async (
 ): Promise<ApiResponse<AvailabilitySlot>> => {
     const response = await api.put(
         `/tutor/availabilities/${availabilityId}`,
-        data,
+        toUtcSlot(data),
         {
             headers: {
                 ...getAuthHeaders(),
@@ -158,7 +180,8 @@ export const updateAvailability = async (
             }
         }
     );
-    return response.data;
+    const r = response.data as ApiResponse<AvailabilitySlot>;
+    return r.content ? { ...r, content: toLocalSlot(r.content) } : r;
 };
 
 /**
@@ -187,7 +210,7 @@ export const bulkCreateAvailabilities = async (
 ): Promise<ApiResponse<AvailabilitySlot[]>> => {
     const response = await api.post(
         '/tutor/availabilities/bulk',
-        { availabilities: data },
+        { availabilities: data.map(toUtcSlot) },
         {
             headers: {
                 ...getAuthHeaders(),
@@ -195,7 +218,8 @@ export const bulkCreateAvailabilities = async (
             }
         }
     );
-    return response.data;
+    const r = response.data as ApiResponse<AvailabilitySlot[]>;
+    return { ...r, content: (r.content ?? []).map(toLocalSlot) };
 };
 
 /**
@@ -208,7 +232,7 @@ export const bulkUpdateAvailabilities = async (
 ): Promise<ApiResponse<AvailabilitySlot[]>> => {
     const response = await api.patch(
         '/tutor/availabilities/bulk',
-        { availabilities: data },
+        { availabilities: data.map(toUtcSlot) },
         {
             headers: {
                 ...getAuthHeaders(),
@@ -216,7 +240,8 @@ export const bulkUpdateAvailabilities = async (
             }
         }
     );
-    return response.data;
+    const r = response.data as ApiResponse<AvailabilitySlot[]>;
+    return { ...r, content: (r.content ?? []).map(toLocalSlot) };
 };
 
 /**
