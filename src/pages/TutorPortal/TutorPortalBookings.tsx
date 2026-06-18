@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { BookOpen, Calendar, Check, ChevronRight, Clock, MessageCircle, Search, User, Wallet, X } from 'lucide-react';
 import { Input, Modal, Pagination } from 'antd';
 import { toast } from 'react-toastify';
+import BookingMonthCalendar from '../../components/BookingMonthCalendar/BookingMonthCalendar';
 import styles from '../../styles/pages/tutor-portal-bookings.module.css';
 import {
   acceptBooking,
@@ -75,10 +76,7 @@ const formatRequestDate = (value?: string) => {
 };
 
 const getBookingPeriod = (booking: BookingResponseDTO) => {
-  const bookingWithLessons = booking as BookingResponseDTO & {
-    lessons?: Array<{ scheduledStart: string; scheduledEnd: string }>;
-  };
-  const lessons = [...(bookingWithLessons.lessons ?? [])].sort(
+  const lessons = [...(booking.lessons ?? [])].sort(
     (first, second) => new Date(first.scheduledStart).getTime() - new Date(second.scheduledStart).getTime(),
   );
 
@@ -89,22 +87,6 @@ const getBookingPeriod = (booking: BookingResponseDTO) => {
 };
 
 const formatTime = (value?: string) => (value ? value.slice(0, 5) : '');
-
-const formatTeachingMode = (mode?: string) => {
-  if (!mode) return 'Theo thỏa thuận';
-  const normalized = mode.toLowerCase();
-  if (normalized.includes('online')) return 'Trực tuyến';
-  if (
-    normalized.includes('offline') ||
-    normalized.includes('person') ||
-    normalized.includes('home') ||
-    normalized.includes('student') ||
-    normalized.includes('tutor')
-  ) {
-    return 'Trực tiếp';
-  }
-  return mode;
-};
 
 const getUniqueSchedule = (booking: BookingResponseDTO) => {
   const uniqueSlots = new Map<string, BookingResponseDTO['schedule'][number]>();
@@ -375,15 +357,6 @@ const TutorPortalBookings = () => {
                             <strong>{booking.sessionCount} buổi học</strong>
                           </div>
                         </div>
-                        <div className={styles.infoItem}>
-                          <span className={styles.infoIcon}>
-                            <User size={18} />
-                          </span>
-                          <div>
-                            <span className={styles.infoLabel}>Hình thức</span>
-                            <strong>{formatTeachingMode(booking.teachingMode)}</strong>
-                          </div>
-                        </div>
                       </div>
 
                       <section className={styles.scheduleSection} aria-label="Lịch học dự kiến">
@@ -393,37 +366,47 @@ const TutorPortalBookings = () => {
                             <h4>Lịch học dự kiến</h4>
                           </div>
                         </div>
-                        <div className={styles.bookingPeriod}>
-                          <div>
-                            <span>Bắt đầu</span>
-                            <strong>{formatRequestDate(bookingPeriod.startDate) || 'Chưa xác định'}</strong>
-                          </div>
-                          <span className={styles.periodDivider} aria-hidden="true">
-                            →
-                          </span>
-                          <div>
-                            <span>Kết thúc</span>
-                            <strong>{formatRequestDate(bookingPeriod.endDate) || 'Chưa xác định'}</strong>
-                          </div>
-                        </div>
-                        {schedule.length > 0 ? (
-                          <div className={styles.scheduleList}>
-                            {schedule.map((slot) => (
-                              <div
-                                key={`${slot.dayOfWeek}-${slot.startTime}-${slot.endTime}`}
-                                className={styles.scheduleTag}
-                              >
-                                <span>{formatDayName(slot.dayOfWeek)}</span>
-                                <strong>
-                                  {formatTime(slot.startTime)}
-                                  {slot.endTime ? ` – ${formatTime(slot.endTime)}` : ''}
-                                </strong>
+                        <div className={styles.scheduleBody}>
+                          <div className={styles.scheduleSummary}>
+                            <div className={styles.bookingPeriod}>
+                              <div>
+                                <span>Bắt đầu</span>
+                                <strong>{formatRequestDate(bookingPeriod.startDate) || 'Chưa xác định'}</strong>
                               </div>
-                            ))}
+                              <span className={styles.periodDivider} aria-hidden="true">
+                                →
+                              </span>
+                              <div>
+                                <span>Kết thúc</span>
+                                <strong>{formatRequestDate(bookingPeriod.endDate) || 'Chưa xác định'}</strong>
+                              </div>
+                            </div>
+                            {schedule.length > 0 ? (
+                              <div className={styles.scheduleList}>
+                                {schedule.map((slot) => (
+                                  <div
+                                    key={`${slot.dayOfWeek}-${slot.startTime}-${slot.endTime}`}
+                                    className={styles.scheduleTag}
+                                  >
+                                    <span>{formatDayName(slot.dayOfWeek)}</span>
+                                    <strong>
+                                      {formatTime(slot.startTime)}
+                                      {slot.endTime ? ` – ${formatTime(slot.endTime)}` : ''}
+                                    </strong>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className={styles.noSchedule}>Phụ huynh chưa chọn khung giờ học.</p>
+                            )}
                           </div>
-                        ) : (
-                          <p className={styles.noSchedule}>Phụ huynh chưa chọn khung giờ học.</p>
-                        )}
+                          <BookingMonthCalendar
+                            lessons={booking.lessons}
+                            startDate={booking.startDate}
+                            schedule={booking.schedule}
+                            sessionCount={booking.sessionCount}
+                          />
+                        </div>
                       </section>
                     </div>
 

@@ -1,0 +1,184 @@
+.calendar {
+  min-width: 0;
+}
+
+.trigger {
+  display: flex;
+  width: 100%;
+  min-height: 70px;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 1px solid #e7e2dc;
+  border-radius: 11px;
+  background: #fbfaf8;
+  color: #293247;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.trigger:hover {
+  border-color: #d7c8bd;
+  background: #f8f5f1;
+}
+
+.trigger:focus-visible {
+  outline: 2px solid rgba(130, 36, 38, 0.3);
+  outline-offset: 2px;
+}
+
+.trigger > svg:first-child {
+  flex: 0 0 auto;
+  color: #8a2b2d;
+}
+
+.trigger span {
+  flex: 1;
+}
+
+.chevron {
+  flex: 0 0 auto;
+  color: #7f8796;
+  transition: transform 500ms ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  margin-top: 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition:
+    grid-template-rows 500ms ease,
+    margin-top 500ms ease,
+    opacity 350ms ease,
+    transform 500ms ease,
+    visibility 0s linear 500ms;
+}
+
+.panelOpen {
+  grid-template-rows: 1fr;
+  margin-top: 10px;
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition-delay: 0s;
+}
+
+.panelInner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.panelContent {
+  padding: 14px;
+  border: 1px solid #e7e2dc;
+  border-radius: 11px;
+  background: #fbfaf8;
+}
+
+.empty {
+  margin: 0;
+  color: #8a91a0;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.months {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(205px, 1fr));
+  gap: 18px;
+}
+
+.month {
+  min-width: 0;
+}
+
+.monthTitle {
+  display: block;
+  margin-bottom: 9px;
+  color: #293247;
+  font-size: 12px;
+}
+
+.weekdays,
+.days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.weekdays {
+  margin-bottom: 5px;
+}
+
+.weekdays span {
+  color: #7f8796;
+  font-size: 9px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.blank,
+.day {
+  aspect-ratio: 1;
+}
+
+.day {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: #f0f1f3;
+  color: #293247;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.dayMuted {
+  background: transparent;
+  color: #c0c4cc;
+}
+
+.dayActive {
+  background: #822426;
+  color: #fff;
+  font-weight: 800;
+}
+
+.dot {
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  width: 3px;
+  height: 3px;
+  margin-left: -1.5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+@media (max-width: 560px) {
+  .months {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron,
+  .panel {
+    transition-duration: 0.01ms;
+  }
+}
