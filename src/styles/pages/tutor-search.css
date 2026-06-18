@@ -563,7 +563,7 @@
 /* ---- University row ---- */
 .tutor-university-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 6px;
     min-width: 0;
 }
@@ -578,9 +578,12 @@
 .tutor-card .university-name {
     font-size: 12px;
     color: rgba(26, 34, 56, 0.5);
+    /* Cho phép xuống tối đa 2 dòng nếu text quá dài */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     flex: 1;
     min-width: 0;
 }

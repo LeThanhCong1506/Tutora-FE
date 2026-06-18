@@ -48,6 +48,8 @@ export const mapApiTutorToUi = (apiTutor: TutorSearchResultResponse): Tutor => {
 
   const subjects: string[] = [];
   const subjectGradeMap = new Map<string, Set<string>>();
+  // Giá thấp nhất theo từng môn — BE trả price theo từng (môn, lớp), gom min về theo tên môn.
+  const subjectMinPriceMap = new Map<string, number>();
   // BE trả gradeLevels theo TÊN ("Lớp 10") — gom trực tiếp, không suy diễn "Grade_N".
   const gradeLevelSet = new Set<string>();
   if (apiTutor.subjects) {
@@ -58,6 +60,12 @@ export const mapApiTutorToUi = (apiTutor: TutorSearchResultResponse): Tutor => {
       }
       if (subjectName && !subjectGradeMap.has(subjectName)) {
         subjectGradeMap.set(subjectName, new Set<string>());
+      }
+      if (subjectName && typeof s.pricePerHour === 'number' && s.pricePerHour > 0) {
+        const current = subjectMinPriceMap.get(subjectName);
+        if (current === undefined || s.pricePerHour < current) {
+          subjectMinPriceMap.set(subjectName, s.pricePerHour);
+        }
       }
       if (s.gradeLevels) {
         s.gradeLevels.forEach((gl) => {
@@ -88,8 +96,14 @@ export const mapApiTutorToUi = (apiTutor: TutorSearchResultResponse): Tutor => {
       subjectName,
       gradeLevels,
       gradeLabel: formatGradeLevelRanges(gradeLevels) || 'Chưa cập nhật lớp',
+      minPrice: subjectMinPriceMap.get(subjectName) ?? null,
     };
   });
+
+  // Giá thấp nhất toàn gia sư: ưu tiên BE trả về, nếu không thì lấy min từ các môn.
+  const subjectPrices = Array.from(subjectMinPriceMap.values());
+  const minPrice =
+    apiTutor.minPricePerHour ?? (subjectPrices.length > 0 ? Math.min(...subjectPrices) : null);
 
   return {
     id: apiTutor.tutorId,
@@ -98,10 +112,14 @@ export const mapApiTutorToUi = (apiTutor: TutorSearchResultResponse): Tutor => {
     type,
     credential: apiTutor.degreeLevel || '',
     bio: apiTutor.bio || '',
+    videoUrl: apiTutor.videoUrl ?? null,
     rating: apiTutor.averageRating || 0,
+    totalReviews: apiTutor.totalReviews || 0,
+    totalLessons: apiTutor.totalLessons || 0,
     university: apiTutor.education || '',
     subjects: subjects.length > 0 ? subjects : ['Chưa cập nhật'],
     gradeLevels: sortedGradeLevels,
     subjectGradeLevels,
+    minPrice,
   };
 };

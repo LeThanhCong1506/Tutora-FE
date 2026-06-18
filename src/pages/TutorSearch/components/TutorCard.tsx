@@ -1,22 +1,27 @@
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import type { Tutor } from './types';
-import { VerifiedIcon, UniversityIcon, ArrowIcon } from './icons';
+import { VerifiedIcon, UniversityIcon, ArrowIcon, PlayIcon, StarIcon, HeartIcon } from './icons';
 import { formatGradeLevelRanges } from './utils';
+import { useWishlist } from './useWishlist';
 import { createChannel } from '../../../services/chat.service';
 import { getCurrentUser, getCurrentUserRole } from '../../../services/auth.service';
 
-// Giới hạn độ dài phần giới thiệu trên thẻ — cắt theo ranh giới từ rồi thêm "…".
-const MAX_BIO_CHARS = 150;
 const MAX_VISIBLE_SUBJECT_GRADES = 3;
 
-const truncateBio = (text: string, max: number): string => {
-  if (text.length <= max) return text;
-  const sliced = text.slice(0, max);
-  const lastSpace = sliced.lastIndexOf(' ');
-  // Tránh cắt giữa một từ dài: nếu khoảng trắng cuối quá gần đầu thì cắt thẳng.
-  const cut = lastSpace > max * 0.6 ? sliced.slice(0, lastSpace) : sliced;
-  return cut.trimEnd() + '…';
+// Ảnh nền mặc định khi gia sư chưa có video giới thiệu — chân dung minh hoạ (không phải người thật).
+const DEFAULT_MEDIA_IMAGE =
+  'https://api.dicebear.com/7.x/notionists/svg?seed=tutora&backgroundColor=b6e3f4';
+
+// Giá thấp nhất hiển thị trên thẻ — định dạng theo vi-VN, ví dụ "Từ 150.000đ/giờ".
+const formatFromPrice = (rate: number): string => `Từ ${rate.toLocaleString('vi-VN')}đ/giờ`;
+
+// Lấy id video YouTube nếu videoUrl là link YouTube (để dùng thumbnail thay vì nhúng <video>).
+const getYoutubeId = (url: string): string | null => {
+  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]+)/);
+  return match?.[1] ?? null;
 };
 
 interface TutorCardProps {
@@ -25,9 +30,28 @@ interface TutorCardProps {
 
 const TutorCard = ({ tutor }: TutorCardProps) => {
   const navigate = useNavigate();
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const { saved, toggle: toggleWishlist } = useWishlist(tutor.id);
 
   const handleCardClick = () => {
     navigate(`/tutor-detail/${tutor.id}`);
+  };
+
+  // Lưu/bỏ lưu gia sư vào danh sách yêu thích — không điều hướng/không mở video.
+  const handleWishlistClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleWishlist();
+  };
+
+  // Click vào video → mở modal xem ngay tại trang (không điều hướng sang trang chi tiết).
+  const openVideoModal = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (tutor.videoUrl) setShowVideoModal(true);
+  };
+
+  const closeVideoModal = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowVideoModal(false);
   };
 
   const handleButtonClick = (e: React.MouseEvent) => {
@@ -78,7 +102,6 @@ const TutorCard = ({ tutor }: TutorCardProps) => {
     }
   };
 
-  const bio = truncateBio(tutor.bio.trim(), MAX_BIO_CHARS);
   const university = tutor.university.trim();
   const gradeLevelRange = formatGradeLevelRanges(tutor.gradeLevels);
   const subjectGradeItems =
@@ -88,44 +111,80 @@ const TutorCard = ({ tutor }: TutorCardProps) => {
           subjectName: subject,
           gradeLevels: tutor.gradeLevels,
           gradeLabel: gradeLevelRange,
+          minPrice: null,
         }));
   const visibleSubjectGrades = subjectGradeItems.slice(0, MAX_VISIBLE_SUBJECT_GRADES);
   const hiddenSubjectsCount = Math.max(subjectGradeItems.length - visibleSubjectGrades.length, 0);
 
+  const youtubeId = tutor.videoUrl ? getYoutubeId(tutor.videoUrl) : null;
+  const hasPrice = typeof tutor.minPrice === 'number' && tutor.minPrice > 0;
+
   return (
     <div className="tutor-card" onClick={handleCardClick}>
+      {/* 1) Video giới thiệu ở trên cùng */}
+      <div
+        className={`tutor-card-media${tutor.videoUrl ? ' is-playable' : ''}`}
+        onClick={tutor.videoUrl ? openVideoModal : undefined}
+        role={tutor.videoUrl ? 'button' : undefined}
+        aria-label={tutor.videoUrl ? `Xem video giới thiệu của ${tutor.name}` : undefined}
+      >
+        {tutor.videoUrl ? (
+          youtubeId ? (
+            <img
+              className="tutor-card-media-content"
+              src={`https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`}
+              alt={tutor.name}
+            />
+          ) : (
+            <video className="tutor-card-media-content" src={tutor.videoUrl} muted preload="metadata" />
+          )
+        ) : (
+          <img
+            className="tutor-card-media-content tutor-card-media-illustration"
+            src={DEFAULT_MEDIA_IMAGE}
+            alt={tutor.name}
+          />
+        )}
+        {tutor.videoUrl && (
+          <span className="tutor-card-play" aria-hidden="true">
+            <PlayIcon />
+          </span>
+        )}
+        <button
+          type="button"
+          className={`tutor-card-wishlist${saved ? ' is-saved' : ''}`}
+          onClick={handleWishlistClick}
+          aria-pressed={saved}
+          aria-label={saved ? 'Bỏ khỏi danh sách yêu thích' : 'Thêm vào danh sách yêu thích'}
+          title={saved ? 'Đã lưu vào yêu thích' : 'Lưu vào yêu thích'}
+        >
+          <HeartIcon filled={saved} />
+        </button>
+      </div>
+
       <div className="tutor-card-body">
-        <div className="tutor-card-header">
-          <div className="tutor-profile">
-            <div className="tutor-avatar-container">
-              <img src={tutor.avatar} alt={tutor.name} className="tutor-avatar" />
-              <div className="tutor-verified-badge">
-                <VerifiedIcon />
-              </div>
+        {/* 2) Avatar + tên + học vấn */}
+        <div className="tutor-card-identity">
+          <div className="tutor-avatar-container">
+            <img src={tutor.avatar} alt={tutor.name} className="tutor-avatar" />
+            <div className="tutor-verified-badge">
+              <VerifiedIcon />
             </div>
-            <div className="tutor-info">
-              <div className="tutor-title-row">
-                <h3 className="tutor-name">{tutor.name}</h3>
-                <div className="tutor-rating">
-                  <span className="rating-star">&#9733;</span>
-                  <span className="rating-value">{tutor.rating.toFixed(1)}</span>
-                </div>
+          </div>
+          <div className="tutor-identity-text">
+            <h3 className="tutor-name">{tutor.name}</h3>
+            {university && (
+              <div className="tutor-university-row">
+                <span className="university-icon">
+                  <UniversityIcon />
+                </span>
+                <span className="university-name">{university}</span>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
-        {university && (
-          <div className="tutor-card-meta">
-            <div className="tutor-university-row">
-              <span className="university-icon">
-                <UniversityIcon />
-              </span>
-              <span className="university-name">{university}</span>
-            </div>
-          </div>
-        )}
-
+        {/* 3) Lớp & môn học */}
         {visibleSubjectGrades.length > 0 && (
           <div className="tutor-subjects">
             {visibleSubjectGrades.map((item, index) => (
@@ -142,7 +201,23 @@ const TutorCard = ({ tutor }: TutorCardProps) => {
           </div>
         )}
 
-        {bio && <p className="tutor-bio">{bio}</p>}
+        {/* 4) Rating + số lượt đánh giá + tổng số buổi học */}
+        <div className="tutor-rating-row">
+          <span className="tutor-rating-star">
+            <StarIcon />
+          </span>
+          <span className="tutor-rating-value">{tutor.rating.toFixed(1)}</span>
+          <span className="tutor-rating-count">({tutor.totalReviews.toLocaleString('vi-VN')} đánh giá)</span>
+          <span className="tutor-rating-dot" aria-hidden="true">•</span>
+          <span className="tutor-lessons-count">{tutor.totalLessons.toLocaleString('vi-VN')} buổi học</span>
+        </div>
+
+        {/* 5) Giá môn học thấp nhất */}
+        {hasPrice && (
+          <div className="tutor-price">
+            <span className="tutor-price-value">{formatFromPrice(tutor.minPrice as number)}</span>
+          </div>
+        )}
       </div>
 
       <div className="tutor-card-footer">
@@ -158,6 +233,29 @@ const TutorCard = ({ tutor }: TutorCardProps) => {
           </button>
         </div>
       </div>
+
+      {showVideoModal &&
+        tutor.videoUrl &&
+        createPortal(
+          <div className="tutor-video-modal" role="dialog" aria-modal="true" onClick={closeVideoModal}>
+            <button type="button" className="tutor-video-modal-close" onClick={closeVideoModal} aria-label="Đóng video">
+              ✕
+            </button>
+            <div className="tutor-video-modal-content" onClick={(e) => e.stopPropagation()}>
+              {youtubeId ? (
+                <iframe
+                  src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1`}
+                  title={`Video giới thiệu - ${tutor.name}`}
+                  allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                  allowFullScreen
+                />
+              ) : (
+                <video src={tutor.videoUrl} controls autoPlay />
+              )}
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };
