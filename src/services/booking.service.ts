@@ -78,6 +78,14 @@ export interface BookingResponseDTO {
     paymentStatus: string;
     paymentCode: string;
     schedule: ScheduleItemPayload[];
+    lessons?: Array<{
+        lessonId: number;
+        sessionIndex: number;
+        scheduledStart: string;
+        scheduledEnd: string;
+        status?: string;
+        lessonPrice?: number;
+    }>;
     startDate?: string;
     createdAt: string;
     paymentDueAt: string | null;
