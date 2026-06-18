@@ -22,6 +22,61 @@
     transform: translateY(-1px);
 }
 
+.statCard.quiet {
+    min-height: 188px;
+    padding: 20px;
+    border: 1px solid #e3e0d7;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #fdfcf9 100%);
+    box-shadow: 0 8px 24px rgba(26, 34, 56, 0.045);
+}
+
+.statCard.quiet.clickable:hover {
+    border-color: #cbc7bb;
+    box-shadow: 0 12px 28px rgba(26, 34, 56, 0.08);
+    transform: translateY(-2px);
+}
+
+.quiet .statHeader {
+    margin-bottom: 18px;
+}
+
+.quiet .statIcon {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #e8e4d8;
+    background: #f4f1e8;
+}
+
+.quiet .statBadge {
+    padding: 3px 9px;
+    color: #445066;
+    background: #f1f2f3;
+    border: 1px solid #e4e6e9;
+    letter-spacing: 0.04em;
+}
+
+.quiet .statValue {
+    margin-bottom: 6px;
+    font-size: 30px;
+    line-height: 36px;
+    letter-spacing: -0.8px;
+}
+
+.quiet .statLabel {
+    color: #666a72;
+    font-size: 11px;
+    line-height: 15px;
+    letter-spacing: 0.06em;
+}
+
+.quiet .statSubLabel {
+    margin-top: 8px;
+    color: #92959c;
+    font-size: 12px;
+    line-height: 17px;
+}
+
 .statHeader {
     display: flex;
     align-items: flex-start;

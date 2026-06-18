@@ -14,6 +14,8 @@ export interface StatCardProps {
     badge?: string;
     /** Badge color variant */
     badgeVariant?: 'green' | 'blue' | 'orange' | 'dark' | 'red';
+    /** Visual treatment for different dashboard contexts */
+    variant?: 'default' | 'quiet';
     /** Click handler for the whole card */
     onClick?: () => void;
     /** Custom className to append */
@@ -31,12 +33,13 @@ const StatCard: React.FC<StatCardProps> = ({
     subLabel,
     badge,
     badgeVariant = 'green',
+    variant = 'default',
     onClick,
     className,
 }) => {
     return (
         <div
-            className={`${styles.statCard} ${onClick ? styles.clickable : ''} ${className || ''}`}
+            className={`${styles.statCard} ${variant === 'quiet' ? styles.quiet : ''} ${onClick ? styles.clickable : ''} ${className || ''}`}
             onClick={onClick}
         >
             <div className={styles.statHeader}>

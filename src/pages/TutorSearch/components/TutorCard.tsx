@@ -151,7 +151,7 @@ const TutorCard = ({ tutor }: TutorCardProps) => {
             Nhắn tin
           </button>
           <button className="btn-start-plan" onClick={handleButtonClick}>
-            <span className="btn-start-plan-text">BẮT ĐẦU</span>
+            <span className="btn-start-plan-text">XEM HỒ SƠ</span>
             <span className="btn-start-plan-icon">
               <ArrowIcon />
             </span>
