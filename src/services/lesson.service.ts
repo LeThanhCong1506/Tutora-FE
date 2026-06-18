@@ -16,6 +16,7 @@ export interface StudentMini {
   studentId: string;
   fullName?: string;
   gradeLevel?: string;
+  avatarUrl?: string;
 }
 
 export interface SubjectInfo {
@@ -141,7 +142,7 @@ export const getParentLessons = async (
   page: number = 1,
   pageSize: number = 20,
   fromDate?: string,
-  status?: string
+  status?: string,
 ): Promise<ApiResponse<PagedList<LessonResponse>>> => {
   try {
     const params: Record<string, any> = { page, pageSize };
@@ -206,10 +207,7 @@ export const getTutorDashboardStats = async (): Promise<ApiResponse<TutorDashboa
 /**
  * Get tutor calendar
  */
-export const getTutorCalendar = async (
-  startDate?: string,
-  endDate?: string
-): Promise<ApiResponse<CalendarDay[]>> => {
+export const getTutorCalendar = async (startDate?: string, endDate?: string): Promise<ApiResponse<CalendarDay[]>> => {
   try {
     const params: Record<string, string> = {};
     if (startDate) params.startDate = startDate;
@@ -238,7 +236,7 @@ export const getTutorLessons = async (
   page: number = 1,
   pageSize: number = 10,
   fromDate?: string,
-  status?: string
+  status?: string,
 ): Promise<ApiResponse<PagedList<LessonResponse>>> => {
   try {
     const params: Record<string, any> = { page, pageSize };
@@ -264,9 +262,7 @@ export const getTutorLessons = async (
 /**
  * Get tutor lesson detail
  */
-export const getTutorLessonDetail = async (
-  lessonId: number
-): Promise<ApiResponse<LessonDetailDto>> => {
+export const getTutorLessonDetail = async (lessonId: number): Promise<ApiResponse<LessonDetailDto>> => {
   try {
     const response = await api.get(`/tutor/lessons/${lessonId}`, {
       headers: getAuthHeaders(),
@@ -283,7 +279,7 @@ export const getTutorLessonDetail = async (
  */
 export const checkInLesson = async (
   lessonId: number,
-  request: CheckInRequest = {}
+  request: CheckInRequest = {},
 ): Promise<ApiResponse<LessonDetailDto>> => {
   try {
     const response = await api.put(`/tutor/lessons/${lessonId}/checkin`, request, {
@@ -301,7 +297,7 @@ export const checkInLesson = async (
  */
 export const checkOutLesson = async (
   lessonId: number,
-  request: CheckOutRequest = {}
+  request: CheckOutRequest = {},
 ): Promise<ApiResponse<LessonDetailDto>> => {
   try {
     const response = await api.put(`/tutor/lessons/${lessonId}/checkout`, request, {
@@ -319,7 +315,7 @@ export const checkOutLesson = async (
  */
 export const submitLessonReport = async (
   lessonId: number,
-  request: SubmitReportRequest
+  request: SubmitReportRequest,
 ): Promise<ApiResponse<LessonDetailDto>> => {
   try {
     const response = await api.put(`/tutor/lessons/${lessonId}/report`, request, {
@@ -335,10 +331,7 @@ export const submitLessonReport = async (
 /**
  * Upload attachment for a lesson
  */
-export const uploadLessonAttachment = async (
-  lessonId: number,
-  file: File
-): Promise<ApiResponse<string>> => {
+export const uploadLessonAttachment = async (lessonId: number, file: File): Promise<ApiResponse<string>> => {
   try {
     const formData = new FormData();
     formData.append('file', file);
