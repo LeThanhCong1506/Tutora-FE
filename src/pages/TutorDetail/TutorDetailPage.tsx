@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-import { getCurrentUser } from '../../services/auth.service';
+import { getCurrentUser, hasAnyRole } from '../../services/auth.service';
 import { isZaloMiniApp } from '../../services/zalo-env';
 import { loginWithZalo } from '../../services/zalo-auth.service';
 import ZaloRoleSelectModal from '../../components/ZaloRoleSelectModal/ZaloRoleSelectModal';
@@ -49,6 +49,17 @@ const TutorDetailPage = () => {
             return;
         }
         onSuccess();
+    };
+
+    const openBooking = () => {
+        if (!hasAnyRole(['Parent', 'Student'])) {
+            toast.warning('Chỉ phụ huynh hoặc học sinh mới có thể đặt lịch học.', {
+                toastId: 'booking-role-forbidden',
+            });
+            return;
+        }
+
+        setShowBooking(true);
     };
 
     const handleRoleSelect = async (role: 'Parent' | 'Student' | 'Tutor') => {
@@ -175,7 +186,7 @@ const TutorDetailPage = () => {
                     {!inMiniApp && (
                         <BookingSidebar
                             availabilities={profile.availabilities}
-                            onBooking={() => requireLogin(() => setShowBooking(true))}
+                            onBooking={() => requireLogin(openBooking)}
                         />
                     )}
                 </div>
@@ -183,7 +194,7 @@ const TutorDetailPage = () => {
             {!inMiniApp && <Footer />}
 
             <div className="mobile-sticky-cta">
-                <button className="mobile-cta-book" onClick={() => requireLogin(() => setShowBooking(true))}>
+                <button className="mobile-cta-book" onClick={() => requireLogin(openBooking)}>
                     <b>ĐẶT LỊCH</b>
                 </button>
             </div>
