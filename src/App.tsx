@@ -65,9 +65,7 @@ const ParentWallet = lazy(() => import('./pages/ParentWallet'));
 const ParentMessage = lazy(() => import('./pages/ParentMessage'));
 const PaymentPage = lazy(() => import('./pages/ParentBooking/Payment'));
 const ParentStudent = lazy(() => import('./pages/ParentStudent'));
-const ParentLessons = lazy(() => import('./pages/ParentLessons'));
 const ParentLessonDetail = lazy(() => import('./pages/ParentLessons/ParentLessonDetail'));
-const ParentCalendar = lazy(() => import('./pages/ParentLessons/ParentCalendar'));
 const ParentAccount = lazy(() => import('./pages/ParentAccount'));
 
 // Student pages
@@ -224,8 +222,6 @@ function App() {
             <Route path="student" element={<ParentStudent />} />
             <Route path="wallet" element={<ParentWallet />} />
             <Route path="messages" element={<ParentMessage />} />
-            <Route path="calendar" element={<ParentCalendar />} />
-            <Route path="lessons" element={<ParentLessons />} />
             <Route path="lessons/:lessonId" element={<ParentLessonDetail />} />
             <Route path="account" element={<ParentAccount />} />
             <Route path="notifications" element={<NotificationsPage />} />
