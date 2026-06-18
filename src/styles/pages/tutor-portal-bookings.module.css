@@ -288,7 +288,7 @@
 
 .infoGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -346,6 +346,17 @@
   background: #fff;
 }
 
+.scheduleBody {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.scheduleSummary {
+  min-width: 0;
+}
+
 .sectionHeading {
   display: flex;
   align-items: center;
@@ -370,6 +381,8 @@
 
 .bookingPeriod {
   display: grid;
+  min-height: 70px;
+  box-sizing: border-box;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 14px;
@@ -739,12 +752,8 @@
     grid-template-columns: minmax(0, 1fr) 250px;
   }
 
-  .infoGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .infoItem:last-child {
-    grid-column: span 2;
+  .scheduleBody {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -833,10 +842,6 @@
 
   .infoGrid {
     grid-template-columns: 1fr;
-  }
-
-  .infoItem:last-child {
-    grid-column: auto;
   }
 
   .sectionHeading {
