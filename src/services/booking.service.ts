@@ -64,13 +64,26 @@ export interface CreateBookingPayload {
 export interface BookingResponseDTO {
     bookingId: number;
     parentId?: string;
-    student?: { studentId: string; fullName: string; gradeLevel: string };
+    student?: {
+        studentId: string;
+        fullName: string;
+        gradeLevel?: string;
+        gradeLevelId?: number;
+        gradeLevelName?: string;
+    };
     tutor?: { tutorId: string; fullName: string; avatarUrl: string; hourlyRate: number };
     subject?: { subjectId: number; subjectName: string };
-    packageType: string;
+    gradeLevel?: { gradeLevelId: number; gradeName?: string; levelOrder: number };
+    package?: { packageId: number; name?: string; packageType: number };
+    packageType: string | number;
     sessionCount: number;
+    totalSessions?: number;
+    durationMinutesPerSession?: number;
     teachingMode?: string;
     price: number;
+    pricePerHour?: number;
+    totalAmount?: number;
+    currency?: string;
     discountApplied: number;
     finalPrice: number;
     platformFee: number;
@@ -100,6 +113,9 @@ export interface BookingResponseDTO {
     // Refund fields
     refundAmount?: number | null;
     refundStatus?: string | null;
+    cancellationReason?: string | null;
+    cancelledBy?: string | null;
+    cancelledAt?: string | null;
 }
 
 export interface PromotionValidateResult {
