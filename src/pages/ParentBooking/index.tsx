@@ -1,8 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Calendar, Check, ChevronLeft, ChevronRight, Clock, Eye, Plus, Search, Wallet } from 'lucide-react';
+import {
+  BookOpen,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Clock3,
+  Eye,
+  Plus,
+  Search,
+  UserRound,
+  WalletCards,
+} from 'lucide-react';
 import { toast } from 'react-toastify';
-import BookingMonthCalendar from '../../components/BookingMonthCalendar/BookingMonthCalendar';
 import { getParentBookings, type BookingResponseDTO } from '../../services/booking.service';
 import styles from './styles.module.css';
 
@@ -80,38 +90,33 @@ const formatDate = (value?: string) => {
   return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
-const formatTime = (value?: string) => (value ? value.slice(0, 5) : '');
-
-const formatDayName = (dayOfWeek: number) => {
-  if (dayOfWeek === 0 || dayOfWeek === 7) return 'Chủ nhật';
-  return `Thứ ${dayOfWeek + 1}`;
-};
-
 const formatGrade = (grade?: string) => {
   if (!grade) return 'Chưa cập nhật lớp';
   return grade.toLowerCase().includes('lớp') ? grade : `Lớp ${grade}`;
 };
 
-const getUniqueSchedule = (booking: BookingResponseDTO) => {
-  const uniqueSlots = new Map<string, BookingResponseDTO['schedule'][number]>();
-
-  (booking.schedule ?? []).forEach((slot) => {
-    const key = `${slot.dayOfWeek}-${slot.startTime}-${slot.endTime}`;
-    if (!uniqueSlots.has(key)) uniqueSlots.set(key, slot);
-  });
-
-  return Array.from(uniqueSlots.values());
-};
-
-const getBookingPeriod = (booking: BookingResponseDTO) => {
+const getRelevantLesson = (booking: BookingResponseDTO) => {
   const lessons = [...(booking.lessons ?? [])].sort(
     (first, second) => new Date(first.scheduledStart).getTime() - new Date(second.scheduledStart).getTime(),
   );
+  const now = Date.now();
 
-  return {
-    startDate: lessons[0]?.scheduledStart ?? booking.startDate,
-    endDate: lessons.at(-1)?.scheduledEnd,
-  };
+  return (
+    lessons.find(
+      (lesson) =>
+        new Date(lesson.scheduledEnd).getTime() >= now &&
+        !['completed', 'cancelled', 'cancelled_noshow'].includes(lesson.status ?? ''),
+    ) ?? lessons.at(-1)
+  );
+};
+
+const formatLessonTime = (start?: string, end?: string) => {
+  if (!start || !end) return '';
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return '';
+  const options: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' };
+  return `${startDate.toLocaleTimeString('vi-VN', options)} - ${endDate.toLocaleTimeString('vi-VN', options)}`;
 };
 
 const getPaymentAction = (booking: BookingResponseDTO) => {
@@ -132,22 +137,6 @@ const getPaymentAction = (booking: BookingResponseDTO) => {
   }
 
   return null;
-};
-
-const getStatusHint = (status: string) => {
-  const hints: Record<string, string> = {
-    pending_tutor: 'Yêu cầu đang chờ gia sư xem lịch và xác nhận.',
-    accepted: 'Gia sư đã xác nhận. Hoàn tất đặt cọc để giữ lịch học.',
-    pending_payment: 'Hoàn tất thanh toán để giữ lịch học đã chọn.',
-    deposit_paid: 'Bạn đã đặt cọc. Hãy hoàn tất khoản còn lại đúng hạn.',
-    pending_remaining_payment: 'Vui lòng hoàn tất khoản thanh toán còn lại.',
-    paid: 'Booking đã được thanh toán đầy đủ.',
-    ongoing: 'Lớp học đang diễn ra theo lịch đã thống nhất.',
-    completed: 'Lớp học đã hoàn thành.',
-    cancelled: 'Booking này đã được hủy.',
-    payment_timeout: 'Booking đã hết hạn thanh toán.',
-  };
-  return hints[status] ?? 'Theo dõi chi tiết booking để cập nhật trạng thái mới nhất.';
 };
 
 const ParentBooking = () => {
@@ -248,165 +237,97 @@ const ParentBooking = () => {
                 label: booking.status,
                 tone: 'pending',
               };
-              const schedule = getUniqueSchedule(booking);
-              const bookingPeriod = getBookingPeriod(booking);
               const paymentAction = getPaymentAction(booking);
-              const requestDate = formatDate(booking.createdAt);
+              const relevantLesson = getRelevantLesson(booking);
+              const lessonDate = formatDate(relevantLesson?.scheduledStart ?? booking.startDate);
+              const lessonTime = formatLessonTime(relevantLesson?.scheduledStart, relevantLesson?.scheduledEnd);
+              const grade =
+                booking.gradeLevel?.gradeName ?? booking.student?.gradeLevelName ?? booking.student?.gradeLevel;
+              const duration = booking.durationMinutesPerSession
+                ? ` · ${booking.durationMinutesPerSession} phút/buổi`
+                : '';
 
               return (
                 <article key={booking.bookingId} className={styles.bookingCard}>
-                  <header className={styles.cardHeader}>
-                    <div className={styles.tutorInfo}>
-                      <div className={styles.tutorAvatar} aria-hidden="true">
-                        {booking.tutor?.avatarUrl ? (
-                          <img src={booking.tutor.avatarUrl} alt="" />
-                        ) : (
-                          <span>{booking.tutor?.fullName?.trim().charAt(0).toUpperCase() || 'G'}</span>
-                        )}
-                      </div>
-                      <div className={styles.tutorIdentity}>
-                        <div className={styles.tutorNameRow}>
-                          <h2>{booking.tutor?.fullName || 'Gia sư chưa cập nhật tên'}</h2>
-                          <span className={`${styles.statusBadge} ${styles[`status_${status.tone}`]}`}>
-                            {status.label}
-                          </span>
-                        </div>
-                        <p>
-                          Học sinh: {booking.student?.fullName || 'Chưa cập nhật'}
-                          <span aria-hidden="true">•</span>
-                          {formatGrade(booking.student?.gradeLevel)}
-                          {requestDate && (
-                            <>
-                              <span aria-hidden="true">•</span>
-                              Đặt ngày {requestDate}
-                            </>
+                  <div className={styles.cardTop}>
+                    <div className={styles.peopleInfo}>
+                      <div className={styles.tutorInfo}>
+                        <div className={styles.tutorAvatar} aria-hidden="true">
+                          {booking.tutor?.avatarUrl ? (
+                            <img src={booking.tutor.avatarUrl} alt="" />
+                          ) : (
+                            <span>{booking.tutor?.fullName?.trim().charAt(0).toUpperCase() || 'G'}</span>
                           )}
-                        </p>
+                        </div>
+                        <div className={styles.personIdentity}>
+                          <span className={styles.tutorLabel}>Gia sư phụ trách</span>
+                          <h2>{booking.tutor?.fullName || 'Gia sư chưa cập nhật tên'}</h2>
+                        </div>
+                      </div>
+
+                      <div className={styles.studentInfo}>
+                        <div className={styles.studentAvatar} aria-hidden="true">
+                          {booking.student?.fullName?.trim().charAt(0).toUpperCase() || <UserRound size={18} />}
+                        </div>
+                        <div className={styles.personIdentity}>
+                          <span className={styles.studentLabel}>Học sinh</span>
+                          <h2>{booking.student?.fullName || 'Chưa cập nhật học sinh'}</h2>
+                          <p>{formatGrade(grade)}</p>
+                        </div>
                       </div>
                     </div>
-                  </header>
+                    <span className={`${styles.statusBadge} ${styles[`status_${status.tone}`]}`}>{status.label}</span>
+                  </div>
 
-                  <div className={styles.cardContent}>
-                    <div className={styles.bookingDetails}>
-                      <div className={styles.infoGrid}>
-                        <div className={styles.infoItem}>
-                          <span className={styles.infoIcon}>
-                            <BookOpen size={18} />
-                          </span>
-                          <div>
-                            <span className={styles.infoLabel}>Môn học</span>
-                            <strong>{booking.subject?.subjectName || 'Chưa cập nhật'}</strong>
-                          </div>
-                        </div>
-                        <div className={styles.infoItem}>
-                          <span className={styles.infoIcon}>
-                            <Calendar size={18} />
-                          </span>
-                          <div>
-                            <span className={styles.infoLabel}>Thời lượng</span>
-                            <strong>{booking.sessionCount} buổi học</strong>
-                          </div>
-                        </div>
+                  <div className={styles.summaryGrid}>
+                    <div className={styles.summaryItem}>
+                      <span className={styles.summaryIcon}>
+                        <BookOpen size={17} />
+                      </span>
+                      <div>
+                        <span>Môn học</span>
+                        <strong>{booking.subject?.subjectName || 'Chưa cập nhật'}</strong>
                       </div>
-
-                      <section className={styles.scheduleSection} aria-label="Lịch học dự kiến">
-                        <div className={styles.sectionHeading}>
-                          <Calendar size={17} />
-                          <h3>Lịch học dự kiến</h3>
-                        </div>
-                        <div className={styles.scheduleBody}>
-                          <div className={styles.scheduleSummary}>
-                            <div className={styles.bookingPeriod}>
-                              <div>
-                                <span>Bắt đầu</span>
-                                <strong>{formatDate(bookingPeriod.startDate) || 'Chưa xác định'}</strong>
-                              </div>
-                              <span className={styles.periodDivider} aria-hidden="true">
-                                →
-                              </span>
-                              <div>
-                                <span>Kết thúc</span>
-                                <strong>{formatDate(bookingPeriod.endDate) || 'Chưa xác định'}</strong>
-                              </div>
-                            </div>
-                            {schedule.length > 0 ? (
-                              <div className={styles.scheduleList}>
-                                {schedule.map((slot) => (
-                                  <div
-                                    key={`${slot.dayOfWeek}-${slot.startTime}-${slot.endTime}`}
-                                    className={styles.scheduleTag}
-                                  >
-                                    <span>{formatDayName(slot.dayOfWeek)}</span>
-                                    <strong>
-                                      {formatTime(slot.startTime)}
-                                      {slot.endTime ? ` – ${formatTime(slot.endTime)}` : ''}
-                                    </strong>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <p className={styles.noSchedule}>Chưa có khung giờ học.</p>
-                            )}
-                          </div>
-                          <BookingMonthCalendar
-                            lessons={booking.lessons}
-                            startDate={booking.startDate}
-                            schedule={booking.schedule}
-                            sessionCount={booking.sessionCount}
-                          />
-                        </div>
-                      </section>
                     </div>
-
-                    <aside className={styles.paymentCard} aria-label="Thông tin học phí">
-                      <div className={styles.paymentTitle}>
-                        <span>
-                          <Wallet size={18} />
-                        </span>
-                        <div>
-                          <p>Tổng học phí</p>
-                          <strong>{formatPrice(booking.finalPrice)}</strong>
-                        </div>
+                    <div className={styles.summaryItem}>
+                      <span className={styles.summaryIcon}>
+                        <Clock3 size={17} />
+                      </span>
+                      <div>
+                        <span>Lộ trình</span>
+                        <strong>
+                          {booking.sessionCount} buổi{duration}
+                        </strong>
                       </div>
-                      <div className={styles.priceBreakdown}>
-                        <div>
-                          <span>Giá gốc</span>
-                          <strong>{formatPrice(booking.price)}</strong>
-                        </div>
-                        {booking.discountApplied > 0 && (
-                          <div>
-                            <span>Ưu đãi</span>
-                            <strong className={styles.discountValue}>− {formatPrice(booking.discountApplied)}</strong>
-                          </div>
-                        )}
-                        {paymentAction && (
-                          <div className={styles.paymentDue}>
-                            <span>{paymentAction.summaryLabel}</span>
-                            <strong>{formatPrice(paymentAction.amount)}</strong>
-                          </div>
-                        )}
+                    </div>
+                    <div className={styles.summaryItem}>
+                      <span className={styles.summaryIcon}>
+                        <CalendarDays size={17} />
+                      </span>
+                      <div>
+                        <span>{relevantLesson ? 'Buổi học gần nhất' : 'Ngày bắt đầu'}</span>
+                        <strong>{lessonDate || 'Chưa xác định'}</strong>
+                        {lessonTime && <small>{lessonTime}</small>}
                       </div>
-                      <p className={styles.paymentNote}>Khoản thanh toán được bảo vệ theo chính sách của Tutora.</p>
-                    </aside>
+                    </div>
+                    <div className={`${styles.summaryItem} ${paymentAction ? styles.summaryItemDue : ''}`}>
+                      <span className={styles.summaryIcon}>
+                        <WalletCards size={17} />
+                      </span>
+                      <div>
+                        <span>{paymentAction?.summaryLabel ?? 'Tổng học phí'}</span>
+                        <strong>{formatPrice(paymentAction?.amount ?? booking.finalPrice)}</strong>
+                      </div>
+                    </div>
                   </div>
 
                   <footer className={styles.cardFooter}>
-                    <div className={styles.statusHint}>
-                      {booking.status === 'completed' || booking.status === 'paid' ? (
-                        <Check size={16} />
-                      ) : (
-                        <Clock size={16} />
-                      )}
-                      <span>{getStatusHint(booking.status)}</span>
-                    </div>
+                    <span className={styles.bookingMeta}>
+                      BK-{booking.bookingId}
+                      <span aria-hidden="true">•</span>
+                      Tạo ngày {formatDate(booking.createdAt) || 'Chưa cập nhật'}
+                    </span>
                     <div className={styles.cardActions}>
-                      <button
-                        type="button"
-                        className={styles.viewBtn}
-                        onClick={() => navigate(`/parent-portal/booking/${booking.bookingId}`)}
-                      >
-                        <Eye size={16} /> Chi tiết
-                      </button>
                       {paymentAction && (
                         <button
                           type="button"
@@ -416,6 +337,13 @@ const ParentBooking = () => {
                           {paymentAction.label} <ChevronRight size={16} />
                         </button>
                       )}
+                      <button
+                        type="button"
+                        className={styles.viewBtn}
+                        onClick={() => navigate(`/parent-portal/booking/${booking.bookingId}`)}
+                      >
+                        <Eye size={16} /> Xem chi tiết
+                      </button>
                     </div>
                   </footer>
                 </article>

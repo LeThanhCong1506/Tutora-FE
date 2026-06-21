@@ -257,17 +257,9 @@ const TutorPortalLayout: React.FC = () => {
     // Replay tour button in sidebar nav footer
     const sidebarNavFooter = (
         <div
-            className="" // Inherits navItem styling via parent PortalLayout
+            className={`${styles.navItem} ${styles.navFooterItem}`}
             title="Hướng dẫn sử dụng"
             onClick={handleReplayTour}
-            style={{
-                display: 'flex', alignItems: 'center', gap: '10.5px',
-                padding: '10.5px 14px', borderRadius: 7, cursor: 'pointer',
-                color: 'rgba(242, 240, 228, 0.7)', marginTop: 8, opacity: 0.7,
-                fontSize: 14, lineHeight: '21px', fontWeight: 500,
-                fontFamily: "'IBM Plex Sans', sans-serif", minHeight: 40,
-                transition: 'all 0.2s ease',
-            }}
         >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <circle cx="9" cy="9" r="7" />
