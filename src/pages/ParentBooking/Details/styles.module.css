@@ -170,10 +170,10 @@
 .hero h1 {
   margin: 0;
   color: #121d32;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: 'IBM Plex Serif', 'Noto Serif', serif;
   font-size: clamp(31px, 3vw, 44px);
   line-height: 1.05;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.02em;
 }
 
 .heroFacts {

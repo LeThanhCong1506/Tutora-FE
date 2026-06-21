@@ -22,6 +22,8 @@ import {
   GraduationCap,
   CheckCircle2,
   Copy,
+  ArrowRight,
+  ListChecks,
 } from 'lucide-react';
 import { message as antMessage, Button, Radio } from 'antd';
 
@@ -174,22 +176,44 @@ const PaymentPage = () => {
         <div className={styles.successContainer}>
           <div className={styles.successCard}>
             <div className={styles.successIcon}>
-              <CheckCircle2 size={64} color="#059669" />
+              <CheckCircle2 size={52} strokeWidth={2.2} />
             </div>
+            <span className={styles.successEyebrow}>Giao dịch đã được xác nhận</span>
             <h1>Thanh toán hoàn tất!</h1>
-            <p>Cảm ơn bạn đã tin tưởng TUTORA. Buổi học của bạn đã được lên lịch.</p>
+            <p className={styles.successMessage}>
+              Cảm ơn bạn đã tin tưởng TUTORA. Lịch học đã được giữ chỗ và sẵn sàng để bạn theo dõi.
+            </p>
+
+            <div className={styles.successReceipt}>
+              <div>
+                <span>Mã đặt lịch</span>
+                <strong>BK-{bookingId}</strong>
+              </div>
+              <div>
+                <span>Khoản thanh toán</span>
+                <strong>{paymentInfo?.paymentPhase === 'remaining' ? 'Phần còn lại' : 'Đặt cọc 50%'}</strong>
+              </div>
+              <div>
+                <span>Số tiền</span>
+                <strong>{formatPrice(paymentInfo?.amount ?? 0)}</strong>
+              </div>
+            </div>
+
             <div className={styles.successActions}>
               <Button
                 type="primary"
                 size="large"
                 onClick={() => navigate(`/parent-portal/booking/${bookingId}`, { replace: true })}
               >
-                Xem chi tiết lịch học
+                <span>Xem lịch học</span>
+                <ArrowRight size={17} />
               </Button>
               <Button size="large" onClick={() => navigate('/parent-portal/booking', { replace: true })}>
-                Quản lý lớp học
+                <ListChecks size={17} />
+                Danh sách đặt lịch
               </Button>
             </div>
+            <p className={styles.successFootnote}>Thông tin thanh toán đã được cập nhật tự động.</p>
           </div>
         </div>
       </div>
@@ -420,7 +444,9 @@ const PaymentPage = () => {
                                 <button
                                   type="button"
                                   className={styles.copyBtn}
-                                  onClick={() => copy(paymentInfo.description || paymentInfo.paymentCode || '', 'nội dung')}
+                                  onClick={() =>
+                                    copy(paymentInfo.description || paymentInfo.paymentCode || '', 'nội dung')
+                                  }
                                   aria-label="Sao chép nội dung"
                                 >
                                   <Copy size={15} />
