@@ -149,7 +149,7 @@ const StudentLessons = () => {
     return (
         <div className={s.page}>
             {/* Top Bar */}
-            <div className={s.topBar}>
+            <div className={s.topBar} style={centeredColumn}>
                 <div className={s.topBarLeft}>
                     <h1 className={s.pageTitle}>Buổi học</h1>
                     <p className={s.pageSubtitle}>Theo dõi và quản lý buổi học của bạn</p>
@@ -163,7 +163,7 @@ const StudentLessons = () => {
             </div>
 
             {/* Main Content */}
-            <div className={s.mainContent}>
+            <div className={s.mainContent} style={centeredColumn}>
                 {/* Hero "Đang diễn ra" — compact version */}
                 {activeLesson && <ActiveLessonHero lesson={activeLesson} navigate={navigate} />}
 
@@ -316,6 +316,8 @@ const LessonRow = ({ lesson, onClick }: { lesson: any; onClick: () => void }) =>
     const endTime = endIso ? dayjs(endIso).format('HH:mm') : '';
     const isInProgress = lesson.status === 'in_progress';
     const canJoin = isInProgress && lesson.meetingLink;
+    const st = (lesson.status || '').toLowerCase();
+    const isCancelled = st === 'cancelled' || st === 'cancelled_noshow' || st === 'no_show';
 
     return (
         <div
@@ -325,20 +327,33 @@ const LessonRow = ({ lesson, onClick }: { lesson: any; onClick: () => void }) =>
             style={{
                 ...lessonRow,
                 background: hover ? '#fafaf8' : '#fff',
+                borderColor: hover ? '#e0ded7' : '#ededea',
                 borderLeftColor: status.color,
+                boxShadow: hover ? '0 3px 10px rgba(26,34,56,0.07)' : '0 1px 2px rgba(0,0,0,0.02)',
+                opacity: isCancelled ? 0.7 : 1,
             }}
         >
-            {/* Time */}
+            {/* Time — start lớn, end nhỏ bên dưới */}
             <div style={timeBlock}>
-                <span style={timeStart}>{startTime}{endTime ? ` - ${endTime}` : ''}</span>
+                <span
+                    style={{
+                        ...timeStart,
+                        color: isCancelled ? '#9ca3af' : '#1a2238',
+                        textDecoration: isCancelled ? 'line-through' : 'none',
+                    }}
+                >
+                    {startTime}
+                </span>
+                {endTime && <span style={timeEnd}>{endTime}</span>}
             </div>
 
-            {/* Title + tutor inline */}
+            <span style={timeDivider} />
+
+            {/* Môn học + gia sư xếp chồng */}
             <div style={infoBlock}>
-                <span style={titleText}>
+                <span style={{ ...titleText, color: isCancelled ? '#6b7280' : '#1a2238' }}>
                     {lesson.subjectName || `Buổi học #${lesson.lessonId}`}
                 </span>
-                <span style={dotSep}>·</span>
                 <span style={tutorWrap}>
                     <span style={avatarSmall(lesson.tutorName)}>{getInitial(lesson.tutorName)}</span>
                     <span style={tutorName}>{lesson.tutorName || 'Gia sư'}</span>
@@ -364,8 +379,8 @@ const LessonRow = ({ lesson, onClick }: { lesson: any; onClick: () => void }) =>
                     </a>
                 )}
                 <ChevronRight
-                    size={14}
-                    style={{ color: hover ? status.color : '#cbd5e1', transition: 'color 0.15s' }}
+                    size={16}
+                    style={{ color: hover ? status.color : '#cbd5e1', transition: 'color 0.15s', flexShrink: 0 }}
                 />
             </div>
         </div>
@@ -375,6 +390,13 @@ const LessonRow = ({ lesson, onClick }: { lesson: any; onClick: () => void }) =>
 // ─────────────────────────────────────────────────────────────────────────
 // Styles
 // ─────────────────────────────────────────────────────────────────────────
+
+// Giới hạn nội dung thành một cột tập trung, căn giữa — dễ quét mắt hơn full-width
+const centeredColumn: React.CSSProperties = {
+    width: '100%',
+    maxWidth: 1120,
+    margin: '0 auto',
+};
 
 const countPill: React.CSSProperties = {
     display: 'inline-flex',
@@ -504,19 +526,19 @@ const heroJitsiTag: React.CSSProperties = {
 
 // ── Date group ──
 const dateGroup: React.CSSProperties = {
-    marginBottom: 14,
+    marginBottom: 20,
 };
 
 const dateHeader: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: 8,
-    padding: '0 4px 8px',
+    gap: 10,
+    padding: '0 4px 10px',
     fontSize: 12,
-    fontWeight: 600,
-    color: '#737373',
+    fontWeight: 700,
+    color: '#8a8a82',
     fontFamily: "'IBM Plex Sans', sans-serif",
-    letterSpacing: 0.2,
+    letterSpacing: 0.4,
     textTransform: 'uppercase',
 };
 
@@ -531,37 +553,55 @@ const lessonRow: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
     gap: 14,
-    padding: '12px 14px',
+    padding: '13px 16px',
     background: '#fff',
-    borderRadius: 10,
+    borderRadius: 12,
+    border: '1px solid #ededea',
     borderLeft: '3px solid',
     cursor: 'pointer',
-    marginBottom: 6,
-    transition: 'background 0.12s ease',
+    marginBottom: 8,
+    transition: 'background 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease',
     boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
 };
 
 const timeBlock: React.CSSProperties = {
     display: 'flex',
-    alignItems: 'center',
-    minWidth: 100,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    minWidth: 52,
     flexShrink: 0,
+    lineHeight: 1.15,
 };
 
 const timeStart: React.CSSProperties = {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 700,
     color: '#1a2238',
     fontFamily: "'Bricolage Grotesque', 'IBM Plex Sans', sans-serif",
-    lineHeight: 1.1,
+};
+
+const timeEnd: React.CSSProperties = {
+    fontSize: 12,
+    fontWeight: 500,
+    color: '#9ca3af',
+    fontFamily: "'IBM Plex Sans', sans-serif",
+    marginTop: 1,
+};
+
+const timeDivider: React.CSSProperties = {
+    width: 1,
+    alignSelf: 'stretch',
+    background: '#eeeeea',
+    flexShrink: 0,
 };
 
 const infoBlock: React.CSSProperties = {
     flex: 1,
     minWidth: 0,
     display: 'flex',
-    alignItems: 'center',
-    gap: 8,
+    flexDirection: 'column',
+    gap: 3,
     overflow: 'hidden',
 };
 
@@ -573,21 +613,13 @@ const titleText: React.CSSProperties = {
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    flexShrink: 0,
-    maxWidth: '50%',
-};
-
-const dotSep: React.CSSProperties = {
-    color: '#cbd5e1',
-    fontSize: 12,
-    flexShrink: 0,
 };
 
 const tutorWrap: React.CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: 5,
-    fontSize: 12,
+    gap: 6,
+    fontSize: 12.5,
     color: '#737373',
     minWidth: 0,
     overflow: 'hidden',
@@ -600,15 +632,15 @@ const tutorName: React.CSSProperties = {
 };
 
 const avatarSmall = (name: string | null | undefined): React.CSSProperties => ({
-    width: 18,
-    height: 18,
+    width: 20,
+    height: 20,
     borderRadius: '50%',
     background: getAvatarBg(name),
     color: '#fff',
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: 700,
     flexShrink: 0,
 });
