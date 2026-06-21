@@ -674,23 +674,56 @@
    SUCCESS STATE  
 ---------------------------------- */
 .successContainer {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 80vh;
-  padding: 20px;
+  min-height: calc(100vh - 56px);
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 48px 20px;
+  background:
+    radial-gradient(circle at 50% 16%, rgba(16, 185, 129, 0.13), transparent 320px),
+    linear-gradient(135deg, #f8f5ec 0%, #f3f5ed 48%, #edf7f2 100%);
+}
+
+.successContainer::before,
+.successContainer::after {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border: 1px solid rgba(5, 150, 105, 0.09);
+  border-radius: 50%;
+  content: '';
+  pointer-events: none;
+}
+
+.successContainer::before {
+  top: -170px;
+  left: 8%;
+}
+
+.successContainer::after {
+  right: 5%;
+  bottom: -190px;
 }
 
 .successCard {
-  background: #ffffff;
-  border-radius: 32px;
-  box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.1);
-  padding: 64px 48px;
-  text-align: center;
-  max-width: 540px;
-  width: 100%;
   position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 620px;
+  box-sizing: border-box;
   overflow: hidden;
+  padding: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.86);
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow:
+    0 28px 70px rgba(41, 57, 48, 0.12),
+    0 2px 6px rgba(41, 57, 48, 0.04);
+  text-align: center;
+  animation: successCardIn 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .successCard::before {
@@ -699,61 +732,168 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 8px;
-  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+  height: 5px;
+  background: linear-gradient(90deg, #0f9f70 0%, #22b983 50%, #0f9f70 100%);
 }
 
 .successIcon {
-  margin-bottom: 32px;
+  position: relative;
   display: inline-flex;
-  padding: 24px;
-  background: #ecfdf5;
+  width: 104px;
+  height: 104px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
   border-radius: 50%;
+  background: #e9faf3;
+  color: #079669;
+  box-shadow: inset 0 0 0 10px rgba(255, 255, 255, 0.55);
+  animation: successIconIn 600ms 120ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.successIcon::after {
+  position: absolute;
+  inset: -9px;
+  border: 1px solid rgba(5, 150, 105, 0.18);
+  border-radius: 50%;
+  content: '';
+}
+
+.successEyebrow {
+  display: block;
+  margin-bottom: 8px;
+  color: #07825c;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .successCard h1 {
-  font-size: 32px;
+  margin: 0;
+  color: #13231d;
+  font-family: 'IBM Plex Serif', 'Noto Serif', serif;
+  font-size: 36px;
   font-weight: 800;
-  color: #0f172a;
-  margin-bottom: 16px;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.035em;
 }
 
-.successCard p {
-  color: #475569;
-  font-size: 16px;
+.successMessage {
+  max-width: 470px;
+  margin: 14px auto 28px;
+  color: #607068;
+  font-size: 14px;
   line-height: 1.6;
-  margin-bottom: 40px;
+}
+
+.successReceipt {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 26px;
+  overflow: hidden;
+  border: 1px solid #dfe9e3;
+  border-radius: 15px;
+  background: #f8fbf9;
+}
+
+.successReceipt > div {
+  min-width: 0;
+  padding: 15px 12px;
+  border-right: 1px solid #dfe9e3;
+}
+
+.successReceipt > div:last-child {
+  border-right: 0;
+}
+
+.successReceipt span,
+.successReceipt strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.successReceipt span {
+  margin-bottom: 5px;
+  color: #819087;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.successReceipt strong {
+  color: #25382f;
+  font-size: 12px;
 }
 
 .successActions {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .successActions button:first-child {
-  background: #059669 !important;
+  background: #078f66 !important;
   border: none !important;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3) !important;
+  box-shadow: 0 8px 20px rgba(5, 150, 105, 0.22) !important;
 }
 
 .successActions button:first-child:hover {
-  background: #047857 !important;
+  background: #067b59 !important;
   transform: translateY(-2px);
 }
 
 .successActions button:last-child {
-  border-color: #cbd5e1 !important;
-  color: #475569 !important;
+  border-color: #ccd9d2 !important;
+  background: #fff !important;
+  color: #40534a !important;
+}
+
+.successActions button:last-child:hover {
+  border-color: #8eaa9c !important;
+  color: #1f3b2f !important;
 }
 
 .successActions button {
-  height: 52px !important;
-  font-size: 15px !important;
-  font-weight: 600 !important;
+  display: inline-flex !important;
+  height: 50px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
   border-radius: 12px !important;
-  transition: all 0.3s ease !important;
+  transition: all 180ms ease !important;
+}
+
+.successFootnote {
+  margin: 18px 0 0;
+  color: #8a9790;
+  font-size: 10px;
+}
+
+@keyframes successCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes successIconIn {
+  from {
+    opacity: 0;
+    transform: scale(0.65) rotate(-8deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
 }
 
 /* Responsive Constraints */
@@ -814,5 +954,53 @@
 
   .waitingStatus {
     justify-content: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .successContainer {
+    min-height: calc(100vh - 56px);
+    padding: 24px 12px;
+  }
+
+  .successCard {
+    padding: 38px 20px 28px;
+    border-radius: 20px;
+  }
+
+  .successIcon {
+    width: 88px;
+    height: 88px;
+    margin-bottom: 20px;
+  }
+
+  .successCard h1 {
+    font-size: 30px;
+  }
+
+  .successMessage {
+    margin-bottom: 22px;
+    font-size: 13px;
+  }
+
+  .successReceipt,
+  .successActions {
+    grid-template-columns: 1fr;
+  }
+
+  .successReceipt > div {
+    border-right: 0;
+    border-bottom: 1px solid #dfe9e3;
+  }
+
+  .successReceipt > div:last-child {
+    border-bottom: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .successCard,
+  .successIcon {
+    animation-duration: 0.01ms;
   }
 }
