@@ -82,7 +82,7 @@
     display: flex;
     align-items: center;
     gap: 10.5px;
-    padding: 10.5px 14px;
+    padding: 10.5px 17.25px;
     border-radius: 7px;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -95,6 +95,12 @@
     box-sizing: border-box;
 }
 
+.sidebar:hover .navItem,
+.sidebarOpen .navItem {
+    padding-right: 14px;
+    padding-left: 14px;
+}
+
 .navItem:hover {
     background-color: rgba(242, 240, 228, 0.1);
     color: rgba(242, 240, 228, 0.9);
@@ -103,6 +109,15 @@
 .navItemActive {
     background-color: #f2f0e4;
     color: #1a2238;
+}
+
+.navFooterItem {
+    margin-top: 8px;
+    opacity: 0.7;
+}
+
+.navFooterItem:hover {
+    opacity: 1;
 }
 
 .navItem svg {
@@ -201,9 +216,15 @@
     display: flex;
     align-items: center;
     gap: 10.5px;
-    padding: 10.5px;
+    padding: 10.5px 8.5px;
     border-radius: 10.5px;
     background-color: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar:hover .userCard,
+.sidebarOpen .userCard {
+    padding-right: 10.5px;
+    padding-left: 10.5px;
 }
 
 .userAvatar {
@@ -661,6 +682,16 @@
 
     .sidebarOpen {
         transform: translateX(0);
+    }
+
+    .sidebar .navItem {
+        padding-right: 14px;
+        padding-left: 14px;
+    }
+
+    .sidebar .userCard {
+        padding-right: 10.5px;
+        padding-left: 10.5px;
     }
 
     /* Show all text on mobile (sidebar is full-width overlay) */
