@@ -119,7 +119,7 @@ const ComboPreview: React.FC<ComboPreviewProps> = ({ combo, availability, extern
         )}
         <span>
           <ClockCircleOutlined />
-          06:00 - 22:00
+          07:00 - 22:00
         </span>
       </div>
       <HourSlotGrid renderCell={renderCell} hideHalfHourLabels />
