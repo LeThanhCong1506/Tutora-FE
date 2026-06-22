@@ -96,7 +96,8 @@ export interface VerificationSections {
   introduction: IntroductionSection;
   certificates: CertificatesSection;
   identityCard: IdentityCardSection;
-  pricing: PricingSection;
+  /** BE đã bỏ pricing khỏi response progress (giá theo môn×lớp lấy qua getPricing). Optional để khớp thực tế. */
+  pricing?: PricingSection;
 }
 
 export interface VerificationProgressResponse {

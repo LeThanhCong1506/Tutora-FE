@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { YoutubeFilled } from '@ant-design/icons';
 import { Check, CirclePlay, Link2, LoaderCircle, Pencil, Video, X } from 'lucide-react';
 import styles from './IntroVideoSection.module.css';
@@ -10,6 +10,7 @@ interface IntroVideoSectionProps {
   onSave: (url: string) => Promise<string | null>;
   isEditMode: boolean;
   isSaving?: boolean;
+  guidanceSignal?: number;
 }
 
 const Label = () => (
@@ -25,14 +26,49 @@ const PlatformBadge = () => (
   </div>
 );
 
-const IntroVideoSection: React.FC<IntroVideoSectionProps> = ({ videoUrl, onSave, isEditMode, isSaving = false }) => {
+const IntroVideoSection: React.FC<IntroVideoSectionProps> = ({
+  videoUrl,
+  onSave,
+  isEditMode,
+  isSaving = false,
+  guidanceSignal = 0,
+}) => {
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isEditingUrl, setIsEditingUrl] = useState(false);
+  const [showGuidance, setShowGuidance] = useState(false);
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const embedUrl = getYouTubeEmbedUrl(videoUrl);
   // Xem trước trực tiếp theo link đang gõ (null nếu chưa hợp lệ).
   const previewEmbedUrl = getYouTubeEmbedUrl(inputValue);
+
+  useEffect(() => {
+    if (embedUrl || !isEditMode) {
+      const resetTimer = window.setTimeout(() => setShowGuidance(false), 0);
+      return () => window.clearTimeout(resetTimer);
+    }
+    if (!guidanceSignal) return;
+
+    const showTimer = window.setTimeout(() => {
+      setShowGuidance(true);
+      sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 0);
+
+    const focusTimer = window.setTimeout(() => {
+      inputRef.current?.focus();
+    }, 450);
+    const hideTimer = window.setTimeout(() => {
+      setShowGuidance(false);
+    }, 6500);
+
+    return () => {
+      window.clearTimeout(showTimer);
+      window.clearTimeout(focusTimer);
+      window.clearTimeout(hideTimer);
+    };
+  }, [embedUrl, guidanceSignal, isEditMode]);
 
   const handleSave = async () => {
     const url = inputValue.trim();
@@ -166,8 +202,8 @@ const IntroVideoSection: React.FC<IntroVideoSectionProps> = ({ videoUrl, onSave,
   const canCancel = !!embedUrl;
 
   return (
-    <div className={styles.container}>
-      <div className={styles.urlEditCard}>
+    <div ref={sectionRef} className={styles.container}>
+      <div className={`${styles.urlEditCard} ${showGuidance ? styles.guidedCard : ''}`}>
         <div className={styles.cardHeader}>
           <div className={styles.titleBlock}>
             <Label />
@@ -176,7 +212,7 @@ const IntroVideoSection: React.FC<IntroVideoSectionProps> = ({ videoUrl, onSave,
           <PlatformBadge />
         </div>
 
-        <div className={styles.previewArea}>
+        <div className={`${styles.previewArea} ${!previewEmbedUrl ? styles.previewAreaEmpty : ''}`}>
           {previewEmbedUrl ? (
             <iframe
               className={styles.iframe}
@@ -189,15 +225,23 @@ const IntroVideoSection: React.FC<IntroVideoSectionProps> = ({ videoUrl, onSave,
             <div className={styles.previewPlaceholder}>
               <div className={styles.previewIcon}>
                 <YoutubeFilled className={styles.previewYoutubeLogo} />
-                <CirclePlay size={26} strokeWidth={1.8} />
               </div>
-              <strong>Chưa có video</strong>
-              <span>Thêm link YouTube để xem trước</span>
+              <strong>Chưa có video giới thiệu</strong>
+              <span>Dán link YouTube bên dưới để xem trước</span>
             </div>
           )}
         </div>
 
         <div className={styles.urlPanel}>
+          {showGuidance && (
+            <div className={styles.guidanceMessage} role="status" aria-live="polite">
+              <span className={styles.guidanceStep}>1</span>
+              <div className={styles.guidanceCopy}>
+                <strong>Dán link YouTube vào ô bên dưới</strong>
+                <span>Sau đó nhấn nút dấu tích để lưu video.</span>
+              </div>
+            </div>
+          )}
           <label className={styles.inputLabel} htmlFor="intro-video-url">
             Link YouTube
           </label>
@@ -205,14 +249,16 @@ const IntroVideoSection: React.FC<IntroVideoSectionProps> = ({ videoUrl, onSave,
             <div className={styles.inputWrapper}>
               <Link2 className={styles.inputIcon} size={18} strokeWidth={2.1} />
               <input
+                ref={inputRef}
                 id="intro-video-url"
                 type="url"
-                className={`${styles.input} ${error ? styles.inputError : ''}`}
+                className={`${styles.input} ${error ? styles.inputError : ''} ${showGuidance ? styles.inputGuided : ''}`}
                 placeholder="https://www.youtube.com/watch?v=..."
                 value={inputValue}
                 onChange={(e) => {
                   setInputValue(e.target.value);
                   if (error) setError(null);
+                  if (showGuidance && e.target.value.trim()) setShowGuidance(false);
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleSave();
@@ -236,13 +282,11 @@ const IntroVideoSection: React.FC<IntroVideoSectionProps> = ({ videoUrl, onSave,
               </button>
             </div>
           </div>
-          <div className={styles.helperRow}>
-            {error ? (
+          {error && (
+            <div className={styles.helperRow}>
               <span className={styles.error}>{error}</span>
-            ) : (
-              <span>Video sẽ xuất hiện trên hồ sơ marketplace của bạn.</span>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

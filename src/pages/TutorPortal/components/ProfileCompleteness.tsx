@@ -47,10 +47,14 @@ const ProfileCompleteness: React.FC<ProfileCompletenessProps> = ({
     // Thứ tự hiển thị từ trên xuống theo luồng hồ sơ gia sư.
     const completionItems = useMemo<CompletionItem[]>(() => [
         {
+            key: 'avatar',
+            label: 'Ảnh đại diện',
+            completed: !!profileData.avatarUrl,
+        },
+        {
             key: 'basicInfo',
             label: 'Thông tin cơ bản',
             completed:
-                !!profileData.avatarUrl &&
                 !!profileData.headline &&
                 profileData.headline.length >= 10 &&
                 !!profileData.teachingAreaCity &&

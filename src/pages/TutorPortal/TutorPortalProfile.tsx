@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Popconfirm } from 'antd';
+import { Modal, Popconfirm } from 'antd';
+import { ArrowRight, Award, BookOpenText, IdCard, ShieldCheck, UserRoundPen } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useTutorProfileForm, type CredentialData } from './hooks/useTutorProfileForm';
 import ProfileHeroModal from './components/ProfileHeroModal';
@@ -220,9 +221,120 @@ const DISTRICT_LABELS: Record<string, Record<string, string>> = {
 };
 
 const TEACHING_MODE_LABELS: Record<string, string> = {
-  Online: 'Dạy Online',
-  Offline: 'Dạy trực tiếp',
-  Hybrid: 'Online & Trực tiếp',
+  online: 'Dạy online',
+  offline: 'Dạy trực tiếp',
+  both: 'Online & trực tiếp',
+};
+
+interface ProfileEmptyStateProps {
+  icon: React.ReactNode;
+  eyebrow: string;
+  title: string;
+  description?: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}
+
+const ProfileEmptyState: React.FC<ProfileEmptyStateProps> = ({
+  icon,
+  eyebrow,
+  title,
+  description,
+  actionLabel,
+  onAction,
+}) => (
+  <div className={styles.profileEmptyState}>
+    <span className={styles.emptyStateVisual}>{icon}</span>
+    <div className={styles.emptyStateCopy}>
+      <span className={styles.emptyStateEyebrow}>{eyebrow}</span>
+      <h3 className={styles.emptyStateTitle}>{title}</h3>
+      {description && <p className={styles.emptyStateDescription}>{description}</p>}
+    </div>
+    {actionLabel && onAction && (
+      <button type="button" className={styles.emptyStateAction} onClick={onAction}>
+        <span>{actionLabel}</span>
+        <ArrowRight size={16} strokeWidth={2.2} />
+      </button>
+    )}
+  </div>
+);
+
+interface CertificateThumbnailProps {
+  url?: string;
+  name: string;
+  onPreview: (preview: CertificatePreviewData) => void;
+}
+
+interface CertificatePreviewData {
+  name: string;
+  imageUrl: string;
+}
+
+const getCloudinaryPdfImageUrl = (url: string, transformation: string): string | null => {
+  try {
+    const parsedUrl = new URL(url);
+    if (parsedUrl.hostname !== 'res.cloudinary.com' || !parsedUrl.pathname.includes('/image/upload/')) {
+      return null;
+    }
+
+    parsedUrl.pathname = parsedUrl.pathname
+      .replace('/image/upload/', `/image/upload/${transformation}/`)
+      .replace(/\.pdf$/i, '.jpg');
+    parsedUrl.hash = '';
+
+    return parsedUrl.toString();
+  } catch {
+    return null;
+  }
+};
+
+const getCertificateImageUrl = (url?: string, fullSize = false): string | null => {
+  if (!url) return null;
+  if (!/\.pdf(?:$|[?#])/i.test(url)) return url;
+
+  const transformation = fullSize
+    ? 'pg_1,w_1800,c_limit,q_auto,f_jpg'
+    : 'pg_1,w_480,h_360,c_pad,b_white,q_auto,f_jpg';
+
+  return getCloudinaryPdfImageUrl(url, transformation);
+};
+
+const CertificateThumbnail: React.FC<CertificateThumbnailProps> = ({ url, name, onPreview }) => {
+  const [imageFailed, setImageFailed] = useState(false);
+  const isPdf = Boolean(url && /\.pdf(?:$|[?#])/i.test(url));
+  const thumbnailUrl = getCertificateImageUrl(url);
+  const previewUrl = getCertificateImageUrl(url, true);
+
+  if (!url || !thumbnailUrl || imageFailed) {
+    return (
+      <div
+        className={styles.credentialThumbnailFallback}
+        title={isPdf ? 'Không thể tạo ảnh xem trước PDF' : 'Không có ảnh xem trước'}
+      >
+        <CertificateIcon />
+        <span>{isPdf ? 'PDF' : 'Tệp'}</span>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className={styles.credentialThumbnailLink}
+      aria-label={`Xem đầy đủ ảnh chứng chỉ ${name}`}
+      onClick={() => {
+        if (previewUrl) onPreview({ name, imageUrl: previewUrl });
+      }}
+    >
+      <img
+        src={thumbnailUrl}
+        alt={`Ảnh chứng chỉ ${name}`}
+        className={styles.credentialThumbnail}
+        loading="lazy"
+        onError={() => setImageFailed(true)}
+      />
+    </button>
+  );
 };
 
 const TutorPortalProfile: React.FC = () => {
@@ -238,9 +350,11 @@ const TutorPortalProfile: React.FC = () => {
   const [editingCredential, setEditingCredential] = useState<ModalCredentialData | null>(null);
   const [isIdentityModalOpen, setIsIdentityModalOpen] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [certificatePreview, setCertificatePreview] = useState<CertificatePreviewData | null>(null);
   const [deletingCredentialId, setDeletingCredentialId] = useState<string | null>(null);
   const [avatarCropImageSrc, setAvatarCropImageSrc] = useState<string | null>(null);
   const [avatarCropFileName, setAvatarCropFileName] = useState('avatar.jpg');
+  const [videoGuidanceSignal, setVideoGuidanceSignal] = useState(0);
 
   // Form hook
   const {
@@ -275,14 +389,35 @@ const TutorPortalProfile: React.FC = () => {
     return `${district}, ${city}`;
   };
 
+  const hasTeachingArea = Boolean(formData.teachingAreaCity && formData.teachingAreaDistrict);
+  const hasSubjects = formData.subjects.some((subject) => Boolean(subject.subjectName?.trim()));
+  const missingBasicFields = [
+    !formData.avatarUrl && 'Ảnh đại diện',
+    !formData.headline.trim() && 'Tiêu đề hồ sơ',
+    !hasTeachingArea && 'Khu vực dạy',
+    !formData.teachingMode && 'Hình thức dạy',
+  ].filter((field): field is string => Boolean(field));
+  const hasMissingBasicDetails = Boolean(
+    !formData.headline.trim() || !hasTeachingArea || !formData.teachingMode,
+  );
+  const missingAboutFields = [
+    !formData.bio.trim() && 'Giới thiệu bản thân',
+    !formData.education.trim() && 'Học vấn',
+    !formData.experience.trim() && 'Kinh nghiệm',
+  ].filter((field): field is string => Boolean(field));
+  const isAboutEmpty = missingAboutFields.length === 3;
+
   // Handle completeness section click
   const handleCompletenessClick = (section: string) => {
     switch (section) {
+      case 'avatar':
+        openAvatarFilePicker();
+        break;
       case 'basicInfo':
         setIsHeroModalOpen(true);
         break;
       case 'video':
-        // Video is inline edit
+        setVideoGuidanceSignal((signal) => signal + 1);
         break;
       case 'about':
         setIsAboutModalOpen(true);
@@ -446,6 +581,7 @@ const TutorPortalProfile: React.FC = () => {
                   onSave={saveVideoUrl}
                   isEditMode={isEditMode}
                   isSaving={isVideoSaving}
+                  guidanceSignal={videoGuidanceSignal}
                 />
               </div>
 
@@ -453,7 +589,7 @@ const TutorPortalProfile: React.FC = () => {
               <div className={styles.sectionCard} data-tour="profile-hero">
                 <div className={styles.sectionHeader}>
                   <h2 className={styles.sectionTitle}>Thông tin cơ bản</h2>
-                  {isEditMode && (
+                  {isEditMode && missingBasicFields.length === 0 && (
                     <button className={styles.editIconBtn} onClick={() => setIsHeroModalOpen(true)}>
                       <EditPencilIcon />
                     </button>
@@ -468,7 +604,14 @@ const TutorPortalProfile: React.FC = () => {
                     title={isEditMode ? 'Đổi ảnh đại diện' : undefined}
                   >
                     <div className={styles.avatar}>
-                      {formData.avatarUrl && <img src={formData.avatarUrl} alt={formData.fullName} />}
+                      {formData.avatarUrl ? (
+                        <img src={formData.avatarUrl} alt={formData.fullName} />
+                      ) : (
+                        <div className={styles.avatarFallback}>
+                          <UserRoundPen size={25} strokeWidth={1.8} />
+                          <span>Thêm ảnh</span>
+                        </div>
+                      )}
                     </div>
                     {isEditMode && (
                       <span className={styles.avatarCameraBadge}>
@@ -494,7 +637,7 @@ const TutorPortalProfile: React.FC = () => {
                       <VerifiedIcon />
                     </div>
 
-                    <p className={styles.headline}>{formData.headline}</p>
+                    {formData.headline.trim() && <p className={styles.headline}>{formData.headline}</p>}
 
                     <div className={styles.metaRow}>
                       <div className={styles.metaItem}>
@@ -503,38 +646,82 @@ const TutorPortalProfile: React.FC = () => {
                           {formData.averageRating} ({formData.totalReviews} đánh giá)
                         </span>
                       </div>
-                      <div className={styles.metaItem}>
-                        <LocationIcon />
-                        <span className={styles.metaValue}>{getLocationDisplay()}</span>
-                      </div>
-                      <div className={styles.metaItem}>
-                        <DesktopIcon />
-                        <span className={styles.metaValue}>
-                          {TEACHING_MODE_LABELS[formData.teachingMode] || formData.teachingMode}
-                        </span>
-                      </div>
+                      {hasTeachingArea && (
+                        <div className={styles.metaItem}>
+                          <LocationIcon />
+                          <span className={styles.metaValue}>{getLocationDisplay()}</span>
+                        </div>
+                      )}
+                      {formData.teachingMode && (
+                        <div className={styles.metaItem}>
+                          <DesktopIcon />
+                          <span className={styles.metaValue}>{TEACHING_MODE_LABELS[formData.teachingMode]}</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Subject Tags */}
-                    <div className={styles.subjectTags}>
-                      <div className={styles.tagsRow}>
-                        {formData.subjects
-                          .filter((subject) => subject.subjectName && subject.subjectName.trim())
-                          .map((subject) => (
-                            <span key={subject.subjectId} className={styles.subjectTag}>
-                              {subject.subjectName}
+                    {hasSubjects && (
+                      <div className={styles.subjectTags}>
+                        <div className={styles.tagsRow}>
+                          {formData.subjects
+                            .filter((subject) => subject.subjectName && subject.subjectName.trim())
+                            .map((subject) => (
+                              <span key={subject.subjectId} className={styles.subjectTag}>
+                                {subject.subjectName}
+                              </span>
+                            ))}
+                          {/* Display subject-specific tags */}
+                          {formData.subjects.flatMap((subject) =>
+                            subject.tags.map((tag: string) => (
+                              <span key={`${subject.subjectId}-${tag}`} className={styles.customTag}>
+                                {tag}
+                              </span>
+                            )),
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {missingBasicFields.length > 0 && (
+                      <div className={styles.basicCompletionNotice}>
+                        <div className={styles.basicNoticeHeader}>
+                          <span className={styles.basicNoticeIcon}>
+                            <UserRoundPen size={18} strokeWidth={2} />
+                          </span>
+                          <div>
+                            <strong>Hoàn thiện thông tin hiển thị</strong>
+                          </div>
+                        </div>
+                        <div className={styles.missingFieldList} aria-label="Thông tin cơ bản còn thiếu">
+                          {missingBasicFields.map((field) => (
+                            <span key={field} className={styles.missingFieldChip}>
+                              {field}
                             </span>
                           ))}
-                        {/* Display subject-specific tags */}
-                        {formData.subjects.flatMap((subject) =>
-                          subject.tags.map((tag: string) => (
-                            <span key={`${subject.subjectId}-${tag}`} className={styles.customTag}>
-                              {tag}
-                            </span>
-                          )),
+                        </div>
+                        {isEditMode && (
+                          <div className={styles.emptyStateActions}>
+                            {hasMissingBasicDetails && (
+                              <button
+                                type="button"
+                                className={styles.emptyStateAction}
+                                onClick={() => setIsHeroModalOpen(true)}
+                              >
+                                <span>Bổ sung thông tin</span>
+                                <ArrowRight size={16} strokeWidth={2.2} />
+                              </button>
+                            )}
+                            {!hasMissingBasicDetails && !formData.avatarUrl && (
+                              <button type="button" className={styles.emptyStateAction} onClick={openAvatarFilePicker}>
+                                <span>Thêm ảnh đại diện</span>
+                                <ArrowRight size={16} strokeWidth={2.2} />
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -543,34 +730,76 @@ const TutorPortalProfile: React.FC = () => {
               <div className={styles.sectionCard} data-tour="profile-about">
                 <div className={styles.sectionHeader}>
                   <h2 className={styles.sectionTitle}>Giới thiệu</h2>
-                  {isEditMode && (
+                  {isEditMode && !isAboutEmpty && (
                     <button className={styles.editIconBtn} onClick={() => setIsAboutModalOpen(true)}>
                       <EditPencilIcon />
                     </button>
                   )}
                 </div>
                 <div className={styles.aboutContent}>
-                  <p className={styles.bioText}>{formData.bio}</p>
+                  {isAboutEmpty ? (
+                    <ProfileEmptyState
+                      icon={<BookOpenText size={27} strokeWidth={1.8} />}
+                      eyebrow="Chưa có nội dung"
+                      title="Kể học viên nghe về bạn"
+                      actionLabel={isEditMode ? 'Viết phần giới thiệu' : undefined}
+                      onAction={isEditMode ? () => setIsAboutModalOpen(true) : undefined}
+                    />
+                  ) : (
+                    <>
+                      {formData.bio.trim() && <p className={styles.bioText}>{formData.bio}</p>}
 
-                  <div className={styles.aboutDetails}>
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>Học vấn</span>
-                      <span className={styles.detailValue}>{formData.education}</span>
-                    </div>
-                    {formData.gpa && formData.gpaScale && (
-                      <div className={styles.detailItem}>
-                        <span className={styles.detailLabel}>GPA</span>
-                        <span className={styles.detailValue}>
-                          {formData.gpa}/{formData.gpaScale}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                      {(formData.education.trim() || (formData.gpa && formData.gpaScale)) && (
+                        <div className={styles.aboutDetails}>
+                          {formData.education.trim() && (
+                            <div className={styles.detailItem}>
+                              <span className={styles.detailLabel}>Học vấn</span>
+                              <span className={styles.detailValue}>{formData.education}</span>
+                            </div>
+                          )}
+                          {formData.gpa && formData.gpaScale && (
+                            <div className={styles.detailItem}>
+                              <span className={styles.detailLabel}>GPA</span>
+                              <span className={styles.detailValue}>
+                                {formData.gpa}/{formData.gpaScale}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
 
-                  <div className={styles.experienceSection}>
-                    <h3 className={styles.subTitle}>Kinh nghiệm</h3>
-                    <p className={styles.experienceText}>{formData.experience}</p>
-                  </div>
+                      {formData.experience.trim() && (
+                        <div className={styles.experienceSection}>
+                          <h3 className={styles.subTitle}>Kinh nghiệm</h3>
+                          <p className={styles.experienceText}>{formData.experience}</p>
+                        </div>
+                      )}
+
+                      {missingAboutFields.length > 0 && (
+                        <div className={styles.partialInfoPrompt}>
+                          <div>
+                            <strong>Phần giới thiệu chưa hoàn chỉnh</strong>
+                            <div className={styles.missingFieldList}>
+                              {missingAboutFields.map((field) => (
+                                <span key={field} className={styles.missingFieldChip}>
+                                  {field}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          {isEditMode && (
+                            <button
+                              type="button"
+                              className={styles.emptyStateSecondaryAction}
+                              onClick={() => setIsAboutModalOpen(true)}
+                            >
+                              Bổ sung
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -578,7 +807,7 @@ const TutorPortalProfile: React.FC = () => {
               <div className={styles.sectionCard} data-tour="profile-credentials">
                 <div className={styles.sectionHeader}>
                   <h2 className={styles.sectionTitle}>Bằng cấp & Chứng chỉ</h2>
-                  {isEditMode && (
+                  {isEditMode && formData.credentials.length > 0 && (
                     <button
                       className={styles.editIconBtn}
                       onClick={() => {
@@ -594,17 +823,33 @@ const TutorPortalProfile: React.FC = () => {
                 </div>
 
                 {/* Credentials List */}
-                <div className={styles.credentialsList}>
+                <div
+                  className={`${styles.credentialsList} ${formData.credentials.length === 0 ? styles.credentialsListEmpty : ''}`}
+                >
                   {formData.credentials.length === 0 ? (
-                    <div className={styles.emptyCredentials}>
-                      <p>Chưa có chứng chỉ nào. Thêm chứng chỉ để tăng độ tin cậy của bạn.</p>
-                    </div>
+                    <ProfileEmptyState
+                      icon={<Award size={28} strokeWidth={1.8} />}
+                      eyebrow="Chưa có minh chứng chuyên môn"
+                      title="Xây dựng hồ sơ đáng tin cậy"
+                      actionLabel={isEditMode ? 'Thêm bằng cấp, chứng chỉ' : undefined}
+                      onAction={
+                        isEditMode
+                          ? () => {
+                              setEditingCredential(null);
+                              setIsCredentialModalOpen(true);
+                            }
+                          : undefined
+                      }
+                    />
                   ) : (
                     formData.credentials.map((credential) => (
                       <div key={credential.id} className={styles.credentialItem}>
-                        <div className={styles.credentialIcon}>
-                          <CertificateIcon />
-                        </div>
+                        <CertificateThumbnail
+                          key={credential.certificateUrl || 'no-certificate-image'}
+                          url={credential.certificateUrl}
+                          name={credential.name}
+                          onPreview={setCertificatePreview}
+                        />
                         <div className={styles.credentialInfo}>
                           <h4 className={styles.credentialTitle}>{credential.name}</h4>
                           <p className={styles.credentialInstitution}>{credential.institution}</p>
@@ -629,23 +874,14 @@ const TutorPortalProfile: React.FC = () => {
                               <strong>Ghi chú:</strong> {credential.verificationNote}
                             </p>
                           )}
-                          {/* Show certificate file link */}
-                          {credential.certificateUrl && (
-                            <a
-                              href={credential.certificateUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={styles.credentialLink}
-                            >
-                              Xem chứng chỉ
-                            </a>
-                          )}
                         </div>
                         {isEditMode && (
                           <div className={styles.credentialActions}>
                             <button
                               className={styles.editCredentialBtn}
                               onClick={() => handleEditCredential(credential)}
+                              title="Chỉnh sửa chứng chỉ"
+                              aria-label={`Chỉnh sửa ${credential.name}`}
                             >
                               <EditPencilIcon />
                             </button>
@@ -661,7 +897,12 @@ const TutorPortalProfile: React.FC = () => {
                               }}
                               placement="left"
                             >
-                              <button className={styles.deleteCredentialBtn} onClick={(e) => e.stopPropagation()}>
+                              <button
+                                className={styles.deleteCredentialBtn}
+                                onClick={(e) => e.stopPropagation()}
+                                title="Xóa chứng chỉ"
+                                aria-label={`Xóa ${credential.name}`}
+                              >
                                 <TrashIcon />
                               </button>
                             </Popconfirm>
@@ -721,9 +962,24 @@ const TutorPortalProfile: React.FC = () => {
                     )}
                     {formData.identityVerification.verificationStatus === 'not_submitted' && (
                       <div className={styles.identityNotSubmitted}>
-                        <p>Xác minh danh tính để tăng độ tin cậy với học sinh và phụ huynh.</p>
+                        <span className={styles.identityEmptyVisual}>
+                          <ShieldCheck size={29} strokeWidth={1.8} />
+                        </span>
+                        <div className={styles.identityEmptyCopy}>
+                          <span className={styles.identityEmptyEyebrow}>Chưa xác minh</span>
+                          <h3>Chuẩn bị CCCD để xác minh</h3>
+                          <p>Bạn cần tải lên ảnh rõ nét của cả hai mặt giấy tờ.</p>
+                          <div className={styles.identityRequirements}>
+                            <span>
+                              <IdCard size={14} strokeWidth={2} />
+                              Mặt trước và mặt sau
+                            </span>
+                            <span>JPG/PNG, tối đa 5MB</span>
+                          </div>
+                        </div>
                         <button className={styles.verifyNowBtn} onClick={() => setIsIdentityModalOpen(true)}>
-                          Xác minh ngay
+                          <span>Bắt đầu xác minh</span>
+                          <ArrowRight size={16} strokeWidth={2.2} />
                         </button>
                       </div>
                     )}
@@ -734,35 +990,16 @@ const TutorPortalProfile: React.FC = () => {
 
             {/* Right Column - Sidebar */}
             <div className={styles.rightColumn}>
-              {/* Card phải chỉ render khi có nội dung: preview (nút đặt/nhắn) hoặc
-                                edit chưa có lịch (nhắc cập nhật lịch). Tránh hộp trắng rỗng. */}
-              {(!isEditMode || formData.availability.length === 0) && (
+              {/* Card phải chỉ render ở chế độ xem trước (nút đặt/nhắn). */}
+              {!isEditMode && (
                 <div className={styles.pricingCard} data-tour="profile-pricing">
-                  {/* Show no schedule message on card only in edit mode */}
-                  {isEditMode && formData.availability.length === 0 && (
-                    <div className={styles.noScheduleSection}>
-                      <p className={styles.noScheduleMessage}>Chưa cập nhật lịch</p>
-                      <button
-                        className={styles.updateScheduleLink}
-                        onClick={() => navigate('/tutor-portal/onboarding')}
-                      >
-                        Cập nhật lịch ngay
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Show booking and message buttons only in preview mode */}
-                  {!isEditMode && (
-                    <>
-                      <button className={styles.bookTrialBtn} onClick={() => setIsBookingModalOpen(true)}>
-                        Đặt buổi học thử
-                      </button>
-                      <button className={styles.sendMessageBtn}>
-                        <MessageIcon />
-                        <span>Gửi tin nhắn</span>
-                      </button>
-                    </>
-                  )}
+                  <button className={styles.bookTrialBtn} onClick={() => setIsBookingModalOpen(true)}>
+                    Đặt buổi học thử
+                  </button>
+                  <button className={styles.sendMessageBtn}>
+                    <MessageIcon />
+                    <span>Gửi tin nhắn</span>
+                  </button>
                 </div>
               )}
 
@@ -817,6 +1054,26 @@ const TutorPortalProfile: React.FC = () => {
       </div>
 
       {/* Modals */}
+      <Modal
+        open={Boolean(certificatePreview)}
+        onCancel={() => setCertificatePreview(null)}
+        footer={null}
+        centered
+        width={1000}
+        title={certificatePreview?.name}
+        className={styles.certificatePreviewModal}
+      >
+        {certificatePreview && (
+          <div className={styles.certificatePreviewCanvas}>
+            <img
+              src={certificatePreview.imageUrl}
+              alt={`Chứng chỉ ${certificatePreview.name}`}
+              className={styles.certificatePreviewImage}
+            />
+          </div>
+        )}
+      </Modal>
+
       <ProfileHeroModal
         isOpen={isHeroModalOpen}
         onClose={() => setIsHeroModalOpen(false)}
