@@ -270,13 +270,18 @@ function mapPricingToForm(items: SubjectGradePriceItem[]): {
  * Extract section statuses from API response
  */
 function mapSectionStatuses(sections: VerificationSections): SectionStatuses {
+    // LƯU Ý: BE đã BỎ `pricing` khỏi response verification/progress (giá giờ theo
+    // môn×lớp, lấy riêng qua getPricing). Truy cập trực tiếp `sections.pricing.status`
+    // sẽ ném TypeError (pricing === undefined) và làm crash cả loadAll TRƯỚC khi
+    // setFormData → toàn bộ hồ sơ (kể cả avatar) hiển thị rỗng / 0 bước hoàn thành.
+    // Dùng optional chaining + fallback để an toàn với mọi section có thể vắng mặt.
     return {
-        video: sections.video.status,
-        basicInfo: sections.basicInfo.status,
-        introduction: sections.introduction.status,
-        certificates: sections.certificates.status,
-        identityCard: sections.identityCard.status,
-        pricing: sections.pricing.status
+        video: sections.video?.status ?? 'in_progress',
+        basicInfo: sections.basicInfo?.status ?? 'in_progress',
+        introduction: sections.introduction?.status ?? 'in_progress',
+        certificates: sections.certificates?.status ?? 'in_progress',
+        identityCard: sections.identityCard?.status ?? 'in_progress',
+        pricing: sections.pricing?.status ?? 'in_progress'
     };
 }
 
@@ -675,15 +680,37 @@ export function useTutorProfileForm() {
             }
             toast.success(avatarResponse.message || 'Cập nhật ảnh đại diện thành công!');
 
-            // Refetch progress để lấy avatarUrl mới.
-            const progressResponse = await getVerificationProgress(userId);
-            if (progressResponse.statusCode === 200 && progressResponse.content?.sections) {
-                const mappedData = mapSectionsToFormData(progressResponse.content.sections);
-                const statuses = mapSectionStatuses(progressResponse.content.sections);
-                setFormData(prev => ({ ...prev, ...mappedData }));
-                setSavedData(prev => ({ ...prev, ...mappedData }));
-                setSectionStatuses(statuses);
-                setLastSaved(new Date());
+            // Cập nhật avatarUrl NGAY, KHÔNG phụ thuộc refetch progress (vốn có thể
+            // lỗi/chậm). Endpoint upload avatar của tutor hiện chỉ trả message — nếu
+            // sau này BE trả về URL thì ưu tiên dùng; nếu chưa, dùng ảnh vừa upload
+            // (object URL) để hiển thị tạm. Nhờ vậy thanh tiến trình + ô "Thông tin
+            // cơ bản" + header đều phản ánh ảnh mới ngay lập tức.
+            const serverAvatarUrl = (avatarResponse.content as { avatarUrl?: string } | null)?.avatarUrl;
+            const immediateAvatarUrl = serverAvatarUrl || URL.createObjectURL(file);
+            setFormData(prev => ({ ...prev, avatarUrl: immediateAvatarUrl }));
+            setSavedData(prev => ({ ...prev, avatarUrl: immediateAvatarUrl }));
+            setLastSaved(new Date());
+            window.dispatchEvent(new CustomEvent('avatar-updated', { detail: immediateAvatarUrl }));
+
+            // Best-effort: lấy URL chuẩn từ server để thay ảnh tạm. Bọc try/catch
+            // RIÊNG: refetch lỗi cũng KHÔNG báo "cập nhật thất bại" (ảnh đã lưu) —
+            // tránh hiện đồng thời cả toast success lẫn error cho cùng một thao tác.
+            try {
+                const progressResponse = await getVerificationProgress(userId);
+                if (progressResponse.statusCode === 200 && progressResponse.content?.sections) {
+                    const mappedData = mapSectionsToFormData(progressResponse.content.sections);
+                    const statuses = mapSectionStatuses(progressResponse.content.sections);
+                    setFormData(prev => ({ ...prev, ...mappedData }));
+                    setSavedData(prev => ({ ...prev, ...mappedData }));
+                    setSectionStatuses(statuses);
+
+                    // Đồng bộ avatar lên header (PortalLayout lắng nghe sự kiện này).
+                    if (mappedData.avatarUrl) {
+                        window.dispatchEvent(new CustomEvent('avatar-updated', { detail: mappedData.avatarUrl }));
+                    }
+                }
+            } catch (refetchErr) {
+                console.error('⚠️ Avatar đã upload nhưng refetch progress lỗi:', refetchErr);
             }
             return true;
         } catch (err: any) {
