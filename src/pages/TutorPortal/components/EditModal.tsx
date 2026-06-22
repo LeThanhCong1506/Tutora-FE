@@ -13,6 +13,7 @@ interface EditModalProps {
     size?: 'small' | 'medium' | 'large';
     saveDisabled?: boolean;
     hideCancel?: boolean;  // Hide cancel button (for view-only mode)
+    disableEscape?: boolean;
 }
 
 const CloseIcon = () => (
@@ -39,21 +40,22 @@ const EditModal: React.FC<EditModalProps> = ({
     cancelLabel = 'Hủy',
     size = 'medium',
     saveDisabled = false,
-    hideCancel = false
+    hideCancel = false,
+    disableEscape = false
 }) => {
     const modalRef = useRef<HTMLDivElement>(null);
 
     // Handle escape key
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && isOpen && !isLoading) {
+            if (e.key === 'Escape' && isOpen && !isLoading && !disableEscape) {
                 onClose();
             }
         };
 
         document.addEventListener('keydown', handleEscape);
         return () => document.removeEventListener('keydown', handleEscape);
-    }, [isOpen, isLoading, onClose]);
+    }, [disableEscape, isOpen, isLoading, onClose]);
 
     // Lock body scroll when modal is open
     useEffect(() => {
