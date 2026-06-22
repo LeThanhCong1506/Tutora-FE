@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
-import { AutoComplete } from 'antd';
+import { AutoComplete, Modal } from 'antd';
 import EditModal from './EditModal';
 import FormField from './FormField';
 import { validateCredentialName, validateInstitution, validateCertificateFile } from '../utils/validation';
@@ -27,19 +27,6 @@ const UploadIcon = () => (
       strokeLinecap="round"
       strokeLinejoin="round"
     />
-  </svg>
-);
-
-const FileIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-    <path
-      d="M11 1H5C3.89543 1 3 1.89543 3 3V17C3 18.1046 3.89543 19 5 19H15C16.1046 19 17 18.1046 17 17V7L11 1Z"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path d="M11 1V7H17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -92,6 +79,30 @@ const YEARS = Array.from({ length: CURRENT_YEAR - 1990 + 1 }, (_, i) => ({
   label: String(CURRENT_YEAR - i),
 }));
 
+const getCertificatePreviewUrl = (url: string | null, fullSize = false): string | null => {
+  if (!url) return null;
+  if (!/\.pdf(?:$|[?#])/i.test(url)) return url;
+
+  try {
+    const parsedUrl = new URL(url);
+    if (parsedUrl.hostname !== 'res.cloudinary.com' || !parsedUrl.pathname.includes('/image/upload/')) {
+      return null;
+    }
+
+    const transformation = fullSize
+      ? 'pg_1,w_1800,c_limit,q_auto,f_jpg'
+      : 'pg_1,w_320,h_240,c_pad,b_white,q_auto,f_jpg';
+
+    parsedUrl.pathname = parsedUrl.pathname
+      .replace('/image/upload/', `/image/upload/${transformation}/`)
+      .replace(/\.pdf$/i, '.jpg');
+    parsedUrl.hash = '';
+    return parsedUrl.toString();
+  } catch {
+    return null;
+  }
+};
+
 const CredentialModal: React.FC<CredentialModalProps> = ({
   isOpen,
   onClose,
@@ -114,10 +125,13 @@ const CredentialModal: React.FC<CredentialModalProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
   const [certificateTypeSearch, setCertificateTypeSearch] = useState<string>('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { saveDraft, loadDraft, clearDraft } = useFormDraft<CredentialData>('draft_credential');
+  const previewImageUrl = getCertificatePreviewUrl(filePreview);
+  const fullPreviewImageUrl = getCertificatePreviewUrl(filePreview, true);
 
   // Reset form when modal opens — prioritize draft over initialData
   useEffect(() => {
@@ -127,6 +141,7 @@ const CredentialModal: React.FC<CredentialModalProps> = ({
       setFormData(dataToUse);
       setErrors({});
       setFilePreview(dataToUse.certificateUrl || null);
+      setIsImagePreviewOpen(false);
       // Set initial search value
       if (dataToUse.certificateType) {
         setCertificateTypeSearch(getCertificateLabel(dataToUse.certificateType));
@@ -174,6 +189,7 @@ const CredentialModal: React.FC<CredentialModalProps> = ({
   const handleRemoveFile = () => {
     setFormData((prev) => ({ ...prev, certificateFile: null, certificateUrl: undefined }));
     setFilePreview(null);
+    setIsImagePreviewOpen(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -298,6 +314,7 @@ const CredentialModal: React.FC<CredentialModalProps> = ({
   };
 
   return (
+    <>
     <EditModal
       isOpen={isOpen}
       onClose={onClose}
@@ -305,6 +322,7 @@ const CredentialModal: React.FC<CredentialModalProps> = ({
       title={isEditing ? 'Chỉnh sửa chứng chỉ' : 'Thêm chứng chỉ mới'}
       isLoading={isLoading}
       saveLabel={isEditing ? 'Cập nhật' : 'Gửi duyệt'}
+      disableEscape={isImagePreviewOpen}
       size="medium"
     >
       <div className={styles.form}>
@@ -404,9 +422,8 @@ const CredentialModal: React.FC<CredentialModalProps> = ({
           label="Mã chứng chỉ"
           value={formData.credentialId || ''}
           onChange={(value) => setFormData((prev) => ({ ...prev, credentialId: value }))}
-          placeholder="Mã định danh của chứng chỉ (nếu có)"
+          placeholder="Không bắt buộc, giúp tăng khả năng được duyệt."
           maxLength={100}
-          hint="Không bắt buộc"
         />
 
         {/* Credential URL (Optional) */}
@@ -416,9 +433,8 @@ const CredentialModal: React.FC<CredentialModalProps> = ({
           label="Link xác minh"
           value={formData.credentialUrl || ''}
           onChange={(value) => setFormData((prev) => ({ ...prev, credentialUrl: value }))}
-          placeholder="URL để xác minh chứng chỉ online (nếu có)"
+          placeholder="Không bắt buộc, giúp tăng khả năng được duyệt."
           maxLength={500}
-          hint="Không bắt buộc"
         />
 
         {/* Certificate Upload */}
@@ -431,15 +447,39 @@ const CredentialModal: React.FC<CredentialModalProps> = ({
           {/* File Preview */}
           {(formData.certificateFile || formData.certificateUrl) && (
             <div className={styles.filePreview}>
-              {filePreview && filePreview.startsWith('data:image') ? (
-                <img src={filePreview} alt="Certificate preview" className={styles.previewImage} />
+              {previewImageUrl ? (
+                <button
+                  type="button"
+                  className={styles.previewImageButton}
+                  onClick={() => setIsImagePreviewOpen(true)}
+                  aria-label="Xem trước ảnh chứng chỉ"
+                  title="Xem ảnh"
+                >
+                  <img
+                    src={previewImageUrl}
+                    alt="Ảnh xem trước chứng chỉ"
+                    className={styles.previewImage}
+                    onError={() => setFilePreview(null)}
+                  />
+                </button>
               ) : (
-                <div className={styles.fileInfo}>
-                  <FileIcon />
-                  <span>{formData.certificateFile?.name || 'File đã tải lên'}</span>
-                </div>
+                <span className={styles.fileTypeFallback}>
+                  {formData.certificateFile?.type === 'application/pdf' || /\.pdf(?:$|[?#])/i.test(formData.certificateUrl || '')
+                    ? 'PDF'
+                    : 'Tệp'}
+                </span>
               )}
-              <button type="button" className={styles.removeFileBtn} onClick={handleRemoveFile}>
+              <div className={styles.fileInfo}>
+                <strong>{formData.certificateFile?.name || 'Ảnh chứng chỉ đã tải lên'}</strong>
+                <span>{previewImageUrl ? 'Sẵn sàng xem trước' : 'File chứng chỉ'}</span>
+              </div>
+              <button
+                type="button"
+                className={styles.removeFileBtn}
+                onClick={handleRemoveFile}
+                aria-label="Xóa file chứng chỉ"
+                title="Xóa file"
+              >
                 <CloseIcon />
               </button>
             </div>
@@ -473,6 +513,28 @@ const CredentialModal: React.FC<CredentialModalProps> = ({
         </div>
       </div>
     </EditModal>
+
+      <Modal
+        open={isImagePreviewOpen && Boolean(fullPreviewImageUrl)}
+        onCancel={() => setIsImagePreviewOpen(false)}
+        footer={null}
+        centered
+        width={960}
+        zIndex={1200}
+        title="Xem trước chứng chỉ"
+        className={styles.imagePreviewModal}
+      >
+        {fullPreviewImageUrl && (
+          <div className={styles.imagePreviewCanvas}>
+            <img
+              src={fullPreviewImageUrl}
+              alt="Ảnh chứng chỉ đầy đủ"
+              className={styles.imagePreviewFull}
+            />
+          </div>
+        )}
+      </Modal>
+    </>
   );
 };
 
