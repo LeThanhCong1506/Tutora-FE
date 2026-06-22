@@ -89,7 +89,7 @@ const AccountIcon = () => (
 // inject dynamically trong component qua `useUnreadMessageBadge`.
 const baseNavItems: NavItem[] = [
     { path: '/tutor-portal/dashboard', label: 'Tổng quan', icon: DashboardIcon, dataTour: 'nav-dashboard' },
-    { path: '/tutor-portal/profile', label: 'Hồ sơ công khai', icon: ProfileIcon, dataTour: 'nav-profile' },
+    { path: '/tutor-portal/profile', label: 'Hồ sơ gia sư', icon: ProfileIcon, dataTour: 'nav-profile' },
     { path: '/tutor-portal/onboarding', label: 'Thiết lập giảng dạy', icon: TeachingSetupIcon, dataTour: 'nav-onboarding' },
     { path: MESSAGES_PATH, label: 'Tin nhắn', icon: MessagesIcon, dataTour: 'nav-messages' },
     { path: '/tutor-portal/bookings', label: 'Yêu cầu đặt lịch', icon: BookingIcon, dataTour: 'nav-bookings' },
@@ -133,7 +133,7 @@ const tourSteps: TourStep[] = [
     },
     {
         target: '[data-tour="nav-profile"]',
-        title: '🪪 Hồ sơ công khai',
+        title: '🪪 Hồ sơ gia sư',
         description: 'Chỉnh sửa hồ sơ hiển thị cho phụ huynh: ảnh đại diện, giới thiệu, bằng cấp, giá dạy, video giới thiệu.',
         placement: 'right',
     },
