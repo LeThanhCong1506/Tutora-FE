@@ -93,6 +93,11 @@
     pointer-events: none;
 }
 
+.charCounterOverLimit {
+    color: #631b1b;
+    font-weight: 700;
+}
+
 /* Textarea */
 .textareaWrapper {
     position: relative;

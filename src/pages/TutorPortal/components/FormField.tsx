@@ -97,7 +97,17 @@ const FormField: React.FC<FormFieldProps> = (props) => {
                     </div>
                 );
 
-            case 'textarea':
+            case 'textarea': {
+                // Không dùng maxLength native: giới hạn cứng có thể cắt ký tự đang được
+                // bộ gõ tiếng Việt ghép (IME), ví dụ "Phát" thành "Pát" ở sát giới hạn.
+                const isOverLimit = Boolean(props.maxLength && props.value.length > props.maxLength);
+                const describedBy = [
+                    error ? `${name}-error` : null,
+                    props.maxLength ? `${name}-counter` : null,
+                ]
+                    .filter(Boolean)
+                    .join(' ') || undefined;
+
                 return (
                     <div className={styles.textareaWrapper}>
                         <textarea
@@ -106,20 +116,23 @@ const FormField: React.FC<FormFieldProps> = (props) => {
                             value={props.value}
                             onChange={(e) => props.onChange(e.target.value)}
                             placeholder={props.placeholder}
-                            maxLength={props.maxLength}
                             rows={props.rows || 4}
                             disabled={props.disabled}
-                            className={`${styles.textarea} ${error ? styles.inputError : ''}`}
-                            aria-invalid={!!error}
-                            aria-describedby={error ? `${name}-error` : undefined}
+                            className={`${styles.textarea} ${error || isOverLimit ? styles.inputError : ''}`}
+                            aria-invalid={!!error || isOverLimit}
+                            aria-describedby={describedBy}
                         />
                         {props.maxLength && (
-                            <span className={styles.charCounter}>
+                            <span
+                                id={`${name}-counter`}
+                                className={`${styles.charCounter} ${isOverLimit ? styles.charCounterOverLimit : ''}`}
+                            >
                                 {props.value.length}/{props.maxLength}
                             </span>
                         )}
                     </div>
                 );
+            }
 
             case 'select':
                 return (

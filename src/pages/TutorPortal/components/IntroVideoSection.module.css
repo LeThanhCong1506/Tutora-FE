@@ -24,6 +24,14 @@
     0 1px 2px rgba(26, 34, 56, 0.08);
 }
 
+.guidedCard {
+  border-color: rgba(146, 112, 12, 0.42);
+  box-shadow:
+    0 0 0 4px rgba(146, 112, 12, 0.11),
+    0 20px 45px rgba(26, 34, 56, 0.08);
+  animation: guidancePulse 0.7s ease-out;
+}
+
 .videoCard,
 .urlEditCard,
 .uploadingState {
@@ -111,6 +119,12 @@
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
+.previewAreaEmpty {
+  background: linear-gradient(145deg, #faf9f4 0%, #f1efe5 100%);
+  border: 1px dashed rgba(26, 34, 56, 0.16);
+  box-shadow: none;
+}
+
 .iframe {
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -184,26 +198,16 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 9px;
+  gap: 7px;
   padding: 24px;
   overflow: hidden;
   text-align: center;
-  color: rgba(255, 255, 255, 0.78);
-  background:
-    radial-gradient(circle at 18% 18%, rgba(200, 59, 50, 0.2), transparent 28%),
-    radial-gradient(circle at 82% 72%, rgba(61, 74, 62, 0.24), transparent 32%),
-    linear-gradient(135deg, #10172a, #090f1d);
+  color: var(--video-ink);
+  background: transparent;
 }
 
 .previewPlaceholder::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
-  background-size: 34px 34px;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.88), rgba(0, 0, 0, 0.18));
+  content: none;
 }
 
 .previewPlaceholder strong,
@@ -215,49 +219,88 @@
 
 .previewPlaceholder strong {
   font-family: 'Bricolage Grotesque', serif;
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 700;
   line-height: 1.25;
   letter-spacing: 0;
-  color: #fff;
+  color: var(--video-ink);
 }
 
 .previewPlaceholder span {
   font-family: 'IBM Plex Sans', sans-serif;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.45;
-  color: rgba(255, 255, 255, 0.56);
+  color: var(--video-muted);
 }
 
 .previewIcon {
-  width: 78px;
-  height: 78px;
-  border-radius: 50%;
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
   display: grid;
   place-items: center;
   margin-bottom: 2px;
-  color: #fff;
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.24);
+  color: #ff0033;
+  background-color: #fff;
+  border: 1px solid rgba(26, 34, 56, 0.09);
+  box-shadow: 0 10px 24px rgba(26, 34, 56, 0.09);
 }
 
 .previewYoutubeLogo {
   color: #ff0033;
-  font-size: 34px;
+  font-size: 31px;
   line-height: 1;
-}
-
-.previewIcon svg:last-child {
-  position: absolute;
-  color: rgba(255, 255, 255, 0.92);
 }
 
 .urlPanel {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid rgba(26, 34, 56, 0.08);
+}
+
+.guidanceMessage {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 11px 12px;
+  border: 1px solid rgba(146, 112, 12, 0.18);
+  border-radius: 11px;
+  color: #1a2238;
+  background-color: rgba(255, 248, 225, 0.72);
+}
+
+.guidanceStep {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #fff;
+  background-color: #92700c;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.guidanceCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.guidanceCopy strong {
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.guidanceCopy span {
+  color: var(--video-muted);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
 }
 
 .inputLabel {
@@ -323,6 +366,12 @@
 .inputError {
   border-color: rgba(200, 59, 50, 0.86);
   box-shadow: 0 0 0 4px rgba(200, 59, 50, 0.1);
+}
+
+.inputGuided,
+.inputGuided:focus {
+  border-color: rgba(146, 112, 12, 0.72);
+  box-shadow: 0 0 0 4px rgba(146, 112, 12, 0.12);
 }
 
 .editActions {
@@ -457,6 +506,23 @@
 
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes guidancePulse {
+  from {
+    transform: translateY(3px);
+    box-shadow: 0 0 0 0 rgba(146, 112, 12, 0.24);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guidedCard {
+    animation: none;
   }
 }
 

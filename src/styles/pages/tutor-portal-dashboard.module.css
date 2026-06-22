@@ -37,16 +37,25 @@
     font-family: 'IBM Plex Serif', serif;
 }
 
-/* Profile Under Review Banner */
+/* Profile status and completion card */
 .reviewBanner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 17.7px;
-    background-color: rgba(26, 34, 56, 0.05);
-    border: 1.2px solid rgba(26, 34, 56, 0.1);
-    border-radius: 14px;
-    gap: 20px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(230px, 270px);
+    overflow: hidden;
+    background: linear-gradient(135deg, #f8f7f0 0%, #efeee5 100%);
+    border: 1px solid rgba(26, 34, 56, 0.12);
+    border-radius: 18px;
+    box-shadow: 0 8px 24px rgba(26, 34, 56, 0.06);
+}
+
+.reviewBannerRejected {
+    background: linear-gradient(135deg, #fff8f6 0%, #f8ece9 100%);
+    border-color: rgba(185, 53, 45, 0.2);
+}
+
+.bannerMain {
+    min-width: 0;
+    padding: 22px 24px 24px;
 }
 
 .bannerContent {
@@ -56,10 +65,12 @@
 }
 
 .bannerIcon {
-    width: 38.6px;
-    height: 38.6px;
-    border-radius: 10.5px;
-    background-color: rgba(26, 34, 56, 0.1);
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+    background-color: #fff;
+    border: 1px solid rgba(26, 34, 56, 0.1);
+    box-shadow: 0 4px 12px rgba(26, 34, 56, 0.06);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -75,64 +86,196 @@
 .bannerText {
     display: flex;
     flex-direction: column;
-    gap: 0.5px;
+    gap: 3px;
+    padding-top: 1px;
 }
 
 .bannerTitleRow {
     display: flex;
-    align-items: flex-end;
-    gap: 7px;
-    padding-bottom: 0.9px;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .bannerTitle {
-    font-size: 14px;
-    line-height: 21px;
-    font-weight: 700;
+    margin: 0;
+    font-size: 18px;
+    line-height: 24px;
+    font-weight: 750;
     color: #1a2238;
     font-family: 'Bricolage Grotesque', sans-serif;
 }
 
 .pendingBadge {
-    padding: 1.8px 7px;
+    padding: 3px 8px;
     background-color: #1a2238;
     border-radius: 9999px;
-    font-size: 10px;
-    line-height: 15px;
+    font-size: 9px;
+    line-height: 14px;
     font-weight: 700;
     color: #fff;
     letter-spacing: 1px;
     text-transform: uppercase;
 }
 
+.pendingBadgeRejected {
+    color: #a8332c;
+    background-color: rgba(185, 53, 45, 0.1);
+}
+
 .bannerDescription {
-    font-size: 12.3px;
-    line-height: 17.5px;
-    font-style: italic;
-    color: rgba(62, 47, 40, 0.7);
+    max-width: 850px;
+    font-size: 13px;
+    line-height: 19px;
+    color: rgba(62, 47, 40, 0.72);
     margin: 0;
-    font-family: 'IBM Plex Serif', serif;
+}
+
+.profileProgressSection {
+    margin-top: 18px;
+}
+
+.profileProgressHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 8px;
+    color: rgba(26, 34, 56, 0.66);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.65px;
+    text-transform: uppercase;
+}
+
+.profileProgressHeader strong {
+    color: #1a2238;
+    font-size: 12px;
+    letter-spacing: 0;
+}
+
+.profileProgressTrack {
+    height: 7px;
+    overflow: hidden;
+    border-radius: 999px;
+    background-color: rgba(26, 34, 56, 0.1);
+}
+
+.profileProgressTrack span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #3d4a3e 0%, #617761 100%);
+    transition: width 0.4s ease;
+}
+
+.profileRequirements {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.profileRequirement {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid rgba(26, 34, 56, 0.08);
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.68);
+    color: #1a2238;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 17px;
+}
+
+.requirementIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    flex: 0 0 22px;
+    border-radius: 7px;
+}
+
+.profileRequirementMissing .requirementIcon {
+    color: #a15c16;
+    background-color: #fff1dc;
+}
+
+.profileRequirementDone {
+    color: rgba(26, 34, 56, 0.62);
+}
+
+.profileRequirementDone .requirementIcon {
+    color: #39724e;
+    background-color: #e4f3e8;
+}
+
+.bannerAside {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 24px;
+    border-left: 1px solid rgba(26, 34, 56, 0.1);
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+.nextStepEyebrow {
+    margin-bottom: 8px;
+    color: rgba(26, 34, 56, 0.5);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.nextStepTitle {
+    color: #1a2238;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 16px;
+    line-height: 21px;
+}
+
+.nextStepMeta {
+    margin-top: 4px;
+    color: rgba(62, 47, 40, 0.62);
+    font-size: 11.5px;
+    line-height: 17px;
 }
 
 .viewDetailsBtn {
     display: flex;
     align-items: center;
     gap: 7px;
-    padding: 8.8px 21px;
+    justify-content: center;
+    width: 100%;
+    margin-top: 18px;
+    padding: 11px 16px;
     background-color: #1a2238;
     border: none;
-    border-radius: 10.5px;
-    font-size: 10.5px;
-    line-height: 14px;
+    border-radius: 11px;
+    font-size: 12px;
+    line-height: 16px;
     font-weight: 700;
     color: #fff;
     cursor: pointer;
-    transition: opacity 0.2s ease;
+    transition: background-color 0.2s ease, transform 0.2s ease;
     flex-shrink: 0;
 }
 
 .viewDetailsBtn:hover {
-    opacity: 0.9;
+    background-color: #2b354e;
+    transform: translateY(-1px);
+}
+
+.viewDetailsBtn:focus-visible {
+    outline: 3px solid rgba(26, 34, 56, 0.24);
+    outline-offset: 3px;
 }
 
 .viewDetailsBtn svg {
@@ -1036,6 +1179,10 @@
 }
 
 @media (max-width: 1400px) {
+    .profileRequirements {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
     .contentGrid {
         flex-direction: column;
     }
@@ -1049,6 +1196,14 @@
 }
 
 @media (max-width: 1024px) {
+    .reviewBanner {
+        grid-template-columns: minmax(0, 1fr) 230px;
+    }
+
+    .profileRequirements {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .statsGrid {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -1099,9 +1254,22 @@
 
     /* Banner */
     .reviewBanner {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 14px;
+        grid-template-columns: 1fr;
+    }
+
+    .bannerMain,
+    .bannerAside {
+        padding: 18px;
+    }
+
+    .bannerAside {
+        border-top: 1px solid rgba(26, 34, 56, 0.1);
+        border-left: 0;
+    }
+
+    .bannerTitle {
+        font-size: 16px;
+        line-height: 22px;
     }
 
     .viewDetailsBtn {
@@ -1231,6 +1399,19 @@
         gap: 8px;
     }
 
+    .bannerContent {
+        gap: 10px;
+    }
+
+    .bannerIcon {
+        width: 38px;
+        height: 38px;
+    }
+
+    .profileRequirements {
+        grid-template-columns: 1fr;
+    }
+
     .statCard {
         padding: 10px;
     }
@@ -1255,4 +1436,4 @@
         font-size: 12px;
         height: 32px;
     }
-}
+}
