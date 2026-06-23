@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import styles from '../../styles/pages/tutor-portal-dashboard.module.css';
@@ -7,6 +7,8 @@ import { getTutorFeedbacks, type FeedbackDto } from '../../services/feedback.ser
 import { getCurrentUser } from '../../services/auth.service';
 import { StatCard } from '../../components/shared';
 import ReplyFeedbackModal from './components/ReplyFeedbackModal';
+import { useTutorProfileForm } from './hooks/useTutorProfileForm';
+import { getProfileCompletionItems } from './profileCompletion';
 
 // Icons
 const ClockIcon = () => (
@@ -99,20 +101,6 @@ const ProfileMissingIcon = () => (
     </svg>
 );
 
-const PROFILE_REQUIREMENTS = [
-    { key: 'hourlyRate', label: 'Giá theo giờ' },
-    { key: 'bio', label: 'Giới thiệu bản thân' },
-    { key: 'video', label: 'Video giới thiệu' },
-    { key: 'avatar', label: 'Ảnh đại diện' },
-    { key: 'education', label: 'Học vấn' },
-    { key: 'headline', label: 'Tiêu đề hồ sơ' },
-    { key: 'subjects', label: 'Môn học' },
-    { key: 'teachingArea', label: 'Khu vực dạy' },
-    { key: 'teachingMode', label: 'Hình thức dạy' },
-    { key: 'certificates', label: 'Chứng chỉ' },
-    { key: 'identity', label: 'Xác minh danh tính' },
-] as const;
-
 const ChevronLeftIcon = () => (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M9 11L5 7L9 3" strokeLinecap="round" strokeLinejoin="round" />
@@ -129,6 +117,7 @@ const ChevronRightIcon = () => (
 
 const TutorPortalDashboard: React.FC = () => {
     const navigate = useNavigate();
+    const { formData: profileData, isInitialLoading: isProfileLoading } = useTutorProfileForm();
     const [selectedTab, setSelectedTab] = useState<'today' | 'tomorrow' | 'week' | 'date'>('today');
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -364,11 +353,11 @@ const TutorPortalDashboard: React.FC = () => {
         setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
     };
 
-    const missingProfileFields = stats?.missingFields ?? [];
-    const missingProfileCount = PROFILE_REQUIREMENTS.filter(item => missingProfileFields.includes(item.key)).length;
-    const completedProfileCount = PROFILE_REQUIREMENTS.length - missingProfileCount;
-    const profileCompletionPercent = Math.round((completedProfileCount / PROFILE_REQUIREMENTS.length) * 100);
-    const firstMissingProfileField = PROFILE_REQUIREMENTS.find(item => missingProfileFields.includes(item.key));
+    const profileRequirements = useMemo(() => getProfileCompletionItems(profileData), [profileData]);
+    const missingProfileCount = profileRequirements.filter(item => !item.completed).length;
+    const completedProfileCount = profileRequirements.length - missingProfileCount;
+    const profileCompletionPercent = Math.round((completedProfileCount / profileRequirements.length) * 100);
+    const firstMissingProfileField = profileRequirements.find(item => !item.completed);
 
     return (
         <div className={styles.dashboard}>
@@ -414,11 +403,11 @@ const TutorPortalDashboard: React.FC = () => {
                             </div>
                         </div>
 
-                        {stats.profileStatus === 'draft' && stats.missingFields && stats.missingFields.length > 0 && (
+                        {stats.profileStatus === 'draft' && !isProfileLoading && missingProfileCount > 0 && (
                             <div className={styles.profileProgressSection}>
                                 <div className={styles.profileProgressHeader}>
                                     <span>Tiến độ hoàn thiện</span>
-                                    <strong>{completedProfileCount}/{PROFILE_REQUIREMENTS.length} mục</strong>
+                                    <strong>{completedProfileCount}/{profileRequirements.length} mục</strong>
                                 </div>
                                 <div
                                     className={styles.profileProgressTrack}
@@ -431,8 +420,8 @@ const TutorPortalDashboard: React.FC = () => {
                                     <span style={{ width: `${profileCompletionPercent}%` }} />
                                 </div>
                                 <div className={styles.profileRequirements}>
-                                    {PROFILE_REQUIREMENTS.map(item => {
-                                        const isMissing = missingProfileFields.includes(item.key);
+                                    {profileRequirements.map(item => {
+                                        const isMissing = !item.completed;
                                         return (
                                             <div
                                                 key={item.key}

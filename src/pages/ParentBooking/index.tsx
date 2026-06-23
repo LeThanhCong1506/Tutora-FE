@@ -31,7 +31,7 @@ const STATUS_CONFIG: Record<string, { label: string; tone: string }> = {
   pending_tutor: { label: 'Chờ gia sư xác nhận', tone: 'pending' },
   accepted: { label: 'Chờ đặt cọc', tone: 'warning' },
   pending_payment: { label: 'Chờ thanh toán', tone: 'warning' },
-  deposit_paid: { label: 'Đã đặt cọc 50%', tone: 'paid' },
+  deposit_paid: { label: 'Đã thanh toán buổi đầu', tone: 'paid' },
   pending_remaining_payment: { label: 'Thanh toán còn lại', tone: 'warning' },
   paid: { label: 'Đã thanh toán', tone: 'paid' },
   ongoing: { label: 'Đang học', tone: 'active' },
@@ -121,10 +121,12 @@ const formatLessonTime = (start?: string, end?: string) => {
 
 const getPaymentAction = (booking: BookingResponseDTO) => {
   if (booking.status === 'accepted' || booking.status === 'pending_payment') {
+    // Cọc = buổi học đầu tiên = finalPrice / số buổi (BE làm tròn về số nguyên đồng).
+    const sessions = booking.totalSessions || booking.sessionCount || 1;
     return {
-      label: 'Thanh toán đặt cọc',
-      summaryLabel: 'Cần đặt cọc',
-      amount: booking.depositAmount ?? Math.ceil(booking.finalPrice * 0.5),
+      label: 'Thanh toán buổi đầu',
+      summaryLabel: 'Buổi học đầu tiên',
+      amount: booking.depositAmount ?? Math.round(booking.finalPrice / sessions),
     };
   }
 

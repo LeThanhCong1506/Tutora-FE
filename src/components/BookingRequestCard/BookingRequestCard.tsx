@@ -147,7 +147,7 @@ const BookingRequestCard = ({ message, isTutor = false, onProceedToPayment }: Bo
             case 'pending_tutor': return 'Chờ xác nhận';
             case 'accepted': return 'Đã chấp nhận';
             case 'pending_payment': return 'Chờ thanh toán';
-            case 'deposit_paid': return 'Đã cọc (50%)';
+            case 'deposit_paid': return 'Đã TT buổi đầu';
             case 'pending_remaining_payment': return 'Chờ TT còn lại';
             case 'paid': return 'Đã thanh toán';
             case 'payment_timeout': return 'Đã hết hạn';
@@ -238,13 +238,13 @@ const BookingRequestCard = ({ message, isTutor = false, onProceedToPayment }: Bo
                 <div className={styles.paymentPrompt}>
                     <div className={styles.paymentText}>
                         <Check size={16} className={styles.successIcon} />
-                        <span>Gia sư đã chấp nhận yêu cầu! Vui lòng đặt cọc 50% để xác nhận lớp học.</span>
+                        <span>Gia sư đã chấp nhận yêu cầu! Vui lòng thanh toán buổi học đầu tiên để xác nhận lớp học.</span>
                     </div>
                     <button
                         className={styles.paymentBtn}
                         onClick={() => onProceedToPayment?.(data.bookingId)}
                     >
-                        🔒 Tiến hành đặt cọc (50%)
+                        🔒 Thanh toán buổi học đầu tiên
                     </button>
                 </div>
             )}
@@ -253,7 +253,7 @@ const BookingRequestCard = ({ message, isTutor = false, onProceedToPayment }: Bo
                 <div className={styles.paymentPrompt} style={{ backgroundColor: '#eff6ff', borderColor: '#3b82f6' }}>
                     <div className={styles.paymentText}>
                         <Check size={16} className={styles.successIcon} style={{ color: '#16a34a' }} />
-                        <span style={{ color: '#1e40af' }}>Đã đặt cọc 50%. Vui lòng thanh toán phần còn lại để bắt đầu học.</span>
+                        <span style={{ color: '#1e40af' }}>Đã thanh toán buổi đầu. Vui lòng thanh toán các buổi còn lại để tiếp tục học.</span>
                     </div>
                     <button
                         className={styles.paymentBtn}
@@ -269,7 +269,7 @@ const BookingRequestCard = ({ message, isTutor = false, onProceedToPayment }: Bo
                 <div className={styles.paymentPrompt} style={{ backgroundColor: '#fee2e2', borderColor: '#ef4444' }}>
                     <div className={styles.paymentText} style={{ color: '#b91c1c' }}>
                         <AlertCircle size={16} />
-                        <span>Yêu cầu đã hết hạn thanh toán (24h) và bị hủy.</span>
+                        <span>Yêu cầu đã hết hạn thanh toán (30 phút) và bị hủy.</span>
                     </div>
                 </div>
             )}
