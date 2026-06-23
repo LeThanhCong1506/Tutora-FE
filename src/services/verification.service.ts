@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from 'axios';
-import type { VerificationRequest, VerificationResponse, EKYCContent } from '../types/verification.types';
+import type { EKYCContent } from '../types/verification.types';
 import { getCurrentUser } from './auth.service';
 import { setupAuthInterceptor } from './apiClient';
 
@@ -23,83 +23,9 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-/**
- * Submit CCCD verification to backend
- * The API returns eKYC result immediately after processing
- * @param frontImagePath - Path to front image in Supabase (e.g., "u123/cccd_front.jpg")
- * @param backImagePath - Path to back image in Supabase (e.g., "u123/cccd_back.jpg")
- * @returns Verification response with eKYC content if successful
- */
-export const submitVerification = async (
-    frontImagePath: string,
-    backImagePath: string
-): Promise<VerificationResponse> => {
-    try {
-        // Backend expects PascalCase field names: FrontImgPath and BackImgPath
-        const payload: VerificationRequest = {
-            FrontImgPath: frontImagePath,
-            BackImgPath: backImagePath
-        };
-
-        const response = await api.post('/tutors/verification/submit', payload);
-
-        console.log('✅ Verification API response:', response.data);
-
-        // API returns eKYC result immediately
-        // Response format: { message, statusCode, content: { id, name, dob, home, address, sex, id_prob, ... } }
-        const ekycContent: EKYCContent | undefined = response.data.content;
-
-        // If we have eKYC content, verification was successful
-        const isVerified = ekycContent && ekycContent.id && ekycContent.name;
-
-        return {
-            success: true,
-            message: response.data.message || (isVerified ? 'Xác thực danh tính thành công!' : 'Gửi xác thực thành công'),
-            verificationId: response.data.verificationId,
-            status: isVerified ? 'approved' : (response.data.status || 'pending'),
-            content: ekycContent
-        };
-
-    } catch (error: any) {
-        console.error('❌ Verification submission error:', error);
-        console.error('📄 Error response data:', error.response?.data);
-        console.error('📊 Error response status:', error.response?.status);
-        console.error('📋 Error response headers:', error.response?.headers);
-
-        // Log validation errors in detail
-        if (error.response?.data?.errors) {
-            console.error('🔍 Validation errors:', JSON.stringify(error.response.data.errors, null, 2));
-        }
-
-        const errorMessage = error.response?.data?.message
-            || error.response?.data?.Message
-            || error.response?.data?.title
-            || error.message
-            || 'Có lỗi xảy ra khi gửi xác thực';
-
-        return {
-            success: false,
-            message: errorMessage
-        };
-    }
-};
-
-/**
- * Get current verification status (if backend provides this endpoint)
- * @returns Verification status
- */
-export const getVerificationStatus = async (): Promise<VerificationResponse | null> => {
-    try {
-        // Note: endpoint này không có trong ENDPOINT_MAPPING.md — suy luận theo
-        // pattern `/tutor-verification/*` → `/tutors/verification/*`. Nếu BE
-        // không expose, hàm gracefully trả null qua catch bên dưới.
-        const response = await api.get('/tutors/verification/status');
-        return response.data;
-    } catch (error: any) {
-        console.error('❌ Error getting verification status:', error);
-        return null;
-    }
-};
+// CCCD upload + eKYC giờ đi qua `uploadCccd` (POST /api/tutors/{id}/profile/cccd) trong
+// tutorProfile.service.ts — upload file trực tiếp + OCR trong 1 request. Endpoint cũ
+// (POST /tutors/verification/submit nhận URL ảnh) đã bị BE gỡ bỏ.
 
 /**
  * User KYC data from /api/users/{id}
@@ -151,7 +77,7 @@ export const getUserKYCData = async (): Promise<UserKYCData | null> => {
         // Parse ekycRawData JSON string.
         // BE lưu dạng bọc: { OcrResult: { id, name, dob, home, address, sex, ... }, VerifiedAt }.
         // UI cần dạng phẳng (ekyc.id, ekyc.name…) → bóc lớp OcrResult nếu có; vẫn chấp
-        // nhận dạng phẳng sẵn (vd content trả về trực tiếp từ /verification/submit).
+        // nhận dạng phẳng sẵn nếu BE trả về trực tiếp.
         let ekycData: EKYCContent | null = null;
         const ekycRaw = userData.ekycRawData || userData.EkycRawData || userData.ekycrawdata;
         let parsed: unknown = null;
