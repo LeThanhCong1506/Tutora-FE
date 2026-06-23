@@ -185,8 +185,8 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
     const getPhaseTitle = () => {
         if (!paymentInfo) return 'Hoàn tất thanh toán';
         return paymentInfo.paymentPhase === 'remaining'
-            ? '💰 Thanh toán phần còn lại'
-            : '🔒 Thanh toán đặt cọc (50%)';
+            ? '💰 Thanh toán các buổi còn lại'
+            : '🔒 Thanh toán buổi học đầu tiên';
     };
 
     const formatCountdown = (seconds: number) => {
@@ -403,15 +403,15 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                                 )}
                                 {paymentInfo.paymentPhase === 'remaining' && paymentInfo.depositAmount != null && (
                                     <div className={styles.summaryRow}>
-                                        <span>Đã đặt cọc (50%):</span>
+                                        <span>Đã thanh toán buổi đầu:</span>
                                         <span style={{ color: '#16a34a' }}>- {formatCurrency(paymentInfo.depositAmount)}</span>
                                     </div>
                                 )}
                                 <div className={styles.summaryRow}>
                                     <span>
                                         {paymentInfo.paymentPhase === 'remaining'
-                                            ? 'Số tiền còn lại cần thanh toán:'
-                                            : 'Số tiền đặt cọc (50%):'}
+                                            ? 'Số tiền các buổi còn lại:'
+                                            : 'Số tiền buổi học đầu tiên:'}
                                     </span>
                                     <strong className={styles.amount}>{formatCurrency(paymentInfo.amount)}</strong>
                                 </div>

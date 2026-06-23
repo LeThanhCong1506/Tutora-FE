@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import EditModal from './EditModal';
 import { uploadCccd } from '../../../services/tutorProfile.service';
-import { submitVerification } from '../../../services/verification.service';
 import { getUserIdFromToken } from '../../../services/auth.service';
 import styles from './IdentityVerificationModal.module.css';
 
@@ -162,7 +161,7 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
         return Object.keys(newErrors).length === 0;
     };
 
-    // Submit: upload cả 2 ảnh CCCD lên Cloudinary (BE) → lấy URL → gửi eKYC.
+    // Submit: CHỈ 1 API duy nhất — BE upload ảnh CCCD lên Cloudinary + OCR/eKYC ngay.
     const handleSave = async () => {
         if (!validateForm()) return;
 
@@ -179,51 +178,40 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
         setIsLoading(true);
 
         try {
-            // 1. Upload ảnh CCCD lên Cloudinary qua BE.
-            const uploadRes = await uploadCccd(userId, frontFile, backFile);
-            if (uploadRes.statusCode !== 200 || !uploadRes.content) {
-                toast.error(uploadRes.message || 'Tải ảnh CCCD thất bại. Vui lòng thử lại.');
+            const res = await uploadCccd(userId, frontFile, backFile);
+            const kyc = res.content;
+
+            if (res.statusCode !== 200 || !kyc) {
+                toast.error(res.message || 'Xác minh CCCD thất bại. Vui lòng thử lại.');
                 return;
             }
 
-            const { frontImageUrl, backImageUrl } = uploadRes.content;
-
-            // 2. Gửi eKYC với URL ảnh vừa upload.
-            const response = await submitVerification(frontImageUrl, backImageUrl);
-
-            if (response.success) {
-                const isVerified = response.status === 'approved' && response.content;
-
-                if (isVerified && response.content) {
-                    toast.success('Xác thực danh tính thành công!');
-                    onSave({
-                        ...formData,
-                        idNumber: response.content.id || '',
-                        fullNameOnId: response.content.name || '',
-                        dateOfBirth: response.content.dob || '',
-                        address: response.content.address || '',
-                        hometown: response.content.home || '',
-                        gender: response.content.sex || '',
-                        idFrontImageUrl: frontImageUrl,
-                        idBackImageUrl: backImageUrl,
-                        verificationStatus: 'verified',
-                    });
-                } else {
-                    toast.success('Đã gửi yêu cầu xác thực. Admin sẽ xét duyệt trong 24-48h.');
-                    onSave({
-                        ...formData,
-                        idFrontImageUrl: frontImageUrl,
-                        idBackImageUrl: backImageUrl,
-                        verificationStatus: 'pending',
-                    });
-                }
-                onClose();
+            if (kyc.ocrSuccess) {
+                // Đọc được CCCD và tên khớp hồ sơ (BE đã chặn nếu lệch) → đã xác minh.
+                toast.success('Xác minh danh tính thành công!');
+                onSave({
+                    ...formData,
+                    idNumber: kyc.identityNumber || '',
+                    fullNameOnId: kyc.fullName || '',
+                    dateOfBirth: kyc.dateOfBirth || '',
+                    gender: kyc.gender || '',
+                    address: kyc.address || '',
+                    verificationStatus: 'verified',
+                });
             } else {
-                toast.error(response.message || 'Có lỗi xảy ra khi gửi xác thực');
+                // Không đọc được CCCD → ảnh đã lưu, chờ admin xác minh thủ công.
+                toast.success(kyc.message || 'Đã gửi CCCD. Admin sẽ xác minh trong 24-48 giờ.');
+                onSave({
+                    ...formData,
+                    verificationStatus: 'pending',
+                });
             }
+            onClose();
         } catch (error) {
-            console.error('Submit verification error:', error);
-            toast.error('Không thể kết nối với server. Vui lòng thử lại.');
+            // BE trả message thân thiện cho lỗi 400 (vd: tên trên CCCD không khớp hồ sơ).
+            const e = error as { response?: { data?: { message?: string } } };
+            console.error('Upload CCCD error:', error);
+            toast.error(e.response?.data?.message || 'Không thể kết nối với server. Vui lòng thử lại.');
         } finally {
             setIsLoading(false);
         }
@@ -365,11 +353,13 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
                     </div>
                 )}
 
-                {/* ID Card Images */}
-                <div className={styles.imageUploads}>
-                    {renderUploadSection('front')}
-                    {renderUploadSection('back')}
-                </div>
+                {/* ID Card Images — ẩn sau khi đã xác minh (ảnh đã lưu, không cần upload lại) */}
+                {!isAlreadyVerified && (
+                    <div className={styles.imageUploads}>
+                        {renderUploadSection('front')}
+                        {renderUploadSection('back')}
+                    </div>
+                )}
 
                 {/* eKYC Extracted Data - show below images when verified */}
                 {isAlreadyVerified && formData.idNumber && (
@@ -394,10 +384,6 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
                             <div className={styles.ekycItem}>
                                 <span className={styles.ekycLabel}>Giới tính</span>
                                 <span className={styles.ekycValue}>{formData.gender || '—'}</span>
-                            </div>
-                            <div className={styles.ekycItem}>
-                                <span className={styles.ekycLabel}>Quê quán</span>
-                                <span className={styles.ekycValue}>{formData.hometown || '—'}</span>
                             </div>
                             <div className={styles.ekycItem}>
                                 <span className={styles.ekycLabel}>Địa chỉ thường trú</span>

@@ -201,19 +201,32 @@ export const updateVideo = async (userId: string, videoUrl: string): Promise<Api
 // CCCD (Citizen ID) Upload
 // ============================================
 
+/**
+ * Kết quả xác minh CCCD trả về từ BE. BE upload ảnh lên Cloudinary (private) VÀ
+ * chạy OCR/eKYC ngay trong cùng 1 request — không cần gọi thêm verify nữa.
+ * - ocrSuccess = true: đọc được CCCD và tên khớp hồ sơ → đã xác minh.
+ * - ocrSuccess = false: không đọc được → ảnh đã lưu, chờ admin xác minh thủ công.
+ * Lưu ý: BE KHÔNG trả URL ảnh (ảnh lưu private trên Cloudinary).
+ */
 export interface CccdUploadResult {
-  frontImageUrl: string;
-  backImageUrl: string;
+  ocrSuccess: boolean;
+  identityNumber: string | null;
+  fullName: string | null;
+  dateOfBirth: string | null;
+  gender: string | null;
+  address: string | null;
+  message: string;
 }
 
 /**
- * Upload ảnh CCCD (2 mặt) lên Cloudinary qua BE và lưu URL vào hồ sơ.
- * PUT /api/tutors/{id}/profile/cccd — multipart: FrontImage + BackImage (JPG/PNG, ≤5MB mỗi ảnh).
+ * Upload + xác minh CCCD chỉ với MỘT request duy nhất.
+ * POST /api/tutors/{id}/profile/cccd — multipart: FrontImage + BackImage (JPG/PNG, ≤5MB mỗi ảnh).
+ * BE tự upload Cloudinary, chạy OCR và đối chiếu tên với hồ sơ.
  *
  * @param userId - User ID (cũng là tutor ID, phải khớp người đang đăng nhập)
  * @param frontImage - Ảnh mặt trước CCCD
  * @param backImage - Ảnh mặt sau CCCD
- * @returns { frontImageUrl, backImageUrl } đã upload
+ * @returns Kết quả OCR/eKYC (CccdUploadResult)
  */
 export const uploadCccd = async (
   userId: string,
@@ -225,7 +238,7 @@ export const uploadCccd = async (
     formData.append('FrontImage', frontImage);
     formData.append('BackImage', backImage);
 
-    const response = await api.put(`/tutors/${userId}/profile/cccd`, formData, {
+    const response = await api.post(`/tutors/${userId}/profile/cccd`, formData, {
       headers: {
         ...getAuthHeaders(),
         'Content-Type': 'multipart/form-data',

@@ -11,7 +11,6 @@ import type { BookingFormData, BookingSlot } from "../types";
 interface Args {
     isOpen: boolean;
     tutorId: string;
-    onClose: () => void;
     /**
      * Tutor's preferred teaching mode (raw, mixed-case from BE).
      * Used to lock the booking flow's mode when the tutor only supports one.
@@ -53,7 +52,7 @@ const slotToUtcDateTimes = (slot: BookingSlot): FlexibleBookingSlotPayload => {
  * student fetching, and the submit flow. The orchestrator consumes this
  * hook and stays focused on rendering.
  */
-export function useBookingForm({ isOpen, tutorId, onClose, tutorTeachingMode }: Args) {
+export function useBookingForm({ isOpen, tutorId, tutorTeachingMode }: Args) {
     const userRole = getCurrentUserRole();
     const currentUserId = getUserIdFromToken();
     const lockedMode = resolveLockedMode(tutorTeachingMode);
@@ -80,10 +79,19 @@ export function useBookingForm({ isOpen, tutorId, onClose, tutorTeachingMode }: 
     const [loadingStudents, setLoadingStudents] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
-    const [bookingSuccess, setBookingSuccess] = useState(false);
+    // Luồng mới: booking vừa tạo ở trạng thái `pending_payment`. Parent phải thanh toán
+    // buổi học đầu tiên (cọc) TRƯỚC khi yêu cầu được gửi tới gia sư (→ `pending_tutor`).
+    //   form     → đang điền form đặt lịch
+    //   payment  → đã tạo booking, đang mở bước thanh toán buổi đầu
+    //   paid     → đã thanh toán, đang chờ gia sư xác nhận
+    //   deferred → đã tạo booking nhưng tạm hoãn thanh toán (có 30 phút để trả sau)
+    const [bookingPhase, setBookingPhase] = useState<'form' | 'payment' | 'paid' | 'deferred'>('form');
     const [successBookingId, setSuccessBookingId] = useState<number | null>(null);
     const [slotDuration, setSlotDuration] = useState(2);
     const [formData, setFormData] = useState<BookingFormData>(defaultFormData);
+
+    // Một khi đã rời bước form (đang/đã thanh toán hoặc chờ gia sư) thì không lưu nháp nữa.
+    const bookingSuccess = bookingPhase !== 'form';
 
     // Bind draft theo userId để phòng vệ thêm: nếu vì lý do gì đó draft cũ
     // không bị dọn lúc logout (xem `clearUserFromStorage` trong auth.service),
@@ -153,7 +161,7 @@ export function useBookingForm({ isOpen, tutorId, onClose, tutorTeachingMode }: 
         } else {
             setStep(0);
             setSubmitError(null);
-            setBookingSuccess(false);
+            setBookingPhase('form');
             setSuccessBookingId(null);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -210,13 +218,12 @@ export function useBookingForm({ isOpen, tutorId, onClose, tutorTeachingMode }: 
             };
 
             const result = await createBooking(payload);
-            setSuccessBookingId(result.content?.bookingId || null);
-            setBookingSuccess(true);
+            setSuccessBookingId(result.content?.bookingId ?? null);
             clearDraft();
-            // Auto-close after 5 seconds
-            setTimeout(() => {
-                onClose();
-            }, 5000);
+            // Không nhảy thẳng sang màn chờ gia sư: booking đang ở `pending_payment`,
+            // mở bước thanh toán buổi học đầu tiên. Chỉ sau khi cọc thành công booking
+            // mới chuyển sang `pending_tutor` và yêu cầu được gửi tới gia sư.
+            setBookingPhase('payment');
         } catch (err: any) {
             console.error("createBooking failed:", err);
             const msg = err.response?.data?.message || "Có lỗi xảy ra khi tạo booking. Vui lòng thử lại.";
@@ -226,6 +233,13 @@ export function useBookingForm({ isOpen, tutorId, onClose, tutorTeachingMode }: 
             setSubmitting(false);
         }
     };
+
+    // Thanh toán buổi đầu thành công → chờ gia sư xác nhận.
+    const handlePaymentSuccess = () => setBookingPhase('paid');
+    // Đóng bước thanh toán mà chưa trả → cho phép trả sau (trong 24h).
+    const deferPayment = () => setBookingPhase('deferred');
+    // Quay lại bước thanh toán từ màn "trả sau".
+    const resumePayment = () => setBookingPhase('payment');
 
     return {
         // Form state
@@ -247,8 +261,11 @@ export function useBookingForm({ isOpen, tutorId, onClose, tutorTeachingMode }: 
         submitError,
         setSubmitError,
         handleSubmit,
-        // Success state
-        bookingSuccess,
+        // Post-create payment flow
+        bookingPhase,
         successBookingId,
+        handlePaymentSuccess,
+        deferPayment,
+        resumePayment,
     };
 }

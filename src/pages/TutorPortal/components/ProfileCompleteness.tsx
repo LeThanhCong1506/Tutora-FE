@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import styles from './ProfileCompleteness.module.css';
+import { getProfileCompletionItems, type ProfileCompletionData } from '../profileCompletion';
 
 // Icons
 const CheckIcon = () => (
@@ -14,29 +15,9 @@ const BoltIcon = () => (
     </svg>
 );
 
-interface ProfileData {
-    avatarUrl: string;
-    headline: string;
-    teachingAreaCity: string;
-    teachingAreaDistrict: string;
-    videoIntroUrl: string | null;
-    bio: string;
-    credentials: Array<{ id: string | number }>;
-    availability: Array<{ dayOfWeek: number }>;
-    identityVerification: {
-        verificationStatus: 'not_submitted' | 'pending' | 'verified' | 'rejected';
-    };
-}
-
 interface ProfileCompletenessProps {
-    profileData: ProfileData;
+    profileData: ProfileCompletionData;
     onSectionClick?: (section: string) => void;
-}
-
-interface CompletionItem {
-    key: string;
-    label: string;
-    completed: boolean;
 }
 
 const ProfileCompleteness: React.FC<ProfileCompletenessProps> = ({
@@ -45,47 +26,7 @@ const ProfileCompleteness: React.FC<ProfileCompletenessProps> = ({
 }) => {
     // Mỗi bước có trọng số NHƯ NHAU — tiến độ = số bước hoàn thành / tổng số bước.
     // Thứ tự hiển thị từ trên xuống theo luồng hồ sơ gia sư.
-    const completionItems = useMemo<CompletionItem[]>(() => [
-        {
-            key: 'avatar',
-            label: 'Ảnh đại diện',
-            completed: !!profileData.avatarUrl,
-        },
-        {
-            key: 'basicInfo',
-            label: 'Thông tin cơ bản',
-            completed:
-                !!profileData.headline &&
-                profileData.headline.length >= 10 &&
-                !!profileData.teachingAreaCity &&
-                !!profileData.teachingAreaDistrict,
-        },
-        {
-            key: 'video',
-            label: 'Video giới thiệu',
-            completed: !!profileData.videoIntroUrl,
-        },
-        {
-            key: 'about',
-            label: 'Giới thiệu bản thân',
-            completed: !!(profileData.bio && profileData.bio.length >= 100),
-        },
-        {
-            key: 'credentials',
-            label: 'Bằng cấp, chứng chỉ',
-            completed: !!profileData.credentials && profileData.credentials.length >= 1,
-        },
-        {
-            key: 'identity',
-            label: 'Xác minh danh tính',
-            completed: profileData.identityVerification?.verificationStatus === 'verified',
-        },
-        {
-            key: 'schedule',
-            label: 'Lịch dạy (3+ khung giờ)',
-            completed: !!profileData.availability && profileData.availability.length >= 3,
-        },
-    ], [profileData]);
+    const completionItems = useMemo(() => getProfileCompletionItems(profileData), [profileData]);
 
     const total = completionItems.length;
     const completedCount = useMemo(

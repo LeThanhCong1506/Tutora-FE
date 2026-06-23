@@ -12,20 +12,6 @@ export interface EKYCContent {
     id_prob: string;      // Confidence probability (e.g., "99.32")
 }
 
-// Backend API expects PascalCase field names
-export interface VerificationRequest {
-    FrontImgPath: string; // Full signed URL with token
-    BackImgPath: string;  // Full signed URL with token
-}
-
-export interface VerificationResponse {
-    success: boolean;
-    message?: string;
-    verificationId?: string;
-    status?: 'pending' | 'approved' | 'rejected';
-    content?: EKYCContent;
-}
-
 export interface UploadResult {
     path: string;
     publicUrl?: string;

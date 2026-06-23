@@ -32,11 +32,11 @@ const BookingSuccessOverlay: React.FC<Props> = ({ tutorName, bookingId, onClose 
             <div className="bm-success-steps">
                 <div className="bm-success-step is-active">
                     <strong>1</strong>
-                    <span>Gia sư xem xét yêu cầu</span>
+                    <span>Thanh toán buổi học đầu tiên</span>
                 </div>
                 <div className="bm-success-step">
                     <strong>2</strong>
-                    <span>Xác nhận &amp; thanh toán</span>
+                    <span>Gia sư xác nhận</span>
                 </div>
                 <div className="bm-success-step">
                     <strong>3</strong>
