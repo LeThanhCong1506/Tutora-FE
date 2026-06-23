@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { ArrowLeft, ArrowRight, CalendarRange, CheckCircle2, RotateCcw, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarRange, CheckCircle2, Clock, RotateCcw, Wallet, X } from "lucide-react";
+import PaymentModal from "../../components/PaymentModal/PaymentModal";
 import {
     BookingStepper,
     StepBookingMode,
@@ -53,9 +54,12 @@ const BookingModal: React.FC<BookingModalProps> = ({
         submitError,
         setSubmitError,
         handleSubmit,
-        bookingSuccess,
+        bookingPhase,
         successBookingId,
-    } = useBookingForm({ isOpen, tutorId, onClose, tutorTeachingMode });
+        handlePaymentSuccess,
+        deferPayment,
+        resumePayment,
+    } = useBookingForm({ isOpen, tutorId, tutorTeachingMode });
 
     const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
     const subjectGradePrices = useMemo(() => rawSubjectGradePrices ?? [], [rawSubjectGradePrices]);
@@ -161,6 +165,19 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
     if (!isOpen) return null;
 
+    // Sau khi tạo booking, mở bước thanh toán buổi học đầu tiên. PaymentModal tự dựng
+    // overlay riêng (z-index cao hơn) nên render trực tiếp ở đây là đủ phủ kín màn hình.
+    if (bookingPhase === "payment" && successBookingId != null) {
+        return (
+            <PaymentModal
+                bookingId={successBookingId}
+                isOpen
+                onClose={deferPayment}
+                onPaymentSuccess={handlePaymentSuccess}
+            />
+        );
+    }
+
     const canNext = () => {
         switch (step) {
             case 0:
@@ -225,7 +242,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
     };
 
     const hasBookingProgress =
-        !bookingSuccess &&
+        bookingPhase === "form" &&
         (formData.subjectId !== 0 ||
             formData.studentId !== "" ||
             formData.comboId !== null ||
@@ -276,36 +293,81 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 aria-label={`Đặt lịch học với ${tutorName}`}
                 onMouseDown={(e) => e.stopPropagation()}
             >
-                {bookingSuccess ? (
+                {bookingPhase !== "form" ? (
                     <div className={styles.modalSuccess}>
                         <button type="button" className={styles.modalClose} onClick={onClose} aria-label="Đóng modal">
                             <X size={22} />
                         </button>
-                        <span className={styles.successIcon}>
-                            <CheckCircle2 size={42} />
-                        </span>
-                        <span className={styles.eyebrow}>Gửi yêu cầu thành công</span>
-                        <h2>Yêu cầu đặt lịch đã được gửi</h2>
-                        <p>Gia sư sẽ xem lịch học và phản hồi cho phụ huynh trong thời gian sớm nhất.</p>
-                        {successBookingId != null && (
-                            <div className={styles.bookingCode}>
-                                <span>Mã booking</span>
-                                <strong>#{successBookingId}</strong>
-                            </div>
-                        )}
-                        {scheduling.bookingWindowStart && scheduling.bookingWindowEnd && (
-                            <div className={styles.successTerm}>
-                                <CalendarRange size={16} />
-                                <span>
-                                    Hiệu lực booking: {formatFullDate(scheduling.bookingWindowStart)} -{" "}
-                                    {formatFullDate(scheduling.bookingWindowEnd)}
+                        {bookingPhase === "paid" ? (
+                            <>
+                                <span className={styles.successIcon}>
+                                    <CheckCircle2 size={42} />
                                 </span>
-                            </div>
+                                <span className={styles.eyebrow}>Thanh toán thành công</span>
+                                <h2>Đã thanh toán buổi học đầu tiên</h2>
+                                <p>
+                                    Yêu cầu đặt lịch đã được gửi tới <strong>{tutorName}</strong>. Gia sư sẽ xác nhận
+                                    trong thời gian sớm nhất. Nếu gia sư không phản hồi, tiền sẽ được hoàn vào ví của
+                                    bạn.
+                                </p>
+                                {successBookingId != null && (
+                                    <div className={styles.bookingCode}>
+                                        <span>Mã booking</span>
+                                        <strong>#{successBookingId}</strong>
+                                    </div>
+                                )}
+                                {scheduling.bookingWindowStart && scheduling.bookingWindowEnd && (
+                                    <div className={styles.successTerm}>
+                                        <CalendarRange size={16} />
+                                        <span>
+                                            Hiệu lực booking: {formatFullDate(scheduling.bookingWindowStart)} -{" "}
+                                            {formatFullDate(scheduling.bookingWindowEnd)}
+                                        </span>
+                                    </div>
+                                )}
+                                <button type="button" className={styles.primaryButton} onClick={onClose}>
+                                    <RotateCcw size={16} />
+                                    Hoàn tất
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <span className={styles.successIcon}>
+                                    <Clock size={42} />
+                                </span>
+                                <span className={styles.eyebrow}>Chưa thanh toán</span>
+                                <h2>Đặt lịch đã được tạo</h2>
+                                <p>
+                                    Vui lòng thanh toán buổi học đầu tiên trong vòng <strong>30 phút</strong> để gửi yêu
+                                    cầu tới <strong>{tutorName}</strong>. Quá hạn, booking sẽ tự động bị hủy.
+                                </p>
+                                {successBookingId != null && (
+                                    <div className={styles.bookingCode}>
+                                        <span>Mã booking</span>
+                                        <strong>#{successBookingId}</strong>
+                                    </div>
+                                )}
+                                <div style={{ display: "flex", gap: 12, width: "100%", flexWrap: "wrap" }}>
+                                    <button
+                                        type="button"
+                                        className={styles.primaryButton}
+                                        style={{ flex: 1 }}
+                                        onClick={resumePayment}
+                                    >
+                                        <Wallet size={16} />
+                                        Thanh toán ngay
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={styles.secondaryButton}
+                                        style={{ flex: 1 }}
+                                        onClick={onClose}
+                                    >
+                                        Để sau
+                                    </button>
+                                </div>
+                            </>
                         )}
-                        <button type="button" className={styles.primaryButton} onClick={onClose}>
-                            <RotateCcw size={16} />
-                            Hoàn tất
-                        </button>
                     </div>
                 ) : (
                     <>

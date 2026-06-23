@@ -54,7 +54,7 @@ const STATUS_CONFIG: Record<string, StatusConfig> = {
   pending_tutor: { label: 'Chờ gia sư xác nhận', className: 'statusPending', icon: Clock3 },
   accepted: { label: 'Chờ đặt cọc', className: 'statusWarning', icon: CreditCard },
   pending_payment: { label: 'Chờ thanh toán', className: 'statusWarning', icon: CreditCard },
-  deposit_paid: { label: 'Đã đặt cọc 50%', className: 'statusActive', icon: CheckCircle2 },
+  deposit_paid: { label: 'Đã thanh toán buổi đầu', className: 'statusActive', icon: CheckCircle2 },
   pending_remaining_payment: { label: 'Chờ thanh toán còn lại', className: 'statusWarning', icon: WalletCards },
   paid: { label: 'Đã thanh toán đủ', className: 'statusActive', icon: CheckCircle2 },
   active: { label: 'Đang học', className: 'statusActive', icon: BookOpen },
@@ -139,9 +139,11 @@ const formatDuration = (minutes?: number) => {
   return `${minutes} phút/buổi`;
 };
 
+// Luồng mới: parent thanh toán buổi học đầu tiên TRƯỚC, sau đó gia sư mới xác nhận.
+// Thứ tự timeline: tạo → thanh toán buổi đầu → gia sư xác nhận → thanh toán còn lại → học → xong.
 const getProgressIndex = (status: string) => {
-  if (status === 'pending_tutor') return 1;
-  if (status === 'accepted' || status === 'pending_payment') return 2;
+  if (status === 'pending_payment' || status === 'accepted') return 1;
+  if (status === 'pending_tutor') return 2;
   if (status === 'deposit_paid' || status === 'pending_remaining_payment') return 3;
   if (status === 'paid' || status === 'active' || status === 'ongoing') return 4;
   if (status === 'completed') return 5;
@@ -151,7 +153,7 @@ const getProgressIndex = (status: string) => {
 const getProgressSteps = (booking: BookingResponseDTO, lessons: Lesson[]): ProgressStep[] => {
   const firstLesson = lessons[0];
   const lastLesson = lessons.at(-1);
-  const tutorConfirmed = booking.status !== 'pending_tutor';
+  const tutorConfirmed = !['pending_payment', 'pending_tutor'].includes(booking.status);
   const depositPaid = Boolean(booking.depositPaidAt);
   const remainingPaid = Boolean(booking.remainingPaidAt);
 
@@ -163,20 +165,22 @@ const getProgressSteps = (booking: BookingResponseDTO, lessons: Lesson[]): Progr
       date: booking.createdAt,
     },
     {
+      key: 'deposit_paid',
+      label: 'Thanh toán buổi học đầu tiên',
+      description: depositPaid
+        ? 'Đã thanh toán buổi học đầu tiên'
+        : 'Hoàn tất thanh toán buổi đầu để gửi yêu cầu tới gia sư',
+      date: booking.depositPaidAt,
+    },
+    {
       key: 'tutor_confirmed',
       label: 'Gia sư xác nhận',
       description: tutorConfirmed ? 'Gia sư đã đồng ý nhận lớp' : 'Đang chờ gia sư phản hồi yêu cầu',
     },
     {
-      key: 'deposit_paid',
-      label: 'Đặt cọc 50%',
-      description: depositPaid ? 'Khoản đặt cọc đã được ghi nhận' : 'Hoàn tất đặt cọc để giữ lịch học',
-      date: booking.depositPaidAt,
-    },
-    {
       key: 'remaining_paid',
-      label: 'Thanh toán còn lại',
-      description: remainingPaid ? 'Học phí đã được thanh toán đầy đủ' : 'Thanh toán 50% học phí còn lại',
+      label: 'Thanh toán các buổi còn lại',
+      description: remainingPaid ? 'Học phí đã được thanh toán đầy đủ' : 'Thanh toán các buổi học còn lại',
       date: booking.remainingPaidAt,
     },
     {
@@ -626,7 +630,7 @@ const BookingDetailPage = () => {
                 <div className={depositPaid ? styles.phasePaid : ''}>
                   <span>{depositPaid ? <CheckCircle2 size={17} /> : <Circle size={17} />}</span>
                   <div>
-                    <small>Đợt 1 · Đặt cọc 50%</small>
+                    <small>Đợt 1 · Buổi học đầu tiên</small>
                     <strong>{formatPrice(booking.depositAmount)}</strong>
                   </div>
                   <time>{booking.depositPaidAt ? formatDateTime(booking.depositPaidAt) : 'Chưa thanh toán'}</time>

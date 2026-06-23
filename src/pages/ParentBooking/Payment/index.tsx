@@ -191,7 +191,7 @@ const PaymentPage = () => {
               </div>
               <div>
                 <span>Khoản thanh toán</span>
-                <strong>{paymentInfo?.paymentPhase === 'remaining' ? 'Phần còn lại' : 'Đặt cọc 50%'}</strong>
+                <strong>{paymentInfo?.paymentPhase === 'remaining' ? 'Các buổi còn lại' : 'Buổi học đầu tiên'}</strong>
               </div>
               <div>
                 <span>Số tiền</span>
@@ -283,8 +283,8 @@ const PaymentPage = () => {
               <div className={`${styles.priceRow} ${styles.totalRow}`}>
                 <span>
                   {paymentInfo?.paymentPhase === 'remaining'
-                    ? 'Thanh toán lần này (50% còn lại):'
-                    : 'Đặt cọc lần này (50%):'}
+                    ? 'Thanh toán lần này (các buổi còn lại):'
+                    : 'Thanh toán lần này (buổi học đầu tiên):'}
                 </span>
                 <span className={styles.totalPrice}>{formatPrice(paymentInfo?.amount || 0)}</span>
               </div>
