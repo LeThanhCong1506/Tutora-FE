@@ -109,6 +109,34 @@ export interface VerificationProgressResponse {
   error: string | null;
 }
 
+// ============================================
+// Profile completion / overall status
+// ============================================
+
+/**
+ * Trạng thái tổng thể của hồ sơ gia sư. Khớp BE TutorProfileStatus:
+ * - draft: đang điền thông tin
+ * - pending_approval: đã gửi, chờ Admin xét duyệt
+ * - active: đã duyệt, hiển thị công khai
+ * - rejected: bị Admin từ chối
+ */
+export type TutorProfileStatus = 'draft' | 'pending_approval' | 'active' | 'rejected';
+
+export interface ProfileCompletionSection {
+  key: string;
+  name: string;
+  isComplete: boolean;
+  missingReason: string | null;
+}
+
+export interface ProfileCompletionResponse {
+  completedSections: number;
+  totalSections: number;
+  canSubmit: boolean;
+  profileStatus: TutorProfileStatus | string;
+  sections: ProfileCompletionSection[];
+}
+
 // Generic API response type
 export interface ApiResponse<T = any> {
   content: T;
@@ -152,6 +180,33 @@ export const getVerificationProgress = async (userId: string): Promise<Verificat
     return response.data;
   } catch (error: any) {
     console.error('❌ Error fetching verification progress:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
+    throw error;
+  }
+};
+
+/**
+ * Lấy tiến trình hoàn thiện + trạng thái tổng thể của hồ sơ gia sư.
+ * GET /api/tutors/{id}/profile-completion — owner-only.
+ *
+ * Endpoint nhẹ, trả `profileStatus` (draft / pending_approval / active / rejected)
+ * cùng số mục đã hoàn thành. Dùng để hiển thị banner trạng thái ở trang profile.
+ *
+ * @param userId - User ID (cũng là tutor ID, phải khớp người đang đăng nhập)
+ */
+export const getProfileCompletion = async (
+  userId: string,
+): Promise<ApiResponse<ProfileCompletionResponse>> => {
+  try {
+    const response = await api.get(`/tutors/${userId}/profile-completion`, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ Error fetching profile completion:', {
       status: error.response?.status,
       data: error.response?.data,
       message: error.message,

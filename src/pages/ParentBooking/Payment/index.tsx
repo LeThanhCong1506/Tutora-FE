@@ -6,6 +6,7 @@ import {
   payWithWallet,
   getBookingById,
   getPaymentStatus,
+  isFirstLessonFinished,
   type PaymentInfoResponse,
   type BookingResponseDTO,
 } from '../../../services/booking.service';
@@ -40,6 +41,12 @@ const PaymentPage = () => {
   const [qrImageError, setQrImageError] = useState(false);
 
   const bookingId = Number(id);
+
+  // Chặn thanh toán đợt 2 (các buổi còn lại) khi buổi học đầu tiên CHƯA kết thúc.
+  // Bắt buộc gác ở đây vì BE vẫn chấp nhận trả phần còn lại ở trạng thái deposit_paid,
+  // nên nếu chỉ ẩn nút ở danh sách/chi tiết thì vào thẳng URL này vẫn trả được.
+  const remainingLocked =
+    !!paymentInfo && paymentInfo.paymentPhase === 'remaining' && !!booking && !isFirstLessonFinished(booking);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -78,7 +85,7 @@ const PaymentPage = () => {
   // Polling payment status for PayOS
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
-    if (paymentMethod === 'payos' && !paymentSuccess && !loading) {
+    if (paymentMethod === 'payos' && !paymentSuccess && !loading && !remainingLocked) {
       interval = setInterval(async () => {
         try {
           const res = await getPaymentStatus(bookingId);
@@ -95,7 +102,7 @@ const PaymentPage = () => {
       }, 5000);
     }
     return () => clearInterval(interval);
-  }, [bookingId, paymentMethod, paymentSuccess, loading, paymentInfo?.paymentPhase]);
+  }, [bookingId, paymentMethod, paymentSuccess, loading, paymentInfo?.paymentPhase, remainingLocked]);
 
   const handleWalletPay = async () => {
     if (!paymentInfo || paymentInfo.walletBalance < paymentInfo.amount) {
@@ -165,6 +172,40 @@ const PaymentPage = () => {
       <div className={styles.pageWrapper}>
         <div className={styles.loadingOverlay}>
           <div className={styles.spinner} aria-hidden="true" />
+        </div>
+      </div>
+    );
+  }
+
+  if (remainingLocked) {
+    return (
+      <div className={styles.pageWrapper}>
+        <div className={styles.successContainer}>
+          <div className={styles.successCard}>
+            <div className={styles.successIcon} style={{ background: '#fff7ed', color: '#ea580c' }}>
+              <Clock size={52} strokeWidth={2.2} />
+            </div>
+            <span className={styles.successEyebrow}>Chưa thể thanh toán</span>
+            <h1>Chờ buổi học đầu tiên kết thúc</h1>
+            <p className={styles.successMessage}>
+              Bạn chỉ có thể thanh toán các buổi học còn lại sau khi buổi học đầu tiên diễn ra và kết thúc. Vui lòng quay
+              lại sau buổi học đầu tiên.
+            </p>
+            <div className={styles.successActions}>
+              <Button
+                type="primary"
+                size="large"
+                onClick={() => navigate(`/parent-portal/booking/${bookingId}`, { replace: true })}
+              >
+                <span>Xem chi tiết booking</span>
+                <ArrowRight size={17} />
+              </Button>
+              <Button size="large" onClick={() => navigate('/parent-portal/booking', { replace: true })}>
+                <ListChecks size={17} />
+                Danh sách đặt lịch
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     );

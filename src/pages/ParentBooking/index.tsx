@@ -13,7 +13,7 @@ import {
   WalletCards,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { getParentBookings, type BookingResponseDTO } from '../../services/booking.service';
+import { getParentBookings, isFirstLessonFinished, type BookingResponseDTO } from '../../services/booking.service';
 import styles from './styles.module.css';
 
 const STATUS_TABS = [
@@ -127,14 +127,26 @@ const getPaymentAction = (booking: BookingResponseDTO) => {
       label: 'Thanh toán buổi đầu',
       summaryLabel: 'Buổi học đầu tiên',
       amount: booking.depositAmount ?? Math.round(booking.finalPrice / sessions),
+      locked: false,
     };
   }
 
   if (booking.status === 'deposit_paid' || booking.status === 'pending_remaining_payment') {
+    const amount = booking.remainingAmount ?? Math.max(0, booking.finalPrice - (booking.depositAmount ?? 0));
+    // Chỉ cho thanh toán đợt 2 khi buổi học đầu tiên đã kết thúc.
+    if (!isFirstLessonFinished(booking)) {
+      return {
+        label: 'Chờ buổi học đầu tiên',
+        summaryLabel: 'Còn lại cần trả',
+        amount,
+        locked: true,
+      };
+    }
     return {
       label: 'Thanh toán còn lại',
       summaryLabel: 'Còn lại cần trả',
-      amount: booking.remainingAmount ?? Math.max(0, booking.finalPrice - (booking.depositAmount ?? 0)),
+      amount,
+      locked: false,
     };
   }
 
@@ -330,15 +342,26 @@ const ParentBooking = () => {
                       Tạo ngày {formatDate(booking.createdAt) || 'Chưa cập nhật'}
                     </span>
                     <div className={styles.cardActions}>
-                      {paymentAction && (
-                        <button
-                          type="button"
-                          className={styles.paymentBtn}
-                          onClick={() => navigate(`/parent-portal/booking/${booking.bookingId}/payment`)}
-                        >
-                          {paymentAction.label} <ChevronRight size={16} />
-                        </button>
-                      )}
+                      {paymentAction &&
+                        (paymentAction.locked ? (
+                          <button
+                            type="button"
+                            className={styles.paymentBtn}
+                            disabled
+                            style={{ opacity: 0.55, cursor: 'not-allowed' }}
+                            title="Có thể thanh toán các buổi còn lại sau khi buổi học đầu tiên kết thúc."
+                          >
+                            <Clock3 size={16} /> {paymentAction.label}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className={styles.paymentBtn}
+                            onClick={() => navigate(`/parent-portal/booking/${booking.bookingId}/payment`)}
+                          >
+                            {paymentAction.label} <ChevronRight size={16} />
+                          </button>
+                        ))}
                       <button
                         type="button"
                         className={styles.viewBtn}

@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Modal, Popconfirm } from 'antd';
-import { ArrowRight, Award, BookOpenText, IdCard, ShieldCheck, UserRoundPen } from 'lucide-react';
+import { ArrowRight, Award, BookOpenText, Clock, IdCard, ShieldCheck, UserRoundPen } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useTutorProfileForm, type CredentialData } from './hooks/useTutorProfileForm';
 import ProfileHeroModal from './components/ProfileHeroModal';
@@ -359,6 +359,7 @@ const TutorPortalProfile: React.FC = () => {
   // Form hook
   const {
     formData,
+    profileStatus,
     sectionStatuses: _sectionStatuses,
     isDirty,
     isLoading: _isLoading,
@@ -380,6 +381,9 @@ const TutorPortalProfile: React.FC = () => {
     saveDraft: _saveDraft,
     publishChanges: _publishChanges,
   } = useTutorProfileForm();
+
+  // Hồ sơ đã gửi và đang chờ Admin xét duyệt → hiển thị banner thông báo.
+  const isPendingApproval = profileStatus?.toLowerCase() === 'pending_approval';
 
   // Get display location
   const getLocationDisplay = () => {
@@ -564,6 +568,32 @@ const TutorPortalProfile: React.FC = () => {
 
   return (
     <div className={styles.profilePage}>
+      {/* Banner trạng thái: hồ sơ đang chờ Admin xét duyệt. Hiển thị ở cả chế độ
+          chỉnh sửa lẫn xem trước để gia sư luôn thấy hồ sơ đang được duyệt. */}
+      {isPendingApproval && (
+        <div className={styles.pendingReviewWrapper}>
+          <div className={styles.pendingReviewBanner} role="status" aria-live="polite">
+            <span className={styles.pendingReviewIcon}>
+              <Clock size={22} strokeWidth={2} />
+            </span>
+            <div className={styles.pendingReviewText}>
+              <div className={styles.pendingReviewTitleRow}>
+                <h2 className={styles.pendingReviewTitle}>Hồ sơ của bạn đang được xét duyệt</h2>
+                <span className={styles.pendingReviewBadge}>
+                  <span className={styles.pendingReviewDot} />
+                  Đang chờ duyệt
+                </span>
+              </div>
+              <p className={styles.pendingReviewDescription}>
+                Admin đang xác minh thông tin hồ sơ của bạn. Hồ sơ sẽ tự động hiển thị trên marketplace
+                ngay sau khi được phê duyệt. Quá trình này thường mất 24–48 giờ — bạn vẫn có thể chỉnh sửa
+                thông tin trong lúc chờ.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content - Conditionally render Edit or Preview mode */}
       {!isEditMode ? (
         /* Preview Mode - Show TutorProfilePreview component */
@@ -1004,7 +1034,13 @@ const TutorPortalProfile: React.FC = () => {
               )}
 
               {/* Profile Completeness Card */}
-              {isEditMode && <ProfileCompleteness profileData={formData} onSectionClick={handleCompletenessClick} />}
+              {isEditMode && (
+                <ProfileCompleteness
+                  profileData={formData}
+                  profileStatus={profileStatus}
+                  onSectionClick={handleCompletenessClick}
+                />
+              )}
             </div>
           </div>
         </div>

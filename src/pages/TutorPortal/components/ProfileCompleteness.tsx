@@ -17,13 +17,18 @@ const BoltIcon = () => (
 
 interface ProfileCompletenessProps {
     profileData: ProfileCompletionData;
+    /** Trạng thái tổng thể hồ sơ (draft / pending_approval / active / rejected). */
+    profileStatus?: string | null;
     onSectionClick?: (section: string) => void;
 }
 
 const ProfileCompleteness: React.FC<ProfileCompletenessProps> = ({
     profileData,
+    profileStatus,
     onSectionClick
 }) => {
+    // Hồ sơ đã gửi, đang chờ Admin duyệt → KHÔNG báo "đủ điều kiện hiển thị" nữa.
+    const isPendingApproval = profileStatus?.toLowerCase() === 'pending_approval';
     // Mỗi bước có trọng số NHƯ NHAU — tiến độ = số bước hoàn thành / tổng số bước.
     // Thứ tự hiển thị từ trên xuống theo luồng hồ sơ gia sư.
     const completionItems = useMemo(() => getProfileCompletionItems(profileData), [profileData]);
@@ -57,7 +62,9 @@ const ProfileCompleteness: React.FC<ProfileCompletenessProps> = ({
 
             {/* Status Message */}
             <div className={styles.statusMessage}>
-                {allDone ? (
+                {isPendingApproval ? (
+                    <span className={styles.pending}>Hồ sơ đang chờ Admin xét duyệt</span>
+                ) : allDone ? (
                     <span className={styles.complete}>Hồ sơ đủ điều kiện hiển thị trên marketplace!</span>
                 ) : (
                     <span className={styles.needsWork}>Bắt buộc hoàn thành để hiển thị trên marketplace</span>
