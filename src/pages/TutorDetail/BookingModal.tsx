@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { ArrowLeft, ArrowRight, CalendarRange, CheckCircle2, Clock, RotateCcw, Wallet, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, ArrowRight, CalendarRange, CheckCircle2, Clock, Wallet, X } from "lucide-react";
 import PaymentModal from "../../components/PaymentModal/PaymentModal";
 import {
     BookingStepper,
@@ -40,6 +41,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
     tutorTeachingMode,
     combos = [],
 }) => {
+    const navigate = useNavigate();
     const {
         formData,
         setFormData,
@@ -64,6 +66,11 @@ const BookingModal: React.FC<BookingModalProps> = ({
     const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
     const subjectGradePrices = useMemo(() => rawSubjectGradePrices ?? [], [rawSubjectGradePrices]);
     const packages = useMemo(() => rawPackages ?? [], [rawPackages]);
+
+    const handleViewBookingInfo = () => {
+        onClose();
+        navigate("/parent-portal/booking");
+    };
 
     // Compute available subjects (intersection of SUBJECT_MAPPING and tutor's subjects).
     // Enrich với gradeLevels của tutor để StepStudentSubject hiển thị + check khớp lớp.
@@ -287,7 +294,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
     return (
         <div className={styles.modalBackdrop} onMouseDown={requestClose}>
             <section
-                className={styles.bookingModal}
+                className={`${styles.bookingModal} ${bookingPhase !== "form" ? styles.successModalShell : ""}`}
                 role="dialog"
                 aria-modal="true"
                 aria-label={`Đặt lịch học với ${tutorName}`}
@@ -298,76 +305,76 @@ const BookingModal: React.FC<BookingModalProps> = ({
                         <button type="button" className={styles.modalClose} onClick={onClose} aria-label="Đóng modal">
                             <X size={22} />
                         </button>
-                        {bookingPhase === "paid" ? (
-                            <>
-                                <span className={styles.successIcon}>
-                                    <CheckCircle2 size={42} />
-                                </span>
-                                <span className={styles.eyebrow}>Thanh toán thành công</span>
-                                <h2>Đã thanh toán buổi học đầu tiên</h2>
-                                <p>
-                                    Yêu cầu đặt lịch đã được gửi tới <strong>{tutorName}</strong>. Gia sư sẽ xác nhận
-                                    trong thời gian sớm nhất. Nếu gia sư không phản hồi, tiền sẽ được hoàn vào ví của
-                                    bạn.
-                                </p>
-                                {successBookingId != null && (
-                                    <div className={styles.bookingCode}>
-                                        <span>Mã booking</span>
-                                        <strong>#{successBookingId}</strong>
-                                    </div>
-                                )}
-                                {scheduling.bookingWindowStart && scheduling.bookingWindowEnd && (
-                                    <div className={styles.successTerm}>
-                                        <CalendarRange size={16} />
-                                        <span>
-                                            Hiệu lực booking: {formatFullDate(scheduling.bookingWindowStart)} -{" "}
-                                            {formatFullDate(scheduling.bookingWindowEnd)}
-                                        </span>
-                                    </div>
-                                )}
-                                <button type="button" className={styles.primaryButton} onClick={onClose}>
-                                    <RotateCcw size={16} />
-                                    Hoàn tất
-                                </button>
-                            </>
-                        ) : (
-                            <>
-                                <span className={styles.successIcon}>
-                                    <Clock size={42} />
-                                </span>
-                                <span className={styles.eyebrow}>Chưa thanh toán</span>
-                                <h2>Đặt lịch đã được tạo</h2>
-                                <p>
-                                    Vui lòng thanh toán buổi học đầu tiên trong vòng <strong>30 phút</strong> để gửi yêu
-                                    cầu tới <strong>{tutorName}</strong>. Quá hạn, booking sẽ tự động bị hủy.
-                                </p>
-                                {successBookingId != null && (
-                                    <div className={styles.bookingCode}>
-                                        <span>Mã booking</span>
-                                        <strong>#{successBookingId}</strong>
-                                    </div>
-                                )}
-                                <div style={{ display: "flex", gap: 12, width: "100%", flexWrap: "wrap" }}>
-                                    <button
-                                        type="button"
-                                        className={styles.primaryButton}
-                                        style={{ flex: 1 }}
-                                        onClick={resumePayment}
-                                    >
-                                        <Wallet size={16} />
-                                        Thanh toán ngay
+                        <div className={styles.successContent}>
+                            {bookingPhase === "paid" ? (
+                                <>
+                                    <span className={styles.successIcon}>
+                                        <CheckCircle2 size={42} />
+                                    </span>
+                                    <span className={styles.eyebrow}>Thanh toán thành công</span>
+                                    <h2>Đã thanh toán buổi học đầu tiên</h2>
+                                    <p>
+                                        Yêu cầu đặt lịch đã được gửi tới <strong>{tutorName}</strong>. Gia sư sẽ xác nhận
+                                        trong thời gian sớm nhất. Nếu gia sư không phản hồi, tiền sẽ được hoàn vào ví của
+                                        bạn.
+                                    </p>
+                                    {successBookingId != null && (
+                                        <div className={styles.bookingCode}>
+                                            <span>Mã booking</span>
+                                            <strong>#{successBookingId}</strong>
+                                        </div>
+                                    )}
+                                    {scheduling.bookingWindowStart && scheduling.bookingWindowEnd && (
+                                        <div className={styles.successTerm}>
+                                            <CalendarRange size={16} />
+                                            <span>
+                                                Hiệu lực booking: {formatFullDate(scheduling.bookingWindowStart)} -{" "}
+                                                {formatFullDate(scheduling.bookingWindowEnd)}
+                                            </span>
+                                        </div>
+                                    )}
+                                    <button type="button" className={styles.primaryButton} onClick={handleViewBookingInfo}>
+                                        <ArrowRight size={16} />
+                                        Xem thông tin buổi học
                                     </button>
-                                    <button
-                                        type="button"
-                                        className={styles.secondaryButton}
-                                        style={{ flex: 1 }}
-                                        onClick={onClose}
-                                    >
-                                        Để sau
-                                    </button>
-                                </div>
-                            </>
-                        )}
+                                </>
+                            ) : (
+                                <>
+                                    <span className={styles.successIcon}>
+                                        <Clock size={42} />
+                                    </span>
+                                    <span className={styles.eyebrow}>Chưa thanh toán</span>
+                                    <h2>Đặt lịch đã được tạo</h2>
+                                    <p>
+                                        Vui lòng thanh toán buổi học đầu tiên trong vòng <strong>30 phút</strong> để gửi yêu
+                                        cầu tới <strong>{tutorName}</strong>. Quá hạn, booking sẽ tự động bị hủy.
+                                    </p>
+                                    {successBookingId != null && (
+                                        <div className={styles.bookingCode}>
+                                            <span>Mã booking</span>
+                                            <strong>#{successBookingId}</strong>
+                                        </div>
+                                    )}
+                                    <div className={styles.successActions}>
+                                        <button
+                                            type="button"
+                                            className={styles.primaryButton}
+                                            onClick={resumePayment}
+                                        >
+                                            <Wallet size={16} />
+                                            Thanh toán ngay
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={styles.secondaryButton}
+                                            onClick={onClose}
+                                        >
+                                            Để sau
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
                 ) : (
                     <>

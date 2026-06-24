@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Calendar, Clock, User, BookOpen, Check, X, AlertCircle } from 'lucide-react';
 import styles from './BookingRequestCard.module.css';
-import { acceptBooking, declineBooking, getBookingById } from '../../services/booking.service';
+import { acceptBooking, declineBooking, getBookingById, isFirstLessonFinished } from '../../services/booking.service';
 import { toast } from 'react-toastify';
 import { Modal, Input } from 'antd';
 
@@ -79,14 +79,18 @@ const BookingRequestCard = ({ message, isTutor = false, onProceedToPayment }: Bo
     const [loading, setLoading] = useState(false);
     const [declineModalVisible, setDeclineModalVisible] = useState(false);
     const [declineReason, setDeclineReason] = useState('');
+    // Chỉ cho thanh toán đợt 2 khi buổi học đầu tiên đã kết thúc (mặc định false → ẩn nút
+    // cho tới khi fetch xác nhận, tránh cho trả sớm).
+    const [firstLessonFinished, setFirstLessonFinished] = useState(false);
 
     // Fetch latest booking status on mount to handle page reload
     useEffect(() => {
         const fetchLatestStatus = async () => {
             try {
                 const response = await getBookingById(data.bookingId);
-                if (response.statusCode === 200 && response.content.status !== status) {
-                    setStatus(response.content.status);
+                if (response.statusCode === 200) {
+                    if (response.content.status !== status) setStatus(response.content.status);
+                    setFirstLessonFinished(isFirstLessonFinished(response.content));
                 }
             } catch (error: any) {
                 if (error?.response?.status !== 404) {
@@ -251,17 +255,26 @@ const BookingRequestCard = ({ message, isTutor = false, onProceedToPayment }: Bo
 
             {!isTutor && (status === 'deposit_paid' || status === 'pending_remaining_payment' || status === 'ongoing') && (
                 <div className={styles.paymentPrompt} style={{ backgroundColor: '#eff6ff', borderColor: '#3b82f6' }}>
-                    <div className={styles.paymentText}>
-                        <Check size={16} className={styles.successIcon} style={{ color: '#16a34a' }} />
-                        <span style={{ color: '#1e40af' }}>Đã thanh toán buổi đầu. Vui lòng thanh toán các buổi còn lại để tiếp tục học.</span>
-                    </div>
-                    <button
-                        className={styles.paymentBtn}
-                        style={{ background: '#2563eb' }}
-                        onClick={() => onProceedToPayment?.(data.bookingId)}
-                    >
-                        💰 Thanh toán phần còn lại
-                    </button>
+                    {firstLessonFinished ? (
+                        <>
+                            <div className={styles.paymentText}>
+                                <Check size={16} className={styles.successIcon} style={{ color: '#16a34a' }} />
+                                <span style={{ color: '#1e40af' }}>Buổi học đầu tiên đã kết thúc. Vui lòng thanh toán các buổi còn lại để tiếp tục học.</span>
+                            </div>
+                            <button
+                                className={styles.paymentBtn}
+                                style={{ background: '#2563eb' }}
+                                onClick={() => onProceedToPayment?.(data.bookingId)}
+                            >
+                                💰 Thanh toán phần còn lại
+                            </button>
+                        </>
+                    ) : (
+                        <div className={styles.paymentText}>
+                            <AlertCircle size={16} style={{ color: '#2563eb' }} />
+                            <span style={{ color: '#1e40af' }}>Đã thanh toán buổi đầu. Bạn có thể thanh toán các buổi còn lại sau khi buổi học đầu tiên kết thúc.</span>
+                        </div>
+                    )}
                 </div>
             )}
 

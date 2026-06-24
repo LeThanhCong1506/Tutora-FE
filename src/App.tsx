@@ -9,6 +9,7 @@ import { DeeplinkHandler } from './components/DeeplinkHandler/DeeplinkHandler';
 import TutorPortalLayout from './layouts/TutorPortalLayout';
 import ParentLayout from './layouts/ParentLayout';
 import StudentLayout from './layouts/StudentLayout';
+import { StudentProfileGate } from './contexts/StudentProfileContext';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import SessionExpiredModal from './components/SessionExpiredModal';
 import PageLoader from './components/PageLoader/PageLoader';
@@ -76,6 +77,7 @@ const StudentLessonDetail = lazy(() => import('./pages/StudentLessons/StudentLes
 const StudentCalendar = lazy(() => import('./pages/StudentLessons/StudentCalendar'));
 const StudentLinkAccount = lazy(() => import('./pages/StudentLinkAccount'));
 const StudentAccount = lazy(() => import('./pages/StudentAccount'));
+const StudentProfile = lazy(() => import('./pages/StudentProfile'));
 
 // Payment callback
 const PaymentCallback = lazy(() => import('./pages/PaymentCallback/PaymentCallback'));
@@ -237,18 +239,22 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<Navigate to="/student-portal/dashboard" replace />} />
-            <Route path="dashboard" element={<StudentDashboard />} />
-            <Route path="booking" element={<StudentBooking />} />
-            <Route path="booking/:id" element={<BookingDetail />} />
-            <Route path="booking/:id/payment" element={<PaymentPage />} />
-            <Route path="lessons" element={<StudentLessons />} />
-            <Route path="lessons/:lessonId" element={<StudentLessonDetail />} />
-            <Route path="calendar" element={<StudentCalendar />} />
-            <Route path="messages" element={<ParentMessage />} />
-            <Route path="link-account" element={<StudentLinkAccount />} />
-            <Route path="account" element={<StudentAccount />} />
-            <Route path="notifications" element={<NotificationsPage />} />
+            {/* Gate: ép hoàn tất hồ sơ học sinh ở lần đăng nhập đầu tiên trước khi vào các trang khác */}
+            <Route element={<StudentProfileGate />}>
+              <Route index element={<Navigate to="/student-portal/dashboard" replace />} />
+              <Route path="dashboard" element={<StudentDashboard />} />
+              <Route path="booking" element={<StudentBooking />} />
+              <Route path="booking/:id" element={<BookingDetail />} />
+              <Route path="booking/:id/payment" element={<PaymentPage />} />
+              <Route path="lessons" element={<StudentLessons />} />
+              <Route path="lessons/:lessonId" element={<StudentLessonDetail />} />
+              <Route path="calendar" element={<StudentCalendar />} />
+              <Route path="messages" element={<ParentMessage />} />
+              <Route path="link-account" element={<StudentLinkAccount />} />
+              <Route path="profile" element={<StudentProfile />} />
+              <Route path="account" element={<StudentAccount />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+            </Route>
           </Route>
 
           {/* PayOS callback - loaded inside iframe after payment */}

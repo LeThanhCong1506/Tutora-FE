@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import {
     getVerificationProgress,
+    getProfileCompletion,
     getPricing,
     updateVideo,
     updateAvatar,
@@ -10,7 +11,8 @@ import {
     type VerificationSections,
     type BasicInfoUpdateData,
     type IntroductionUpdateData,
-    type SubjectGradePriceItem
+    type SubjectGradePriceItem,
+    type TutorProfileStatus
 } from '../../../services/tutorProfile.service';
 import { getUserIdFromToken } from '../../../services/auth.service';
 import { getMyAvailability, DAY_OF_WEEK_MAP } from '../../../services/availability.service';
@@ -291,6 +293,9 @@ export function useTutorProfileForm() {
     const [sectionStatuses, setSectionStatuses] = useState<SectionStatuses>(initialSectionStatuses);
     // Bảng giá theo môn × lớp (read-only) — hiển thị ở Pricing card, chỉnh sửa ở Onboarding.
     const [pricingItems, setPricingItems] = useState<SubjectGradePriceItem[]>([]);
+    // Trạng thái tổng thể của hồ sơ (draft / pending_approval / active / rejected).
+    // null khi chưa tải xong — dùng để hiển thị banner "đang chờ Admin duyệt".
+    const [profileStatus, setProfileStatus] = useState<TutorProfileStatus | string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [isVideoSaving, setIsVideoSaving] = useState(false);
@@ -394,11 +399,12 @@ export function useTutorProfileForm() {
             try {
                 setError(null);
 
-                const [progressR, availR, kycR, pricingR] = await Promise.allSettled([
+                const [progressR, availR, kycR, pricingR, completionR] = await Promise.allSettled([
                     getVerificationProgress(userId),
                     getMyAvailability(),
                     getUserKYCData(),
                     getPricing(userId),
+                    getProfileCompletion(userId),
                 ]);
 
                 if (cancelled) return;
@@ -489,6 +495,14 @@ export function useTutorProfileForm() {
                     if (reason?.response?.status !== 404) {
                         console.error('Failed to fetch pricing:', pricingR.reason);
                     }
+                }
+
+                // 5) Trạng thái tổng thể hồ sơ — quyết định banner "đang chờ Admin duyệt".
+                //    Lỗi (kể cả 404 hồ sơ mới) → giữ null, không hiển thị banner.
+                if (completionR.status === 'fulfilled' && completionR.value.content) {
+                    setProfileStatus(completionR.value.content.profileStatus ?? null);
+                } else if (completionR.status === 'rejected') {
+                    console.error('Failed to fetch profile completion:', completionR.reason);
                 }
 
                 if (cancelled) return;
@@ -873,6 +887,7 @@ export function useTutorProfileForm() {
     return {
         formData,
         pricingItems,
+        profileStatus,
         sectionStatuses,
         isDirty,
         isLoading,

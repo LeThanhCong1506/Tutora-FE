@@ -3,10 +3,11 @@ import { PortalLayout } from '../../components/shared/PortalLayout';
 import type { NavItem } from '../../components/shared/PortalLayout';
 import { useUnreadMessageBadge } from '../../hooks/useUnreadMessageBadge';
 import { useUnreadBadgesByTab } from '../../hooks/useUnreadBadgesByTab';
+import { StudentProfileProvider } from '../../contexts/StudentProfileContext';
 
 import {
     DashboardIcon, MessagesIcon, BookingIcon,
-    AccountIcon, LessonsIcon, CalendarIcon, LinkIcon,
+    AccountIcon, LessonsIcon, CalendarIcon, LinkIcon, ChildrenIcon,
 } from '../shared/icons';
 
 const MESSAGES_PATH = '/student-portal/messages';
@@ -31,6 +32,7 @@ const baseStudentNavItems: NavItem[] = [
     { path: '/student-portal/calendar', label: 'Thời khóa biểu', icon: CalendarIcon },
     { path: MESSAGES_PATH, label: 'Tin nhắn', icon: MessagesIcon },
     { path: '/student-portal/link-account', label: 'Liên kết tài khoản', icon: LinkIcon },
+    { path: '/student-portal/profile', label: 'Hồ sơ học sinh', icon: ChildrenIcon },
     { path: '/student-portal/account', label: 'Tài khoản', icon: AccountIcon },
 ];
 
@@ -55,14 +57,16 @@ const StudentLayout: React.FC<StudentLayoutProps> = ({ children }) => {
     );
 
     return (
-        <PortalLayout
-            navItems={navItems}
-            userRole="STUDENT"
-            showSidebarUserCard={false}
-            showAvatarImage={false}
-        >
-            {children}
-        </PortalLayout>
+        <StudentProfileProvider>
+            <PortalLayout
+                navItems={navItems}
+                userRole="STUDENT"
+                showSidebarUserCard={false}
+                showAvatarImage={false}
+            >
+                {children}
+            </PortalLayout>
+        </StudentProfileProvider>
     );
 };
 

@@ -16,6 +16,114 @@
   font-family: 'IBM Plex Sans', sans-serif;
 }
 
+/* ===== PENDING APPROVAL BANNER ===== */
+/* Hiển thị khi profileStatus === 'pending_approval'. Tông kem/hổ phách + chấm
+   nhấp nháy để truyền tải "đang được xử lý / chờ duyệt", khớp palette trang. */
+.pendingReviewWrapper {
+  max-width: min(1120px, 90vw);
+  width: 100%;
+  margin: 0 auto;
+  padding: clamp(1.5rem, 1rem + 1vw, 2.5rem) clamp(1.5rem, 1rem + 1vw, 2.5rem) 0;
+}
+
+.pendingReviewBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, #fdf6e9 0%, #f6edd9 100%);
+  border: 1px solid rgba(180, 130, 40, 0.28);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(26, 34, 56, 0.06);
+}
+
+.pendingReviewIcon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 13px;
+  background-color: #fff;
+  border: 1px solid rgba(180, 130, 40, 0.3);
+  box-shadow: 0 4px 12px rgba(26, 34, 56, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #b07d18;
+  animation: pendingReviewPulse 2s ease-in-out infinite;
+}
+
+.pendingReviewText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 1px;
+  min-width: 0;
+}
+
+.pendingReviewTitleRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pendingReviewTitle {
+  margin: 0;
+  font-size: 17px;
+  line-height: 23px;
+  font-weight: 750;
+  color: #1a2238;
+  font-family: 'Bricolage Grotesque', sans-serif;
+}
+
+.pendingReviewBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background-color: rgba(176, 125, 24, 0.12);
+  border-radius: 9999px;
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 700;
+  color: #946410;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.pendingReviewDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #c98a12;
+  animation: pendingReviewPulse 1.4s ease-in-out infinite;
+}
+
+.pendingReviewDescription {
+  margin: 0;
+  max-width: 760px;
+  font-size: 13px;
+  line-height: 19px;
+  color: rgba(62, 47, 40, 0.74);
+}
+
+@keyframes pendingReviewPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pendingReviewIcon,
+  .pendingReviewDot {
+    animation: none;
+  }
+}
+
 /* Main Content Area */
 /* KHÔNG đặt overflow ở đây: trang cuộn ở `.contentArea` của PortalLayout.
    Nếu `.mainContent` có overflow:auto thì nó trở thành scroll-container "giả"
