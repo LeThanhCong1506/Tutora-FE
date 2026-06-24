@@ -1,5 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Wallet, CreditCard, Loader2, CheckCircle2, Clock, AlertTriangle, ArrowLeft, Copy, Check } from 'lucide-react';
+import {
+    X,
+    Wallet,
+    CreditCard,
+    Loader2,
+    CheckCircle2,
+    Clock,
+    AlertTriangle,
+    ArrowLeft,
+    Copy,
+    Check,
+    Building2,
+    UserRound,
+    BadgeDollarSign,
+    ReceiptText,
+    ScanLine,
+    ShieldCheck,
+} from 'lucide-react';
 import styles from './PaymentModal.module.css';
 import { getPaymentInfo, getPaymentStatus, payWithWallet, type PaymentInfoDTO } from '../../services/payment.service';
 import { toast } from 'react-toastify';
@@ -10,6 +27,16 @@ interface PaymentModalProps {
     onClose: () => void;
     onPaymentSuccess: () => void;
 }
+
+type PaymentApiError = {
+    response?: {
+        status?: number;
+        data?: {
+            errorCode?: string;
+            message?: string;
+        };
+    };
+};
 
 // Map bin code to bank name
 const BANK_MAP: Record<string, { name: string; logo?: string }> = {
@@ -55,24 +82,16 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
         return info.qrCode;
     };
 
-    useEffect(() => {
-        if (isOpen) {
-            fetchPaymentInfo();
-            setShowQRView(false);
-            setPaymentSuccess(false);
-            setQrImageError(false);
-        }
-    }, [isOpen, bookingId]);
-
-    const fetchPaymentInfo = async () => {
+    const fetchPaymentInfo = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
             const info = await getPaymentInfo(bookingId);
             setPaymentInfo(info);
-        } catch (err: any) {
-            console.warn('Failed to fetch payment info:', err?.response?.status, err?.response?.data);
-            const errorCode = err.response?.data?.errorCode;
+        } catch (err: unknown) {
+            const apiError = err as PaymentApiError;
+            console.warn('Failed to fetch payment info:', apiError.response?.status, apiError.response?.data);
+            const errorCode = apiError.response?.data?.errorCode;
 
             if (errorCode === 'BOOKING_EXPIRED') {
                 setError('BOOKING_EXPIRED');
@@ -83,12 +102,21 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                     onClose();
                 }, 2000);
             } else {
-                setError(err.response?.data?.message || 'Không thể tải thông tin thanh toán. Vui lòng thử lại.');
+                setError(apiError.response?.data?.message || 'Không thể tải thông tin thanh toán. Vui lòng thử lại.');
             }
         } finally {
             setLoading(false);
         }
-    };
+    }, [bookingId, onClose, onPaymentSuccess]);
+
+    useEffect(() => {
+        if (isOpen) {
+            void fetchPaymentInfo();
+            setShowQRView(false);
+            setPaymentSuccess(false);
+            setQrImageError(false);
+        }
+    }, [isOpen, bookingId, fetchPaymentInfo]);
 
     // Countdown timer for QR view
     useEffect(() => {
@@ -139,7 +167,7 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
         }, 5000);
 
         return () => clearInterval(interval);
-    }, [showQRView, bookingId, paymentInfo?.paymentPhase, paymentSuccess]);
+    }, [showQRView, bookingId, paymentInfo?.paymentPhase, paymentSuccess, onClose, onPaymentSuccess]);
 
     const handleWalletPayment = async () => {
         if (!paymentInfo?.canPayWithWallet) return;
@@ -154,9 +182,10 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
             );
             onPaymentSuccess();
             onClose();
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const apiError = err as PaymentApiError;
             console.error('Wallet payment failed:', err);
-            toast.error(err.response?.data?.message || 'Thanh toán thất bại.');
+            toast.error(apiError.response?.data?.message || 'Thanh toán thất bại.');
         } finally {
             setPaying(false);
         }
@@ -185,8 +214,15 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
     const getPhaseTitle = () => {
         if (!paymentInfo) return 'Hoàn tất thanh toán';
         return paymentInfo.paymentPhase === 'remaining'
-            ? '💰 Thanh toán các buổi còn lại'
-            : '🔒 Thanh toán buổi học đầu tiên';
+            ? 'Thanh toán các buổi còn lại'
+            : 'Thanh toán buổi học đầu tiên';
+    };
+
+    const getPhaseDescription = () => {
+        if (!paymentInfo) return 'Hoàn tất thanh toán để xác nhận lịch học của bạn.';
+        return paymentInfo.paymentPhase === 'remaining'
+            ? 'Hoàn tất phần học phí còn lại để tiếp tục lịch học đã đặt.'
+            : 'Thanh toán buổi đầu để gửi yêu cầu đặt lịch tới gia sư.';
     };
 
     const formatCountdown = (seconds: number) => {
@@ -208,9 +244,18 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                             <ArrowLeft size={18} />
                             Quay lại
                         </button>
-                        <div className={styles.qrHeaderTitle}>
-                            <span className={styles.qrHeaderLabel}>Thanh toán</span>
-                            <span className={styles.qrHeaderSub}>Quét mã QR để thanh toán</span>
+                        <div className={styles.qrHeaderMain}>
+                            <div className={styles.qrHeaderIcon}>
+                                <ScanLine size={22} />
+                            </div>
+                            <div className={styles.qrHeaderTitle}>
+                                <span className={styles.qrHeaderLabel}>Thanh toán QR</span>
+                                <span className={styles.qrHeaderSub}>Quét mã hoặc chuyển khoản thủ công</span>
+                            </div>
+                        </div>
+                        <div className={styles.qrHeaderAmount}>
+                            <span>Số tiền</span>
+                            <strong>{formatCurrencyShort(paymentInfo.amount)}</strong>
                         </div>
                     </div>
 
@@ -227,17 +272,23 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                         )}
 
                         {/* Timer badge */}
-                        {countdown > 0 && !paymentSuccess && (
-                            <div className={styles.qrTimerBadge}>
-                                <Clock size={14} />
-                                <span>Thời gian còn lại: {formatCountdown(countdown)}</span>
-                            </div>
-                        )}
-
-                        {countdown <= 0 && paymentInfo.expiredAt && !paymentSuccess && (
-                            <div className={`${styles.qrTimerBadge} ${styles.qrTimerExpired}`}>
-                                <AlertTriangle size={14} />
-                                <span>Đã hết hạn thanh toán</span>
+                        {!paymentSuccess && (
+                            <div className={styles.qrStatusStrip}>
+                                {countdown > 0 ? (
+                                    <div className={styles.qrTimerBadge}>
+                                        <Clock size={15} />
+                                        <span>Còn {formatCountdown(countdown)}</span>
+                                    </div>
+                                ) : paymentInfo.expiredAt ? (
+                                    <div className={`${styles.qrTimerBadge} ${styles.qrTimerExpired}`}>
+                                        <AlertTriangle size={15} />
+                                        <span>Đã hết hạn thanh toán</span>
+                                    </div>
+                                ) : null}
+                                <div className={styles.qrSecurityNote}>
+                                    <ShieldCheck size={15} />
+                                    <span>Giao dịch được đối soát tự động</span>
+                                </div>
                             </div>
                         )}
 
@@ -246,12 +297,17 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                             {/* QR Code Side */}
                             <div className={styles.qrCodeSection}>
                                 <div className={styles.qrCodeCard}>
-                                    <div className={styles.qrCodeTitle}>
-                                        Quét mã để hoàn tất thanh toán
+                                    <div className={styles.qrCodeTitleRow}>
+                                        <div>
+                                            <div className={styles.qrCodeTitle}>
+                                                Quét mã để hoàn tất thanh toán
+                                            </div>
+                                            <p className={styles.qrCodeDesc}>
+                                                Mở app ngân hàng, quét mã và giữ nguyên nội dung chuyển khoản.
+                                            </p>
+                                        </div>
+                                        <span className={styles.qrCodeBadge}>VietQR</span>
                                     </div>
-                                    <p className={styles.qrCodeDesc}>
-                                        Sử dụng ứng dụng ngân hàng để quét mã QR và xác nhận giao dịch.
-                                    </p>
                                     <div className={styles.qrCodeImageWrapper}>
                                         {!qrImageError ? (
                                             <img
@@ -280,7 +336,7 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                             <div className={styles.qrDetailsSection}>
                                 {/* Bank Name */}
                                 <div className={styles.qrInfoCard}>
-                                    <div className={styles.qrInfoIcon}>🏦</div>
+                                    <div className={styles.qrInfoIcon}><Building2 size={18} /></div>
                                     <div className={styles.qrInfoContent}>
                                         <span className={styles.qrInfoLabel}>Ngân hàng</span>
                                         <span className={styles.qrInfoValue}>{bankName}</span>
@@ -289,7 +345,7 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
 
                                 {/* Account Name */}
                                 <div className={styles.qrInfoCard}>
-                                    <div className={styles.qrInfoIcon}>👤</div>
+                                    <div className={styles.qrInfoIcon}><UserRound size={18} /></div>
                                     <div className={styles.qrInfoContent}>
                                         <span className={styles.qrInfoLabel}>Chủ tài khoản</span>
                                         <span className={styles.qrInfoValue}>{paymentInfo.accountName}</span>
@@ -298,7 +354,7 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
 
                                 {/* Account Number */}
                                 <div className={`${styles.qrInfoCard} ${styles.qrInfoCopyable}`} onClick={() => handleCopy(paymentInfo.accountNumber, 'account')}>
-                                    <div className={styles.qrInfoIcon}>📋</div>
+                                    <div className={styles.qrInfoIcon}><CreditCard size={18} /></div>
                                     <div className={styles.qrInfoContent}>
                                         <span className={styles.qrInfoLabel}>Số tài khoản</span>
                                         <span className={styles.qrInfoValue}>{paymentInfo.accountNumber}</span>
@@ -310,7 +366,7 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
 
                                 {/* Amount */}
                                 <div className={`${styles.qrInfoCard} ${styles.qrInfoHighlight}`}>
-                                    <div className={styles.qrInfoIcon}>💰</div>
+                                    <div className={styles.qrInfoIcon}><BadgeDollarSign size={18} /></div>
                                     <div className={styles.qrInfoContent}>
                                         <span className={styles.qrInfoLabel}>Số tiền</span>
                                         <span className={`${styles.qrInfoValue} ${styles.qrInfoAmount}`}>{formatCurrencyShort(paymentInfo.amount)}</span>
@@ -319,7 +375,7 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
 
                                 {/* Description / Payment Code */}
                                 <div className={`${styles.qrInfoCard} ${styles.qrInfoCopyable}`} onClick={() => handleCopy(paymentInfo.description || paymentInfo.paymentCode, 'desc')}>
-                                    <div className={styles.qrInfoIcon}>📝</div>
+                                    <div className={styles.qrInfoIcon}><ReceiptText size={18} /></div>
                                     <div className={styles.qrInfoContent}>
                                         <span className={styles.qrInfoLabel}>Nội dung</span>
                                         <span className={styles.qrInfoValue}>{paymentInfo.description || paymentInfo.paymentCode}</span>
@@ -356,7 +412,16 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
         <div className={styles.overlay}>
             <div className={styles.modal}>
                 <div className={styles.header}>
-                    <h3>{getPhaseTitle()}</h3>
+                    <div className={styles.headerTitleGroup}>
+                        <div className={styles.headerIconWrap}>
+                            <CreditCard size={22} />
+                        </div>
+                        <div>
+                            <span className={styles.headerEyebrow}>TUTORA Secure Pay</span>
+                            <h3>{getPhaseTitle()}</h3>
+                            <p>{getPhaseDescription()}</p>
+                        </div>
+                    </div>
                     <button onClick={onClose} className={styles.closeBtn}>
                         <X size={20} />
                     </button>
@@ -390,31 +455,37 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                     ) : paymentInfo ? (
                         <>
                             <div className={styles.summaryBox}>
-                                <div className={styles.summaryRow}>
-                                    <span>Mã đơn hàng:</span>
-                                    <strong>#{bookingId}</strong>
-                                </div>
-                                {/* 2-stage breakdown */}
-                                {paymentInfo.totalAmount != null && paymentInfo.totalAmount > 0 && (
-                                    <div className={styles.summaryRow}>
-                                        <span>Tổng giá trị booking:</span>
-                                        <span>{formatCurrency(paymentInfo.totalAmount)}</span>
+                                <div className={styles.summaryTop}>
+                                    <div>
+                                        <span className={styles.summaryKicker}>Cần thanh toán</span>
+                                        <strong className={styles.summaryAmountLarge}>{formatCurrency(paymentInfo.amount)}</strong>
                                     </div>
-                                )}
-                                {paymentInfo.paymentPhase === 'remaining' && paymentInfo.depositAmount != null && (
-                                    <div className={styles.summaryRow}>
-                                        <span>Đã thanh toán buổi đầu:</span>
-                                        <span style={{ color: '#16a34a' }}>- {formatCurrency(paymentInfo.depositAmount)}</span>
-                                    </div>
-                                )}
-                                <div className={styles.summaryRow}>
-                                    <span>
-                                        {paymentInfo.paymentPhase === 'remaining'
-                                            ? 'Số tiền các buổi còn lại:'
-                                            : 'Số tiền buổi học đầu tiên:'}
-                                    </span>
-                                    <strong className={styles.amount}>{formatCurrency(paymentInfo.amount)}</strong>
+                                    <span className={styles.orderPill}>#{bookingId}</span>
                                 </div>
+
+                                <div className={styles.summaryDetails}>
+                                    {paymentInfo.totalAmount != null && paymentInfo.totalAmount > 0 && (
+                                        <div className={styles.summaryRow}>
+                                            <span>Tổng giá trị booking</span>
+                                            <strong>{formatCurrency(paymentInfo.totalAmount)}</strong>
+                                        </div>
+                                    )}
+                                    {paymentInfo.paymentPhase === 'remaining' && paymentInfo.depositAmount != null && (
+                                        <div className={styles.summaryRow}>
+                                            <span>Đã thanh toán buổi đầu</span>
+                                            <strong className={styles.paidAmount}>- {formatCurrency(paymentInfo.depositAmount)}</strong>
+                                        </div>
+                                    )}
+                                    <div className={styles.summaryRow}>
+                                        <span>
+                                            {paymentInfo.paymentPhase === 'remaining'
+                                                ? 'Các buổi còn lại'
+                                                : 'Buổi học đầu tiên'}
+                                        </span>
+                                        <strong>{formatCurrency(paymentInfo.amount)}</strong>
+                                    </div>
+                                </div>
+
                                 {paymentInfo.expiredAt && (
                                     <div className={styles.deadlineRow}>
                                         <Clock size={14} />
@@ -428,6 +499,9 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                             <div className={styles.paymentOptions}>
                                 {/* Option 1: Wallet */}
                                 <div className={`${styles.optionCard} ${!paymentInfo.canPayWithWallet ? styles.disabled : ''}`}>
+                                    <span className={`${styles.optionBadge} ${paymentInfo.canPayWithWallet ? styles.optionBadgeReady : styles.optionBadgeMuted}`}>
+                                        {paymentInfo.canPayWithWallet ? 'Có thể dùng' : 'Không khả dụng'}
+                                    </span>
                                     <div className={styles.optionHeader}>
                                         <div className={styles.optionIconWrap}>
                                             <Wallet size={24} />
@@ -442,6 +516,7 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                                     ) : (
                                         <div className={styles.payAction}>
                                             <button
+                                                type="button"
                                                 className={styles.payBtn}
                                                 onClick={handleWalletPayment}
                                                 disabled={paying}
@@ -453,7 +528,8 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                                 </div>
 
                                 {/* Option 2: Bank Transfer / QR Code — opens in-app view */}
-                                <div className={styles.optionCard} onClick={handleOpenQRView}>
+                                <div className={`${styles.optionCard} ${styles.recommendedOption}`} onClick={handleOpenQRView}>
+                                    <span className={`${styles.optionBadge} ${styles.optionBadgeRecommended}`}>Khuyên dùng</span>
                                     <div className={styles.optionHeader}>
                                         <div className={styles.optionIconWrap} style={{ background: '#eff6ff', color: '#2563eb' }}>
                                             <CreditCard size={24} />
@@ -464,7 +540,7 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                                         </div>
                                     </div>
                                     <div className={styles.payAction}>
-                                        <button className={styles.payBtn} style={{ background: '#2563eb' }}>
+                                        <button type="button" className={styles.payBtn} style={{ background: '#2563eb' }}>
                                             Thanh toán chuyển khoản
                                         </button>
                                     </div>
