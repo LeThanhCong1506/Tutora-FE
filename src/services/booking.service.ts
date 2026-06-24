@@ -386,3 +386,22 @@ export const getPaymentStatus = async (bookingId: number): Promise<ApiResponse<P
         throw error;
     }
 };
+
+/**
+ * Buổi học đầu tiên đã kết thúc chưa? Dùng để CHẶN thanh toán đợt 2 (các buổi còn lại)
+ * khi buổi học đầu tiên chưa diễn ra xong.
+ * - `pending_remaining_payment`: BE chỉ mở trạng thái này SAU khi buổi 1 hoàn tất + xác nhận
+ *   → luôn coi là đã xong.
+ * - Các trạng thái khác (deposit_paid/ongoing): xét theo lịch — buổi sớm nhất (chưa hủy)
+ *   phải đã qua giờ kết thúc, hoặc đã/đang được xác nhận (completed / pending_confirmation).
+ */
+export const isFirstLessonFinished = (booking: BookingResponseDTO): boolean => {
+    if (booking.status === 'pending_remaining_payment') return true;
+    const lessons = (booking.lessons ?? [])
+        .filter((l) => l.status !== 'cancelled' && l.status !== 'cancelled_noshow')
+        .sort((a, b) => new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime());
+    const first = lessons[0];
+    if (!first) return false;
+    if (first.status === 'completed' || first.status === 'pending_confirmation') return true;
+    return new Date(first.scheduledEnd).getTime() < Date.now();
+};

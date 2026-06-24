@@ -25,7 +25,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import BookingMonthCalendar from '../../../components/BookingMonthCalendar/BookingMonthCalendar';
-import { cancelBooking, getBookingById, type BookingResponseDTO } from '../../../services/booking.service';
+import { cancelBooking, getBookingById, isFirstLessonFinished, type BookingResponseDTO } from '../../../services/booking.service';
 import { canLeaveBookingFeedback } from '../../../services/feedback.service';
 import { getPaymentBadge } from '../../../utils/paymentBadge';
 import CreateFeedbackModal from '../../ParentLessons/components/CreateFeedbackModal';
@@ -301,8 +301,11 @@ const BookingDetailPage = () => {
     'paid',
   ].includes(booking.status);
   const canPayDeposit = ['accepted', 'pending_payment'].includes(booking.status);
-  const canPayRemaining = ['deposit_paid', 'pending_remaining_payment'].includes(booking.status);
-  const hasActions = canReview || canCancel || canPayDeposit || canPayRemaining;
+  // Chỉ cho thanh toán đợt 2 khi buổi học đầu tiên đã kết thúc.
+  const isRemainingStage = ['deposit_paid', 'pending_remaining_payment'].includes(booking.status);
+  const canPayRemaining = isRemainingStage && isFirstLessonFinished(booking);
+  const remainingLocked = isRemainingStage && !isFirstLessonFinished(booking);
+  const hasActions = canReview || canCancel || canPayDeposit || canPayRemaining || remainingLocked;
 
   const copyBookingCode = async () => {
     try {
@@ -696,6 +699,25 @@ const BookingDetailPage = () => {
                   >
                     <CreditCard size={17} /> Thanh toán phần còn lại
                   </button>
+                )}
+                {remainingLocked && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: 8,
+                      alignItems: 'flex-start',
+                      padding: '12px 14px',
+                      borderRadius: 10,
+                      background: '#fff7ed',
+                      border: '1px solid #fed7aa',
+                      color: '#9a3412',
+                      fontSize: 13,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    <Clock3 size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+                    <span>Bạn có thể thanh toán các buổi học còn lại sau khi buổi học đầu tiên kết thúc.</span>
+                  </div>
                 )}
                 {canCancel && (
                   <button className={styles.cancelBtn} type="button" onClick={() => setShowCancelModal(true)}>
