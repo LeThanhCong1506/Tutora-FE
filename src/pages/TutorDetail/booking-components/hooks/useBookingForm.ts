@@ -236,8 +236,12 @@ export function useBookingForm({ isOpen, tutorId, tutorTeachingMode }: Args) {
 
     // Thanh toán buổi đầu thành công → chờ gia sư xác nhận.
     const handlePaymentSuccess = () => setBookingPhase('paid');
-    // Đóng bước thanh toán mà chưa trả → cho phép trả sau (trong 24h).
-    const deferPayment = () => setBookingPhase('deferred');
+    // Đóng bước thanh toán mà CHƯA trả → cho phép trả sau (trong 30 phút).
+    // QUAN TRỌNG: dùng functional update + guard chỉ chuyển 'payment' → 'deferred'.
+    // PaymentModal khi thành công gọi onPaymentSuccess() (đặt 'paid') RỒI onClose()
+    // ngay sau đó; nếu defer vô điều kiện sẽ ghi đè 'paid' → 'deferred' và hiện nhầm
+    // màn "Chưa thanh toán" dù đã trả xong.
+    const deferPayment = () => setBookingPhase((p) => (p === 'payment' ? 'deferred' : p));
     // Quay lại bước thanh toán từ màn "trả sau".
     const resumePayment = () => setBookingPhase('payment');
 

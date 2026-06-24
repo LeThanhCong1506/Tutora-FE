@@ -785,6 +785,12 @@
   box-shadow: 0 30px 80px -24px rgba(0, 0, 0, 0.48);
 }
 
+.successModalShell {
+  width: min(760px, calc(100vw - 52px));
+  max-height: calc(100vh - 52px);
+  border-radius: 24px;
+}
+
 /* Overlay xác nhận khi đóng modal lúc đang đặt dở (chống mất lựa chọn do lỡ tay). */
 .closeConfirm {
   position: absolute;
@@ -2587,10 +2593,13 @@
 
 .modalSuccess {
   position: relative;
-  min-height: 430px;
+  min-height: 460px;
   justify-content: center;
   flex-direction: column;
-  padding: 35px;
+  padding: 52px 44px 44px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(212, 180, 131, 0.16), transparent 34%),
+    linear-gradient(180deg, #ffffff 0%, rgba(250, 249, 246, 0.86) 100%);
   text-align: center;
 }
 
@@ -2598,6 +2607,14 @@
   position: absolute;
   top: 18px;
   right: 18px;
+}
+
+.successContent {
+  display: flex;
+  width: min(560px, 100%);
+  align-items: center;
+  flex-direction: column;
+  margin: 0 auto;
 }
 
 .successIcon {
@@ -2612,7 +2629,7 @@
 }
 
 .modalSuccess h2 {
-  margin: 6px 0;
+  margin: 8px 0 8px;
   color: var(--color-navy);
   font-size: 28px;
   font-weight: 500;
@@ -2620,7 +2637,7 @@
 }
 
 .modalSuccess p {
-  max-width: 420px;
+  max-width: 500px;
   margin: 0;
   color: var(--color-navy-60);
   font-size: 12px;
@@ -2657,6 +2674,25 @@
   color: var(--color-green);
   font-size: 11px;
   font-weight: 700;
+}
+
+.successActions {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 12px;
+  margin-top: 2px;
+}
+
+.successActions .primaryButton,
+.successActions .secondaryButton {
+  width: 100%;
+  min-height: 46px;
+}
+
+.successContent > .primaryButton {
+  min-width: 220px;
+  margin-top: 4px;
 }
 
 @media (max-width: 1100px) {
@@ -2698,6 +2734,13 @@
     max-height: 100vh;
     min-height: 100vh;
     border-radius: 0;
+  }
+
+  .successModalShell {
+    width: min(560px, calc(100% - 24px));
+    max-height: calc(100vh - 24px);
+    min-height: auto;
+    border-radius: 22px;
   }
 
   .modalHeader,
@@ -2854,5 +2897,31 @@
   .primaryButton,
   .secondaryButton {
     width: 100%;
+  }
+
+  .successModalShell {
+    width: min(100% - 20px, 420px);
+    max-height: calc(100vh - 20px);
+  }
+
+  .modalSuccess {
+    min-height: auto;
+    padding: 46px 20px 24px;
+  }
+
+  .successContent {
+    width: 100%;
+  }
+
+  .successActions {
+    grid-template-columns: 1fr;
+  }
+
+  .modalSuccess h2 {
+    font-size: 24px;
+  }
+
+  .modalSuccess p {
+    font-size: 12px;
   }
 }
