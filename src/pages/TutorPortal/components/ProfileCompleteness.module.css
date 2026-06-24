@@ -63,7 +63,24 @@
     line-height: 16px;
     display: flex;
     align-items: center;
+}
+
+/* Icon + text căn giữa theo chiều dọc, khoảng cách đều nhau. Dùng inline-flex ở
+   chính span (icon là ::before bên trong span) để gap có tác dụng giữa icon và chữ. */
+.complete,
+.needsWork,
+.pending {
+    display: inline-flex;
+    align-items: center;
     gap: 6px;
+}
+
+.complete::before,
+.needsWork::before,
+.pending::before {
+    flex-shrink: 0;
+    font-size: 13px;
+    line-height: 1;
 }
 
 .complete {
@@ -81,6 +98,14 @@
 
 .needsWork::before {
     content: '⚠';
+}
+
+.pending {
+    color: #946410;
+}
+
+.pending::before {
+    content: '⏳';
 }
 
 /* ===== Vertical stepper checklist ===== */
