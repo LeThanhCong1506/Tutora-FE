@@ -41,7 +41,7 @@ const RegisterForm: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!formData.fullname || !formData.email || !formData.password || !formData.confirmPassword) {
+        if (!formData.fullname || !formData.phone || !formData.password || !formData.confirmPassword) {
             toast.warning("Vui lòng điền đầy đủ thông tin!");
             return;
         }
@@ -62,23 +62,27 @@ const RegisterForm: React.FC = () => {
             return;
         }
 
-        // Validate phone number — TÙY CHỌN: bỏ trống thì bỏ qua, chỉ kiểm tra khi có nhập.
+        // Validate số điện thoại — BẮT BUỘC trong luồng đăng ký mới.
         const phoneDigits = formData.phone.replace(/\D/g, "");
-        if (phoneDigits.length > 0 && (phoneDigits.length < 9 || phoneDigits.length > 11)) {
+        if (phoneDigits.length < 9 || phoneDigits.length > 11) {
             toast.warning("Số điện thoại không hợp lệ!");
+            return;
+        }
+
+        // Validate email — TÙY CHỌN: chỉ kiểm tra định dạng khi có nhập.
+        if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+            toast.warning("Email không hợp lệ!");
             return;
         }
 
         try {
             setIsSubmitting(true);
 
-            // NOTE: Supabase Auth sync (auth.admin.createUser) đã được gỡ khỏi FE vì
-            // yêu cầu service-role key — không an toàn để ship xuống browser.
-            // Nếu cần đồng bộ user sang Supabase Auth (để hỗ trợ password reset qua
-            // Supabase email), backend phải làm trong endpoint /auth/register.
+            // BE flow mới: đăng ký bằng SỐ ĐIỆN THOẠI (email tùy chọn). BE gửi OTP qua SMS
+            // và yêu cầu xác thực số điện thoại trước khi cấp token.
             const response = await axios.post(`${API_BASE_URL}/auth/register`, {
-                email: formData.email,
-                phone: formData.phone || undefined,
+                phone: formData.phone,
+                email: formData.email || undefined,
                 password: formData.password,
                 fullName: formData.fullname,
                 role: formData.role,
@@ -86,16 +90,15 @@ const RegisterForm: React.FC = () => {
 
             const content = response.data?.content;
 
-            // BE flow mới: đăng ký bằng email YÊU CẦU xác thực OTP trước khi cấp token.
-            // Lúc này token = null, requiresEmailVerification = true (BE đã gửi mã OTP qua email)
-            // → KHÔNG coi là lỗi, chuyển sang trang nhập OTP.
-            if (content?.requiresEmailVerification) {
-                toast.success("Đăng ký thành công! Vui lòng kiểm tra email để lấy mã xác thực.");
-                navigate(`/verify-email?email=${encodeURIComponent(content.email || formData.email)}`);
+            // requiresPhoneVerification = true (BE đã gửi mã OTP qua SMS)
+            // → KHÔNG coi là lỗi, chuyển sang trang nhập OTP xác thực số điện thoại.
+            if (content?.requiresPhoneVerification) {
+                toast.success("Đăng ký thành công! Vui lòng kiểm tra tin nhắn SMS để lấy mã xác thực.");
+                navigate(`/verify-phone?phone=${encodeURIComponent(content.phone || formData.phone)}`);
                 return;
             }
 
-            // Trường hợp được cấp token ngay (vd tài khoản nội bộ) → đăng nhập luôn.
+            // Trường hợp hiếm: được cấp token ngay → đăng nhập luôn.
             const token = content?.token;
             if (!token) {
                 throw new Error("Không nhận được token từ server");
@@ -161,8 +164,8 @@ const RegisterForm: React.FC = () => {
                 <form onSubmit={handleSubmit} className="register-form__form">
                     <div className="space-y-5 animate-fade-in-up delay-100">
                         <InputGroup id="fullname" name="fullname" type="text" label="Họ và Tên" placeholder="Nguyễn Văn A" icon="person" value={formData.fullname} onChange={handleChange} disabled={isSubmitting} />
-                        <InputGroup id="email" name="email" type="email" label="Email" placeholder="student@example.com" icon="mail" value={formData.email} onChange={handleChange} disabled={isSubmitting} />
-                        <InputGroup id="phone" name="phone" type="tel" label="Số Điện Thoại (tùy chọn)" placeholder="090..." icon="phone" value={formData.phone} onChange={handleChange} disabled={isSubmitting} />
+                        <InputGroup id="phone" name="phone" type="tel" label="Số Điện Thoại" placeholder="090..." icon="phone" value={formData.phone} onChange={handleChange} disabled={isSubmitting} />
+                        <InputGroup id="email" name="email" type="email" label="Email (tùy chọn)" placeholder="student@example.com" icon="mail" value={formData.email} onChange={handleChange} disabled={isSubmitting} />
                         <InputGroup id="password" name="password" type="password" label="Mật Khẩu" placeholder="••••••••" icon="lock" value={formData.password} onChange={handleChange} showPasswordToggle={true} disabled={isSubmitting} />
                         {formData.password && (
                             <div style={{ marginTop: 2, marginBottom: 8 }}>
