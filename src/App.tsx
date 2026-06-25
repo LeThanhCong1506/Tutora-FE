@@ -32,7 +32,7 @@ const ParentBookingDemo = lazy(() => import('./pages/ParentBookingDemo'));
 const LoginPage = lazy(() => import('./pages/Login/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/Register/RegisterPage'));
 const ResetPasswordPage = lazy(() => import('./pages/Login/ResetPasswordPage'));
-const VerifyEmailPage = lazy(() => import('./pages/VerifyEmail/VerifyEmailPage'));
+const VerifyPhonePage = lazy(() => import('./pages/VerifyPhone/VerifyPhonePage'));
 
 // Error pages
 const NotFoundPage = lazy(() => import('./pages/Error/NotFoundPage'));
@@ -266,7 +266,7 @@ function App() {
             <>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
-              <Route path="/verify-email" element={<VerifyEmailPage />} />
+              <Route path="/verify-phone" element={<VerifyPhonePage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
             </>
           )}

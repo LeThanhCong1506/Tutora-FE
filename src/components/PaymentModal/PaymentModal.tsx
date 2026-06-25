@@ -287,15 +287,18 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                             </div>
                         )}
 
-                        {/* Expired Overlay — che QR để chặn quét nhầm sau khi hết hạn */}
+                        {/* Hết hạn → THAY THẾ hẳn nội dung QR (không overlay) để khi scroll
+                            không còn lộ lớp QR cũ bên dưới. */}
                         {isExpired && !paymentSuccess && (
-                            <div className={styles.qrExpiredOverlay}>
-                                <div className={styles.qrSuccessContent}>
-                                    <AlertTriangle size={60} className={styles.qrExpiredIcon} />
+                            <div className={styles.qrExpiredState}>
+                                <div className={styles.qrExpiredCard}>
+                                    <span className={styles.qrExpiredIconWrap}>
+                                        <AlertTriangle size={38} />
+                                    </span>
                                     <h3>Mã thanh toán đã hết hạn</h3>
                                     <p>
-                                        Vui lòng không quét mã cũ để tránh chuyển khoản nhầm. Hãy tải lại
-                                        để kiểm tra trạng thái đặt lịch.
+                                        Vui lòng không quét mã cũ để tránh chuyển khoản nhầm. Hãy
+                                        tải lại để kiểm tra trạng thái đặt lịch của bạn.
                                     </p>
                                     <button
                                         type="button"
@@ -310,7 +313,7 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                         )}
 
                         {/* Timer badge */}
-                        {!paymentSuccess && (
+                        {!paymentSuccess && !isExpired && (
                             <div className={styles.qrStatusStrip}>
                                 {countdown > 0 ? (
                                     <div className={styles.qrTimerBadge}>
@@ -331,6 +334,7 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                         )}
 
                         {/* QR + Bank Info Layout */}
+                        {!isExpired && (
                         <div className={styles.qrLayout}>
                             {/* QR Code Side */}
                             <div className={styles.qrCodeSection}>
@@ -424,6 +428,7 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                                 </div>
                             </div>
                         </div>
+                        )}
 
                         {/* Polling status indicator */}
                         {!paymentSuccess && !isExpired && (

@@ -376,11 +376,11 @@ export const changePassword = async (oldPassword: string, newPassword: string) =
 // --- SIMPLE AUTH (Không qua Supabase) ---
 
 export const simpleRegister = async (data: {
-  email: string;
   phone: string;
   password: string;
   fullName: string;
   role: string;
+  email?: string;
 }) => {
   try {
     console.log("🔐 Simple Register...");
@@ -409,28 +409,55 @@ export const simpleLogin = async (emailOrPhone: string, password: string) => {
 };
 
 /**
- * Xác thực email bằng mã OTP (gửi qua email khi đăng ký).
+ * Xác thực số điện thoại bằng mã OTP (gửi qua SMS khi đăng ký).
  * Thành công → BE trả { token, refreshToken } và tài khoản được đăng nhập.
  */
-export const verifyEmailOtp = async (email: string, otp: string) => {
+export const verifyPhoneOtp = async (phone: string, otp: string) => {
   try {
-    const response = await api.post("/auth/verify-email", { email, otp });
+    const response = await api.post("/auth/verify-phone", { phone, otp });
     return response.data;
   } catch (error: any) {
-    console.error("❌ Verify email error:", error.response?.data);
+    console.error("❌ Verify phone error:", error.response?.data);
     throw error;
   }
 };
 
 /**
- * Gửi lại mã OTP xác thực email (khi mã cũ hết hạn / không nhận được).
+ * Gửi lại mã OTP xác thực số điện thoại (khi mã cũ hết hạn / không nhận được).
  */
-export const resendVerificationEmail = async (email: string) => {
+export const resendPhoneOtp = async (phone: string) => {
   try {
-    const response = await api.post("/auth/resend-verification-email", { email });
+    const response = await api.post("/auth/resend-phone-otp", { phone });
     return response.data;
   } catch (error: any) {
-    console.error("❌ Resend verification email error:", error.response?.data);
+    console.error("❌ Resend phone OTP error:", error.response?.data);
+    throw error;
+  }
+};
+
+/**
+ * Quên mật khẩu: gửi mã OTP đặt lại mật khẩu tới số điện thoại.
+ * BE luôn trả success (tránh dò số điện thoại tồn tại).
+ */
+export const forgotPasswordPhone = async (phone: string) => {
+  try {
+    const response = await api.post("/auth/forgot-password", { phone });
+    return response.data;
+  } catch (error: any) {
+    console.error("❌ Forgot password error:", error.response?.data);
+    throw error;
+  }
+};
+
+/**
+ * Đặt lại mật khẩu bằng OTP gửi tới số điện thoại.
+ */
+export const resetPasswordPhone = async (phone: string, otp: string, newPassword: string) => {
+  try {
+    const response = await api.post("/auth/reset-password", { phone, otp, newPassword });
+    return response.data;
+  } catch (error: any) {
+    console.error("❌ Reset password error:", error.response?.data);
     throw error;
   }
 };

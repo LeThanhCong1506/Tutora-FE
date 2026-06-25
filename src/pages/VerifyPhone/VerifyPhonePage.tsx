@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// src/pages/VerifyEmail/VerifyEmailPage.tsx
-// Màn nhập OTP xác thực email — dùng cho luồng đăng ký mới của BE
-// (POST /auth/register trả requiresEmailVerification + gửi OTP qua email) và
-// cho luồng đăng nhập khi tài khoản chưa xác thực email.
+// src/pages/VerifyPhone/VerifyPhonePage.tsx
+// Màn nhập OTP xác thực số điện thoại — dùng cho luồng đăng ký mới của BE
+// (POST /auth/register trả requiresPhoneVerification + gửi OTP qua SMS) và
+// cho luồng đăng nhập khi tài khoản chưa xác thực số điện thoại.
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
-  verifyEmailOtp,
-  resendVerificationEmail,
+  verifyPhoneOtp,
+  resendPhoneOtp,
   saveUserToStorage,
   getRoleFromToken,
 } from "../../services/auth.service";
@@ -16,10 +16,10 @@ import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import styles from "../../styles/pages/reset-password.module.css";
 
-const MailIcon = () => (
+const PhoneIcon = () => (
   <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-      d="M3 8l9 6 9-6M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />
   </svg>
 );
 
@@ -41,14 +41,14 @@ const portalPathFromRole = (role: string): string => {
   }
 };
 
-const VerifyEmailPage: React.FC = () => {
+const VerifyPhonePage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Email cần xác thực: ưu tiên query (?email=) để sống sót khi refresh, fallback state.
-  const email = useMemo(() => {
-    const fromQuery = new URLSearchParams(location.search).get("email");
-    const fromState = (location.state as { email?: string } | null)?.email;
+  // SĐT cần xác thực: ưu tiên query (?phone=) để sống sót khi refresh, fallback state.
+  const phone = useMemo(() => {
+    const fromQuery = new URLSearchParams(location.search).get("phone");
+    const fromState = (location.state as { phone?: string } | null)?.phone;
     return fromQuery || fromState || "";
   }, [location.search, location.state]);
 
@@ -57,13 +57,13 @@ const VerifyEmailPage: React.FC = () => {
   const [isResending, setIsResending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
-  // Không có email → quay lại đăng ký.
+  // Không có SĐT → quay lại đăng ký.
   useEffect(() => {
-    if (!email) {
-      toast.warning("Thiếu thông tin email cần xác thực. Vui lòng đăng ký lại.");
+    if (!phone) {
+      toast.warning("Thiếu thông tin số điện thoại cần xác thực. Vui lòng đăng ký lại.");
       navigate("/register", { replace: true });
     }
-  }, [email, navigate]);
+  }, [phone, navigate]);
 
   // Đếm ngược nút "Gửi lại mã".
   useEffect(() => {
@@ -73,11 +73,11 @@ const VerifyEmailPage: React.FC = () => {
   }, [cooldown]);
 
   const handleResend = async () => {
-    if (!email || cooldown > 0 || isResending) return;
+    if (!phone || cooldown > 0 || isResending) return;
     try {
       setIsResending(true);
-      await resendVerificationEmail(email);
-      toast.success("Đã gửi lại mã xác thực. Vui lòng kiểm tra email.");
+      await resendPhoneOtp(phone);
+      toast.success("Đã gửi lại mã xác thực. Vui lòng kiểm tra tin nhắn SMS.");
       setCooldown(RESEND_COOLDOWN);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Không gửi lại được mã. Vui lòng thử lại.");
@@ -89,11 +89,11 @@ const VerifyEmailPage: React.FC = () => {
   // Tự gửi lại mã khi đến từ luồng đăng nhập (OTP đăng ký có thể đã hết hạn).
   useEffect(() => {
     const autoResend = (location.state as { autoResend?: boolean } | null)?.autoResend;
-    if (email && autoResend) {
+    if (phone && autoResend) {
       handleResend();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [email]);
+  }, [phone]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,7 +105,7 @@ const VerifyEmailPage: React.FC = () => {
 
     try {
       setIsSubmitting(true);
-      const data = await verifyEmailOtp(email, code);
+      const data = await verifyPhoneOtp(phone, code);
       const token = data.content?.token;
       const refreshToken = data.content?.refreshToken;
 
@@ -117,7 +117,7 @@ const VerifyEmailPage: React.FC = () => {
       window.dispatchEvent(new Event("auth-change"));
 
       const role = (getRoleFromToken(token) || "").toLowerCase();
-      toast.success("Xác thực email thành công!");
+      toast.success("Xác thực số điện thoại thành công!");
       setTimeout(() => navigate(portalPathFromRole(role), { replace: true }), 1200);
     } catch (error: any) {
       toast.error(error.response?.data?.message || error.message || "Xác thực thất bại.");
@@ -126,7 +126,7 @@ const VerifyEmailPage: React.FC = () => {
     }
   };
 
-  if (!email) return null;
+  if (!phone) return null;
 
   return (
     <div className={styles.page}>
@@ -137,12 +137,12 @@ const VerifyEmailPage: React.FC = () => {
           <div className={styles.card}>
             <div className={styles.cardContent}>
               <div className={styles.iconCircle}>
-                <MailIcon />
+                <PhoneIcon />
               </div>
 
-              <h1 className={styles.title}>Xác thực email</h1>
+              <h1 className={styles.title}>Xác thực số điện thoại</h1>
               <p className={styles.description}>
-                Nhập mã OTP gồm 6 chữ số đã được gửi tới <strong>{email}</strong>
+                Nhập mã OTP gồm 6 chữ số đã được gửi tới <strong>{phone}</strong>
               </p>
 
               <form onSubmit={handleSubmit}>
@@ -201,4 +201,4 @@ const VerifyEmailPage: React.FC = () => {
   );
 };
 
-export default VerifyEmailPage;
+export default VerifyPhonePage;
