@@ -9,19 +9,22 @@ import axios from "axios";
 import { saveUserToStorage } from "../../services/auth.service";
 
 const API_BASE_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5166') + '/api';
-const REMEMBERED_EMAIL_KEY = 'TUTORA_remembered_email';
+const REMEMBERED_PHONE_KEY = 'TUTORA_remembered_phone';
+
+// Chỉ giữ chữ số và dấu '+' đứng đầu (cho số dạng +84...).
+const sanitizePhone = (raw: string) => raw.replace(/[^\d+]/g, '').replace(/(?!^)\+/g, '');
 
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [formData, setFormData] = useState({ phone: "", password: "" });
   const [rememberMe, setRememberMe] = useState(false);
 
-  // Load remembered email on mount
+  // Load remembered phone on mount
   useEffect(() => {
-    const savedEmail = localStorage.getItem(REMEMBERED_EMAIL_KEY);
-    if (savedEmail) {
-      setFormData((prev) => ({ ...prev, email: savedEmail }));
+    const savedPhone = localStorage.getItem(REMEMBERED_PHONE_KEY);
+    if (savedPhone) {
+      setFormData((prev) => ({ ...prev, phone: savedPhone }));
       setRememberMe(true);
     }
   }, []);
@@ -30,7 +33,7 @@ const LoginForm: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: name === "phone" ? sanitizePhone(value) : value }));
   };
 
   /**
@@ -71,23 +74,42 @@ const LoginForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.email || !formData.password) {
-      toast.warning("Vui lòng nhập đầy đủ email và mật khẩu!");
+    if (!formData.phone || !formData.password) {
+      toast.warning("Vui lòng nhập đầy đủ số điện thoại và mật khẩu!");
+      return;
+    }
+
+    const phoneDigits = formData.phone.replace(/\D/g, "");
+    if (phoneDigits.length < 9 || phoneDigits.length > 11) {
+      toast.warning("Số điện thoại không hợp lệ!");
       return;
     }
 
     try {
       setIsSubmitting(true);
 
-      // Call auth login API directly (no Supabase)
+      // Call auth login API directly (no Supabase) — chỉ đăng nhập bằng số điện thoại
       const response = await axios.post(`${API_BASE_URL}/auth/login`, {
-        emailOrPhone: formData.email,
+        emailOrPhone: formData.phone,
         password: formData.password,
       });
 
       const data = response.data;
-      const token = data.content?.token;
-      const refreshToken = data.content?.refreshToken;
+      const content = data.content;
+
+      // BE chặn đăng nhập khi SĐT chưa xác thực → trả 200 kèm requiresPhoneVerification.
+      // Đưa sang trang nhập OTP và tự gửi lại mã mới (OTP đăng ký có thể đã hết hạn).
+      if (content?.requiresPhoneVerification) {
+        const phone = content.phone || formData.phone;
+        toast.info("Số điện thoại chưa được xác thực. Vui lòng nhập mã OTP để hoàn tất.");
+        navigate(`/verify-phone?phone=${encodeURIComponent(phone)}`, {
+          state: { autoResend: true },
+        });
+        return;
+      }
+
+      const token = content?.token;
+      const refreshToken = content?.refreshToken;
 
       if (!token) {
         throw new Error("Không nhận được token từ server");
@@ -129,11 +151,11 @@ const LoginForm: React.FC = () => {
         return;
       }
 
-      // Save or clear remembered email based on checkbox
+      // Save or clear remembered phone based on checkbox
       if (rememberMe) {
-        localStorage.setItem(REMEMBERED_EMAIL_KEY, formData.email);
+        localStorage.setItem(REMEMBERED_PHONE_KEY, formData.phone);
       } else {
-        localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+        localStorage.removeItem(REMEMBERED_PHONE_KEY);
       }
 
       // Save user data with accessToken and refreshToken
@@ -155,20 +177,6 @@ const LoginForm: React.FC = () => {
         error.message ||
         "Đăng nhập thất bại";
 
-      // BE chặn đăng nhập khi email chưa xác thực → đưa sang trang nhập OTP và tự gửi lại mã mới.
-      // Chỉ áp dụng khi đăng nhập bằng email (có "@"); login qua SĐT/username thì bỏ qua.
-      if (
-        typeof errorMessage === "string" &&
-        errorMessage.includes("chưa được xác minh") &&
-        formData.email.includes("@")
-      ) {
-        toast.info("Email chưa được xác thực. Vui lòng nhập mã OTP để hoàn tất.");
-        navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`, {
-          state: { autoResend: true },
-        });
-        return;
-      }
-
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -189,13 +197,13 @@ const LoginForm: React.FC = () => {
         <form onSubmit={handleSubmit} className="login-form__form">
           <div className="animate-fade-in-up delay-100">
             <InputGroup
-              id="email"
-              name="email"
-              type="text"
-              label="Email, SĐT hoặc Username"
-              placeholder="name@example.com hoặc username"
-              icon="mail"
-              value={formData.email}
+              id="phone"
+              name="phone"
+              type="tel"
+              label="Số điện thoại"
+              placeholder="090..."
+              icon="phone"
+              value={formData.phone}
               onChange={handleChange}
               disabled={isSubmitting}
             />
