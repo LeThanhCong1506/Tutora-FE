@@ -18,7 +18,7 @@ import {
     useBookingForm,
     useBookingSchedule,
 } from "./booking-components";
-import type { BookingModalProps, StepProps } from "./booking-components";
+import type { BookingModalProps, StepProps, Subject } from "./booking-components";
 import styles from "./booking-components/bookingModal.module.css";
 
 const packageIdFromComboId = (comboId: string | null): number | undefined => {
@@ -72,15 +72,42 @@ const BookingModal: React.FC<BookingModalProps> = ({
         navigate("/parent-portal/booking");
     };
 
-    // Compute available subjects (intersection of SUBJECT_MAPPING and tutor's subjects).
-    // Enrich với gradeLevels của tutor để StepStudentSubject hiển thị + check khớp lớp.
-    const availableSubjects = SUBJECT_MAPPING.filter((s) =>
-        subjects.some((tutorSubj) => tutorSubj.subjectId === s.id),
-    ).map((s) => {
-        const tutorSubj = subjects.find((t) => t.subjectId === s.id);
-        // gradeLevels từ BE có thể là mảng, chuỗi JSON hoặc CSV → chuẩn hoá về string[].
-        return { ...s, gradeLevels: parseStringArray(tutorSubj?.gradeLevels) };
-    });
+    // Danh sách môn có thể đặt. BE đã bỏ field `subjects` riêng — nguồn chân lý giờ là
+    // `subjectGradePrices` (mỗi dòng = 1 môn × 1 khối + giá). Gom theo subjectId để mỗi
+    // môn 1 thẻ, kèm gradeLevels của tutor (để StepStudentSubject hiển thị + check khớp lớp).
+    const availableSubjects = useMemo<Subject[]>(() => {
+        const bySubject = new Map<number, Subject>();
+        for (const price of subjectGradePrices) {
+            if (price.isActive === false) continue;
+            const gradeName = price.gradeLevelName?.trim();
+            const existing = bySubject.get(price.subjectId);
+            if (existing) {
+                if (gradeName && !existing.gradeLevels!.includes(gradeName)) {
+                    existing.gradeLevels!.push(gradeName);
+                }
+                continue;
+            }
+            const mapped = SUBJECT_MAPPING.find((s) => s.id === price.subjectId);
+            bySubject.set(price.subjectId, {
+                id: price.subjectId,
+                name: mapped?.name ?? price.subjectName ?? `Môn #${price.subjectId}`,
+                gradeLevels: gradeName ? [gradeName] : [],
+            });
+        }
+
+        // Fallback legacy: hồ sơ cũ còn field `subjects` mà chưa có subjectGradePrices.
+        if (bySubject.size === 0) {
+            return SUBJECT_MAPPING.filter((s) =>
+                subjects.some((tutorSubj) => tutorSubj.subjectId === s.id),
+            ).map((s) => {
+                const tutorSubj = subjects.find((t) => t.subjectId === s.id);
+                // gradeLevels từ BE có thể là mảng, chuỗi JSON hoặc CSV → chuẩn hoá về string[].
+                return { ...s, gradeLevels: parseStringArray(tutorSubj?.gradeLevels) };
+            });
+        }
+
+        return [...bySubject.values()];
+    }, [subjectGradePrices, subjects]);
 
     const selectedCombo = combos.find((c) => c.id === formData.comboId);
     const flexiblePackage = packages.find((pkg) => pkg.isActive && pkg.packageType === 1);
