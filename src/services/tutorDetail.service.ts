@@ -161,6 +161,7 @@ export interface TutorFullProfile {
     // Feedback Statistics
     totalFeedbacks: number;
     averageRating: number;
+    totalLessons: number;
 
     // Feedback List
     feedbacks: FeedbackItem[] | null;

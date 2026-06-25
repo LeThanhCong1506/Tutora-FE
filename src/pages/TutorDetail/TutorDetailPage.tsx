@@ -16,7 +16,7 @@ import {
 } from '../../services/tutorDetail.service';
 import type { TutorFullProfile } from '../../services/tutorDetail.service';
 import {
-    HeroSection,
+    VideoIntroSection,
     AboutSection,
     AcademicPortfolioSection,
     ActiveClassesSection,
@@ -164,7 +164,7 @@ const TutorDetailPage = () => {
             >
                 <div className="tutor-detail-container">
                     <div className="tutor-detail-content">
-                        <HeroSection profile={profile} />
+                        <VideoIntroSection profile={profile} />
                         <AboutSection profile={profile} />
 
                         <div className="portfolio-stats-wrapper">
