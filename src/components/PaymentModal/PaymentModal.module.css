@@ -263,21 +263,6 @@
     letter-spacing: -0.04em;
 }
 
-.orderPill {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 60px;
-    padding: 8px 12px;
-    border: 1px solid rgba(26, 34, 56, 0.1);
-    border-radius: 999px;
-    background: #fff;
-    color: #1a2238;
-    font-size: 13px;
-    font-weight: 800;
-    box-shadow: 0 8px 20px rgba(26, 34, 56, 0.06);
-}
-
 .summaryDetails {
     display: grid;
     gap: 7px;
@@ -974,6 +959,51 @@
     margin: 0;
 }
 
+/* Expired Overlay — che QR + buộc tải lại sau khi hết hạn */
+.qrExpiredOverlay {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 50% 38%, rgba(220, 38, 38, 0.07), transparent 26%),
+        rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    display: grid;
+    place-items: center;
+    z-index: 10;
+    animation: fadeIn 0.3s ease;
+}
+
+.qrExpiredIcon {
+    color: #dc2626;
+    width: 60px;
+    height: 60px;
+    margin-bottom: 18px;
+    animation: successPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+}
+
+.qrReloadBtn {
+    margin-top: 22px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 26px;
+    background: var(--color-navy, #1a2238);
+    color: #fff;
+    border: none;
+    border-radius: 13px;
+    font-family: var(--font-primary, sans-serif);
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 10px 22px rgba(26, 34, 56, 0.16);
+    transition: all 0.2s;
+}
+
+.qrReloadBtn:hover {
+    background: #2a3450;
+    transform: translateY(-1px);
+}
+
 
 /* ============================================================
    RESPONSIVE
@@ -1029,10 +1059,6 @@
         flex-direction: row;
         align-items: center;
         gap: 12px;
-    }
-
-    .orderPill {
-        align-self: center;
     }
 
     .summaryDetails {
@@ -1151,10 +1177,6 @@
     .summaryTop {
         align-items: flex-start;
         flex-direction: column;
-    }
-
-    .orderPill {
-        align-self: flex-start;
     }
 
     .summaryRow {
