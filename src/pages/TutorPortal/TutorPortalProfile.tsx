@@ -19,6 +19,7 @@ import TutorProfilePreview from './components/TutorProfilePreview';
 import { deleteCertificate } from '../../services/certificate.service';
 import { getUserIdFromToken } from '../../services/auth.service';
 import { validateAvatar } from './utils/validation';
+import { getCertificateImageUrl, isPdfUrl } from '../../utils/certificateImage';
 import styles from '../../styles/pages/tutor-portal-profile.module.css';
 
 // Icon Components
@@ -270,38 +271,9 @@ interface CertificatePreviewData {
   imageUrl: string;
 }
 
-const getCloudinaryPdfImageUrl = (url: string, transformation: string): string | null => {
-  try {
-    const parsedUrl = new URL(url);
-    if (parsedUrl.hostname !== 'res.cloudinary.com' || !parsedUrl.pathname.includes('/image/upload/')) {
-      return null;
-    }
-
-    parsedUrl.pathname = parsedUrl.pathname
-      .replace('/image/upload/', `/image/upload/${transformation}/`)
-      .replace(/\.pdf$/i, '.jpg');
-    parsedUrl.hash = '';
-
-    return parsedUrl.toString();
-  } catch {
-    return null;
-  }
-};
-
-const getCertificateImageUrl = (url?: string, fullSize = false): string | null => {
-  if (!url) return null;
-  if (!/\.pdf(?:$|[?#])/i.test(url)) return url;
-
-  const transformation = fullSize
-    ? 'pg_1,w_1800,c_limit,q_auto,f_jpg'
-    : 'pg_1,w_480,h_360,c_pad,b_white,q_auto,f_jpg';
-
-  return getCloudinaryPdfImageUrl(url, transformation);
-};
-
 const CertificateThumbnail: React.FC<CertificateThumbnailProps> = ({ url, name, onPreview }) => {
   const [imageFailed, setImageFailed] = useState(false);
-  const isPdf = Boolean(url && /\.pdf(?:$|[?#])/i.test(url));
+  const isPdf = isPdfUrl(url);
   const thumbnailUrl = getCertificateImageUrl(url);
   const previewUrl = getCertificateImageUrl(url, true);
 

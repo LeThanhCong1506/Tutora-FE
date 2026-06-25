@@ -1,4 +1,4 @@
-export { default as HeroSection } from './HeroSection';
+export { default as VideoIntroSection } from './VideoIntroSection';
 export { default as AboutSection } from './AboutSection';
 export { default as AcademicPortfolioSection } from './AcademicPortfolioSection';
 export { default as ActiveClassesSection } from './ActiveClassesSection';

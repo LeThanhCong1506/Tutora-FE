@@ -16,6 +16,7 @@ import {
     ReceiptText,
     ScanLine,
     ShieldCheck,
+    RefreshCw,
 } from 'lucide-react';
 import styles from './PaymentModal.module.css';
 import { getPaymentInfo, getPaymentStatus, payWithWallet, type PaymentInfoDTO } from '../../services/payment.service';
@@ -68,6 +69,7 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
     const [countdown, setCountdown] = useState<number>(0);
     const [paymentSuccess, setPaymentSuccess] = useState(false);
     const [qrImageError, setQrImageError] = useState(false);
+    const [isExpired, setIsExpired] = useState(false);
 
     // Build VietQR image URL from bank details
     const getQRCodeUrl = (info: PaymentInfoDTO): string => {
@@ -82,7 +84,10 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
         return info.qrCode;
     };
 
-    const fetchPaymentInfo = useCallback(async () => {
+    // assumeExpired: FE đã biết QR hết hạn (countdown về 0). Khi đó booking có thể đã bị job
+    // hủy (BE trả INVALID_BOOKING_STATUS thay vì BOOKING_EXPIRED) — vẫn hiển thị màn "hết hạn"
+    // cho rõ ràng, trừ khi BE báo đã thanh toán (vừa kịp trả tiền).
+    const fetchPaymentInfo = useCallback(async (assumeExpired = false) => {
         try {
             setLoading(true);
             setError(null);
@@ -93,14 +98,14 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
             console.warn('Failed to fetch payment info:', apiError.response?.status, apiError.response?.data);
             const errorCode = apiError.response?.data?.errorCode;
 
-            if (errorCode === 'BOOKING_EXPIRED') {
-                setError('BOOKING_EXPIRED');
-            } else if (errorCode === 'BOOKING_ALREADY_PAID') {
+            if (errorCode === 'BOOKING_ALREADY_PAID') {
                 setError('BOOKING_ALREADY_PAID');
                 setTimeout(() => {
                     onPaymentSuccess();
                     onClose();
                 }, 2000);
+            } else if (errorCode === 'BOOKING_EXPIRED' || assumeExpired) {
+                setError('BOOKING_EXPIRED');
             } else {
                 setError(apiError.response?.data?.message || 'Không thể tải thông tin thanh toán. Vui lòng thử lại.');
             }
@@ -115,35 +120,37 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
             setShowQRView(false);
             setPaymentSuccess(false);
             setQrImageError(false);
+            setIsExpired(false);
         }
     }, [isOpen, bookingId, fetchPaymentInfo]);
 
-    // Countdown timer for QR view
+    // Countdown timer for QR view. Khi hết giờ → đánh dấu isExpired để che QR + dừng poll.
     useEffect(() => {
         if (!showQRView || !paymentInfo?.expiredAt) return;
 
-        const calcRemaining = () => {
-            const expiry = new Date(paymentInfo.expiredAt!).getTime();
-            const now = Date.now();
-            return Math.max(0, Math.floor((expiry - now) / 1000));
-        };
+        const expiry = new Date(paymentInfo.expiredAt).getTime();
+        const calcRemaining = () => Math.max(0, Math.floor((expiry - Date.now()) / 1000));
 
-        setCountdown(calcRemaining());
-
-        const timer = setInterval(() => {
+        // Cập nhật countdown + isExpired cùng lúc để tránh nháy "hết hạn" 1 frame lúc mở.
+        const apply = () => {
             const remaining = calcRemaining();
             setCountdown(remaining);
-            if (remaining <= 0) {
-                clearInterval(timer);
-            }
+            setIsExpired(remaining <= 0);
+            return remaining;
+        };
+
+        if (apply() <= 0) return; // đã hết hạn ngay khi mở → không cần đếm tiếp
+
+        const timer = setInterval(() => {
+            if (apply() <= 0) clearInterval(timer);
         }, 1000);
 
         return () => clearInterval(timer);
     }, [showQRView, paymentInfo?.expiredAt]);
 
-    // Poll payment status when QR view is active
+    // Poll payment status when QR view is active. Ngừng khi đã hết hạn — không nhận quét mới.
     useEffect(() => {
-        if (!showQRView || paymentSuccess) return;
+        if (!showQRView || paymentSuccess || isExpired) return;
 
         const interval = setInterval(async () => {
             try {
@@ -167,7 +174,7 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
         }, 5000);
 
         return () => clearInterval(interval);
-    }, [showQRView, bookingId, paymentInfo?.paymentPhase, paymentSuccess, onClose, onPaymentSuccess]);
+    }, [showQRView, bookingId, paymentInfo?.paymentPhase, paymentSuccess, isExpired, onClose, onPaymentSuccess]);
 
     const handleWalletPayment = async () => {
         if (!paymentInfo?.canPayWithWallet) return;
@@ -192,7 +199,16 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
     };
 
     const handleOpenQRView = () => {
+        setIsExpired(false);
         setShowQRView(true);
+    };
+
+    // Hết hạn → quay về màn chọn phương thức và fetch lại; BE sẽ trả BOOKING_EXPIRED
+    // (hoặc BOOKING_ALREADY_PAID nếu vừa kịp thanh toán) để hiển thị đúng trạng thái.
+    const handleReloadAfterExpiry = () => {
+        setShowQRView(false);
+        setIsExpired(false);
+        void fetchPaymentInfo(true);
     };
 
     const handleCopy = useCallback((text: string, field: string) => {
@@ -271,6 +287,28 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                             </div>
                         )}
 
+                        {/* Expired Overlay — che QR để chặn quét nhầm sau khi hết hạn */}
+                        {isExpired && !paymentSuccess && (
+                            <div className={styles.qrExpiredOverlay}>
+                                <div className={styles.qrSuccessContent}>
+                                    <AlertTriangle size={60} className={styles.qrExpiredIcon} />
+                                    <h3>Mã thanh toán đã hết hạn</h3>
+                                    <p>
+                                        Vui lòng không quét mã cũ để tránh chuyển khoản nhầm. Hãy tải lại
+                                        để kiểm tra trạng thái đặt lịch.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        className={styles.qrReloadBtn}
+                                        onClick={handleReloadAfterExpiry}
+                                    >
+                                        <RefreshCw size={16} />
+                                        Tải lại
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Timer badge */}
                         {!paymentSuccess && (
                             <div className={styles.qrStatusStrip}>
@@ -279,7 +317,7 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                                         <Clock size={15} />
                                         <span>Còn {formatCountdown(countdown)}</span>
                                     </div>
-                                ) : paymentInfo.expiredAt ? (
+                                ) : isExpired ? (
                                     <div className={`${styles.qrTimerBadge} ${styles.qrTimerExpired}`}>
                                         <AlertTriangle size={15} />
                                         <span>Đã hết hạn thanh toán</span>
@@ -388,7 +426,7 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                         </div>
 
                         {/* Polling status indicator */}
-                        {!paymentSuccess && (
+                        {!paymentSuccess && !isExpired && (
                             <div className={styles.qrPollingStatus}>
                                 <Loader2 size={14} className={styles.spinnerSlow} />
                                 <span>Đang chờ xác nhận thanh toán...</span>
@@ -436,8 +474,11 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                     ) : error === 'BOOKING_EXPIRED' ? (
                         <div className={styles.errorContainer}>
                             <AlertTriangle className={styles.errorIcon} size={48} />
-                            <h3>Yêu cầu thanh toán đã hết hạn</h3>
-                            <p>Booking này đã quá hạn thanh toán và đã bị hủy tự động.</p>
+                            <h3>Booking đã hết hạn thanh toán</h3>
+                            <p>
+                                Buổi học chưa được thanh toán trong thời gian quy định nên booking đã
+                                tự động bị hủy. Vui lòng đặt lịch lại nếu bạn vẫn muốn học với gia sư này.
+                            </p>
                             <button onClick={onClose} className={styles.retryBtn}>Đóng</button>
                         </div>
                     ) : error === 'BOOKING_ALREADY_PAID' ? (
@@ -450,7 +491,7 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                         <div className={styles.errorContainer}>
                             <AlertTriangle className={styles.errorIcon} />
                             <p>{error}</p>
-                            <button onClick={fetchPaymentInfo} className={styles.retryBtn}>Thử lại</button>
+                            <button onClick={() => fetchPaymentInfo()} className={styles.retryBtn}>Thử lại</button>
                         </div>
                     ) : paymentInfo ? (
                         <>
@@ -460,7 +501,6 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                                         <span className={styles.summaryKicker}>Cần thanh toán</span>
                                         <strong className={styles.summaryAmountLarge}>{formatCurrency(paymentInfo.amount)}</strong>
                                     </div>
-                                    <span className={styles.orderPill}>#{bookingId}</span>
                                 </div>
 
                                 <div className={styles.summaryDetails}>
