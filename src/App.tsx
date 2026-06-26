@@ -33,6 +33,7 @@ const LoginPage = lazy(() => import('./pages/Login/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/Register/RegisterPage'));
 const ResetPasswordPage = lazy(() => import('./pages/Login/ResetPasswordPage'));
 const VerifyPhonePage = lazy(() => import('./pages/VerifyPhone/VerifyPhonePage'));
+const SocialRegisterPage = lazy(() => import('./pages/SocialRegister/SocialRegisterPage'));
 
 // Error pages
 const NotFoundPage = lazy(() => import('./pages/Error/NotFoundPage'));
@@ -267,6 +268,7 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/verify-phone" element={<VerifyPhonePage />} />
+              <Route path="/auth/social-complete" element={<SocialRegisterPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
             </>
           )}

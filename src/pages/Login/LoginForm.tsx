@@ -5,8 +5,9 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import InputGroup from "../../components/InputGroup";
 import ForgotPasswordModal from "../../components/ForgotPasswordModal";
+import GoogleSignInButton from "../../components/GoogleSignInButton";
 import axios from "axios";
-import { saveUserToStorage } from "../../services/auth.service";
+import { saveUserToStorage, googleAuth } from "../../services/auth.service";
 
 const API_BASE_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5166') + '/api';
 const REMEMBERED_PHONE_KEY = 'TUTORA_remembered_phone';
@@ -71,6 +72,79 @@ const LoginForm: React.FC = () => {
 
   const ADMIN_PORTAL_URL = import.meta.env.VITE_ADMIN_PORTAL_URL || 'https://admin.tutora.vn';
 
+  /**
+   * Hoàn tất đăng nhập sau khi đã có JWT (dùng chung cho password & Google).
+   * Admin có cổng riêng (tutora-admin-frontend) → KHÔNG save token, chỉ cảnh báo.
+   * Trả về true nếu đăng nhập user-facing thành công.
+   */
+  const finishLogin = (token: string, refreshToken: string): boolean => {
+    const role = getRoleFromToken(token);
+
+    if (role === 'admin') {
+      toast.warning(
+        <div style={{ lineHeight: 1.5 }}>
+          <strong style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>
+            Tài khoản quản trị
+          </strong>
+          <span style={{ display: 'block', marginBottom: 8, fontSize: 13 }}>
+            Vui lòng dùng cổng quản trị riêng.
+          </span>
+          <a
+            href={ADMIN_PORTAL_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#1a2238', fontWeight: 600, fontSize: 13, textDecoration: 'underline' }}
+          >
+            Đi tới Tutora Admin →
+          </a>
+        </div>,
+        { autoClose: 10000, toastId: 'admin-wrong-portal' }
+      );
+      return false;
+    }
+
+    saveUserToStorage({ accessToken: token, refreshToken });
+    toast.success("Đăng nhập thành công!");
+    setTimeout(() => navigate(getPortalPathFromRole(role)), 800);
+    return true;
+  };
+
+  /**
+   * Callback khi GIS trả idToken. Gọi /auth/google:
+   *  - Có sẵn tài khoản (SĐT đã xác thực) → BE trả { accessToken, refreshToken } → đăng nhập luôn.
+   *  - Chưa hoàn tất → BE trả socialRegistrationToken → sang trang hoàn tất đăng ký (role + SĐT + OTP).
+   */
+  const handleGoogleCredential = async (idToken: string) => {
+    try {
+      setIsSubmitting(true);
+      const data = await googleAuth(idToken);
+
+      if (data?.accessToken) {
+        finishLogin(data.accessToken, data.refreshToken);
+        return;
+      }
+
+      if (data?.requiresPhoneInput || data?.requiresRoleSelection) {
+        navigate('/auth/social-complete', {
+          state: {
+            socialRegistrationToken: data.socialRegistrationToken,
+            email: data.email,
+            phone: data.phone,
+            requiresRoleSelection: data.requiresRoleSelection,
+          },
+        });
+        return;
+      }
+
+      toast.error(data?.message || data?.errorMessage || "Đăng nhập Google thất bại.");
+    } catch (error: any) {
+      console.error("Google login error:", error);
+      toast.error(error.response?.data?.message || "Đăng nhập Google thất bại.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -115,59 +189,17 @@ const LoginForm: React.FC = () => {
         throw new Error("Không nhận được token từ server");
       }
 
-      // Check role TRƯỚC khi save — admin có cổng đăng nhập riêng
-      // (tutora-admin-frontend). Không save token để khỏi tạo "ghost session"
-      // ở user-facing repo (sau này refresh sẽ có user but không có route hợp lệ).
-      const role = getRoleFromToken(token);
+      // Hoàn tất đăng nhập (admin được chặn bên trong finishLogin).
+      const loggedIn = finishLogin(token, refreshToken);
 
-      if (role === 'admin') {
-        toast.warning(
-          <div style={{ lineHeight: 1.5 }}>
-            <strong style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>
-              Tài khoản quản trị
-            </strong>
-            <span style={{ display: 'block', marginBottom: 8, fontSize: 13 }}>
-              Vui lòng dùng cổng quản trị riêng.
-            </span>
-            <a
-              href={ADMIN_PORTAL_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                color: '#1a2238',
-                fontWeight: 600,
-                fontSize: 13,
-                textDecoration: 'underline',
-              }}
-            >
-              Đi tới Tutora Admin →
-            </a>
-          </div>,
-          {
-            autoClose: 10000,
-            toastId: 'admin-wrong-portal',
-          }
-        );
-        return;
+      // Chỉ ghi nhớ SĐT khi đăng nhập user-facing thành công.
+      if (loggedIn) {
+        if (rememberMe) {
+          localStorage.setItem(REMEMBERED_PHONE_KEY, formData.phone);
+        } else {
+          localStorage.removeItem(REMEMBERED_PHONE_KEY);
+        }
       }
-
-      // Save or clear remembered phone based on checkbox
-      if (rememberMe) {
-        localStorage.setItem(REMEMBERED_PHONE_KEY, formData.phone);
-      } else {
-        localStorage.removeItem(REMEMBERED_PHONE_KEY);
-      }
-
-      // Save user data with accessToken and refreshToken
-      saveUserToStorage({ accessToken: token, refreshToken });
-
-      // Navigate by role (admin đã handled ở trên)
-      const portalPath = getPortalPathFromRole(role);
-
-      toast.success("Đăng nhập thành công!");
-      setTimeout(() => {
-        navigate(portalPath);
-      }, 800);
     } catch (error: any) {
       console.error("Login Error:", error);
 
@@ -272,6 +304,21 @@ const LoginForm: React.FC = () => {
               )}
               {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
             </button>
+          </div>
+
+          {/* Divider "hoặc" */}
+          <div
+            className="animate-fade-in-up delay-300"
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '4px 0' }}
+          >
+            <span style={{ flex: 1, height: 1, background: 'rgba(26,34,56,0.12)' }} />
+            <span style={{ fontSize: 12, color: 'rgba(26,34,56,0.45)', fontWeight: 500 }}>HOẶC</span>
+            <span style={{ flex: 1, height: 1, background: 'rgba(26,34,56,0.12)' }} />
+          </div>
+
+          {/* Đăng nhập với Google (GIS trả idToken → /auth/google) */}
+          <div className="animate-fade-in-up delay-300">
+            <GoogleSignInButton onCredential={handleGoogleCredential} disabled={isSubmitting} />
           </div>
 
           <div className="login-form__register animate-fade-in-up delay-300">

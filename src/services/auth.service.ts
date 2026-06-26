@@ -462,6 +462,74 @@ export const resetPasswordPhone = async (phone: string, otp: string, newPassword
   }
 };
 
+// --- SOCIAL AUTH (Google / Zalo qua idToken) ---
+
+/**
+ * Đăng nhập/đăng ký bằng Google idToken.
+ * BE trả OBJECT THÔ (không bọc trong "content"):
+ *  - Đã có tài khoản + SĐT xác thực → { accessToken, refreshToken } → đăng nhập luôn.
+ *  - Chưa có / chưa có SĐT → { requiresRoleSelection, requiresPhoneInput,
+ *      socialRegistrationToken, email, phone, message } → tiếp tục complete-registration.
+ */
+export const googleAuth = async (idToken: string) => {
+  try {
+    const response = await api.post("/auth/google", { idToken });
+    return response.data;
+  } catch (error: any) {
+    console.error("❌ Google auth error:", error.response?.data);
+    throw error;
+  }
+};
+
+/**
+ * Hoàn tất đăng ký social: gửi role (nếu cần) + số điện thoại.
+ * BE gửi OTP qua SMS và trả content { requiresPhoneVerification, phone, socialRegistrationToken }.
+ */
+export const completeSocialRegistration = async (
+  socialRegistrationToken: string,
+  phone: string,
+  role?: string,
+) => {
+  try {
+    const response = await api.post("/auth/social/complete-registration", {
+      socialRegistrationToken,
+      role,
+      phone,
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("❌ Complete social registration error:", error.response?.data);
+    throw error;
+  }
+};
+
+/**
+ * Xác thực OTP cho phiên đăng ký social.
+ * Thành công → BE trả content { token, refreshToken }.
+ */
+export const verifySocialPhoneOtp = async (socialRegistrationToken: string, otp: string) => {
+  try {
+    const response = await api.post("/auth/social/verify-phone", { socialRegistrationToken, otp });
+    return response.data;
+  } catch (error: any) {
+    console.error("❌ Verify social phone error:", error.response?.data);
+    throw error;
+  }
+};
+
+/**
+ * Gửi lại OTP cho phiên đăng ký social hiện tại.
+ */
+export const resendSocialPhoneOtp = async (socialRegistrationToken: string) => {
+  try {
+    const response = await api.post("/auth/social/resend-phone-otp", { socialRegistrationToken });
+    return response.data;
+  } catch (error: any) {
+    console.error("❌ Resend social phone OTP error:", error.response?.data);
+    throw error;
+  }
+};
+
 // --- ONBOARDING TOUR ---
 
 export const getTourStatus = async (): Promise<boolean> => {
