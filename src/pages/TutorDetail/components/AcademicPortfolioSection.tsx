@@ -8,11 +8,6 @@ interface CertificatePreview {
     imageUrl: string;
 }
 
-/**
- * Ô ảnh chứng chỉ: hiển thị ảnh thật của file chứng chỉ (ảnh hoặc trang đầu PDF).
- * Fallback về icon mặc định khi không có file hoặc ảnh tải lỗi. Bấm để mở modal
- * xem ảnh đầy đủ (thay vì điều hướng sang URL Cloudinary).
- */
 const CertificateThumbnail = ({
     url,
     name,
@@ -53,12 +48,12 @@ const CertificateThumbnail = ({
     );
 };
 
-/** Lightbox đơn giản hiển thị ảnh chứng chỉ. Bấm nền hoặc Esc để đóng. */
 const CertificatePreviewModal = ({ preview, onClose }: { preview: CertificatePreview; onClose: () => void }) => {
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
         };
+
         document.addEventListener('keydown', onKeyDown);
         return () => document.removeEventListener('keydown', onKeyDown);
     }, [onClose]);
@@ -72,7 +67,7 @@ const CertificatePreviewModal = ({ preview, onClose }: { preview: CertificatePre
             aria-label={`Chứng chỉ ${preview.name}`}
         >
             <button className="certificate-lightbox-close" onClick={onClose} aria-label="Đóng" type="button">
-                ✕
+                ×
             </button>
             <div className="certificate-lightbox-body" onClick={(e) => e.stopPropagation()}>
                 <img className="certificate-lightbox-img" src={preview.imageUrl} alt={`Chứng chỉ ${preview.name}`} />
@@ -101,61 +96,76 @@ const AcademicPortfolioSection = ({ certificates }: { certificates: CertificateI
                     </p>
                 </div>
                 <div className="verified-badge-green">
-                    <CheckIcon />
-                    <b>{verificationLabel}</b>
+                    <span className="verified-badge-icon" aria-hidden="true">
+                        <CheckIcon />
+                    </span>
+                    <span className="verified-badge-copy">
+                        <small>Trạng thái hồ sơ</small>
+                        <b>{verificationLabel}</b>
+                    </span>
                 </div>
             </div>
 
             <div className="portfolio-content">
                 <div className="portfolio-category">
                     <div className="category-header">
-                        <div className="category-indicator gold"></div>
-                        <span className="category-title">Văn bằng & Chứng chỉ</span>
-                        {totalCertificates > 0 && (
-                            <span className="category-count">{totalCertificates} mục</span>
-                        )}
-                        <div className="category-divider"></div>
+                        <div className="category-heading">
+                            <div className="category-indicator gold"></div>
+                            <span className="category-title">Văn bằng & Chứng chỉ</span>
+                        </div>
+                        <div className="category-summary">
+                            <span className="category-count">
+                                {totalCertificates > 0 ? `${totalCertificates} mục` : 'Chưa có mục nào'}
+                            </span>
+                            <div className="category-divider"></div>
+                        </div>
                     </div>
                     <div className="certificates-grid">
                         {totalCertificates > 0 ? certificateList.map((cert, index) => {
                             const isVerified = cert.verificationStatus === 'verified';
 
                             return (
-                            <div key={index} className={`certificate-card${isVerified ? ' is-verified' : ''}`}>
-                                <CertificateThumbnail
-                                    url={cert.certificateFileUrl}
-                                    name={cert.certificateName}
-                                    onPreview={setPreview}
-                                />
-                                <div className="certificate-info">
-                                    <div className="certificate-meta-row">
-                                        <span className="certificate-type">
-                                            {cert.certificateType || 'Chứng chỉ'}
-                                        </span>
-                                        {isVerified && (
-                                            <span className="certificate-status">
-                                                <CheckIcon />
-                                                Đã xác thực
+                                <div key={index} className={`certificate-card${isVerified ? ' is-verified' : ''}`}>
+                                    <CertificateThumbnail
+                                        url={cert.certificateFileUrl}
+                                        name={cert.certificateName}
+                                        onPreview={setPreview}
+                                    />
+                                    <div className="certificate-info">
+                                        <div className="certificate-meta-row">
+                                            <span className="certificate-type">
+                                                {cert.certificateType || 'Chứng chỉ'}
                                             </span>
-                                        )}
+                                            {isVerified && (
+                                                <span className="certificate-status">
+                                                    <CheckIcon />
+                                                    Đã xác thực
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="certificate-title-row">
+                                            <b className="certificate-title">{cert.certificateName}</b>
+                                        </div>
+                                        <span className="certificate-institution">
+                                            <small>Đơn vị cấp</small>
+                                            {cert.issuingOrganization || 'Chưa cập nhật'}
+                                        </span>
+                                        {cert.yearIssued && <span className="certificate-year-pill">Năm {cert.yearIssued}</span>}
                                     </div>
-                                    <div className="certificate-title-row">
-                                        <b className="certificate-title">{cert.certificateName}</b>
-                                    </div>
-                                    <span className="certificate-institution">
-                                        <small>Đơn vị cấp</small>
-                                        {cert.issuingOrganization || 'Chưa cập nhật'}
-                                    </span>
-                                    {cert.yearIssued && <span className="certificate-year-pill">Năm {cert.yearIssued}</span>}
                                 </div>
-                            </div>
                             );
                         }) : (
                             <div className="portfolio-empty-state">
-                                <CertificateIcon />
-                                <div>
+                                <div className="portfolio-empty-icon" aria-hidden="true">
+                                    <CertificateIcon />
+                                </div>
+                                <div className="portfolio-empty-copy">
                                     <b>Chưa có chứng chỉ được cập nhật</b>
                                     <span>Gia sư có thể bổ sung chứng chỉ để hồ sơ đáng tin cậy hơn.</span>
+                                    <div className="portfolio-empty-actions">
+                                        <span>Chờ xét duyệt</span>
+                                        <span>Tải lên bổ sung</span>
+                                    </div>
                                 </div>
                             </div>
                         )}
