@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // src/pages/Login/LoginForm.tsx — Dùng SimpleAuth API (không qua Supabase)
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import InputGroup from "../../components/InputGroup";
 import ForgotPasswordModal from "../../components/ForgotPasswordModal";
@@ -324,9 +324,9 @@ const LoginForm: React.FC = () => {
           <div className="login-form__register animate-fade-in-up delay-300">
             <p>
               Chưa có tài khoản?{" "}
-              <a href="/register" className="login-form__register-link">
+              <Link to="/register" className="login-form__register-link">
                 Đăng ký ngay
-              </a>
+              </Link>
             </p>
           </div>
         </form>
