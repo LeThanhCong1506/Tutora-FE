@@ -4,10 +4,22 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import InputGroup from "../../components/InputGroup";
+import GoogleSignInButton from "../../components/GoogleSignInButton";
 import axios from "axios";
-import { saveUserToStorage, getRoleFromToken } from "../../services/auth.service";
+import { saveUserToStorage, getRoleFromToken, googleAuth } from "../../services/auth.service";
 
 const API_BASE_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5166') + '/api';
+const ADMIN_PORTAL_URL = import.meta.env.VITE_ADMIN_PORTAL_URL || 'https://admin.tutora.vn';
+
+const getPortalPathFromRole = (role: string): string => {
+    switch (role.toLowerCase()) {
+        case 'admin': return '/admin-portal/dashboard';
+        case 'tutor': return '/tutor-portal/dashboard';
+        case 'parent': return '/parent-portal/dashboard';
+        case 'student': return '/student-portal/dashboard';
+        default: return '/';
+    }
+};
 
 const RegisterForm: React.FC = () => {
     const navigate = useNavigate();
@@ -37,6 +49,65 @@ const RegisterForm: React.FC = () => {
     };
 
 
+
+    const handleGoogleCredential = async (idToken: string) => {
+        try {
+            setIsSubmitting(true);
+            const data = await googleAuth(idToken);
+
+            if (data?.accessToken) {
+                const role = (getRoleFromToken(data.accessToken) || '').toLowerCase();
+
+                if (role === 'admin') {
+                    toast.warning(
+                        <div style={{ lineHeight: 1.5 }}>
+                            <strong style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>
+                                Tài khoản quản trị
+                            </strong>
+                            <span style={{ display: 'block', marginBottom: 8, fontSize: 13 }}>
+                                Vui lòng dùng cổng quản trị riêng.
+                            </span>
+                            <a
+                                href={ADMIN_PORTAL_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ color: '#1a2238', fontWeight: 600, fontSize: 13, textDecoration: 'underline' }}
+                            >
+                                Đi tới Tutora Admin
+                            </a>
+                        </div>,
+                        { autoClose: 10000, toastId: 'admin-wrong-portal' }
+                    );
+                    return;
+                }
+
+                await saveUserToStorage({ accessToken: data.accessToken, refreshToken: data.refreshToken });
+                window.dispatchEvent(new Event("auth-change"));
+                toast.success("Đăng nhập Google thành công!");
+                setTimeout(() => navigate(getPortalPathFromRole(role)), 800);
+                return;
+            }
+
+            if (data?.requiresPhoneInput || data?.requiresRoleSelection) {
+                navigate('/auth/social-complete', {
+                    state: {
+                        socialRegistrationToken: data.socialRegistrationToken,
+                        email: data.email,
+                        phone: data.phone,
+                        requiresRoleSelection: data.requiresRoleSelection,
+                    },
+                });
+                return;
+            }
+
+            toast.error(data?.message || data?.errorMessage || "Đăng ký Google thất bại.");
+        } catch (error: any) {
+            console.error("Google register error:", error);
+            toast.error(error.response?.data?.message || "Đăng ký Google thất bại.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -109,14 +180,8 @@ const RegisterForm: React.FC = () => {
             window.dispatchEvent(new Event("auth-change"));
 
             // Redirect theo role
-            const role = (getRoleFromToken(token) || '').toLowerCase();
-            let portalPath = '/';
-            switch (role) {
-                case 'admin': portalPath = '/admin-portal/dashboard'; break;
-                case 'tutor': portalPath = '/tutor-portal/dashboard'; break;
-                case 'parent': portalPath = '/parent-portal/dashboard'; break;
-                case 'student': portalPath = '/student-portal/dashboard'; break;
-            }
+            const role = getRoleFromToken(token) || '';
+            const portalPath = getPortalPathFromRole(role);
 
             toast.success(`Chào mừng ${formData.fullname} đến với TUTORA!`);
             setTimeout(() => navigate(portalPath), 1500);
@@ -283,6 +348,16 @@ const RegisterForm: React.FC = () => {
                             )}
                             {isSubmitting ? "Đang đăng ký..." : "Đăng ký ngay"}
                         </button>
+                    </div>
+
+                    <div className="register-form__divider animate-fade-in-up delay-300 mt-3">
+                        <span className="register-form__divider-line" />
+                        <span className="register-form__divider-text">HOẶC</span>
+                        <span className="register-form__divider-line" />
+                    </div>
+
+                    <div className="animate-fade-in-up delay-300">
+                        <GoogleSignInButton onCredential={handleGoogleCredential} disabled={isSubmitting} />
                     </div>
 
                     <div className="register-form__login animate-fade-in-up delay-300 mt-3">
