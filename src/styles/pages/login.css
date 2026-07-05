@@ -367,161 +367,6 @@
     transform: translateY(0);
 }
 
-.google-signin-button {
-    --google-button-height: clamp(44px, 6.2vh, 50px);
-    position: relative;
-    width: 100%;
-    min-height: var(--google-button-height);
-    border-radius: var(--radius-md);
-    isolation: isolate;
-    cursor: pointer;
-}
-
-.google-signin-button__visual {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    min-height: var(--google-button-height);
-    display: grid;
-    grid-template-columns: 32px minmax(0, 1fr) 16px;
-    align-items: center;
-    gap: 12px;
-    padding: 0 14px;
-    color: var(--color-navy);
-    background: linear-gradient(180deg, #ffffff 0%, #fbfaf6 100%);
-    border: 1px solid rgba(26, 34, 56, 0.14);
-    border-radius: inherit;
-    box-shadow: 0 10px 24px rgba(26, 34, 56, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.95);
-    overflow: hidden;
-    pointer-events: none;
-    transition: transform 0.18s ease, box-shadow 0.2s ease, border-color 0.2s ease,
-        background-color 0.2s ease;
-}
-
-.google-signin-button__icon {
-    width: 30px;
-    height: 30px;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    background-color: var(--color-white);
-    border: 1px solid rgba(26, 34, 56, 0.08);
-    box-shadow: 0 4px 10px rgba(26, 34, 56, 0.08);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.google-signin-button__icon svg {
-    width: 18px;
-    height: 18px;
-    display: block;
-}
-
-.google-signin-button__label {
-    min-width: 0;
-    overflow: hidden;
-    text-align: center;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-family: var(--font-primary);
-    font-size: clamp(13px, 1.6vw, 15px);
-    font-weight: 700;
-    letter-spacing: 0;
-}
-
-.google-signin-button__chevron {
-    width: 8px;
-    height: 8px;
-    justify-self: end;
-    border-top: 2px solid rgba(26, 34, 56, 0.42);
-    border-right: 2px solid rgba(26, 34, 56, 0.42);
-    transform: rotate(45deg);
-    transition: transform 0.2s ease, border-color 0.2s ease;
-}
-
-.google-signin-button__native {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: inherit;
-    opacity: 0.001;
-    overflow: hidden;
-    cursor: pointer;
-}
-
-.google-signin-button__native>div {
-    width: 100% !important;
-    height: 100% !important;
-    display: block !important;
-    cursor: pointer !important;
-}
-
-.google-signin-button__native iframe {
-    width: 100% !important;
-    height: 100% !important;
-    cursor: pointer !important;
-}
-
-.google-signin-button:not(.google-signin-button--disabled):not(.google-signin-button--loading):not(.google-signin-button--error):hover .google-signin-button__visual {
-    transform: translateY(-1px);
-    border-color: rgba(66, 133, 244, 0.38);
-    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-    box-shadow: 0 12px 26px rgba(26, 34, 56, 0.11),
-        0 0 0 3px rgba(66, 133, 244, 0.08);
-}
-
-.google-signin-button:not(.google-signin-button--disabled):not(.google-signin-button--loading):not(.google-signin-button--error):hover .google-signin-button__icon {
-    transform: scale(1.04);
-    box-shadow: 0 6px 14px rgba(26, 34, 56, 0.12);
-}
-
-.google-signin-button:not(.google-signin-button--disabled):not(.google-signin-button--loading):not(.google-signin-button--error):hover .google-signin-button__chevron {
-    border-color: var(--color-green);
-    transform: translateX(2px) rotate(45deg);
-}
-
-.google-signin-button:focus-within .google-signin-button__visual {
-    border-color: rgba(66, 133, 244, 0.5);
-    box-shadow: 0 10px 24px rgba(26, 34, 56, 0.08),
-        0 0 0 4px rgba(66, 133, 244, 0.14);
-}
-
-.google-signin-button:not(.google-signin-button--disabled):not(.google-signin-button--loading):not(.google-signin-button--error):active .google-signin-button__visual {
-    transform: translateY(0) scale(0.99);
-}
-
-.google-signin-button--loading {
-    cursor: progress;
-}
-
-.google-signin-button--loading .google-signin-button__visual,
-.google-signin-button--error .google-signin-button__visual,
-.google-signin-button--disabled .google-signin-button__visual {
-    color: var(--color-navy-60);
-    background: #f7f5ed;
-    border-color: rgba(26, 34, 56, 0.08);
-    box-shadow: none;
-}
-
-.google-signin-button--error,
-.google-signin-button--disabled {
-    cursor: not-allowed;
-}
-
-.google-signin-button--error .google-signin-button__native,
-.google-signin-button--disabled .google-signin-button__native,
-.google-signin-button--loading .google-signin-button__native {
-    pointer-events: none;
-}
-
-.google-signin-button--error .google-signin-button__icon,
-.google-signin-button--disabled .google-signin-button__icon {
-    opacity: 0.65;
-}
-
 /* Register Link */
 .login-form__register {
     text-align: center;
@@ -637,24 +482,6 @@
         font-size: 12px;
     }
 
-    .google-signin-button {
-        --google-button-height: 42px;
-    }
-
-    .google-signin-button__visual {
-        grid-template-columns: 30px minmax(0, 1fr) 14px;
-        gap: 10px;
-        padding: 0 12px;
-    }
-
-    .google-signin-button__icon {
-        width: 28px;
-        height: 28px;
-    }
-
-    .google-signin-button__label {
-        font-size: 13px;
-    }
 }
 
 @media (max-height: 550px) {
@@ -693,30 +520,6 @@
         font-size: 11px;
     }
 
-    .google-signin-button {
-        --google-button-height: 38px;
-    }
-
-    .google-signin-button__visual {
-        grid-template-columns: 26px minmax(0, 1fr) 12px;
-        gap: 8px;
-        padding: 0 10px;
-    }
-
-    .google-signin-button__icon {
-        width: 24px;
-        height: 24px;
-    }
-
-    .google-signin-button__icon svg {
-        width: 16px;
-        height: 16px;
-    }
-
-    .google-signin-button__label {
-        font-size: 12px;
-    }
-
     .login-form__divider {
         gap: 8px;
     }
@@ -735,15 +538,6 @@
         gap: 8px;
     }
 
-    .google-signin-button {
-        --google-button-height: 42px;
-    }
-
-    .google-signin-button__visual {
-        grid-template-columns: 28px minmax(0, 1fr) 12px;
-        gap: 8px;
-        padding: 0 12px;
-    }
 }
 
 /* Mobile Performance Optimizations */
@@ -763,13 +557,7 @@
     }
 
     .login-form__button:hover,
-    .login-form__social-btn:hover,
-    .google-signin-button:hover .google-signin-button__visual,
-    .google-signin-button:hover .google-signin-button__icon {
+    .login-form__social-btn:hover {
         transform: none;
-    }
-
-    .google-signin-button:hover .google-signin-button__chevron {
-        transform: rotate(45deg);
     }
 }

@@ -138,10 +138,10 @@ const Header = () => {
           ) : (
             <>
               <Link to="/login" className="btn-login">
-                LOG IN
+                ĐĂNG NHẬP
               </Link>
               <Link to="/register" className="btn-signup">
-                SIGN UP
+                ĐĂNG KÝ
               </Link>
             </>
           )}
@@ -270,14 +270,14 @@ const Header = () => {
                   className="btn-login"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  LOG IN
+                  ĐĂNG NHẬP
                 </Link>
                 <Link
                   to="/register"
                   className="btn-signup"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  SIGN UP
+                  ĐĂNG KÝ
                 </Link>
               </>
             )}
