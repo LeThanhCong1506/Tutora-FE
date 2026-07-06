@@ -58,8 +58,6 @@ const AddStudentModal = ({ isOpen, onClose, onSubmit }: AddStudentModalProps) =>
         } else if (new Date(formData.birthDate) > new Date()) {
             newErrors.birthDate = 'Ngày sinh không được là ngày trong tương lai';
         }
-        if (!formData.school.trim()) newErrors.school = 'Trường là bắt buộc';
-
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             // Scroll to first error field
@@ -76,7 +74,7 @@ const AddStudentModal = ({ isOpen, onClose, onSubmit }: AddStudentModalProps) =>
             await onSubmit({
                 fullname: formData.fullName,
                 birthdate: formData.birthDate,
-                school: formData.school,
+                school: formData.school.trim() || undefined,
                 gradeLevelId: formData.gradeLevelId ? Number(formData.gradeLevelId) : undefined,
                 learninggoals: formData.learningGoals || undefined,
             });
@@ -182,7 +180,7 @@ const AddStudentModal = ({ isOpen, onClose, onSubmit }: AddStudentModalProps) =>
 
                     <div className={styles.formRow}>
                         <label className={styles.formLabel}>
-                            Trường <span className={styles.required}>*</span>
+                            Trường
                         </label>
                         <input
                             type="text"

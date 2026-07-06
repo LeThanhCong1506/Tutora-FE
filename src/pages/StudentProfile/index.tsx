@@ -58,7 +58,6 @@ const StudentProfile = () => {
     if (name.length < 2 || name.length > 100) e.fullname = 'Họ tên phải từ 2 đến 100 ký tự.';
     if (!form.birthdate) e.birthdate = 'Vui lòng chọn ngày sinh.';
     else if (new Date(form.birthdate).getTime() > Date.now()) e.birthdate = 'Ngày sinh không hợp lệ.';
-    if (!form.school.trim()) e.school = 'Vui lòng nhập trường đang học.';
     if (!form.gradeLevelId) e.gradeLevelId = 'Vui lòng chọn khối lớp.';
     if (form.learninggoals.length > 1000) e.learninggoals = 'Mục tiêu học tập tối đa 1000 ký tự.';
     setErrors(e);
@@ -75,7 +74,7 @@ const StudentProfile = () => {
       await updateMyStudentProfile({
         fullname: form.fullname.trim(),
         birthdate: form.birthdate,
-        school: form.school.trim(),
+        school: form.school.trim() || undefined,
         gradeLevelId: Number(form.gradeLevelId),
         learninggoals: form.learninggoals.trim() || undefined,
       });
@@ -168,7 +167,7 @@ const StudentProfile = () => {
 
         <div className={styles.field}>
           <label htmlFor="sp-school">
-            Trường đang học <span className={styles.req}>*</span>
+            Trường đang học
           </label>
           <input
             id="sp-school"

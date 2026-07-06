@@ -1,0 +1,147 @@
+/* Zalo sign-in button — song song với google-signin-button.css nhưng đơn giản hơn
+   (chỉ là 1 nút redirect, không có iframe overlay như GIS). */
+.zalo-signin-button {
+    --zalo-button-height: clamp(44px, 6.2vh, 50px);
+    position: relative;
+    width: 100%;
+    min-height: var(--zalo-button-height);
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) 16px;
+    align-items: center;
+    gap: 12px;
+    padding: 0 14px;
+    border-radius: var(--radius-md);
+    color: var(--color-navy);
+    background: linear-gradient(180deg, #ffffff 0%, #fbfaf6 100%);
+    border: 1px solid rgba(26, 34, 56, 0.14);
+    box-shadow: 0 10px 24px rgba(26, 34, 56, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    cursor: pointer;
+    font-family: var(--font-primary);
+    transition: transform 0.18s ease, box-shadow 0.2s ease, border-color 0.2s ease,
+        background-color 0.2s ease;
+}
+
+.zalo-signin-button__icon {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+}
+
+.zalo-signin-button__icon svg {
+    width: 30px;
+    height: 30px;
+    display: block;
+    border-radius: 9px;
+    box-shadow: 0 6px 14px rgba(0, 104, 255, 0.22);
+}
+
+.zalo-signin-button__label {
+    min-width: 0;
+    overflow: hidden;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: clamp(13px, 1.6vw, 15px);
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
+.zalo-signin-button__chevron {
+    width: 8px;
+    height: 8px;
+    justify-self: end;
+    border-top: 2px solid rgba(26, 34, 56, 0.42);
+    border-right: 2px solid rgba(26, 34, 56, 0.42);
+    transform: rotate(45deg);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.zalo-signin-button:not(.zalo-signin-button--disabled):hover {
+    transform: translateY(-1px);
+    border-color: rgba(0, 104, 255, 0.38);
+    background: linear-gradient(180deg, #ffffff 0%, #f4f9ff 100%);
+    box-shadow: 0 12px 26px rgba(26, 34, 56, 0.11),
+        0 0 0 3px rgba(0, 104, 255, 0.08);
+}
+
+.zalo-signin-button:not(.zalo-signin-button--disabled):hover .zalo-signin-button__icon svg {
+    box-shadow: 0 8px 18px rgba(0, 104, 255, 0.28);
+}
+
+.zalo-signin-button:not(.zalo-signin-button--disabled):hover .zalo-signin-button__chevron {
+    border-color: #0068ff;
+    transform: translateX(2px) rotate(45deg);
+}
+
+.zalo-signin-button:focus-visible {
+    outline: none;
+    border-color: rgba(0, 104, 255, 0.5);
+    box-shadow: 0 10px 24px rgba(26, 34, 56, 0.08),
+        0 0 0 4px rgba(0, 104, 255, 0.14);
+}
+
+.zalo-signin-button:not(.zalo-signin-button--disabled):active {
+    transform: translateY(0) scale(0.99);
+}
+
+.zalo-signin-button--disabled {
+    cursor: not-allowed;
+    color: var(--color-navy-60);
+    background: #f7f5ed;
+    border-color: rgba(26, 34, 56, 0.08);
+    box-shadow: none;
+}
+
+.zalo-signin-button--disabled .zalo-signin-button__icon {
+    opacity: 0.65;
+}
+
+@media (max-height: 700px) {
+    .zalo-signin-button {
+        --zalo-button-height: 42px;
+        grid-template-columns: 30px minmax(0, 1fr) 14px;
+        gap: 10px;
+        padding: 0 12px;
+    }
+
+    .zalo-signin-button__icon,
+    .zalo-signin-button__icon svg {
+        width: 28px;
+        height: 28px;
+    }
+
+    .zalo-signin-button__label {
+        font-size: 13px;
+    }
+}
+
+@media (max-height: 550px) {
+    .zalo-signin-button {
+        --zalo-button-height: 38px;
+        grid-template-columns: 26px minmax(0, 1fr) 12px;
+        gap: 8px;
+        padding: 0 10px;
+    }
+
+    .zalo-signin-button__icon,
+    .zalo-signin-button__icon svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .zalo-signin-button__label {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 768px) {
+    .zalo-signin-button:hover {
+        transform: none;
+    }
+
+    .zalo-signin-button:hover .zalo-signin-button__chevron {
+        transform: rotate(45deg);
+    }
+}
