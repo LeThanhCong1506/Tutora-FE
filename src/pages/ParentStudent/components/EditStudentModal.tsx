@@ -31,7 +31,7 @@ const EditStudentModal = ({ isOpen, onClose, onSubmit, student }: EditStudentMod
             setFormData({
                 fullName: student.fullName,
                 birthDate: student.birthDate,
-                school: student.school,
+                school: student.school ?? '',
                 gradeLevelId: student.gradeLevelId != null ? String(student.gradeLevelId) : '',
                 learningGoals: student.learningGoals || '',
             });
@@ -56,7 +56,6 @@ const EditStudentModal = ({ isOpen, onClose, onSubmit, student }: EditStudentMod
         const newErrors: Record<string, string> = {};
         if (!formData.fullName.trim()) newErrors.fullName = 'Họ tên là bắt buộc';
         if (!formData.birthDate) newErrors.birthDate = 'Ngày sinh là bắt buộc';
-        if (!formData.school.trim()) newErrors.school = 'Trường là bắt buộc';
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -68,7 +67,7 @@ const EditStudentModal = ({ isOpen, onClose, onSubmit, student }: EditStudentMod
             await onSubmit(student.studentId, {
                 fullname: formData.fullName,
                 birthdate: formData.birthDate,
-                school: formData.school,
+                school: formData.school.trim() || undefined,
                 gradeLevelId: formData.gradeLevelId ? Number(formData.gradeLevelId) : undefined,
                 learninggoals: formData.learningGoals || undefined,
             });
@@ -126,7 +125,7 @@ const EditStudentModal = ({ isOpen, onClose, onSubmit, student }: EditStudentMod
 
                     <div className={styles.formRow}>
                         <label className={styles.formLabel}>
-                            Trường <span className={styles.required}>*</span>
+                            Trường
                         </label>
                         <input
                             type="text"

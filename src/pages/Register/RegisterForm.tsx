@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import InputGroup from "../../components/InputGroup";
 import GoogleSignInButton from "../../components/GoogleSignInButton";
+import ZaloSignInButton from "../../components/ZaloSignInButton";
 import axios from "axios";
 import { saveUserToStorage, getRoleFromToken, googleAuth } from "../../services/auth.service";
 
@@ -358,6 +359,11 @@ const RegisterForm: React.FC = () => {
 
                     <div className="animate-fade-in-up delay-300">
                         <GoogleSignInButton onCredential={handleGoogleCredential} disabled={isSubmitting} />
+                    </div>
+
+                    {/* Đăng ký/đăng nhập với Zalo (Web OAuth + PKCE → redirect Zalo → /auth/zalo/callback) */}
+                    <div className="animate-fade-in-up delay-300 mt-2">
+                        <ZaloSignInButton disabled={isSubmitting} />
                     </div>
 
                     <div className="register-form__login animate-fade-in-up delay-300 mt-3">

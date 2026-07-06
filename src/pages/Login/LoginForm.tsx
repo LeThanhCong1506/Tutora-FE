@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import InputGroup from "../../components/InputGroup";
 import ForgotPasswordModal from "../../components/ForgotPasswordModal";
 import GoogleSignInButton from "../../components/GoogleSignInButton";
+import ZaloSignInButton from "../../components/ZaloSignInButton";
 import axios from "axios";
 import { saveUserToStorage, googleAuth } from "../../services/auth.service";
 
@@ -319,6 +320,11 @@ const LoginForm: React.FC = () => {
           {/* Đăng nhập với Google (GIS trả idToken → /auth/google) */}
           <div className="animate-fade-in-up delay-300">
             <GoogleSignInButton onCredential={handleGoogleCredential} disabled={isSubmitting} />
+          </div>
+
+          {/* Đăng nhập với Zalo (Web OAuth + PKCE → redirect Zalo → /auth/zalo/callback) */}
+          <div className="animate-fade-in-up delay-300" style={{ marginTop: 10 }}>
+            <ZaloSignInButton disabled={isSubmitting} />
           </div>
 
           <div className="login-form__register animate-fade-in-up delay-300">
