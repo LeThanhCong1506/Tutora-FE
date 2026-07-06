@@ -19,10 +19,10 @@ const StudentProfileContext = createContext<StudentProfileContextValue | undefin
 
 /**
  * Hồ sơ học sinh được coi là "đầy đủ" khi có đủ thông tin học tập bắt buộc:
- * họ tên, ngày sinh, trường, khối lớp. (Mục tiêu học tập là tuỳ chọn.)
+ * họ tên, ngày sinh, khối lớp. (Trường và mục tiêu học tập là tuỳ chọn.)
  */
 export const isStudentProfileComplete = (p: StudentType | null): boolean =>
-  !!p && !!p.fullName?.trim() && !!p.birthDate && !!p.school?.trim() && p.gradeLevelId != null;
+  !!p && !!p.fullName?.trim() && !!p.birthDate && p.gradeLevelId != null;
 
 export const StudentProfileProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<StudentType | null>(null);

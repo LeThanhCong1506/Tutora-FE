@@ -17,7 +17,7 @@ setupAuthInterceptor(api);
 export interface ICreateParentStudent {
   fullname: string;
   birthdate: string;
-  school: string;
+  school?: string;
   // BE đổi: nhận id khối lớp (GradeLevelId) thay vì chuỗi tên lớp.
   gradeLevelId?: number;
   learninggoals?: string;

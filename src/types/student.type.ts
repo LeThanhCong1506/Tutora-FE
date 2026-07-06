@@ -3,7 +3,7 @@ export type StudentType = {
   parentId: string;
   fullName: string;
   birthDate: string;
-  school: string;
+  school: string | null;
   gradeLevelId: number | null;
   gradeLevel: string;
   learningGoals: string;
