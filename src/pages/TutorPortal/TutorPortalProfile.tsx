@@ -356,6 +356,9 @@ const TutorPortalProfile: React.FC = () => {
 
   // Hồ sơ đã gửi và đang chờ Admin xét duyệt → hiển thị banner thông báo.
   const isPendingApproval = profileStatus?.toLowerCase() === 'pending_approval';
+  // Hồ sơ đã Active nhưng có 1 bản chỉnh sửa đang chờ Admin duyệt (khác với isPendingApproval:
+  // ở đây hồ sơ VẪN đang hiển thị công khai trên marketplace với thông tin cũ).
+  const isPendingUpdate = profileStatus?.toLowerCase() === 'pending_update';
 
   // Get display location
   const getLocationDisplay = () => {
@@ -560,6 +563,31 @@ const TutorPortalProfile: React.FC = () => {
                 Admin đang xác minh thông tin hồ sơ của bạn. Hồ sơ sẽ tự động hiển thị trên marketplace
                 ngay sau khi được phê duyệt. Quá trình này thường mất 24–48 giờ — bạn vẫn có thể chỉnh sửa
                 thông tin trong lúc chờ.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Banner trạng thái: hồ sơ đã Active nhưng có thay đổi đang chờ duyệt lại — khác
+          isPendingApproval ở chỗ hồ sơ vẫn hiển thị công khai với thông tin CŨ trong lúc chờ. */}
+      {isPendingUpdate && (
+        <div className={styles.pendingReviewWrapper}>
+          <div className={styles.pendingReviewBanner} role="status" aria-live="polite">
+            <span className={styles.pendingReviewIcon}>
+              <Clock size={22} strokeWidth={2} />
+            </span>
+            <div className={styles.pendingReviewText}>
+              <div className={styles.pendingReviewTitleRow}>
+                <h2 className={styles.pendingReviewTitle}>Bạn có thay đổi hồ sơ đang chờ Admin duyệt</h2>
+                <span className={styles.pendingReviewBadge}>
+                  <span className={styles.pendingReviewDot} />
+                  Đang chờ duyệt
+                </span>
+              </div>
+              <p className={styles.pendingReviewDescription}>
+                Thông tin công khai trên Marketplace vẫn giữ nguyên như trước cho đến khi Admin duyệt
+                thay đổi này. Bạn vẫn có thể tiếp tục chỉnh sửa — lần nộp mới nhất sẽ thay thế bản đang chờ.
               </p>
             </div>
           </div>
