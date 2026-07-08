@@ -1,0 +1,140 @@
+.toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.heading {
+  margin: 0;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a2238;
+}
+
+.subheading {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #687083;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card {
+  padding: 16px 20px;
+  border: 1px solid #e7e9ee;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cardTitle {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a2238;
+}
+
+.cardDesc {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #687083;
+  line-height: 1.5;
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: #9aa1b0;
+}
+
+.fileList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fileRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid #e7e9ee;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.fileIcon {
+  font-size: 20px;
+  flex: 0 0 auto;
+}
+
+.fileInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fileName {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1a2238;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileName:hover {
+  text-decoration: underline;
+}
+
+.fileMeta {
+  font-size: 12px;
+  color: #9aa1b0;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 60px 20px;
+  text-align: center;
+  border: 1px dashed #e0e2e8;
+  border-radius: 16px;
+  color: #687083;
+}
+
+.emptyIcon {
+  font-size: 30px;
+}
+
+.emptyState h4 {
+  margin: 0;
+  color: #1a2238;
+  font-family: 'IBM Plex Sans', sans-serif;
+}
+
+.emptyState p {
+  margin: 0;
+  font-size: 13px;
+}

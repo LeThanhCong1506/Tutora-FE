@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getTutorLessons, checkInLesson, checkOutLesson, type LessonResponse } from '../../services/lesson.service';
-import { Tag } from 'antd';
+import { type LessonResponse, type SubmitReportRequest } from '../../services/lesson.service';
 import { toast } from 'react-toastify';
+import { ChevronDown, MapPin, Video } from 'lucide-react';
+import { StatusBadge } from '../../components/shared';
+import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
+import { MOCK_LESSONS } from './mockClassSessions';
 import styles from '../../styles/pages/tutor-portal-class-detail.module.css';
+import sessionStyles from '../../styles/pages/tutor-portal-session-cards.module.css';
 import LessonReportForm from './components/LessonReportForm';
 import AttachmentUploader from './components/AttachmentUploader';
+import HomeworkTab from './components/HomeworkTab';
+import MaterialsTab from './components/MaterialsTab';
 
 // Icons
 const BackIcon = () => (
@@ -112,54 +118,41 @@ const TutorPortalClassDetail: React.FC = () => {
         }
     }, [bookingId]);
 
+    // TODO: Backend hiện không còn endpoint `/tutor/lessons*` (đã đổi sang
+    // `/api/tutor/class-sessions`). Dùng mock tạm thời — thay lại getTutorLessons()
+    // (hoặc service class-session mới) khi lesson.service.ts được viết lại.
     const fetchClassData = async () => {
-        try {
-            setLoading(true);
-            console.log('🔄 Fetching lessons for bookingId:', bookingId);
-            const response = await getTutorLessons(1, 100);
+        setLoading(true);
+        const classLessons = MOCK_LESSONS.filter(l => l.bookingId === bookingId);
+        setLessons(classLessons);
 
-            // Get lessons data
-            const allLessons = Array.isArray(response.content)
-                ? response.content
-                : response.content?.items || [];
+        if (classLessons.length > 0) {
+            const firstLesson = classLessons[0];
+            const sortedLessons = [...classLessons].sort((a, b) =>
+                new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime()
+            );
+            const nextLesson = sortedLessons.find(l => new Date(l.scheduledStart) > new Date());
 
-            // Filter by bookingId
-            const classLessons = allLessons.filter(l => l.bookingId === bookingId);
-            console.log('✅ Found', classLessons.length, 'lessons for this class');
-
-            setLessons(classLessons);
-
-            // Extract class info from first lesson
-            if (classLessons.length > 0) {
-                const firstLesson = classLessons[0];
-                const sortedLessons = [...classLessons].sort((a, b) =>
-                    new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime()
-                );
-                const nextLesson = sortedLessons.find(l => new Date(l.scheduledStart) > new Date());
-
-                setClassInfo({
-                    name: firstLesson.subject?.subjectName || 'N/A',
-                    subject: firstLesson.subject?.subjectName || 'N/A',
-                    grade: firstLesson.student?.gradeLevel || 'N/A',
-                    nextLesson: nextLesson
-                        ? new Date(nextLesson.scheduledStart).toLocaleString('vi-VN', {
-                            weekday: 'long',
-                            day: '2-digit',
-                            month: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        })
-                        : 'Không có',
-                    studentName: firstLesson.student?.fullName || 'Unknown',
-                    studentEmail: '' // TODO: Add email if available in API
-                });
-            }
-        } catch (error: any) {
-            console.error('❌ Error fetching class data:', error);
-            toast.error('Không thể tải dữ liệu lớp học');
-        } finally {
-            setLoading(false);
+            setClassInfo({
+                name: firstLesson.subject?.subjectName || 'N/A',
+                subject: firstLesson.subject?.subjectName || 'N/A',
+                grade: firstLesson.student?.gradeLevel || 'N/A',
+                nextLesson: nextLesson
+                    ? new Date(nextLesson.scheduledStart).toLocaleString('vi-VN', {
+                        weekday: 'long',
+                        day: '2-digit',
+                        month: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })
+                    : 'Không có',
+                studentName: firstLesson.student?.fullName || 'Unknown',
+                studentEmail: '' // TODO: Add email if available in API
+            });
+        } else {
+            setClassInfo(null);
         }
+        setLoading(false);
     };
 
     const handleBack = () => {
@@ -213,70 +206,66 @@ const TutorPortalClassDetail: React.FC = () => {
     };
 
     /**
-     * Click "Vào lớp": gọi check-in → BE tạo Meet link → mở tab Meet.
+     * Click "Vào lớp": mock check-in (cập nhật state cục bộ) → mở tab Meet.
      * Nếu lesson đã in_progress mà có meetingLink (vd tutor lỡ đóng tab) → re-open thẳng.
+     * TODO: thay bằng checkInLesson() thật khi lesson.service.ts trỏ đúng `/tutor/class-sessions`.
      */
     const handleEnterLesson = async (lesson: LessonResponse) => {
-        // Case re-join: lesson đang chạy, đã có link → mở thẳng, không gọi check-in lại
+        // Case re-join: lesson đang chạy, đã có link → mở thẳng, không cần check-in lại
         if (lesson.status === 'in_progress' && lesson.meetingLink) {
             window.open(lesson.meetingLink, '_blank', 'noopener,noreferrer');
             return;
         }
 
-        try {
-            setCheckingInLessonId(lesson.lessonId);
-            const response = await checkInLesson(lesson.lessonId);
-            const meetingLink = response.content?.meetingLink;
+        setCheckingInLessonId(lesson.lessonId);
+        await new Promise((r) => setTimeout(r, 350)); // giả lập độ trễ mạng
 
-            if (meetingLink) {
-                window.open(meetingLink, '_blank', 'noopener,noreferrer');
-                toast.success('Check-in thành công! Đang mở lớp học…');
-            } else {
-                // teachingMode = offline thì không có link — vẫn check-in OK.
-                toast.success('Check-in thành công!');
-            }
-            await fetchClassData();
-        } catch (error: unknown) {
-            const e = error as { response?: { data?: { message?: string } } };
-            const message: string = e.response?.data?.message || 'Không thể check-in. Vui lòng thử lại.';
-            toast.error(message);
-        } finally {
-            setCheckingInLessonId(null);
-        }
+        const meetingLink = lesson.meetingLink || `https://meet.example.com/mock-room-${lesson.lessonId}`;
+        setLessons((prev) => prev.map((l) => (
+            l.lessonId === lesson.lessonId
+                ? { ...l, status: 'in_progress', checkInTime: new Date().toISOString(), meetingLink }
+                : l
+        )));
+
+        window.open(meetingLink, '_blank', 'noopener,noreferrer');
+        toast.success('Check-in thành công! Đang mở lớp học…');
+        setCheckingInLessonId(null);
     };
 
     const handleCheckOut = async (lessonId: number) => {
-        try {
-            setCheckingOutLessonId(lessonId);
-            await checkOutLesson(lessonId);
-            toast.success('Check-out thành công!');
-            await fetchClassData();
-        } catch (error: unknown) {
-            const e = error as { response?: { data?: { message?: string } } };
-            toast.error(e.response?.data?.message || 'Không thể check-out. Vui lòng thử lại.');
-        } finally {
-            setCheckingOutLessonId(null);
-        }
+        setCheckingOutLessonId(lessonId);
+        await new Promise((r) => setTimeout(r, 350));
+
+        setLessons((prev) => prev.map((l) => (
+            l.lessonId === lessonId ? { ...l, checkOutTime: new Date().toISOString() } : l
+        )));
+
+        toast.success('Check-out thành công!');
+        setCheckingOutLessonId(null);
     };
 
-    const handleReportSuccess = async () => {
+    const handleReportSubmit = (lessonId: number, request: SubmitReportRequest) => {
+        setLessons((prev) => prev.map((l) => (
+            l.lessonId === lessonId
+                ? {
+                    ...l,
+                    status: 'pending_confirmation',
+                    lessonContent: request.contentCovered,
+                    homework: request.homeworkAssigned,
+                    tutorNotes: request.tutorNotes,
+                    isStudentPresent: request.isStudentPresent,
+                    attendanceNote: request.attendanceNote,
+                    submittedAt: new Date().toISOString(),
+                    confirmDeadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                }
+                : l
+        )));
+    };
+
+    const handleReportSuccess = () => {
         setShowReportForm(false);
         setActiveLessonId(null);
         toast.success('Báo cáo đã được nộp thành công!');
-        await fetchClassData();
-    };
-
-    const getLessonStatusLabel = (status?: string): { text: string; color: string } => {
-        switch (status) {
-            case 'scheduled': return { text: 'Đã lên lịch', color: '#1890ff' };
-            case 'in_progress': return { text: 'Đang học', color: '#52c41a' };
-            case 'pending_confirmation': return { text: 'Chờ xác nhận', color: '#722ed1' };
-            case 'completed': return { text: 'Hoàn thành', color: '#52c41a' };
-            case 'disputed': return { text: 'Đang khiếu nại', color: '#ff4d4f' };
-            case 'cancelled': return { text: 'Đã hủy', color: '#999' };
-            case 'no_show': return { text: 'Vắng mặt', color: '#ff4d4f' };
-            default: return { text: status || 'N/A', color: '#999' };
-        }
     };
 
     const sortedLessons = React.useMemo(() => {
@@ -401,148 +390,100 @@ const TutorPortalClassDetail: React.FC = () => {
                                     </div>
                                 ) : (
                                     sortedLessons.map((lesson) => {
-                                        const statusInfo = getLessonStatusLabel(lesson.status);
+                                        const meta = getClassSessionStatusMeta(lesson.status);
                                         const isExpanded = activeLessonId === lesson.lessonId;
                                         const startTime = new Date(lesson.scheduledStart);
                                         const endTime = new Date(lesson.scheduledEnd);
-                                        const isPast = startTime < new Date();
+                                        const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
 
                                         return (
+                                            <div key={lesson.lessonId}>
                                             <div
-                                                key={lesson.lessonId}
+                                                className={sessionStyles.sessionCard}
                                                 style={{
-                                                    background: '#fff',
-                                                    borderRadius: '12px',
-                                                    border: isExpanded ? '2px solid #3e2f28' : '1px solid rgba(26,34,56,0.1)',
-                                                    overflow: 'hidden',
-                                                    transition: 'border-color 0.2s',
+                                                    cursor: 'pointer',
+                                                    border: isExpanded ? '1.5px solid #1a2238' : undefined,
+                                                    borderRadius: isExpanded ? '14px 14px 0 0' : undefined,
                                                 }}
+                                                onClick={() => setActiveLessonId(isExpanded ? null : lesson.lessonId)}
                                             >
-                                                {/* Lesson Card Header */}
-                                                <div
-                                                    style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'space-between',
-                                                        padding: '16px 20px',
-                                                        cursor: 'pointer',
-                                                        background: isPast && lesson.status === 'completed' ? '#f6fff6' : undefined,
-                                                    }}
-                                                    onClick={() => setActiveLessonId(isExpanded ? null : lesson.lessonId)}
-                                                >
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                                        <div style={{
-                                                            width: '52px', height: '52px',
-                                                            borderRadius: '10px',
-                                                            background: '#f2f0e4',
-                                                            display: 'flex', flexDirection: 'column',
-                                                            alignItems: 'center', justifyContent: 'center',
-                                                            fontWeight: 600, color: '#1a2238',
-                                                            flexShrink: 0,
-                                                        }}>
-                                                            <span style={{ fontSize: '18px', lineHeight: 1 }}>
-                                                                {startTime.getDate()}
-                                                            </span>
-                                                            <span style={{ fontSize: '10px', textTransform: 'uppercase', color: '#666' }}>
-                                                                Th{startTime.getMonth() + 1}
-                                                            </span>
-                                                        </div>
-                                                        <div>
-                                                            <div style={{ fontWeight: 600, fontSize: '14px', color: '#1a2238' }}>
-                                                                Buổi {sortedLessons.indexOf(lesson) + 1}
-                                                                {lesson.subject?.subjectName && ` - ${lesson.subject.subjectName}`}
-                                                            </div>
-                                                            <div style={{ fontSize: '13px', color: '#666', marginTop: '2px' }}>
-                                                                {startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                                                                {' - '}
-                                                                {endTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                                                                {' · '}
-                                                                {startTime.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
-                                                            </div>
-                                                        </div>
+                                                <div className={sessionStyles.timeBlock}>
+                                                    <div className={sessionStyles.timeValue}>
+                                                        {startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                                                     </div>
+                                                    <div className={sessionStyles.durationValue}>{durationMinutes} phút</div>
+                                                </div>
 
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                        <Tag color={statusInfo.color} style={{ margin: 0, borderRadius: '6px' }}>
-                                                            {statusInfo.text}
-                                                        </Tag>
-
-                                                        {/* "Vào lớp" button — gọi check-in + auto mở Meet link */}
-                                                        {lesson.status === 'scheduled' && canCheckIn(lesson) && (
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); handleEnterLesson(lesson); }}
-                                                                disabled={checkingInLessonId === lesson.lessonId}
-                                                                style={{
-                                                                    padding: '6px 16px', borderRadius: '8px',
-                                                                    background: '#16a34a', color: '#fff',
-                                                                    border: 'none', cursor: 'pointer',
-                                                                    fontSize: '13px', fontWeight: 600,
-                                                                    opacity: checkingInLessonId === lesson.lessonId ? 0.6 : 1,
-                                                                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                                                                }}
-                                                            >
-                                                                {checkingInLessonId === lesson.lessonId ? 'Đang xử lý...' : '▶ Vào lớp'}
-                                                            </button>
-                                                        )}
-
-                                                        {/* Re-join button cho lesson đang in_progress mà chưa check-out */}
-                                                        {lesson.status === 'in_progress' && lesson.meetingLink && !lesson.checkOutTime && (
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); handleEnterLesson(lesson); }}
-                                                                style={{
-                                                                    padding: '6px 16px', borderRadius: '8px',
-                                                                    background: '#16a34a', color: '#fff',
-                                                                    border: 'none', cursor: 'pointer',
-                                                                    fontSize: '13px', fontWeight: 600,
-                                                                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                                                                }}
-                                                            >
-                                                                ▶ Vào lại lớp
-                                                            </button>
-                                                        )}
-
-                                                        {/* Check-out button */}
-                                                        {lesson.status === 'in_progress' && !lesson.checkOutTime && (
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); handleCheckOut(lesson.lessonId); }}
-                                                                disabled={checkingOutLessonId === lesson.lessonId}
-                                                                style={{
-                                                                    padding: '6px 16px', borderRadius: '8px',
-                                                                    background: '#faad14', color: '#fff',
-                                                                    border: 'none', cursor: 'pointer',
-                                                                    fontSize: '13px', fontWeight: 600,
-                                                                    opacity: checkingOutLessonId === lesson.lessonId ? 0.6 : 1,
-                                                                }}
-                                                            >
-                                                                {checkingOutLessonId === lesson.lessonId ? 'Đang xử lý...' : 'Check-out'}
-                                                            </button>
-                                                        )}
-
-                                                        {/* MVP Phase 2: Cho phép nộp báo cáo mà không cần Check-in/Check-out */}
-                                                        {(lesson.status === 'in_progress' || lesson.status === 'scheduled') && (
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setActiveLessonId(lesson.lessonId);
-                                                                    setShowReportForm(true);
-                                                                }}
-                                                                style={{
-                                                                    padding: '6px 16px', borderRadius: '8px',
-                                                                    background: '#3e2f28', color: '#fff',
-                                                                    border: 'none', cursor: 'pointer',
-                                                                    fontSize: '13px', fontWeight: 600,
-                                                                }}
-                                                            >
-                                                                Nộp báo cáo
-                                                            </button>
-                                                        )}
-
-                                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#999" strokeWidth="1.5"
-                                                            style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-                                                            <path d="M4 6L8 10L12 6" strokeLinecap="round" strokeLinejoin="round" />
-                                                        </svg>
+                                                <div className={sessionStyles.sessionInfo}>
+                                                    <div className={sessionStyles.sessionTitleRow}>
+                                                        <span className={sessionStyles.className}>
+                                                            Buổi {sortedLessons.indexOf(lesson) + 1}
+                                                            {lesson.subject?.subjectName && ` · ${lesson.subject.subjectName}`}
+                                                        </span>
+                                                    </div>
+                                                    <div className={sessionStyles.metaRow}>
+                                                        <span className={sessionStyles.metaItem}>
+                                                            {startTime.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' })}
+                                                        </span>
+                                                        <span className={sessionStyles.metaItem}>
+                                                            {lesson.meetingLink ? <Video size={12} /> : <MapPin size={12} />}
+                                                            {lesson.meetingLink ? 'Online' : 'Tại nhà'}
+                                                        </span>
+                                                        <StatusBadge variant={meta.variant} shape="tag">{meta.label}</StatusBadge>
                                                     </div>
                                                 </div>
+
+                                                <div className={sessionStyles.actionGroup} onClick={(e) => e.stopPropagation()}>
+                                                    {/* "Vào lớp" — gọi check-in + auto mở Meet link */}
+                                                    {lesson.status === 'scheduled' && canCheckIn(lesson) && (
+                                                        <button
+                                                            className={sessionStyles.joinActionBtn}
+                                                            onClick={() => handleEnterLesson(lesson)}
+                                                            disabled={checkingInLessonId === lesson.lessonId}
+                                                        >
+                                                            {checkingInLessonId === lesson.lessonId ? 'Đang xử lý...' : 'Vào lớp'}
+                                                        </button>
+                                                    )}
+
+                                                    {/* Re-join cho lesson đang in_progress mà chưa check-out */}
+                                                    {lesson.status === 'in_progress' && lesson.meetingLink && !lesson.checkOutTime && (
+                                                        <button className={sessionStyles.joinActionBtn} onClick={() => handleEnterLesson(lesson)}>
+                                                            Vào lại lớp
+                                                        </button>
+                                                    )}
+
+                                                    {/* Check-out */}
+                                                    {lesson.status === 'in_progress' && !lesson.checkOutTime && (
+                                                        <button
+                                                            className={sessionStyles.defaultActionBtn}
+                                                            onClick={() => handleCheckOut(lesson.lessonId)}
+                                                            disabled={checkingOutLessonId === lesson.lessonId}
+                                                        >
+                                                            {checkingOutLessonId === lesson.lessonId ? 'Đang xử lý...' : 'Check-out'}
+                                                        </button>
+                                                    )}
+
+                                                    {/* MVP Phase 2: Cho phép nộp báo cáo mà không cần Check-in/Check-out */}
+                                                    {(lesson.status === 'in_progress' || lesson.status === 'scheduled') && (
+                                                        <button
+                                                            className={sessionStyles.primaryActionBtn}
+                                                            onClick={() => {
+                                                                setActiveLessonId(lesson.lessonId);
+                                                                setShowReportForm(true);
+                                                            }}
+                                                        >
+                                                            Nộp báo cáo
+                                                        </button>
+                                                    )}
+
+                                                    <ChevronDown
+                                                        size={16}
+                                                        className={`${sessionStyles.expandChevron} ${isExpanded ? sessionStyles.expandChevronOpen : ''}`}
+                                                        onClick={() => setActiveLessonId(isExpanded ? null : lesson.lessonId)}
+                                                        style={{ cursor: 'pointer' }}
+                                                    />
+                                                </div>
+                                            </div>
 
                                                 {/* Expanded Detail */}
                                                 {isExpanded && (
@@ -619,6 +560,7 @@ const TutorPortalClassDetail: React.FC = () => {
                                                             <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                                                 <LessonReportForm
                                                                     lessonId={lesson.lessonId}
+                                                                    onSubmitMock={(request) => handleReportSubmit(lesson.lessonId, request)}
                                                                     onSubmitSuccess={handleReportSuccess}
                                                                     onCancel={() => setShowReportForm(false)}
                                                                 />
@@ -760,18 +702,10 @@ const TutorPortalClassDetail: React.FC = () => {
                         )}
 
                         {/* === HOMEWORK TAB === */}
-                        {activeTab === 'homework' && (
-                            <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
-                                Tính năng bài tập về nhà đang được phát triển
-                            </div>
-                        )}
+                        {activeTab === 'homework' && <HomeworkTab lessons={lessons} />}
 
                         {/* === MATERIALS TAB === */}
-                        {activeTab === 'materials' && (
-                            <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
-                                Tính năng tài liệu đang được phát triển
-                            </div>
-                        )}
+                        {activeTab === 'materials' && <MaterialsTab bookingId={bookingId} />}
                     </div>
                 </div>
             </div>

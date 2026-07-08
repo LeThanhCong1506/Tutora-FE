@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getTutorLessons, type LessonResponse } from '../../services/lesson.service';
-import { toast } from 'react-toastify';
+import { type LessonResponse } from '../../services/lesson.service';
+import { MOCK_LESSONS } from './mockClassSessions';
 import { DataTable, StatusBadge } from '../../components/shared';
 import type { DataTableColumn } from '../../components/shared';
 import styles from '../../styles/pages/tutor-portal-classes.module.css';
@@ -93,37 +93,16 @@ const TutorPortalClasses: React.FC = () => {
         setCurrentPage(1);
     }, [searchTerm, statusFilter, sortBy]);
 
+    // TODO: Backend hiện không còn endpoint `/tutor/lessons*` (đã đổi sang
+    // `/api/tutor/class-sessions`). Dùng mock tạm thời — thay lại getTutorLessons()
+    // (hoặc service class-session mới) khi lesson.service.ts được viết lại.
     const fetchLessons = async () => {
-        try {
-            setLoading(true);
-            console.log('🔄 Fetching tutor lessons...');
-            const response = await getTutorLessons(1, 100, undefined, statusFilter || undefined);
-
-            console.log('📦 API Response:', response);
-            console.log('📦 Response content:', response.content);
-
-            // Handle both array and PagedList response
-            let lessonsData: LessonResponse[] = [];
-
-            if (Array.isArray(response.content)) {
-                lessonsData = response.content;
-                console.log('✅ Lessons found (array):', lessonsData.length);
-            } else if (response.content && response.content.items) {
-                lessonsData = response.content.items;
-                console.log('✅ Lessons found (PagedList):', lessonsData.length);
-            } else {
-                console.log('⚠️ No items in response');
-            }
-
-            console.log('📚 Lessons data:', lessonsData);
-            setLessons(lessonsData);
-        } catch (error: any) {
-            console.error('❌ Error fetching lessons:', error);
-            console.error('❌ Error response:', error.response?.data);
-            toast.error('Không thể tải danh sách lớp học: ' + (error.message || 'Lỗi không xác định'));
-        } finally {
-            setLoading(false);
-        }
+        setLoading(true);
+        const filtered = statusFilter
+            ? MOCK_LESSONS.filter((l) => l.status === statusFilter)
+            : MOCK_LESSONS;
+        setLessons(filtered);
+        setLoading(false);
     };
 
     // Group lessons by bookingId to create classes

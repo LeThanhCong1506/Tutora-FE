@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { Upload, Button } from 'antd';
 import { toast } from 'react-toastify';
 import { UploadOutlined, DeleteOutlined } from '@ant-design/icons';
-import { uploadLessonAttachment } from '../../../services/lesson.service';
+// TODO: endpoint `/tutor/lessons/{id}/attachments` không còn tồn tại trên BE
+// (đã đổi sang `/tutor/class-sessions/{id}/attachments`). Mock tạm bằng
+// object URL cục bộ — thay lại uploadLessonAttachment() khi service nối lại.
 
 interface AttachmentUploaderProps {
   lessonId: number;
@@ -17,18 +19,13 @@ const AttachmentUploader: React.FC<AttachmentUploaderProps> = ({
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; url: string }[]>([]);
 
   const handleUpload = async (file: File) => {
-    try {
-      setUploading(true);
-      const response = await uploadLessonAttachment(lessonId, file);
-      const url = response.content || '';
-      setUploadedFiles((prev) => [...prev, { name: file.name, url }]);
-      toast.success(`Tải lên ${file.name} thành công!`);
-      onUploadComplete?.(url);
-    } catch (error: any) {
-      toast.error(`Tải lên ${file.name} thất bại.`);
-    } finally {
-      setUploading(false);
-    }
+    setUploading(true);
+    await new Promise((r) => setTimeout(r, 400)); // giả lập độ trễ upload
+    const url = `https://mock-storage.example.com/lessons/${lessonId}/${encodeURIComponent(file.name)}`;
+    setUploadedFiles((prev) => [...prev, { name: file.name, url }]);
+    toast.success(`Tải lên ${file.name} thành công!`);
+    onUploadComplete?.(url);
+    setUploading(false);
     return false;
   };
 

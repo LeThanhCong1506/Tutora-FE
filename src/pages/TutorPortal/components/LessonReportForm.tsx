@@ -10,12 +10,19 @@ interface LessonReportFormProps {
   lessonId: number;
   onSubmitSuccess: () => void;
   onCancel?: () => void;
+  /**
+   * Khi truyền vào, form dùng callback này thay vì gọi `submitLessonReport()` thật
+   * (endpoint `/tutor/lessons/{id}/report` hiện không tồn tại trên BE — đã đổi
+   * sang `/tutor/class-sessions/{id}/report`). Bỏ prop này khi service được nối lại.
+   */
+  onSubmitMock?: (request: SubmitReportRequest) => void;
 }
 
 const LessonReportForm: React.FC<LessonReportFormProps> = ({
   lessonId,
   onSubmitSuccess,
   onCancel,
+  onSubmitMock,
 }) => {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
@@ -44,7 +51,11 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
         isStudentPresent: values.isStudentPresent ?? true,
         attendanceNote: values.attendanceNote || '',
       };
-      await submitLessonReport(lessonId, request);
+      if (onSubmitMock) {
+        onSubmitMock(request);
+      } else {
+        await submitLessonReport(lessonId, request);
+      }
       toast.success('Nộp báo cáo buổi học thành công!');
       clearDraft();
       onSubmitSuccess();
