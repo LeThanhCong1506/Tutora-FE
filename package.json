@@ -17,6 +17,7 @@
     "@ant-design/icons": "^6.1.0",
     "@microsoft/signalr": "^10.0.0",
     "@supabase/supabase-js": "^2.90.0",
+    "agora-rtc-sdk-ng": "^4.24.5",
     "antd": "^6.1.4",
     "axios": "^1.13.2",
     "date-fns": "^4.1.0",

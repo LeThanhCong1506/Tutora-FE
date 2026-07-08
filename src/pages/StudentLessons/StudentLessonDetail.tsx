@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
     ArrowLeft, BookOpen, AlertCircle, Video,
     Calendar as CalendarIcon, FileText, ClipboardCheck, Star,
@@ -136,7 +136,7 @@ const StudentLessonDetail = () => {
 
     const status = getStatus(lesson.status);
     const isInProgress = lesson.status === 'in_progress';
-    const canJoin = isInProgress && lesson.meetingLink;
+    const canJoin = isInProgress;
     const tutorName = (lesson as any).tutorName ?? (lesson as any).tutor?.fullName ?? 'Gia sư';
     const subjectName = (lesson as any).subjectName ?? (lesson as any).subject?.subjectName ?? 'Buổi học';
     const report = (lesson as any).report;
@@ -179,14 +179,9 @@ const StudentLessonDetail = () => {
                                     </div>
                                 </div>
                             </div>
-                            <a
-                                href={lesson.meetingLink!}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={heroJoinBtn}
-                            >
+                            <Link to={`/live-session/${lesson.lessonId}`} style={heroJoinBtn}>
                                 <Video size={16} /> Tham gia ngay
-                            </a>
+                            </Link>
                         </div>
                     </div>
                 )}

@@ -211,25 +211,24 @@ const TutorPortalClassDetail: React.FC = () => {
      * TODO: thay bằng checkInLesson() thật khi lesson.service.ts trỏ đúng `/tutor/class-sessions`.
      */
     const handleEnterLesson = async (lesson: LessonResponse) => {
-        // Case re-join: lesson đang chạy, đã có link → mở thẳng, không cần check-in lại
-        if (lesson.status === 'in_progress' && lesson.meetingLink) {
-            window.open(lesson.meetingLink, '_blank', 'noopener,noreferrer');
+        // Case re-join: lesson đang chạy → vào thẳng phòng học, không cần check-in lại
+        if (lesson.status === 'in_progress') {
+            navigate(`/live-session/${lesson.lessonId}`);
             return;
         }
 
         setCheckingInLessonId(lesson.lessonId);
         await new Promise((r) => setTimeout(r, 350)); // giả lập độ trễ mạng
 
-        const meetingLink = lesson.meetingLink || `https://meet.example.com/mock-room-${lesson.lessonId}`;
         setLessons((prev) => prev.map((l) => (
             l.lessonId === lesson.lessonId
-                ? { ...l, status: 'in_progress', checkInTime: new Date().toISOString(), meetingLink }
+                ? { ...l, status: 'in_progress', checkInTime: new Date().toISOString() }
                 : l
         )));
 
-        window.open(meetingLink, '_blank', 'noopener,noreferrer');
-        toast.success('Check-in thành công! Đang mở lớp học…');
+        toast.success('Check-in thành công! Đang vào lớp học…');
         setCheckingInLessonId(null);
+        navigate(`/live-session/${lesson.lessonId}`);
     };
 
     const handleCheckOut = async (lessonId: number) => {
@@ -446,7 +445,7 @@ const TutorPortalClassDetail: React.FC = () => {
                                                     )}
 
                                                     {/* Re-join cho lesson đang in_progress mà chưa check-out */}
-                                                    {lesson.status === 'in_progress' && lesson.meetingLink && !lesson.checkOutTime && (
+                                                    {lesson.status === 'in_progress' && !lesson.checkOutTime && (
                                                         <button className={sessionStyles.joinActionBtn} onClick={() => handleEnterLesson(lesson)}>
                                                             Vào lại lớp
                                                         </button>
