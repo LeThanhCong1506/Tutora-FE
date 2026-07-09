@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { type LessonResponse } from '../../services/lesson.service';
-import { MOCK_LESSONS } from './mockClassSessions';
+import { toast } from 'react-toastify';
+import { getTutorClassSessions, type ClassSessionResponse } from '../../services/classSession.service';
 import { DataTable, StatusBadge } from '../../components/shared';
 import type { DataTableColumn } from '../../components/shared';
 import styles from '../../styles/pages/tutor-portal-classes.module.css';
@@ -40,26 +40,23 @@ interface ClassData {
     bookingId: number;
     subjectName: string;
     studentName: string;
-    studentId: string;
-    totalLessons: number;
-    completedLessons: number;
-    nextLesson?: LessonResponse;
+    totalSessions: number;
+    completedSessions: number;
+    nextSession?: ClassSessionResponse;
     schedule: string; // e.g., "T2, T4 10:00"
-    hasHomework: boolean;
-    hasNotes: boolean;
     status: string;
 }
 
-// Helper to compute class status from lessons
-const getClassStatus = (lessons: LessonResponse[]): string => {
-    if (lessons.length === 0) return 'unknown';
-    const allCompleted = lessons.every(l => l.status === 'completed');
+// Helper to compute class status from sessions
+const getClassStatus = (sessions: ClassSessionResponse[]): string => {
+    if (sessions.length === 0) return 'unknown';
+    const allCompleted = sessions.every(s => s.status === 'completed');
     if (allCompleted) return 'completed';
-    const hasCancelled = lessons.some(l => l.status === 'cancelled');
-    if (hasCancelled && lessons.every(l => l.status === 'cancelled' || l.status === 'completed')) return 'cancelled';
-    const hasInProgress = lessons.some(l => l.status === 'in_progress');
+    const hasCancelled = sessions.some(s => s.status === 'cancelled' || s.status === 'cancelled_noshow');
+    if (hasCancelled && sessions.every(s => s.status === 'cancelled' || s.status === 'cancelled_noshow' || s.status === 'completed')) return 'cancelled';
+    const hasInProgress = sessions.some(s => s.status === 'in_progress');
     if (hasInProgress) return 'in_progress';
-    const hasPending = lessons.some(l => l.status === 'pending_report' || l.status === 'pending_parent_confirmation');
+    const hasPending = sessions.some(s => s.status === 'pending_confirmation');
     if (hasPending) return 'pending';
     return 'scheduled';
 };
@@ -77,67 +74,60 @@ const getStatusDisplay = (status: string): { label: string; variant: 'success' |
 
 const TutorPortalClasses: React.FC = () => {
     const navigate = useNavigate();
-    const [lessons, setLessons] = useState<LessonResponse[]>([]);
+    const [sessions, setSessions] = useState<ClassSessionResponse[]>([]);
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState<string>('');
     const [searchTerm, setSearchTerm] = useState('');
-    const [sortBy, setSortBy] = useState<string>('nextLesson');
+    const [sortBy, setSortBy] = useState<string>('nextSession');
     const [currentPage, setCurrentPage] = useState(1);
     const PAGE_SIZE = 10;
 
     useEffect(() => {
-        fetchLessons();
+        fetchClassSessions();
     }, [statusFilter]);
 
     useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm, statusFilter, sortBy]);
 
-    // TODO: Backend hiện không còn endpoint `/tutor/lessons*` (đã đổi sang
-    // `/api/tutor/class-sessions`). Dùng mock tạm thời — thay lại getTutorLessons()
-    // (hoặc service class-session mới) khi lesson.service.ts được viết lại.
-    const fetchLessons = async () => {
-        setLoading(true);
-        const filtered = statusFilter
-            ? MOCK_LESSONS.filter((l) => l.status === statusFilter)
-            : MOCK_LESSONS;
-        setLessons(filtered);
-        setLoading(false);
+    const fetchClassSessions = async () => {
+        try {
+            setLoading(true);
+            // `GET /tutor/class-sessions` trả về PagedList<ClassSessionResponse> — serialize thành mảng trần.
+            const response = await getTutorClassSessions(1, 100, undefined, statusFilter || undefined);
+            setSessions(Array.isArray(response.content) ? response.content : []);
+        } catch (error: unknown) {
+            const e = error as { response?: { data?: { message?: string } }; message?: string };
+            toast.error('Không thể tải danh sách lớp học: ' + (e.response?.data?.message || e.message || 'Lỗi không xác định'));
+        } finally {
+            setLoading(false);
+        }
     };
 
-    // Group lessons by bookingId to create classes
+    // Group sessions by bookingId to create classes
     const classes: ClassData[] = React.useMemo(() => {
-        const grouped = new Map<number, LessonResponse[]>();
+        const grouped = new Map<number, ClassSessionResponse[]>();
 
-        // Group lessons by bookingId
-        lessons.forEach(lesson => {
-            if (!lesson.bookingId) return;
-            if (!grouped.has(lesson.bookingId)) {
-                grouped.set(lesson.bookingId, []);
+        sessions.forEach(session => {
+            if (!grouped.has(session.bookingId)) {
+                grouped.set(session.bookingId, []);
             }
-            grouped.get(lesson.bookingId)!.push(lesson);
+            grouped.get(session.bookingId)!.push(session);
         });
 
-        // Convert to ClassData array
-        return Array.from(grouped.entries()).map(([bookingId, classLessons]) => {
-            // Sort lessons by date
-            const sortedLessons = [...classLessons].sort((a, b) =>
+        return Array.from(grouped.entries()).map(([bookingId, classSessions]) => {
+            const sortedSessions = [...classSessions].sort((a, b) =>
                 new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime()
             );
 
-            // Find next upcoming lesson
             const now = new Date();
-            const nextLesson = sortedLessons.find(l => new Date(l.scheduledStart) > now);
+            const nextSession = sortedSessions.find(s => new Date(s.scheduledStart) > now);
 
-            // Count completed lessons
-            const completedLessons = sortedLessons.filter(l =>
-                l.status === 'completed' || l.status === 'pending_parent_confirmation'
-            ).length;
+            const completedSessions = sortedSessions.filter(s => s.status === 'completed').length;
 
-            // Get schedule pattern from lessons
             const scheduleSet = new Set<string>();
-            sortedLessons.forEach(lesson => {
-                const date = new Date(lesson.scheduledStart);
+            sortedSessions.forEach(session => {
+                const date = new Date(session.scheduledStart);
                 const weekdays = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
                 const day = weekdays[date.getDay()];
                 const hours = date.getHours().toString().padStart(2, '0');
@@ -146,28 +136,20 @@ const TutorPortalClasses: React.FC = () => {
             });
             const schedule = Array.from(scheduleSet).slice(0, 3).join(', ');
 
-            // Check if class has homework/notes
-            const hasHomework = sortedLessons.some(l => l.homework);
-            const hasNotes = sortedLessons.some(l => l.tutorNotes);
-
-            // Get first lesson for student/subject info
-            const firstLesson = sortedLessons[0];
+            const firstSession = sortedSessions[0];
 
             return {
                 bookingId,
-                subjectName: firstLesson.subject?.subjectName || 'N/A',
-                studentName: firstLesson.student?.fullName || 'Unknown',
-                studentId: firstLesson.student?.studentId || '',
-                totalLessons: sortedLessons.length,
-                completedLessons,
-                nextLesson,
+                subjectName: firstSession.subject?.subjectName || 'N/A',
+                studentName: firstSession.student?.fullName || 'Unknown',
+                totalSessions: sortedSessions.length,
+                completedSessions,
+                nextSession,
                 schedule,
-                hasHomework,
-                hasNotes,
-                status: getClassStatus(sortedLessons)
+                status: getClassStatus(sortedSessions)
             };
         });
-    }, [lessons]);
+    }, [sessions]);
 
     const handleOpenClass = (bookingId: number) => {
         navigate(`/tutor-portal/classes/${bookingId}`);
@@ -189,12 +171,12 @@ const TutorPortalClasses: React.FC = () => {
         switch (sortBy) {
             case 'subjectName':
                 return a.subjectName.localeCompare(b.subjectName);
-            case 'completedLessons':
-                return (b.completedLessons / b.totalLessons) - (a.completedLessons / a.totalLessons);
-            case 'nextLesson':
+            case 'completedSessions':
+                return (b.completedSessions / b.totalSessions) - (a.completedSessions / a.totalSessions);
+            case 'nextSession':
             default: {
-                const aTime = a.nextLesson ? new Date(a.nextLesson.scheduledStart).getTime() : Infinity;
-                const bTime = b.nextLesson ? new Date(b.nextLesson.scheduledStart).getTime() : Infinity;
+                const aTime = a.nextSession ? new Date(a.nextSession.scheduledStart).getTime() : Infinity;
+                const bTime = b.nextSession ? new Date(b.nextSession.scheduledStart).getTime() : Infinity;
                 return aTime - bTime;
             }
         }
@@ -209,7 +191,7 @@ const TutorPortalClasses: React.FC = () => {
                 <div className={styles.classInfo}>
                     <div className={styles.className}>{row.subjectName}</div>
                     <div className={styles.classTags}>
-                        <span className={styles.tag}>{row.totalLessons} buổi</span>
+                        <span className={styles.tag}>{row.totalSessions} buổi</span>
                     </div>
                 </div>
             ),
@@ -233,12 +215,12 @@ const TutorPortalClasses: React.FC = () => {
             ),
         },
         {
-            key: 'nextLesson',
+            key: 'nextSession',
             title: 'Buổi tiếp theo',
             render: (row) => (
                 <div className={styles.nextLessonText}>
-                    {row.nextLesson
-                        ? formatDate(row.nextLesson.scheduledStart).split('\n').map((line, i) => (
+                    {row.nextSession
+                        ? formatDate(row.nextSession.scheduledStart).split('\n').map((line, i) => (
                             <div key={i}>{line}</div>
                         ))
                         : 'Không có'}
@@ -252,10 +234,7 @@ const TutorPortalClasses: React.FC = () => {
             render: (row) => (
                 <div className={styles.healthBadges}>
                     <span className={styles.hwBadge}>
-                        {row.completedLessons}/{row.totalLessons}<br />Hoàn thành
-                    </span>
-                    <span className={styles.scoresBadge}>
-                        {row.hasHomework ? '✓' : '-'}<br />BTVN
+                        {row.completedSessions}/{row.totalSessions}<br />Hoàn thành
                     </span>
                 </div>
             ),
@@ -315,8 +294,7 @@ const TutorPortalClasses: React.FC = () => {
                             <option value="">Trạng thái: Tất cả</option>
                             <option value="scheduled">Đã lên lịch</option>
                             <option value="in_progress">Đang học</option>
-                            <option value="pending_report">Chờ báo cáo</option>
-                            <option value="pending_parent_confirmation">Chờ xác nhận</option>
+                            <option value="pending_confirmation">Chờ xác nhận</option>
                             <option value="completed">Hoàn thành</option>
                             <option value="cancelled">Đã hủy</option>
                         </select>
@@ -325,9 +303,9 @@ const TutorPortalClasses: React.FC = () => {
                             value={sortBy}
                             onChange={(e) => setSortBy(e.target.value)}
                         >
-                            <option value="nextLesson">Sắp xếp: Buổi học tiếp theo</option>
+                            <option value="nextSession">Sắp xếp: Buổi học tiếp theo</option>
                             <option value="subjectName">Sắp xếp: Tên môn học</option>
-                            <option value="completedLessons">Sắp xếp: Tiến độ</option>
+                            <option value="completedSessions">Sắp xếp: Tiến độ</option>
                         </select>
                     </div>
 

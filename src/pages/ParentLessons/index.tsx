@@ -1,31 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, ChevronRight, Clock } from 'lucide-react';
+import { toast } from 'react-toastify';
 import dayjs from 'dayjs';
 import { FilterTabs } from '../../components/shared';
-import { getClassSessionStatusMeta, type ClassSessionStatus } from '../../utils/classSessionStatus';
+import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
+import { getParentClassSessions, type ClassSessionResponse } from '../../services/classSession.service';
 import styles from './styles.module.css';
-
-// ── Mock domain shape (mirrors BE `ClassSessionResponse`, parent-facing) ──
-// TODO: replace with `getParentClassSessions()` once `/api/parent/class-sessions` is wired up.
-interface MockParentSession {
-    classSessionId: number;
-    subjectName: string;
-    tutorName: string;
-    scheduledStart: string;
-    scheduledEnd: string;
-    status: ClassSessionStatus;
-}
-
-const now = dayjs();
-
-const MOCK_SESSIONS: MockParentSession[] = [
-    { classSessionId: 201, subjectName: 'AP Mathematics A', tutorName: 'Alex Chen', scheduledStart: now.add(30, 'minute').toISOString(), scheduledEnd: now.add(120, 'minute').toISOString(), status: 'scheduled' },
-    { classSessionId: 202, subjectName: 'Physics Grade 11', tutorName: 'Alex Chen', scheduledStart: now.hour(16).minute(0).toISOString(), scheduledEnd: now.hour(17).minute(30).toISOString(), status: 'scheduled' },
-    { classSessionId: 203, subjectName: 'AP Mathematics A', tutorName: 'Alex Chen', scheduledStart: now.subtract(1, 'day').hour(14).minute(0).toISOString(), scheduledEnd: now.subtract(1, 'day').hour(15).minute(30).toISOString(), status: 'pending_confirmation' },
-    { classSessionId: 204, subjectName: 'Chemistry Grade 10', tutorName: 'Minh Tran', scheduledStart: now.subtract(3, 'day').hour(18).minute(30).toISOString(), scheduledEnd: now.subtract(3, 'day').hour(19).minute(30).toISOString(), status: 'completed' },
-    { classSessionId: 205, subjectName: 'Physics Grade 11', tutorName: 'Alex Chen', scheduledStart: now.add(2, 'day').hour(16).minute(0).toISOString(), scheduledEnd: now.add(2, 'day').hour(17).minute(30).toISOString(), status: 'scheduled' },
-];
 
 const TABS = [
     { key: '', label: 'Tất cả' },
@@ -37,15 +18,30 @@ const TABS = [
 const ParentLessons: React.FC = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('');
+    const [sessions, setSessions] = useState<ClassSessionResponse[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    const filtered = useMemo(
-        () => (activeTab ? MOCK_SESSIONS.filter((s) => s.status === activeTab) : MOCK_SESSIONS),
-        [activeTab],
-    );
+    useEffect(() => {
+        fetchSessions();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTab]);
+
+    const fetchSessions = async () => {
+        try {
+            setLoading(true);
+            const response = await getParentClassSessions(1, 100, undefined, activeTab || undefined);
+            setSessions(Array.isArray(response.content) ? response.content : []);
+        } catch (error: unknown) {
+            const e = error as { response?: { data?: { message?: string } } };
+            toast.error(e.response?.data?.message || 'Không thể tải danh sách buổi học.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const sorted = useMemo(
-        () => [...filtered].sort((a, b) => dayjs(b.scheduledStart).diff(dayjs(a.scheduledStart))),
-        [filtered],
+        () => [...sessions].sort((a, b) => dayjs(b.scheduledStart).diff(dayjs(a.scheduledStart))),
+        [sessions],
     );
 
     return (
@@ -61,7 +57,7 @@ const ParentLessons: React.FC = () => {
                 <FilterTabs tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />
             </div>
 
-            {sorted.length === 0 ? (
+            {!loading && sorted.length === 0 ? (
                 <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>
                         <BookOpen size={32} />
@@ -90,7 +86,7 @@ const ParentLessons: React.FC = () => {
                                     </div>
                                     <div className={styles.lessonInfo}>
                                         <p className={styles.lessonTitle}>
-                                            {session.subjectName} <span>· {session.tutorName}</span>
+                                            {session.subject?.subjectName ?? 'N/A'} <span>· {session.tutor?.fullName ?? 'N/A'}</span>
                                         </p>
                                         <p className={styles.lessonTime}>
                                             <Clock size={12} />

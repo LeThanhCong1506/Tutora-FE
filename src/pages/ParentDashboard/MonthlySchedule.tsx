@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { getParentCalendar, getParentLessonDetail, type CalendarLessonDto } from '../../services/parent-lesson.service';
-import type { LessonDetailDto } from '../../services/lesson.service';
+import { getParentCalendar, getParentLessonDetail, type CalendarLessonDto, type ParentLessonDetailDto } from '../../services/parent-lesson.service';
 import { createChannel } from '../../services/chat.service';
 import styles from './MonthlySchedule.module.css';
 
@@ -134,7 +133,7 @@ const MonthlySchedule = () => {
   const [lessons, setLessons] = useState<CalendarLessonDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalLessonId, setModalLessonId] = useState<number | null>(null);
-  const [lessonDetail, setLessonDetail] = useState<LessonDetailDto | null>(null);
+  const [lessonDetail, setLessonDetail] = useState<ParentLessonDetailDto | null>(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState('');
   const [openingChat, setOpeningChat] = useState(false);
