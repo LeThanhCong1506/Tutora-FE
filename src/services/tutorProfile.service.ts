@@ -116,11 +116,13 @@ export interface VerificationProgressResponse {
 /**
  * Trạng thái tổng thể của hồ sơ gia sư. Khớp BE TutorProfileStatus:
  * - draft: đang điền thông tin
- * - pending_approval: đã gửi, chờ Admin xét duyệt
+ * - pending_approval: đã gửi, chờ Admin xét duyệt lần đầu (chưa từng lên marketplace)
  * - active: đã duyệt, hiển thị công khai
  * - rejected: bị Admin từ chối
+ * - pending_update: đã Active (đang hiển thị công khai với thông tin CŨ) nhưng có 1 bản
+ *   chỉnh sửa đang chờ Admin duyệt lại — giá trị tổng hợp, không lưu xuống DB
  */
-export type TutorProfileStatus = 'draft' | 'pending_approval' | 'active' | 'rejected';
+export type TutorProfileStatus = 'draft' | 'pending_approval' | 'active' | 'rejected' | 'pending_update';
 
 export interface ProfileCompletionSection {
   key: string;
