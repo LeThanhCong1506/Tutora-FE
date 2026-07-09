@@ -6,7 +6,7 @@ import AgoraRTC, {
   type ILocalVideoTrack,
   type IMicrophoneAudioTrack,
 } from 'agora-rtc-sdk-ng';
-import type { AgoraRoomInfo } from '../../../../services/agora.service';
+import { getAgoraRoom, type AgoraRoomInfo } from '../../../../services/agora.service';
 import type { RemoteParticipant } from '../types';
 
 interface UseAgoraCallResult {
@@ -87,9 +87,30 @@ export const useAgoraCall = (
       setRemoteParticipants((prev) => prev.filter((p) => p.uid !== user.uid));
     };
 
+    // Token Agora hết hạn theo thời gian (thời hạn cấu hình ở AgoraSettings.TokenExpireSeconds
+    // bên backend) — sự kiện này bắn ra ít lâu trước khi hết hạn để client kịp xin token mới và
+    // gia hạn phiên mà không phải rời/vào lại channel.
+    const handleTokenWillExpire = async () => {
+      try {
+        const classSessionId = Number(room.channel);
+        const fresh = await getAgoraRoom(classSessionId);
+        await client.renewToken(fresh.content.token);
+      } catch (err) {
+        console.error('❌ Agora token renewal failed:', err);
+      }
+    };
+
+    // Nếu renew ở trên thất bại (mất mạng, buổi học đã quá hạn truy cập...), token sẽ thực sự hết
+    // hạn và Agora chủ động ngắt kết nối — báo cho user thay vì để màn hình đứng hình im lặng.
+    const handleTokenDidExpire = () => {
+      setJoinError('Phiên kết nối đã hết hạn. Vui lòng tải lại trang để tiếp tục.');
+    };
+
     client.on('user-published', handleUserPublished);
     client.on('user-unpublished', handleUserUnpublished);
     client.on('user-left', handleUserLeft);
+    client.on('token-privilege-will-expire', handleTokenWillExpire);
+    client.on('token-privilege-did-expire', handleTokenDidExpire);
 
     (async () => {
       try {
@@ -122,6 +143,8 @@ export const useAgoraCall = (
       client.off('user-published', handleUserPublished);
       client.off('user-unpublished', handleUserUnpublished);
       client.off('user-left', handleUserLeft);
+      client.off('token-privilege-will-expire', handleTokenWillExpire);
+      client.off('token-privilege-did-expire', handleTokenDidExpire);
       if (!leavingRef.current) {
         void cleanupTracks();
         void client.leave();
