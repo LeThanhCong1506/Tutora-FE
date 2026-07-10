@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Upload, Button, Switch } from 'antd';
 import { UploadOutlined, DeleteOutlined, FilePdfOutlined, FileWordOutlined, FileImageOutlined, FilePptOutlined, FileOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { toast } from 'react-toastify';
-import { MOCK_MATERIALS, type LearningMaterial } from '../mockMaterials';
+import { getMaterials, uploadMaterial, updateMaterialVisibility, deleteMaterial, type LearningMaterialResponse } from '../../../services/materials.service';
 import styles from '../../../styles/pages/tutor-portal-homework.module.css';
 
 interface MaterialsTabProps {
@@ -31,46 +31,72 @@ const formatSize = (bytes?: number) => {
     return kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.round(kb)} KB`;
 };
 
-/**
- * TODO: entity `Learningmaterial` (bảng `learning_materials`) đã tồn tại thật
- * trong DB nhưng BE chưa có controller/service nào expose nó — chưa có
- * endpoint để gọi thật. Mock theo đúng field của entity, thay lại khi BE
- * bổ sung `LearningMaterialController` (list/upload/delete theo bookingId).
- */
+const errorMessage = (error: unknown, fallback: string) => {
+    const e = error as { response?: { data?: { message?: string } } };
+    return e.response?.data?.message || fallback;
+};
+
 const MaterialsTab: React.FC<MaterialsTabProps> = ({ bookingId }) => {
-    const [materials, setMaterials] = useState<LearningMaterial[]>(() =>
-        MOCK_MATERIALS.filter((m) => m.bookingId === bookingId),
-    );
+    const [materials, setMaterials] = useState<LearningMaterialResponse[]>([]);
+    const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
 
-    const handleUpload = async (file: File) => {
-        setUploading(true);
-        await new Promise((r) => setTimeout(r, 400));
+    useEffect(() => {
+        if (!bookingId) {
+            setMaterials([]);
+            setLoading(false);
+            return;
+        }
+        fetchMaterials(bookingId);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [bookingId]);
 
-        const ext = file.name.split('.').pop()?.toLowerCase() || 'other';
-        const newMaterial: LearningMaterial = {
-            materialId: Date.now(),
-            bookingId,
-            ownerType: 'tutor',
-            title: file.name.replace(/\.[^/.]+$/, ''),
-            fileType: ext,
-            fileUrl: `https://mock-storage.example.com/materials/${encodeURIComponent(file.name)}`,
-            fileSize: file.size,
-            isPublic: false,
-            createdAt: new Date().toISOString(),
-        };
-        setMaterials((prev) => [newMaterial, ...prev]);
-        toast.success(`Tải lên ${file.name} thành công!`);
-        setUploading(false);
+    const fetchMaterials = async (id: number) => {
+        try {
+            setLoading(true);
+            const response = await getMaterials(id);
+            setMaterials(Array.isArray(response.content) ? response.content : []);
+        } catch (error: unknown) {
+            toast.error(errorMessage(error, 'Không thể tải danh sách tài liệu.'));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleUpload = async (file: File) => {
+        if (!bookingId) return false;
+        setUploading(true);
+        try {
+            const title = file.name.replace(/\.[^/.]+$/, '');
+            const response = await uploadMaterial(bookingId, file, title);
+            setMaterials((prev) => [response.content, ...prev]);
+            toast.success(`Tải lên ${file.name} thành công!`);
+        } catch (error: unknown) {
+            toast.error(errorMessage(error, `Tải lên ${file.name} thất bại.`));
+        } finally {
+            setUploading(false);
+        }
         return false;
     };
 
-    const handleRemove = (materialId: number) => {
-        setMaterials((prev) => prev.filter((m) => m.materialId !== materialId));
+    const handleRemove = async (materialId: number) => {
+        if (!bookingId) return;
+        try {
+            await deleteMaterial(bookingId, materialId);
+            setMaterials((prev) => prev.filter((m) => m.materialId !== materialId));
+        } catch (error: unknown) {
+            toast.error(errorMessage(error, 'Không thể xoá tài liệu.'));
+        }
     };
 
-    const handleTogglePublic = (materialId: number, isPublic: boolean) => {
-        setMaterials((prev) => prev.map((m) => (m.materialId === materialId ? { ...m, isPublic } : m)));
+    const handleTogglePublic = async (materialId: number, isPublic: boolean) => {
+        if (!bookingId) return;
+        try {
+            const response = await updateMaterialVisibility(bookingId, materialId, isPublic);
+            setMaterials((prev) => prev.map((m) => (m.materialId === materialId ? response.content : m)));
+        } catch (error: unknown) {
+            toast.error(errorMessage(error, 'Không thể cập nhật tài liệu.'));
+        }
     };
 
     return (
@@ -85,6 +111,7 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({ bookingId }) => {
                         type="primary"
                         icon={<UploadOutlined />}
                         loading={uploading}
+                        disabled={!bookingId}
                         style={{ background: '#1a2238', borderColor: '#1a2238' }}
                     >
                         Tải tài liệu lên
@@ -92,7 +119,9 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({ bookingId }) => {
                 </Upload>
             </div>
 
-            {materials.length === 0 ? (
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>Đang tải tài liệu...</div>
+            ) : materials.length === 0 ? (
                 <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>📁</div>
                     <h4>Chưa có tài liệu nào</h4>

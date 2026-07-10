@@ -96,6 +96,8 @@ const TutorPortalClassDetail: React.FC = () => {
     const [showReportForm, setShowReportForm] = useState(false);
     const [checkingInId, setCheckingInId] = useState<number | null>(null);
     const [checkingOutId, setCheckingOutId] = useState<number | null>(null);
+    // URL các file đính kèm đã upload cho từng buổi, chờ gộp vào khi nộp báo cáo (SubmitReportRequest.Attachments).
+    const [pendingAttachments, setPendingAttachments] = useState<Record<number, string[]>>({});
 
     // Real data from API
     const [sessions, setSessions] = useState<ClassSessionResponse[]>([]);
@@ -285,6 +287,10 @@ const TutorPortalClassDetail: React.FC = () => {
         applyDetail(detail);
         setShowReportForm(false);
         setActiveSessionId(null);
+        setPendingAttachments((prev) => {
+            const { [detail.classSessionId]: _submitted, ...rest } = prev;
+            return rest;
+        });
         toast.success('Báo cáo đã được nộp thành công!');
     };
 
@@ -593,10 +599,17 @@ const TutorPortalClassDetail: React.FC = () => {
                                                             <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                                                 <LessonReportForm
                                                                     classSessionId={session.classSessionId}
+                                                                    attachmentUrls={pendingAttachments[session.classSessionId]}
                                                                     onSubmitSuccess={handleReportSuccess}
                                                                     onCancel={() => setShowReportForm(false)}
                                                                 />
-                                                                <AttachmentUploader classSessionId={session.classSessionId} />
+                                                                <AttachmentUploader
+                                                                    classSessionId={session.classSessionId}
+                                                                    onUploadComplete={(url) => setPendingAttachments((prev) => ({
+                                                                        ...prev,
+                                                                        [session.classSessionId]: [...(prev[session.classSessionId] || []), url],
+                                                                    }))}
+                                                                />
                                                             </div>
                                                         )}
 

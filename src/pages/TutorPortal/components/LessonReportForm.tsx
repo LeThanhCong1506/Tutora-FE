@@ -12,6 +12,7 @@ const { TextArea } = Input;
 
 interface LessonReportFormProps {
   classSessionId: number;
+  attachmentUrls?: string[];
   onSubmitSuccess: (detail: ClassSessionDetailResponse) => void;
   onCancel?: () => void;
 }
@@ -26,6 +27,7 @@ interface ReportFormValues {
 
 const LessonReportForm: React.FC<LessonReportFormProps> = ({
   classSessionId,
+  attachmentUrls,
   onSubmitSuccess,
   onCancel,
 }) => {
@@ -55,6 +57,7 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
         tutorNotes: values.tutorNotes || '',
         isStudentPresent: values.isStudentPresent ?? true,
         attendanceNote: values.attendanceNote || '',
+        attachments: attachmentUrls && attachmentUrls.length > 0 ? attachmentUrls : undefined,
       };
       const response = await submitClassSessionReport(classSessionId, request);
       toast.success('Nộp báo cáo buổi học thành công!');
