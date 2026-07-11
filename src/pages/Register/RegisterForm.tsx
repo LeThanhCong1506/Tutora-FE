@@ -357,12 +357,8 @@ const RegisterForm: React.FC = () => {
                         <span className="register-form__divider-line" />
                     </div>
 
-                    <div className="animate-fade-in-up delay-300">
+                    <div className="register-form__social animate-fade-in-up delay-300">
                         <GoogleSignInButton onCredential={handleGoogleCredential} disabled={isSubmitting} />
-                    </div>
-
-                    {/* Đăng ký/đăng nhập với Zalo (Web OAuth + PKCE → redirect Zalo → /auth/zalo/callback) */}
-                    <div className="animate-fade-in-up delay-300 mt-2">
                         <ZaloSignInButton disabled={isSubmitting} />
                     </div>
 
