@@ -46,6 +46,8 @@ export interface TutorPackageResponse {
   name: string;
   packageType: PackageType;
   isActive: boolean;
+  /** true = package đang có buổi dạy được đặt & chưa hoàn tất → BE khóa sửa/xóa (409). */
+  hasActiveBooking: boolean;
   fixedSlots: TutorPackageFixedSlot[];
 }
 
@@ -112,6 +114,41 @@ export const createPackage = async (
       : resp;
   } catch (error: any) {
     console.error('❌ Error creating package:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
+    throw error;
+  }
+};
+
+/**
+ * PUT /api/tutors/{id}/profile/packages/{packageId} — cập nhật package tại chỗ (giữ nguyên packageId).
+ * BE trả 409 nếu package đang có buổi dạy được đặt chưa hoàn tất, hoặc khung mới đè buổi đã cam kết.
+ */
+export const updatePackage = async (
+  userId: string,
+  packageId: number,
+  data: CreateTutorPackageData,
+): Promise<ApiResponse<TutorPackageResponse>> => {
+  try {
+    const response = await api.put(
+      `/tutors/${userId}/profile/packages/${packageId}`,
+      { ...data, fixedSlots: data.fixedSlots.map(fixedSlotToUtc) },
+      {
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+    // Response trả fixedSlots theo UTC → convert về local (đối xứng với createPackage/getPackages).
+    const resp = response.data as ApiResponse<TutorPackageResponse>;
+    return resp.content
+      ? { ...resp, content: { ...resp.content, fixedSlots: (resp.content.fixedSlots ?? []).map(fixedSlotToLocal) } }
+      : resp;
+  } catch (error: any) {
+    console.error('❌ Error updating package:', {
       status: error.response?.status,
       data: error.response?.data,
       message: error.message,

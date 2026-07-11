@@ -8,10 +8,16 @@ import type { FixedCombo } from './types';
 interface StepCombosProps {
   onboarding: UseOnboardingState;
   onCreatePackage?: (combo: FixedCombo) => Promise<FixedCombo | null>;
+  onUpdatePackage?: (comboId: string, combo: FixedCombo) => Promise<FixedCombo | null>;
   onDeactivatePackage?: (comboId: string) => Promise<boolean>;
 }
 
-const StepCombos: React.FC<StepCombosProps> = ({ onboarding, onCreatePackage, onDeactivatePackage }) => {
+const StepCombos: React.FC<StepCombosProps> = ({
+  onboarding,
+  onCreatePackage,
+  onUpdatePackage,
+  onDeactivatePackage,
+}) => {
   const { state, addCombo, updateCombo, removeCombo } = onboarding;
 
   return (
@@ -41,6 +47,7 @@ const StepCombos: React.FC<StepCombosProps> = ({ onboarding, onCreatePackage, on
         onUpdate={updateCombo}
         onRemove={removeCombo}
         onCreatePackage={onCreatePackage}
+        onUpdatePackage={onUpdatePackage}
         onDeactivatePackage={onDeactivatePackage}
       />
     </div>

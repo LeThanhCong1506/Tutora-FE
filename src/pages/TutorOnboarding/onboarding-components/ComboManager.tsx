@@ -1,6 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { Popconfirm } from 'antd';
-import { CalendarOutlined, ClockCircleOutlined, DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
+import { Popconfirm, Tooltip } from 'antd';
+import {
+  CalendarOutlined,
+  ClockCircleOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  LockOutlined,
+  PlusOutlined,
+} from '@ant-design/icons';
 import styles from '../styles.module.css';
 import ComboFormModal from './ComboFormModal';
 import { DAY_COLUMNS, formatDuration, formatHourMinute, minutesOf } from './constants';
@@ -14,6 +21,7 @@ interface ComboManagerProps {
   onUpdate: (id: string, combo: FixedCombo) => void;
   onRemove: (id: string) => void;
   onCreatePackage?: (combo: FixedCombo) => Promise<FixedCombo | null>;
+  onUpdatePackage?: (comboId: string, combo: FixedCombo) => Promise<FixedCombo | null>;
   onDeactivatePackage?: (comboId: string) => Promise<boolean>;
 }
 
@@ -28,6 +36,9 @@ const formatSessionRange = (session: ComboSessionSlot) => {
   )}`;
 };
 
+const LOCKED_HINT =
+  'Gói đang có buổi dạy được đặt và chưa hoàn tất — không thể sửa hay xóa. Vui lòng chờ hoàn tất hoặc hủy booking trước.';
+
 const ComboManager: React.FC<ComboManagerProps> = ({
   combos,
   availability,
@@ -36,6 +47,7 @@ const ComboManager: React.FC<ComboManagerProps> = ({
   onUpdate,
   onRemove,
   onCreatePackage,
+  onUpdatePackage,
   onDeactivatePackage,
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
@@ -71,7 +83,14 @@ const ComboManager: React.FC<ComboManagerProps> = ({
   const handleSave = async (combo: FixedCombo) => {
     const normalized = applySubjectRules(combo);
     if (editing) {
-      onUpdate(editing.id, normalized);
+      if (onUpdatePackage) {
+        setSavingPackage(true);
+        const updatedCombo = await onUpdatePackage(editing.id, normalized).finally(() => setSavingPackage(false));
+        if (!updatedCombo) return; // lỗi (vd BE 409) → giữ modal mở cho tutor sửa tiếp
+        onUpdate(editing.id, updatedCombo);
+      } else {
+        onUpdate(editing.id, normalized);
+      }
     } else if (onCreatePackage) {
       setSavingPackage(true);
       const persistedCombo = await onCreatePackage(normalized).finally(() => setSavingPackage(false));
@@ -118,36 +137,58 @@ const ComboManager: React.FC<ComboManagerProps> = ({
           <div className={styles.comboList}>
             {combos.map((combo) => {
               const displayCombo = applySubjectRules(combo);
+              // Gói đang có buổi dạy được đặt & chưa hoàn tất → khóa Sửa/Xóa (BE cũng chặn 409).
+              const locked = combo.hasActiveBooking === true;
 
               return (
                 <div key={combo.id} className={styles.comboCard}>
                   <div className={styles.comboCardHead}>
-                    <span className={`${styles.comboTypeBadge} ${styles.comboFixed}`}>Lịch cố định</span>
+                    <div className={styles.comboBadgeRow}>
+                      <span className={`${styles.comboTypeBadge} ${styles.comboFixed}`}>Lịch cố định</span>
+                      {locked && (
+                        <Tooltip title={LOCKED_HINT}>
+                          <span className={`${styles.comboTypeBadge} ${styles.comboLocked}`}>
+                            <LockOutlined /> Đang có lớp
+                          </span>
+                        </Tooltip>
+                      )}
+                    </div>
                     <div className={styles.comboCardActions}>
-                      <button
-                        type="button"
-                        className={styles.iconBtn}
-                        onClick={() => openEdit(combo)}
-                        aria-label={`Sửa ${combo.name}`}
-                        title="Sửa gói lịch học"
-                      >
-                        <EditOutlined />
-                      </button>
+                      <Tooltip title={locked ? LOCKED_HINT : undefined}>
+                        <span className={styles.iconBtnWrap}>
+                          <button
+                            type="button"
+                            className={styles.iconBtn}
+                            onClick={() => openEdit(combo)}
+                            disabled={locked}
+                            aria-label={`Sửa ${combo.name}`}
+                            title={locked ? undefined : 'Sửa gói lịch học'}
+                          >
+                            <EditOutlined />
+                          </button>
+                        </span>
+                      </Tooltip>
                       <Popconfirm
                         title="Xóa gói lịch học này?"
                         onConfirm={() => handleRemove(combo.id)}
                         okText="Xóa"
                         cancelText="Hủy"
                         okButtonProps={{ danger: true, loading: removingComboId === combo.id }}
+                        disabled={locked}
                       >
-                        <button
-                          type="button"
-                          className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
-                          aria-label={`Xóa ${combo.name}`}
-                          title="Xóa gói lịch học"
-                        >
-                          <DeleteOutlined />
-                        </button>
+                        <Tooltip title={locked ? LOCKED_HINT : undefined}>
+                          <span className={styles.iconBtnWrap}>
+                            <button
+                              type="button"
+                              className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
+                              disabled={locked}
+                              aria-label={`Xóa ${combo.name}`}
+                              title={locked ? undefined : 'Xóa gói lịch học'}
+                            >
+                              <DeleteOutlined />
+                            </button>
+                          </span>
+                        </Tooltip>
                       </Popconfirm>
                     </div>
                   </div>

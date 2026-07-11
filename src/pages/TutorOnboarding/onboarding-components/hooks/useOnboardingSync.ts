@@ -13,6 +13,7 @@ import {
 import {
   getPackages,
   createPackage,
+  updatePackage,
   deactivatePackage,
   type TutorPackageResponse,
 } from '../../../../services/tutorPackages.service';
@@ -85,7 +86,10 @@ const fixedPackageMatchesCombo = (pkg: TutorPackageResponse, combo: FixedCombo) 
  * - saveAvailability(): diff availability (Bước 1 → "Tiếp tục").
  * - savePricing(): PUT thay toàn bộ giá theo môn/lớp (Bước 2 → "Tiếp tục").
  * - createFixedPackage(): tạo ngay gói fixed khi tutor bấm "Tạo gói".
+ * - updateFixedPackage(): PUT sửa gói tại chỗ (giữ packageId) khi tutor bấm "Cập nhật gói".
  * - savePackages(): reconcile gói fixed + đảm bảo 1 gói flexible (Bước 3 → "Hoàn tất").
+ * Gói có hasActiveBooking (đang có buổi dạy được đặt) bị BE chặn sửa/xóa bằng 409 —
+ * FE khóa nút từ trước, message 409 hiển thị nguyên văn nếu vẫn lọt tới BE.
  * Mỗi hàm refresh ref tương ứng sau khi lưu để lần lưu kế tiếp diff đúng.
  */
 export function useOnboardingSync(hydrate: HydrateFn) {
@@ -296,7 +300,47 @@ export function useOnboardingSync(hydrate: HydrateFn) {
         return packageToFixedCombo(createdPackage);
       } catch (err) {
         console.error('[Onboarding] createFixedPackage:', err);
-        toast.error('Tạo gói lịch học thất bại.');
+        toast.error(extractApiError(err, 'Tạo gói lịch học thất bại.'));
+        return null;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [refreshPackages],
+  );
+
+  // Sửa gói tại chỗ qua PUT (giữ nguyên packageId — parent đang mở form đặt gói không bị đứt).
+  // Trả combo đã cập nhật theo BE, hoặc null khi lỗi (caller giữ modal mở để tutor sửa tiếp).
+  const updateFixedPackage = useCallback(
+    async (comboId: string, combo: FixedCombo): Promise<FixedCombo | null> => {
+      const userId = userIdRef.current;
+      if (!userId) {
+        toast.error('Không xác định được tài khoản gia sư.');
+        return null;
+      }
+
+      // Combo chưa từng lưu BE (không có id pkg_) → không có gì để PUT; giữ chỉnh sửa local,
+      // savePackages sẽ tạo mới khi bấm "Hoàn tất".
+      const packageId = getPackageIdFromComboId(comboId);
+      if (!packageId) return combo;
+
+      setSaving(true);
+      try {
+        const response = await updatePackage(userId, packageId, comboToPackagePayload(combo));
+        await refreshPackages(userId);
+
+        const updatedPackage =
+          response.content ?? loadedFixedRef.current.find((pkg) => pkg.packageId === packageId);
+        if (!updatedPackage) {
+          toast.error('Đã cập nhật gói nhưng chưa nhận được dữ liệu phản hồi.');
+          return null;
+        }
+
+        toast.success('Đã cập nhật gói lịch học');
+        return packageToFixedCombo(updatedPackage);
+      } catch (err) {
+        console.error('[Onboarding] updateFixedPackage:', err);
+        toast.error(extractApiError(err, 'Cập nhật gói lịch học thất bại.'));
         return null;
       } finally {
         setSaving(false);
@@ -324,7 +368,7 @@ export function useOnboardingSync(hydrate: HydrateFn) {
         return true;
       } catch (err) {
         console.error('[Onboarding] deactivateFixedPackage:', err);
-        toast.error('Xóa gói lịch học thất bại.');
+        toast.error(extractApiError(err, 'Xóa gói lịch học thất bại.'));
         return false;
       } finally {
         setSaving(false);
@@ -359,12 +403,8 @@ export function useOnboardingSync(hydrate: HydrateFn) {
           }
 
           if (!fixedPackageMatchesCombo(existing, combo)) {
-            operations.push(
-              (async () => {
-                await deactivatePackage(userId, existing.packageId);
-                await createPackage(userId, comboToPackagePayload(combo));
-              })(),
-            );
+            // PUT tại chỗ (atomic, giữ packageId) — không deactivate+create như trước.
+            operations.push(updatePackage(userId, existing.packageId, comboToPackagePayload(combo)));
           }
         });
 
@@ -381,7 +421,14 @@ export function useOnboardingSync(hydrate: HydrateFn) {
         return true;
       } catch (err) {
         console.error('[Onboarding] savePackages:', err);
-        toast.error('Lưu gói lịch học thất bại.');
+        toast.error(extractApiError(err, 'Lưu gói lịch học thất bại.'));
+        // Một số thao tác có thể đã áp dụng trước khi lỗi → đồng bộ lại state theo BE.
+        try {
+          await refreshPackages(userId);
+          hydrate({ combos: loadedFixedRef.current.map(packageToFixedCombo) });
+        } catch {
+          /* giữ state cũ nếu refetch lỗi */
+        }
         return false;
       } finally {
         setSaving(false);
@@ -398,6 +445,7 @@ export function useOnboardingSync(hydrate: HydrateFn) {
     createSubjectRecord,
     savePricing,
     createFixedPackage,
+    updateFixedPackage,
     deactivateFixedPackage,
     savePackages,
     reload: load,
