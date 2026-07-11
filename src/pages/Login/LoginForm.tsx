@@ -317,13 +317,8 @@ const LoginForm: React.FC = () => {
             <span style={{ flex: 1, height: 1, background: 'rgba(26,34,56,0.12)' }} />
           </div>
 
-          {/* Đăng nhập với Google (GIS trả idToken → /auth/google) */}
-          <div className="animate-fade-in-up delay-300">
+          <div className="login-form__social animate-fade-in-up delay-300">
             <GoogleSignInButton onCredential={handleGoogleCredential} disabled={isSubmitting} />
-          </div>
-
-          {/* Đăng nhập với Zalo (Web OAuth + PKCE → redirect Zalo → /auth/zalo/callback) */}
-          <div className="animate-fade-in-up delay-300" style={{ marginTop: 10 }}>
             <ZaloSignInButton disabled={isSubmitting} />
           </div>
 

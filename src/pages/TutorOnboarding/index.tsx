@@ -140,6 +140,7 @@ const TutorOnboarding: React.FC = () => {
           <StepCombos
             onboarding={onboarding}
             onCreatePackage={sync.createFixedPackage}
+            onUpdatePackage={sync.updateFixedPackage}
             onDeactivatePackage={sync.deactivateFixedPackage}
           />
         )}
