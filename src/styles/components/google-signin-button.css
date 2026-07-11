@@ -1,5 +1,5 @@
 .google-signin-button {
-    --google-button-height: clamp(44px, 6.2vh, 50px);
+    --google-button-height: clamp(52px, 6.5vh, 56px);
     position: relative;
     width: 100%;
     min-height: var(--google-button-height);
@@ -155,7 +155,7 @@
 
 @media (max-height: 700px) {
     .google-signin-button {
-        --google-button-height: 42px;
+        --google-button-height: 50px;
     }
 
     .google-signin-button__visual {
@@ -176,7 +176,7 @@
 
 @media (max-height: 550px) {
     .google-signin-button {
-        --google-button-height: 38px;
+        --google-button-height: 46px;
     }
 
     .google-signin-button__visual {
@@ -202,7 +202,7 @@
 
 @media (max-width: 400px) {
     .google-signin-button {
-        --google-button-height: 42px;
+        --google-button-height: 50px;
     }
 
     .google-signin-button__visual {

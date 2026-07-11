@@ -214,6 +214,7 @@ export const packageToFixedCombo = (pkg: TutorPackageResponse): FixedCombo => ({
   id: `pkg_${pkg.packageId}`,
   type: 'fixed',
   name: pkg.name,
+  hasActiveBooking: pkg.hasActiveBooking,
   sessions: pkg.fixedSlots.map((s) => {
     const start = parseTime(normalizeHHmm(s.startTime));
     const end = parseTime(normalizeHHmm(s.endTime));

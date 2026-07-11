@@ -80,7 +80,7 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({ onCredential, d
             shape: "rectangular",
             logo_alignment: "left",
             locale: "vi",
-            width: Math.min(Math.max(width, 240), 400),
+            width: Math.min(Math.max(width, 160), 400),
           });
 
           setIsReady(true);

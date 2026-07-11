@@ -344,6 +344,7 @@
 
 .register-form__button {
     width: 100%;
+    min-height: 54px;
     padding: clamp(10px, 1.6vh, 14px) clamp(16px, 3vw, 24px);
     font-size: clamp(11px, 1.5vw, 13px);
     font-weight: 700;
@@ -396,7 +397,44 @@
 .register-form__social {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: clamp(8px, 2vw, 16px);
+    gap: 10px;
+}
+
+.register-form__social .google-signin-button {
+    --google-button-height: 56px;
+}
+
+.register-form__social .zalo-signin-button {
+    --zalo-button-height: 56px;
+}
+
+.register-form__social .google-signin-button,
+.register-form__social .zalo-signin-button {
+    min-width: 0;
+}
+
+.register-form__social .google-signin-button__visual,
+.register-form__social .zalo-signin-button {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 8px;
+    padding: 0 12px;
+}
+
+.register-form__social .google-signin-button__chevron,
+.register-form__social .zalo-signin-button__chevron {
+    display: none;
+}
+
+.register-form__social .google-signin-button__icon,
+.register-form__social .zalo-signin-button__icon,
+.register-form__social .zalo-signin-button__icon svg {
+    width: 28px;
+    height: 28px;
+}
+
+.register-form__social .google-signin-button__label,
+.register-form__social .zalo-signin-button__label {
+    font-size: 12px;
 }
 
 .register-form__social-btn {
@@ -725,7 +763,7 @@
     }
 
     .register-form__social {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 8px;
     }
 
