@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 import { Upload, Button } from 'antd';
 import { toast } from 'react-toastify';
 import { UploadOutlined, DeleteOutlined } from '@ant-design/icons';
-import { uploadLessonAttachment } from '../../../services/lesson.service';
+import { uploadClassSessionAttachment } from '../../../services/classSession.service';
 
 interface AttachmentUploaderProps {
-  lessonId: number;
+  classSessionId: number;
   onUploadComplete?: (url: string) => void;
 }
 
 const AttachmentUploader: React.FC<AttachmentUploaderProps> = ({
-  lessonId,
+  classSessionId,
   onUploadComplete,
 }) => {
   const [uploading, setUploading] = useState(false);
@@ -19,12 +19,12 @@ const AttachmentUploader: React.FC<AttachmentUploaderProps> = ({
   const handleUpload = async (file: File) => {
     try {
       setUploading(true);
-      const response = await uploadLessonAttachment(lessonId, file);
+      const response = await uploadClassSessionAttachment(classSessionId, file);
       const url = response.content || '';
       setUploadedFiles((prev) => [...prev, { name: file.name, url }]);
       toast.success(`Tải lên ${file.name} thành công!`);
       onUploadComplete?.(url);
-    } catch (error: any) {
+    } catch {
       toast.error(`Tải lên ${file.name} thất bại.`);
     } finally {
       setUploading(false);

@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getTutorLessons, type LessonResponse } from '../../services/lesson.service';
+import {
+    getTutorClassSessions,
+    getTutorClassSessionDetail,
+    type ClassSessionResponse,
+    type ClassSessionDetailResponse,
+} from '../../services/classSession.service';
 import { toast } from 'react-toastify';
 import styles from '../../styles/pages/tutor-portal-student-profile.module.css';
 
@@ -89,7 +94,7 @@ const TutorPortalStudentProfile: React.FC = () => {
     const bookingId = classId ? parseInt(classId) : undefined;
 
     const [newNote, setNewNote] = useState('');
-    const [_lessons, setLessons] = useState<LessonResponse[]>([]);
+    const [_lessons, setLessons] = useState<ClassSessionResponse[]>([]);
     const [loading, setLoading] = useState(true);
     const [studentData, setStudentData] = useState<StudentData | null>(null);
     const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
@@ -106,32 +111,40 @@ const TutorPortalStudentProfile: React.FC = () => {
     const fetchStudentData = async () => {
         try {
             setLoading(true);
-            console.log('🔄 Fetching student data for bookingId:', bookingId);
 
-            const response = await getTutorLessons(1, 100);
-            const allLessons = Array.isArray(response.content)
-                ? response.content
-                : response.content?.items || [];
+            const response = await getTutorClassSessions(1, 100);
+            const allSessions = Array.isArray(response.content) ? response.content : [];
 
-            // Filter lessons for this booking/class
-            const classLessons = allLessons.filter(l => l.bookingId === bookingId);
-            console.log('✅ Found', classLessons.length, 'lessons for this class');
+            // Filter sessions for this booking/class
+            const classSessions = allSessions.filter(s => s.bookingId === bookingId);
+            setLessons(classSessions);
 
-            setLessons(classLessons);
-
-            if (classLessons.length > 0) {
-                computeStudentData(classLessons);
+            if (classSessions.length > 0) {
+                // homework/tutorNotes/classSessionContent chỉ có ở detail, không có ở list —
+                // nạp song song chi tiết từng buổi (giống TutorPortalClassDetail.tsx).
+                const detailResults = await Promise.all(
+                    classSessions.map(s =>
+                        getTutorClassSessionDetail(s.classSessionId)
+                            .then(r => r.content)
+                            .catch(() => null)
+                    )
+                );
+                const details = detailResults.filter((d): d is ClassSessionDetailResponse => d !== null);
+                computeStudentData(classSessions, details);
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const e = error as { response?: { data?: { message?: string } } };
             console.error('❌ Error fetching student data:', error);
-            toast.error('Không thể tải dữ liệu học sinh');
+            toast.error(e.response?.data?.message || 'Không thể tải dữ liệu học sinh');
         } finally {
             setLoading(false);
         }
     };
 
-    const computeStudentData = (classLessons: LessonResponse[]) => {
-        const sortedLessons = [...classLessons].sort((a, b) =>
+    const computeStudentData = (classSessions: ClassSessionResponse[], details: ClassSessionDetailResponse[]) => {
+        const detailById = new Map(details.map(d => [d.classSessionId, d]));
+
+        const sortedLessons = [...classSessions].sort((a, b) =>
             new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime()
         );
 
@@ -140,9 +153,7 @@ const TutorPortalStudentProfile: React.FC = () => {
         const nextLesson = sortedLessons.find(l => new Date(l.scheduledStart) > now);
 
         // Compute stats
-        const completedLessons = sortedLessons.filter(l =>
-            l.status === 'completed' || l.status === 'pending_parent_confirmation'
-        );
+        const completedLessons = sortedLessons.filter(l => l.status === 'completed');
         const totalLessons = sortedLessons.length;
         const completedCount = completedLessons.length;
 
@@ -193,29 +204,29 @@ const TutorPortalStudentProfile: React.FC = () => {
             status: lesson.isStudentPresent ? 'Có mặt' : 'Vắng mặt'
         })));
 
-        // Compute homework data (from lessons with homework)
-        const lessonsWithHomework = sortedLessons.filter(l => l.homework);
+        // Compute homework data (từ chi tiết buổi học có homework — field này chỉ có ở detail)
+        const lessonsWithHomework = sortedLessons.filter(l => detailById.get(l.classSessionId)?.homework);
         setHomeworkData(lessonsWithHomework.map((lesson) => ({
-            id: lesson.lessonId,
-            title: lesson.homework || 'Bài tập',
+            id: lesson.classSessionId,
+            title: detailById.get(lesson.classSessionId)?.homework || 'Bài tập',
             assigned: new Date(lesson.scheduledStart).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }),
             due: new Date(new Date(lesson.scheduledStart).getTime() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }),
             status: lesson.status === 'completed' ? 'Đã nộp' : 'Quá hạn'
         })));
 
         // Compute notes from tutor notes
-        const lessonsWithNotes = sortedLessons.filter(l => l.tutorNotes).slice(-5).reverse();
+        const lessonsWithNotes = sortedLessons.filter(l => detailById.get(l.classSessionId)?.tutorNotes).slice(-5).reverse();
         setNotes(lessonsWithNotes.map((lesson) => ({
-            id: lesson.lessonId,
+            id: lesson.classSessionId,
             date: new Date(lesson.scheduledStart).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }),
-            text: lesson.tutorNotes || ''
+            text: detailById.get(lesson.classSessionId)?.tutorNotes || ''
         })));
 
         // Compute score data (placeholder - using lesson completion as "score")
-        const completedWithContent = completedLessons.filter(l => l.lessonContent).slice(-3).reverse();
+        const completedWithContent = completedLessons.filter(l => detailById.get(l.classSessionId)?.classSessionContent).slice(-3).reverse();
         setScoreData(completedWithContent.map((lesson) => ({
-            id: lesson.lessonId,
-            title: lesson.lessonContent || 'Bài học',
+            id: lesson.classSessionId,
+            title: detailById.get(lesson.classSessionId)?.classSessionContent || 'Bài học',
             date: new Date(lesson.scheduledStart).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }),
             score: 85 + Math.floor(Math.random() * 15) // Placeholder score 85-100%
         })));

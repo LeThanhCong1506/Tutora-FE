@@ -1,11 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getTutorLessons, checkInLesson, checkOutLesson, type LessonResponse } from '../../services/lesson.service';
-import { Tag } from 'antd';
+import {
+    getTutorClassSessions,
+    getTutorClassSessionDetail,
+    checkInClassSession,
+    checkOutClassSession,
+    type ClassSessionResponse,
+    type ClassSessionDetailResponse,
+} from '../../services/classSession.service';
 import { toast } from 'react-toastify';
+import { ChevronDown, MapPin, Video } from 'lucide-react';
+import { StatusBadge } from '../../components/shared';
+import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 import styles from '../../styles/pages/tutor-portal-class-detail.module.css';
+import sessionStyles from '../../styles/pages/tutor-portal-session-cards.module.css';
 import LessonReportForm from './components/LessonReportForm';
 import AttachmentUploader from './components/AttachmentUploader';
+import HomeworkTab from './components/HomeworkTab';
+import MaterialsTab from './components/MaterialsTab';
 
 // Icons
 const BackIcon = () => (
@@ -52,15 +64,6 @@ const MoreIcon = () => (
     </svg>
 );
 
-// Sample data for reference (commented out - not used)
-// const classData = {
-//     id: '1',
-//     name: 'Toán học',
-//     subject: 'Toán',
-//     grade: 'Lớp 11',
-//     nextLesson: 'Thứ Hai, 20/01 lúc 14:00'
-// };
-
 // Type for student data
 interface StudentData {
     id: number;
@@ -88,14 +91,19 @@ const TutorPortalClassDetail: React.FC = () => {
     const [selectedStudents, setSelectedStudents] = useState<number[]>([]);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    // Lesson management state
-    const [activeLessonId, setActiveLessonId] = useState<number | null>(null);
+    // Session management state
+    const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
     const [showReportForm, setShowReportForm] = useState(false);
-    const [checkingInLessonId, setCheckingInLessonId] = useState<number | null>(null);
-    const [checkingOutLessonId, setCheckingOutLessonId] = useState<number | null>(null);
+    const [checkingInId, setCheckingInId] = useState<number | null>(null);
+    const [checkingOutId, setCheckingOutId] = useState<number | null>(null);
+    // URL các file đính kèm đã upload cho từng buổi, chờ gộp vào khi nộp báo cáo (SubmitReportRequest.Attachments).
+    const [pendingAttachments, setPendingAttachments] = useState<Record<number, string[]>>({});
 
     // Real data from API
-    const [lessons, setLessons] = useState<LessonResponse[]>([]);
+    const [sessions, setSessions] = useState<ClassSessionResponse[]>([]);
+    // Chi tiết từng buổi (nội dung/homework/hạn xác nhận/report) — chỉ có ở endpoint
+    // GET /tutor/class-sessions/{id}, không có trên list. Nạp song song sau khi có list.
+    const [sessionDetails, setSessionDetails] = useState<Record<number, ClassSessionDetailResponse>>({});
     const [loading, setLoading] = useState(true);
     const [classInfo, setClassInfo] = useState<{
         name: string;
@@ -110,39 +118,30 @@ const TutorPortalClassDetail: React.FC = () => {
         if (bookingId) {
             fetchClassData();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [bookingId]);
 
     const fetchClassData = async () => {
+        setLoading(true);
         try {
-            setLoading(true);
-            console.log('🔄 Fetching lessons for bookingId:', bookingId);
-            const response = await getTutorLessons(1, 100);
+            const listResponse = await getTutorClassSessions(1, 100);
+            const allSessions = Array.isArray(listResponse.content) ? listResponse.content : [];
+            const classSessions = allSessions.filter(s => s.bookingId === bookingId);
+            setSessions(classSessions);
 
-            // Get lessons data
-            const allLessons = Array.isArray(response.content)
-                ? response.content
-                : response.content?.items || [];
-
-            // Filter by bookingId
-            const classLessons = allLessons.filter(l => l.bookingId === bookingId);
-            console.log('✅ Found', classLessons.length, 'lessons for this class');
-
-            setLessons(classLessons);
-
-            // Extract class info from first lesson
-            if (classLessons.length > 0) {
-                const firstLesson = classLessons[0];
-                const sortedLessons = [...classLessons].sort((a, b) =>
+            if (classSessions.length > 0) {
+                const firstSession = classSessions[0];
+                const sorted = [...classSessions].sort((a, b) =>
                     new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime()
                 );
-                const nextLesson = sortedLessons.find(l => new Date(l.scheduledStart) > new Date());
+                const nextSession = sorted.find(s => new Date(s.scheduledStart) > new Date());
 
                 setClassInfo({
-                    name: firstLesson.subject?.subjectName || 'N/A',
-                    subject: firstLesson.subject?.subjectName || 'N/A',
-                    grade: firstLesson.student?.gradeLevel || 'N/A',
-                    nextLesson: nextLesson
-                        ? new Date(nextLesson.scheduledStart).toLocaleString('vi-VN', {
+                    name: firstSession.subject?.subjectName || 'N/A',
+                    subject: firstSession.subject?.subjectName || 'N/A',
+                    grade: firstSession.student?.gradeLevel || 'N/A',
+                    nextLesson: nextSession
+                        ? new Date(nextSession.scheduledStart).toLocaleString('vi-VN', {
                             weekday: 'long',
                             day: '2-digit',
                             month: '2-digit',
@@ -150,13 +149,30 @@ const TutorPortalClassDetail: React.FC = () => {
                             minute: '2-digit'
                         })
                         : 'Không có',
-                    studentName: firstLesson.student?.fullName || 'Unknown',
-                    studentEmail: '' // TODO: Add email if available in API
+                    studentName: firstSession.student?.fullName || 'Unknown',
+                    studentEmail: '' // TODO: Backend chưa trả email học sinh ở DTO này
                 });
+
+                // Nạp chi tiết từng buổi song song (nội dung, homework, report, hạn xác nhận)
+                const detailResults = await Promise.all(
+                    classSessions.map(s =>
+                        getTutorClassSessionDetail(s.classSessionId)
+                            .then(r => [s.classSessionId, r.content] as const)
+                            .catch(() => null)
+                    )
+                );
+                const detailMap: Record<number, ClassSessionDetailResponse> = {};
+                detailResults.forEach(entry => {
+                    if (entry) detailMap[entry[0]] = entry[1];
+                });
+                setSessionDetails(detailMap);
+            } else {
+                setClassInfo(null);
+                setSessionDetails({});
             }
-        } catch (error: any) {
-            console.error('❌ Error fetching class data:', error);
-            toast.error('Không thể tải dữ liệu lớp học');
+        } catch (error: unknown) {
+            const e = error as { response?: { data?: { message?: string } }; message?: string };
+            toast.error('Không thể tải dữ liệu lớp học: ' + (e.response?.data?.message || e.message || 'Lỗi không xác định'));
         } finally {
             setLoading(false);
         }
@@ -197,112 +213,121 @@ const TutorPortalClassDetail: React.FC = () => {
         }
     };
 
-    // === Lesson Management Functions ===
+    // Áp dụng ClassSessionDetailResponse mới nhất (từ checkin/checkout/report) vào cả 2 state.
+    const applyDetail = (detail: ClassSessionDetailResponse) => {
+        setSessionDetails(prev => ({ ...prev, [detail.classSessionId]: detail }));
+        setSessions(prev => prev.map(s => (
+            s.classSessionId === detail.classSessionId
+                ? {
+                    ...s,
+                    status: detail.status ?? s.status,
+                    checkInTime: detail.checkInTime,
+                    checkOutTime: detail.checkOutTime,
+                    meetingLink: detail.meetingLink,
+                }
+                : s
+        )));
+    };
+
+    // === Session Management Functions ===
 
     /**
      * Tutor được phép check-in trong cửa sổ ±15 phút quanh giờ bắt đầu.
-     * BE enforce cùng rule (LessonService.CheckInAsync). FE check trước để
+     * BE enforce cùng rule (ClassSessionService.CheckInAsync). FE check trước để
      * disable UI sớm, tránh round-trip nếu rõ ràng ngoài range.
      */
-    const canCheckIn = (lesson: LessonResponse): boolean => {
-        if (lesson.status !== 'scheduled') return false;
+    const canCheckIn = (session: ClassSessionResponse): boolean => {
+        if (session.status !== 'scheduled') return false;
         const now = Date.now();
-        const start = new Date(lesson.scheduledStart).getTime();
+        const start = new Date(session.scheduledStart).getTime();
         const diffMinutes = Math.abs(now - start) / (1000 * 60);
         return diffMinutes <= 15;
     };
 
     /**
-     * Click "Vào lớp": gọi check-in → BE tạo Meet link → mở tab Meet.
-     * Nếu lesson đã in_progress mà có meetingLink (vd tutor lỡ đóng tab) → re-open thẳng.
+     * Click "Vào lớp": gọi check-in thật → BE tạo Meet link → mở tab Meet.
+     * Nếu session đã in_progress mà có meetingLink (vd tutor lỡ đóng tab) → re-open thẳng.
      */
-    const handleEnterLesson = async (lesson: LessonResponse) => {
-        // Case re-join: lesson đang chạy, đã có link → mở thẳng, không gọi check-in lại
-        if (lesson.status === 'in_progress' && lesson.meetingLink) {
-            window.open(lesson.meetingLink, '_blank', 'noopener,noreferrer');
+    const handleEnterSession = async (session: ClassSessionResponse) => {
+        // Case re-join: session đang chạy → vào thẳng phòng học, không cần check-in lại
+        if (session.status === 'in_progress') {
+            navigate(`/live-session/${session.classSessionId}`);
             return;
         }
 
         try {
-            setCheckingInLessonId(lesson.lessonId);
-            const response = await checkInLesson(lesson.lessonId);
-            const meetingLink = response.content?.meetingLink;
-
-            if (meetingLink) {
-                window.open(meetingLink, '_blank', 'noopener,noreferrer');
-                toast.success('Check-in thành công! Đang mở lớp học…');
-            } else {
-                // teachingMode = offline thì không có link — vẫn check-in OK.
-                toast.success('Check-in thành công!');
-            }
-            await fetchClassData();
+            setCheckingInId(session.classSessionId);
+            const response = await checkInClassSession(session.classSessionId);
+            applyDetail(response.content);
+            toast.success('Check-in thành công! Đang vào lớp học…');
+            navigate(`/live-session/${session.classSessionId}`);
         } catch (error: unknown) {
             const e = error as { response?: { data?: { message?: string } } };
-            const message: string = e.response?.data?.message || 'Không thể check-in. Vui lòng thử lại.';
-            toast.error(message);
+            toast.error(e.response?.data?.message || 'Không thể check-in. Vui lòng thử lại.');
         } finally {
-            setCheckingInLessonId(null);
+            setCheckingInId(null);
         }
     };
 
-    const handleCheckOut = async (lessonId: number) => {
+    const handleCheckOut = async (classSessionId: number) => {
         try {
-            setCheckingOutLessonId(lessonId);
-            await checkOutLesson(lessonId);
+            setCheckingOutId(classSessionId);
+            const response = await checkOutClassSession(classSessionId);
+            applyDetail(response.content);
             toast.success('Check-out thành công!');
-            await fetchClassData();
         } catch (error: unknown) {
             const e = error as { response?: { data?: { message?: string } } };
             toast.error(e.response?.data?.message || 'Không thể check-out. Vui lòng thử lại.');
         } finally {
-            setCheckingOutLessonId(null);
+            setCheckingOutId(null);
         }
     };
 
-    const handleReportSuccess = async () => {
+    const handleReportSuccess = (detail: ClassSessionDetailResponse) => {
+        applyDetail(detail);
         setShowReportForm(false);
-        setActiveLessonId(null);
+        setActiveSessionId(null);
+        setPendingAttachments((prev) => {
+            const { [detail.classSessionId]: _submitted, ...rest } = prev;
+            return rest;
+        });
         toast.success('Báo cáo đã được nộp thành công!');
-        await fetchClassData();
     };
 
-    const getLessonStatusLabel = (status?: string): { text: string; color: string } => {
-        switch (status) {
-            case 'scheduled': return { text: 'Đã lên lịch', color: '#1890ff' };
-            case 'in_progress': return { text: 'Đang học', color: '#52c41a' };
-            case 'pending_confirmation': return { text: 'Chờ xác nhận', color: '#722ed1' };
-            case 'completed': return { text: 'Hoàn thành', color: '#52c41a' };
-            case 'disputed': return { text: 'Đang khiếu nại', color: '#ff4d4f' };
-            case 'cancelled': return { text: 'Đã hủy', color: '#999' };
-            case 'no_show': return { text: 'Vắng mặt', color: '#ff4d4f' };
-            default: return { text: status || 'N/A', color: '#999' };
-        }
-    };
-
-    const sortedLessons = React.useMemo(() => {
-        return [...lessons].sort((a, b) =>
+    const sortedSessions = React.useMemo(() => {
+        return [...sessions].sort((a, b) =>
             new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime()
         );
-    }, [lessons]);
+    }, [sessions]);
 
-    // Create student data from classInfo and lessons
+    // Bài tập về nhà tổng hợp từ chi tiết từng buổi (chỉ field homework trên ClassSessionDetailResponse)
+    const homeworkItems = React.useMemo(() => {
+        return sortedSessions
+            .map(s => {
+                const detail = sessionDetails[s.classSessionId];
+                return detail?.homework
+                    ? { classSessionId: s.classSessionId, scheduledStart: s.scheduledStart, subjectName: s.subject?.subjectName, homework: detail.homework }
+                    : null;
+            })
+            .filter((x): x is NonNullable<typeof x> => x !== null);
+    }, [sortedSessions, sessionDetails]);
+
+    // Create student data from classInfo and sessions
     const studentsDataComputed = React.useMemo(() => {
-        console.log('📊 Computing students:', { hasClassInfo: !!classInfo, lessonsCount: lessons.length });
-        if (!classInfo || lessons.length === 0) {
-            console.log('⚠️ No students - returning empty array');
+        if (!classInfo || sessions.length === 0) {
             return [];
         }
 
-        const sortedLessons = [...lessons].sort((a, b) =>
+        const sorted = [...sessions].sort((a, b) =>
             new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime()
         );
 
-        const lastCompletedLesson = sortedLessons
-            .filter(l => l.status === 'completed' || l.status === 'pending_parent_confirmation')
+        const lastCompletedSession = sorted
+            .filter(s => s.status === 'completed')
             .slice(-1)[0];
 
-        const completedCount = lessons.filter(l => l.status === 'completed' || l.status === 'pending_parent_confirmation').length;
-        const totalCount = lessons.length;
+        const completedCount = sessions.filter(s => s.status === 'completed').length;
+        const totalCount = sessions.length;
 
         const result: StudentData[] = [{
             id: 1,
@@ -310,8 +335,8 @@ const TutorPortalClassDetail: React.FC = () => {
             email: classInfo.studentEmail || 'email@example.com',
             avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(classInfo.studentName)}&background=3d4a3e&color=f2f0e4&size=128`,
             status: 'Đang học',
-            lastLesson: lastCompletedLesson
-                ? new Date(lastCompletedLesson.scheduledStart).toLocaleDateString('vi-VN', {
+            lastLesson: lastCompletedSession
+                ? new Date(lastCompletedSession.scheduledStart).toLocaleDateString('vi-VN', {
                     weekday: 'short',
                     day: '2-digit',
                     month: '2-digit'
@@ -324,9 +349,8 @@ const TutorPortalClassDetail: React.FC = () => {
             avgScore: `${Math.round((completedCount / totalCount) * 100)}%`,
             grade: classInfo.grade
         }];
-        console.log('✅ Computed students:', result);
         return result;
-    }, [classInfo, lessons]);
+    }, [classInfo, sessions]);
 
     return (
         <div className={styles.classDetail}>
@@ -362,7 +386,7 @@ const TutorPortalClassDetail: React.FC = () => {
                             className={`${styles.tab} ${activeTab === 'lessons' ? styles.active : ''}`}
                             onClick={() => setActiveTab('lessons')}
                         >
-                            Buổi học ({lessons.length})
+                            Buổi học ({sessions.length})
                         </button>
                         <button
                             className={`${styles.tab} ${activeTab === 'students' ? styles.active : ''}`}
@@ -395,239 +419,202 @@ const TutorPortalClassDetail: React.FC = () => {
                                     <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
                                         Đang tải buổi học...
                                     </div>
-                                ) : sortedLessons.length === 0 ? (
+                                ) : sortedSessions.length === 0 ? (
                                     <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
                                         Chưa có buổi học nào
                                     </div>
                                 ) : (
-                                    sortedLessons.map((lesson) => {
-                                        const statusInfo = getLessonStatusLabel(lesson.status);
-                                        const isExpanded = activeLessonId === lesson.lessonId;
-                                        const startTime = new Date(lesson.scheduledStart);
-                                        const endTime = new Date(lesson.scheduledEnd);
-                                        const isPast = startTime < new Date();
+                                    sortedSessions.map((session) => {
+                                        const meta = getClassSessionStatusMeta(session.status);
+                                        const isExpanded = activeSessionId === session.classSessionId;
+                                        const detail = sessionDetails[session.classSessionId];
+                                        const startTime = new Date(session.scheduledStart);
+                                        const endTime = new Date(session.scheduledEnd);
+                                        const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
 
                                         return (
+                                            <div key={session.classSessionId}>
                                             <div
-                                                key={lesson.lessonId}
+                                                className={sessionStyles.sessionCard}
                                                 style={{
-                                                    background: '#fff',
-                                                    borderRadius: '12px',
-                                                    border: isExpanded ? '2px solid #3e2f28' : '1px solid rgba(26,34,56,0.1)',
-                                                    overflow: 'hidden',
-                                                    transition: 'border-color 0.2s',
+                                                    cursor: 'pointer',
+                                                    border: isExpanded ? '1.5px solid #1a2238' : undefined,
+                                                    borderRadius: isExpanded ? '14px 14px 0 0' : undefined,
                                                 }}
+                                                onClick={() => setActiveSessionId(isExpanded ? null : session.classSessionId)}
                                             >
-                                                {/* Lesson Card Header */}
-                                                <div
-                                                    style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'space-between',
-                                                        padding: '16px 20px',
-                                                        cursor: 'pointer',
-                                                        background: isPast && lesson.status === 'completed' ? '#f6fff6' : undefined,
-                                                    }}
-                                                    onClick={() => setActiveLessonId(isExpanded ? null : lesson.lessonId)}
-                                                >
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                                        <div style={{
-                                                            width: '52px', height: '52px',
-                                                            borderRadius: '10px',
-                                                            background: '#f2f0e4',
-                                                            display: 'flex', flexDirection: 'column',
-                                                            alignItems: 'center', justifyContent: 'center',
-                                                            fontWeight: 600, color: '#1a2238',
-                                                            flexShrink: 0,
-                                                        }}>
-                                                            <span style={{ fontSize: '18px', lineHeight: 1 }}>
-                                                                {startTime.getDate()}
-                                                            </span>
-                                                            <span style={{ fontSize: '10px', textTransform: 'uppercase', color: '#666' }}>
-                                                                Th{startTime.getMonth() + 1}
-                                                            </span>
-                                                        </div>
-                                                        <div>
-                                                            <div style={{ fontWeight: 600, fontSize: '14px', color: '#1a2238' }}>
-                                                                Buổi {sortedLessons.indexOf(lesson) + 1}
-                                                                {lesson.subject?.subjectName && ` - ${lesson.subject.subjectName}`}
-                                                            </div>
-                                                            <div style={{ fontSize: '13px', color: '#666', marginTop: '2px' }}>
-                                                                {startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                                                                {' - '}
-                                                                {endTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                                                                {' · '}
-                                                                {startTime.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
-                                                            </div>
-                                                        </div>
+                                                <div className={sessionStyles.timeBlock}>
+                                                    <div className={sessionStyles.timeValue}>
+                                                        {startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                                                     </div>
+                                                    <div className={sessionStyles.durationValue}>{durationMinutes} phút</div>
+                                                </div>
 
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                        <Tag color={statusInfo.color} style={{ margin: 0, borderRadius: '6px' }}>
-                                                            {statusInfo.text}
-                                                        </Tag>
-
-                                                        {/* "Vào lớp" button — gọi check-in + auto mở Meet link */}
-                                                        {lesson.status === 'scheduled' && canCheckIn(lesson) && (
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); handleEnterLesson(lesson); }}
-                                                                disabled={checkingInLessonId === lesson.lessonId}
-                                                                style={{
-                                                                    padding: '6px 16px', borderRadius: '8px',
-                                                                    background: '#16a34a', color: '#fff',
-                                                                    border: 'none', cursor: 'pointer',
-                                                                    fontSize: '13px', fontWeight: 600,
-                                                                    opacity: checkingInLessonId === lesson.lessonId ? 0.6 : 1,
-                                                                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                                                                }}
-                                                            >
-                                                                {checkingInLessonId === lesson.lessonId ? 'Đang xử lý...' : '▶ Vào lớp'}
-                                                            </button>
-                                                        )}
-
-                                                        {/* Re-join button cho lesson đang in_progress mà chưa check-out */}
-                                                        {lesson.status === 'in_progress' && lesson.meetingLink && !lesson.checkOutTime && (
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); handleEnterLesson(lesson); }}
-                                                                style={{
-                                                                    padding: '6px 16px', borderRadius: '8px',
-                                                                    background: '#16a34a', color: '#fff',
-                                                                    border: 'none', cursor: 'pointer',
-                                                                    fontSize: '13px', fontWeight: 600,
-                                                                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                                                                }}
-                                                            >
-                                                                ▶ Vào lại lớp
-                                                            </button>
-                                                        )}
-
-                                                        {/* Check-out button */}
-                                                        {lesson.status === 'in_progress' && !lesson.checkOutTime && (
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); handleCheckOut(lesson.lessonId); }}
-                                                                disabled={checkingOutLessonId === lesson.lessonId}
-                                                                style={{
-                                                                    padding: '6px 16px', borderRadius: '8px',
-                                                                    background: '#faad14', color: '#fff',
-                                                                    border: 'none', cursor: 'pointer',
-                                                                    fontSize: '13px', fontWeight: 600,
-                                                                    opacity: checkingOutLessonId === lesson.lessonId ? 0.6 : 1,
-                                                                }}
-                                                            >
-                                                                {checkingOutLessonId === lesson.lessonId ? 'Đang xử lý...' : 'Check-out'}
-                                                            </button>
-                                                        )}
-
-                                                        {/* MVP Phase 2: Cho phép nộp báo cáo mà không cần Check-in/Check-out */}
-                                                        {(lesson.status === 'in_progress' || lesson.status === 'scheduled') && (
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setActiveLessonId(lesson.lessonId);
-                                                                    setShowReportForm(true);
-                                                                }}
-                                                                style={{
-                                                                    padding: '6px 16px', borderRadius: '8px',
-                                                                    background: '#3e2f28', color: '#fff',
-                                                                    border: 'none', cursor: 'pointer',
-                                                                    fontSize: '13px', fontWeight: 600,
-                                                                }}
-                                                            >
-                                                                Nộp báo cáo
-                                                            </button>
-                                                        )}
-
-                                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#999" strokeWidth="1.5"
-                                                            style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-                                                            <path d="M4 6L8 10L12 6" strokeLinecap="round" strokeLinejoin="round" />
-                                                        </svg>
+                                                <div className={sessionStyles.sessionInfo}>
+                                                    <div className={sessionStyles.sessionTitleRow}>
+                                                        <span className={sessionStyles.className}>
+                                                            Buổi {sortedSessions.indexOf(session) + 1}
+                                                            {session.subject?.subjectName && ` · ${session.subject.subjectName}`}
+                                                        </span>
+                                                    </div>
+                                                    <div className={sessionStyles.metaRow}>
+                                                        <span className={sessionStyles.metaItem}>
+                                                            {startTime.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' })}
+                                                        </span>
+                                                        <span className={sessionStyles.metaItem}>
+                                                            {session.meetingLink ? <Video size={12} /> : <MapPin size={12} />}
+                                                            {session.meetingLink ? 'Online' : 'Tại nhà'}
+                                                        </span>
+                                                        <StatusBadge variant={meta.variant} shape="tag">{meta.label}</StatusBadge>
                                                     </div>
                                                 </div>
+
+                                                <div className={sessionStyles.actionGroup} onClick={(e) => e.stopPropagation()}>
+                                                    {/* "Vào lớp" — gọi check-in + auto mở Meet link */}
+                                                    {session.status === 'scheduled' && canCheckIn(session) && (
+                                                        <button
+                                                            className={sessionStyles.joinActionBtn}
+                                                            onClick={() => handleEnterSession(session)}
+                                                            disabled={checkingInId === session.classSessionId}
+                                                        >
+                                                            {checkingInId === session.classSessionId ? 'Đang xử lý...' : 'Vào lớp'}
+                                                        </button>
+                                                    )}
+
+                                                    {/* Re-join cho session đang in_progress mà chưa check-out */}
+                                                    {session.status === 'in_progress' && !session.checkOutTime && (
+                                                        <button className={sessionStyles.joinActionBtn} onClick={() => handleEnterSession(session)}>
+                                                            Vào lại lớp
+                                                        </button>
+                                                    )}
+
+                                                    {/* Check-out */}
+                                                    {session.status === 'in_progress' && !session.checkOutTime && (
+                                                        <button
+                                                            className={sessionStyles.defaultActionBtn}
+                                                            onClick={() => handleCheckOut(session.classSessionId)}
+                                                            disabled={checkingOutId === session.classSessionId}
+                                                        >
+                                                            {checkingOutId === session.classSessionId ? 'Đang xử lý...' : 'Check-out'}
+                                                        </button>
+                                                    )}
+
+                                                    {/* Cho phép nộp báo cáo mà không cần Check-in/Check-out (MVP Phase 2) */}
+                                                    {(session.status === 'in_progress' || session.status === 'scheduled') && (
+                                                        <button
+                                                            className={sessionStyles.primaryActionBtn}
+                                                            onClick={() => {
+                                                                setActiveSessionId(session.classSessionId);
+                                                                setShowReportForm(true);
+                                                            }}
+                                                        >
+                                                            Nộp báo cáo
+                                                        </button>
+                                                    )}
+
+                                                    <ChevronDown
+                                                        size={16}
+                                                        className={`${sessionStyles.expandChevron} ${isExpanded ? sessionStyles.expandChevronOpen : ''}`}
+                                                        onClick={() => setActiveSessionId(isExpanded ? null : session.classSessionId)}
+                                                        style={{ cursor: 'pointer' }}
+                                                    />
+                                                </div>
+                                            </div>
 
                                                 {/* Expanded Detail */}
                                                 {isExpanded && (
                                                     <div style={{ padding: '0 20px 20px', borderTop: '1px solid rgba(26,34,56,0.06)' }}>
+                                                        {!detail ? (
+                                                            <div style={{ padding: '16px 0', color: '#999', fontSize: 13 }}>Đang tải chi tiết...</div>
+                                                        ) : (
                                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingTop: '16px' }}>
                                                             <div>
                                                                 <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Học sinh</div>
                                                                 <div style={{ fontSize: '14px', color: '#1a2238' }}>
-                                                                    {lesson.student?.fullName || classInfo?.studentName || 'N/A'}
+                                                                    {detail.student?.fullName || classInfo?.studentName || 'N/A'}
                                                                 </div>
                                                             </div>
                                                             <div>
                                                                 <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Giá buổi học</div>
                                                                 <div style={{ fontSize: '14px', color: '#1a2238', fontWeight: 600 }}>
-                                                                    {lesson.lessonPrice ? `${lesson.lessonPrice.toLocaleString('vi-VN')}đ` : 'N/A'}
+                                                                    {detail.classSessionPrice ? `${detail.classSessionPrice.toLocaleString('vi-VN')}đ` : 'N/A'}
                                                                 </div>
                                                             </div>
-                                                            {lesson.checkInTime && (
+                                                            {detail.checkInTime && (
                                                                 <div>
                                                                     <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Check-in lúc</div>
                                                                     <div style={{ fontSize: '14px', color: '#52c41a' }}>
-                                                                        {new Date(lesson.checkInTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                                                                        {new Date(detail.checkInTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                                                                     </div>
                                                                 </div>
                                                             )}
-                                                            {lesson.checkOutTime && (
+                                                            {detail.checkOutTime && (
                                                                 <div>
                                                                     <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Check-out lúc</div>
                                                                     <div style={{ fontSize: '14px', color: '#faad14' }}>
-                                                                        {new Date(lesson.checkOutTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                                                                        {new Date(detail.checkOutTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                                                                     </div>
                                                                 </div>
                                                             )}
-                                                            {lesson.meetingLink && (
+                                                            {detail.meetingLink && (
                                                                 <div style={{ gridColumn: '1 / -1' }}>
                                                                     <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: 8 }}>
                                                                         <span>Link học online</span>
                                                                     </div>
-                                                                    <a href={lesson.meetingLink} target="_blank" rel="noopener noreferrer"
+                                                                    <a href={detail.meetingLink} target="_blank" rel="noopener noreferrer"
                                                                         style={{ fontSize: '14px', color: '#1890ff', wordBreak: 'break-all' }}>
-                                                                        {lesson.meetingLink}
+                                                                        {detail.meetingLink}
                                                                     </a>
                                                                 </div>
                                                             )}
-                                                            {lesson.lessonContent && (
+                                                            {detail.classSessionContent && (
                                                                 <div style={{ gridColumn: '1 / -1' }}>
                                                                     <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Nội dung đã dạy</div>
                                                                     <div style={{ fontSize: '14px', color: '#1a2238', whiteSpace: 'pre-wrap' }}>
-                                                                        {lesson.lessonContent}
+                                                                        {detail.classSessionContent}
                                                                     </div>
                                                                 </div>
                                                             )}
-                                                            {lesson.homework && (
+                                                            {detail.homework && (
                                                                 <div style={{ gridColumn: '1 / -1' }}>
                                                                     <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Bài tập về nhà</div>
                                                                     <div style={{ fontSize: '14px', color: '#1a2238', whiteSpace: 'pre-wrap' }}>
-                                                                        {lesson.homework}
+                                                                        {detail.homework}
                                                                     </div>
                                                                 </div>
                                                             )}
-                                                            {lesson.confirmDeadline && (
+                                                            {detail.confirmDeadline && (
                                                                 <div style={{ gridColumn: '1 / -1' }}>
                                                                     <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Hạn xác nhận</div>
                                                                     <div style={{ fontSize: '14px', color: '#722ed1' }}>
-                                                                        {new Date(lesson.confirmDeadline).toLocaleString('vi-VN')}
+                                                                        {new Date(detail.confirmDeadline).toLocaleString('vi-VN')}
                                                                     </div>
                                                                 </div>
                                                             )}
                                                         </div>
+                                                        )}
 
                                                         {/* Report Form */}
-                                                        {/* MVP Phase 2: Bỏ điều kiện checkOutTime */}
-                                                        {showReportForm && activeLessonId === lesson.lessonId && (lesson.status === 'in_progress' || lesson.status === 'scheduled') && (
+                                                        {showReportForm && activeSessionId === session.classSessionId && (session.status === 'in_progress' || session.status === 'scheduled') && (
                                                             <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                                                 <LessonReportForm
-                                                                    lessonId={lesson.lessonId}
+                                                                    classSessionId={session.classSessionId}
+                                                                    attachmentUrls={pendingAttachments[session.classSessionId]}
                                                                     onSubmitSuccess={handleReportSuccess}
                                                                     onCancel={() => setShowReportForm(false)}
                                                                 />
-                                                                <AttachmentUploader lessonId={lesson.lessonId} />
+                                                                <AttachmentUploader
+                                                                    classSessionId={session.classSessionId}
+                                                                    onUploadComplete={(url) => setPendingAttachments((prev) => ({
+                                                                        ...prev,
+                                                                        [session.classSessionId]: [...(prev[session.classSessionId] || []), url],
+                                                                    }))}
+                                                                />
                                                             </div>
                                                         )}
 
-                                                        {/* Check-in hint for scheduled lessons ngoài cửa sổ 15ph */}
-                                                        {lesson.status === 'scheduled' && !canCheckIn(lesson) && (
+                                                        {/* Check-in hint for scheduled sessions ngoài cửa sổ 15ph */}
+                                                        {session.status === 'scheduled' && !canCheckIn(session) && (
                                                             <div style={{
                                                                 marginTop: '16px', padding: '12px 16px',
                                                                 background: '#f2f0e4', borderRadius: '8px',
@@ -760,18 +747,10 @@ const TutorPortalClassDetail: React.FC = () => {
                         )}
 
                         {/* === HOMEWORK TAB === */}
-                        {activeTab === 'homework' && (
-                            <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
-                                Tính năng bài tập về nhà đang được phát triển
-                            </div>
-                        )}
+                        {activeTab === 'homework' && <HomeworkTab items={homeworkItems} />}
 
                         {/* === MATERIALS TAB === */}
-                        {activeTab === 'materials' && (
-                            <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
-                                Tính năng tài liệu đang được phát triển
-                            </div>
-                        )}
+                        {activeTab === 'materials' && <MaterialsTab bookingId={bookingId} />}
                     </div>
                 </div>
             </div>

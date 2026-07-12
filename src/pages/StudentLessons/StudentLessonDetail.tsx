@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
     ArrowLeft, BookOpen, AlertCircle, Video,
     Calendar as CalendarIcon, FileText, ClipboardCheck, Star,
@@ -13,24 +13,26 @@ import type { LessonDetailDto } from '../../services/lesson.service';
 import { message as antMessage, Spin, Modal } from 'antd';
 import CreateFeedbackModal from '../ParentLessons/components/CreateFeedbackModal';
 import s from '../StudentPages.module.css';
+import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 
-// ── Status definitions — khớp với LessonStatus.cs ở BE ─────────────────
+// ── Status definitions — nguồn duy nhất là classSessionStatus.ts (khớp BE ClassSessionStatus) ──
 type StatusInfo = { label: string; color: string; bg: string; icon: string };
 
-const STATUS_INFO: Record<string, StatusInfo> = {
-    scheduled:            { label: 'Đã lên lịch',     color: '#6366F1', bg: 'rgba(99,102,241,0.10)',  icon: '📅' },
-    in_progress:          { label: 'Đang diễn ra',    color: '#0d9488', bg: 'rgba(13,148,136,0.12)',  icon: '🟢' },
-    pending_confirmation: { label: 'Chờ xác nhận',    color: '#d97706', bg: 'rgba(217,119,6,0.10)',   icon: '⏳' },
-    completed:            { label: 'Hoàn thành',      color: '#059669', bg: 'rgba(5,150,105,0.10)',   icon: '✅' },
-    cancelled:            { label: 'Đã hủy',          color: '#737373', bg: '#f5f5f5',                icon: '❌' },
-    cancelled_noshow:     { label: 'Hủy (vắng mặt)',  color: '#737373', bg: '#f5f5f5',                icon: '❌' },
-    no_show:              { label: 'Vắng mặt',        color: '#DC2626', bg: '#FEF2F2',                icon: '⚠️' },
-    disputed:             { label: 'Khiếu nại',       color: '#DC2626', bg: '#FEF2F2',                icon: '🚨' },
+const STATUS_ICON: Record<string, string> = {
+    scheduled: '📅',
+    reserved: '📅',
+    in_progress: '🟢',
+    pending_confirmation: '⏳',
+    completed: '✅',
+    cancelled: '❌',
+    cancelled_noshow: '❌',
+    no_show: '⚠️',
+    disputed: '🚨',
 };
 
 const getStatus = (status: string | null | undefined): StatusInfo => {
-    if (!status) return STATUS_INFO.cancelled;
-    return STATUS_INFO[status.toLowerCase()] ?? STATUS_INFO.cancelled;
+    const meta = getClassSessionStatusMeta(status);
+    return { label: meta.label, color: meta.color, bg: meta.bg, icon: STATUS_ICON[(status ?? '').toLowerCase()] ?? '❔' };
 };
 
 const VN_WEEKDAYS_FULL = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
@@ -134,7 +136,7 @@ const StudentLessonDetail = () => {
 
     const status = getStatus(lesson.status);
     const isInProgress = lesson.status === 'in_progress';
-    const canJoin = isInProgress && lesson.meetingLink;
+    const canJoin = isInProgress;
     const tutorName = (lesson as any).tutorName ?? (lesson as any).tutor?.fullName ?? 'Gia sư';
     const subjectName = (lesson as any).subjectName ?? (lesson as any).subject?.subjectName ?? 'Buổi học';
     const report = (lesson as any).report;
@@ -177,14 +179,9 @@ const StudentLessonDetail = () => {
                                     </div>
                                 </div>
                             </div>
-                            <a
-                                href={lesson.meetingLink!}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={heroJoinBtn}
-                            >
+                            <Link to={`/live-session/${lesson.lessonId}`} style={heroJoinBtn}>
                                 <Video size={16} /> Tham gia ngay
-                            </a>
+                            </Link>
                         </div>
                     </div>
                 )}

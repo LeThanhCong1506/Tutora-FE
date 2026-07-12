@@ -24,6 +24,7 @@ const baseParentNavItems: NavItem[] = [
     { path: '/parent-portal/student', label: 'Quản lý học sinh', icon: ChildrenIcon },
     { path: MESSAGES_PATH, label: 'Tin nhắn', icon: MessagesIcon },
     { path: '/parent-portal/booking', label: 'Đặt lịch', icon: BookingIcon },
+    { path: '/parent-portal/lessons', label: 'Buổi học', icon: ClockIcon },
     { path: '/parent-portal/account', label: 'Tài khoản', icon: AccountIcon },
 ];
 

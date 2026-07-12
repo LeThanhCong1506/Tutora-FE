@@ -81,7 +81,11 @@ export const createFeedback = async (
   request: CreateFeedbackRequest
 ): Promise<ApiResponse<FeedbackDto>> => {
   try {
-    const response = await api.post('/feedbacks', request, {
+    // BE `CreateFeedbackRequest.ClassSessionId` (đã đổi tên từ `LessonId`) — map ở đây để
+    // không phải sửa `lessonId` prop xuyên suốt CreateFeedbackModal.tsx và các trang gọi nó.
+    const { lessonId, ...rest } = request;
+    const body = { ...rest, classSessionId: lessonId };
+    const response = await api.post('/feedbacks', body, {
       headers: getAuthHeaders(),
     });
     return response.data;
@@ -150,7 +154,7 @@ export const canLeaveFeedback = async (
   lessonId: number
 ): Promise<ApiResponse<boolean>> => {
   try {
-    const response = await api.get(`/feedbacks/eligibility/lessons/${lessonId}`, {
+    const response = await api.get(`/feedbacks/eligibility/class-sessions/${lessonId}`, {
       headers: getAuthHeaders(),
     });
     return response.data;

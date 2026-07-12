@@ -2,7 +2,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import styles from '../../styles/pages/tutor-portal-dashboard.module.css';
-import { getTutorDashboardStats, getTutorCalendar, checkInLesson, type TutorDashboardStats, type CalendarDay, type CalendarLesson } from '../../services/lesson.service';
+import {
+    getTutorDashboardStats,
+    getTutorCalendar,
+    checkInClassSession,
+    type TutorDashboardStatsResponse,
+    type CalendarDayResponse,
+    type CalendarClassSessionResponse,
+} from '../../services/classSession.service';
 import { getTutorFeedbacks, type FeedbackDto } from '../../services/feedback.service';
 import { getCurrentUser } from '../../services/auth.service';
 import { StatCard } from '../../components/shared';
@@ -123,8 +130,8 @@ const TutorPortalDashboard: React.FC = () => {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
     // API data states
-    const [stats, setStats] = useState<TutorDashboardStats | null>(null);
-    const [calendarData, setCalendarData] = useState<CalendarDay[]>([]);
+    const [stats, setStats] = useState<TutorDashboardStatsResponse | null>(null);
+    const [calendarData, setCalendarData] = useState<CalendarDayResponse[]>([]);
     const [loading, setLoading] = useState(true);
     const [recentFeedbacks, setRecentFeedbacks] = useState<FeedbackDto[]>([]);
     const [replyModal, setReplyModal] = useState<{ open: boolean; feedback: FeedbackDto | null }>({ open: false, feedback: null });
@@ -186,7 +193,7 @@ const TutorPortalDashboard: React.FC = () => {
         // Get days with sessions from calendar data
         const daysWithSessions = new Set(
             calendarData
-                .filter(day => day.lessons && day.lessons.length > 0)
+                .filter(day => day.classSessions && day.classSessions.length > 0)
                 .map(day => new Date(day.date).getDate())
         );
 
@@ -242,7 +249,7 @@ const TutorPortalDashboard: React.FC = () => {
 
 
     // Get lessons based on selected tab
-    const getFilteredLessons = (): CalendarLesson[] => {
+    const getFilteredLessons = (): CalendarClassSessionResponse[] => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
@@ -269,20 +276,20 @@ const TutorPortalDashboard: React.FC = () => {
                     return dayDate >= today && dayDate <= weekEnd;
                 }
             })
-            .flatMap(day => day.lessons || [])
+            .flatMap(day => day.classSessions || [])
             .sort((a, b) => new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime());
     };
 
     // ── Check-in / Vào lớp helpers (shared với ClassDetail) ──
     const [checkingInLessonId, setCheckingInLessonId] = useState<number | null>(null);
 
-    const canCheckIn = (lesson: CalendarLesson): boolean => {
+    const canCheckIn = (lesson: CalendarClassSessionResponse): boolean => {
         if (lesson.status !== 'scheduled') return false;
         const diffMinutes = Math.abs(Date.now() - new Date(lesson.scheduledStart).getTime()) / (1000 * 60);
         return diffMinutes <= 15;
     };
 
-    const handleEnterLesson = async (lesson: CalendarLesson) => {
+    const handleEnterLesson = async (lesson: CalendarClassSessionResponse) => {
         // Re-join nếu lesson đang chạy & đã có link
         if (lesson.status === 'in_progress' && lesson.meetingLink) {
             window.open(lesson.meetingLink, '_blank', 'noopener,noreferrer');
@@ -290,8 +297,8 @@ const TutorPortalDashboard: React.FC = () => {
         }
 
         try {
-            setCheckingInLessonId(lesson.lessonId);
-            const response = await checkInLesson(lesson.lessonId);
+            setCheckingInLessonId(lesson.classSessionId);
+            const response = await checkInClassSession(lesson.classSessionId);
             const link = response.content?.meetingLink;
             if (link) {
                 window.open(link, '_blank', 'noopener,noreferrer');
@@ -470,7 +477,7 @@ const TutorPortalDashboard: React.FC = () => {
                 <div className={styles.statsGrid} data-tour="stats-grid">
                     <StatCard
                         icon={<CalendarIcon />}
-                        value={stats.upcomingLessons}
+                        value={stats.upcomingClassSessions}
                         label="Buổi học sắp tới"
                         className={styles.statCard}
                     />
@@ -534,7 +541,7 @@ const TutorPortalDashboard: React.FC = () => {
             </div>
 
             {/* Next Upcoming Lessons from dashboard stats */}
-            {stats && stats.nextLessons && stats.nextLessons.length > 0 && (
+            {stats && stats.nextClassSessions && stats.nextClassSessions.length > 0 && (
                 <div className={styles.sectionCard} style={{ padding: '20px' }}>
                     <div className={styles.sectionHeader} style={{ marginBottom: '14px' }}>
                         <h2 className={styles.sectionTitle}>Buổi học sắp tới</h2>
@@ -544,8 +551,8 @@ const TutorPortalDashboard: React.FC = () => {
                         </button>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {stats.nextLessons.slice(0, 5).map((lesson) => (
-                            <div key={lesson.lessonId} style={{
+                        {stats.nextClassSessions.slice(0, 5).map((lesson) => (
+                            <div key={lesson.classSessionId} style={{
                                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                                 padding: '14px 16px', borderRadius: '12px',
                                 background: '#f9f8f3', border: '1px solid rgba(26,34,56,0.06)',
@@ -615,7 +622,7 @@ const TutorPortalDashboard: React.FC = () => {
                         <div className={styles.lessonsList}>
                             {getFilteredLessons().length > 0 ? (
                                 getFilteredLessons().map((lesson) => (
-                                    <div key={lesson.lessonId} className={styles.lessonItem}>
+                                    <div key={lesson.classSessionId} className={styles.lessonItem}>
                                         <div className={styles.lessonInfo}>
                                             <div className={styles.lessonTime}>
                                                 <div>{formatTime(lesson.scheduledStart)}</div>
@@ -635,9 +642,9 @@ const TutorPortalDashboard: React.FC = () => {
                                                 <button
                                                     className={styles.primaryBtn}
                                                     onClick={() => handleEnterLesson(lesson)}
-                                                    disabled={checkingInLessonId === lesson.lessonId}
+                                                    disabled={checkingInLessonId === lesson.classSessionId}
                                                 >
-                                                    {checkingInLessonId === lesson.lessonId ? 'Đang xử lý…' : '▶ Vào lớp'}
+                                                    {checkingInLessonId === lesson.classSessionId ? 'Đang xử lý…' : '▶ Vào lớp'}
                                                 </button>
                                             )}
                                             {/* In-progress & đã có link → nút Vào lại lớp (re-open) */}
