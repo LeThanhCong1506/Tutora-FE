@@ -1,25 +1,39 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Form, Input, Checkbox, Button } from 'antd';
 import { toast } from 'react-toastify';
-import { submitLessonReport, type SubmitReportRequest } from '../../../services/lesson.service';
+import {
+  submitClassSessionReport,
+  type SubmitReportRequest,
+  type ClassSessionDetailResponse,
+} from '../../../services/classSession.service';
 import { useFormDraft } from '../../../hooks/useFormDraft';
 
 const { TextArea } = Input;
 
 interface LessonReportFormProps {
-  lessonId: number;
-  onSubmitSuccess: () => void;
+  classSessionId: number;
+  attachmentUrls?: string[];
+  onSubmitSuccess: (detail: ClassSessionDetailResponse) => void;
   onCancel?: () => void;
 }
 
+interface ReportFormValues {
+  lessonContent: string;
+  homework?: string;
+  tutorNotes?: string;
+  isStudentPresent?: boolean;
+  attendanceNote?: string;
+}
+
 const LessonReportForm: React.FC<LessonReportFormProps> = ({
-  lessonId,
+  classSessionId,
+  attachmentUrls,
   onSubmitSuccess,
   onCancel,
 }) => {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
-  const { saveDraft, loadDraft, clearDraft } = useFormDraft<Record<string, any>>(`draft_lesson_report_${lessonId}`);
+  const { saveDraft, loadDraft, clearDraft } = useFormDraft<Partial<ReportFormValues>>(`draft_lesson_report_${classSessionId}`);
 
   // Load draft on mount
   useEffect(() => {
@@ -30,11 +44,11 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
   }, [loadDraft, form]);
 
   // Auto-save draft on field changes
-  const handleValuesChange = useCallback((_: any, allValues: any) => {
+  const handleValuesChange = useCallback((_: Partial<ReportFormValues>, allValues: Partial<ReportFormValues>) => {
     saveDraft(allValues);
   }, [saveDraft]);
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: ReportFormValues) => {
     try {
       setSubmitting(true);
       const request: SubmitReportRequest = {
@@ -43,13 +57,15 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
         tutorNotes: values.tutorNotes || '',
         isStudentPresent: values.isStudentPresent ?? true,
         attendanceNote: values.attendanceNote || '',
+        attachments: attachmentUrls && attachmentUrls.length > 0 ? attachmentUrls : undefined,
       };
-      await submitLessonReport(lessonId, request);
+      const response = await submitClassSessionReport(classSessionId, request);
       toast.success('Nộp báo cáo buổi học thành công!');
       clearDraft();
-      onSubmitSuccess();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Không thể nộp báo cáo. Vui lòng thử lại.');
+      onSubmitSuccess(response.content);
+    } catch (error: unknown) {
+      const e = error as { response?: { data?: { message?: string } } };
+      toast.error(e.response?.data?.message || 'Không thể nộp báo cáo. Vui lòng thử lại.');
     } finally {
       setSubmitting(false);
     }

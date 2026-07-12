@@ -26,10 +26,18 @@ const getDashboardByRole = (role: string): string => {
     }
 };
 
+// DEV ONLY: đặt VITE_DEV_BYPASS_AUTH=true trong .env cục bộ để xem UI mà không cần đăng nhập.
+// Chỉ có hiệu lực ở dev build (import.meta.env.DEV) — không bao giờ ảnh hưởng production.
+const DEV_BYPASS_AUTH = import.meta.env.DEV && import.meta.env.VITE_DEV_BYPASS_AUTH === 'true';
+
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     allowedRoles,
     children,
 }) => {
+    if (DEV_BYPASS_AUTH) {
+        return children ? <>{children}</> : <Outlet />;
+    }
+
     const user = getCurrentUser();
 
     if (!user || !user.accessToken) {

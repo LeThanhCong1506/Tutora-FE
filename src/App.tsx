@@ -68,6 +68,7 @@ const ParentWallet = lazy(() => import('./pages/ParentWallet'));
 const ParentMessage = lazy(() => import('./pages/ParentMessage'));
 const PaymentPage = lazy(() => import('./pages/ParentBooking/Payment'));
 const ParentStudent = lazy(() => import('./pages/ParentStudent'));
+const ParentLessons = lazy(() => import('./pages/ParentLessons'));
 const ParentLessonDetail = lazy(() => import('./pages/ParentLessons/ParentLessonDetail'));
 const ParentAccount = lazy(() => import('./pages/ParentAccount'));
 
@@ -84,6 +85,9 @@ const StudentProfile = lazy(() => import('./pages/StudentProfile'));
 // Payment callback
 const PaymentCallback = lazy(() => import('./pages/PaymentCallback/PaymentCallback'));
 const NotificationsPage = lazy(() => import('./pages/Notifications/NotificationsPage'));
+
+// Live video-call session (full-screen, no portal chrome)
+const LiveSession = lazy(() => import('./pages/LiveSession'));
 
 // ---------------------
 
@@ -226,6 +230,7 @@ function App() {
             <Route path="student" element={<ParentStudent />} />
             <Route path="wallet" element={<ParentWallet />} />
             <Route path="messages" element={<ParentMessage />} />
+            <Route path="lessons" element={<ParentLessons />} />
             <Route path="lessons/:lessonId" element={<ParentLessonDetail />} />
             <Route path="account" element={<ParentAccount />} />
             <Route path="notifications" element={<NotificationsPage />} />
@@ -262,6 +267,16 @@ function App() {
           {/* PayOS callback - loaded inside iframe after payment */}
           <Route path="/payment/success" element={<PaymentCallback />} />
           <Route path="/payment/cancel" element={<PaymentCallback />} />
+
+          {/* Live video-call session — full-screen, không có portal chrome */}
+          <Route
+            path="/live-session/:classSessionId"
+            element={
+              <ProtectedRoute allowedRoles={["Tutor", "Parent", "Student"]}>
+                <LiveSession />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Auth routes — không có trong Zalo Mini App (auth qua Zalo token) */}
           {!inMiniApp && (

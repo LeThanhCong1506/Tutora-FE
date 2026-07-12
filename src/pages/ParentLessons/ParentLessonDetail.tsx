@@ -15,18 +15,7 @@ import CreateDisputeForm from './components/CreateDisputeForm';
 import ReportNoShowModal from './components/ReportNoShowModal';
 import NoShowActionModal from './components/NoShowActionModal';
 import CreateFeedbackModal from './components/CreateFeedbackModal';
-
-
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  scheduled: { label: 'Đã lên lịch', color: '#1890ff' },
-  checked_in: { label: 'Đang diễn ra', color: '#52c41a' },
-  checked_out: { label: 'Chờ báo cáo', color: '#faad14' },
-  pending_confirmation: { label: 'Chờ xác nhận', color: '#722ed1' },
-  completed: { label: 'Hoàn thành', color: '#52c41a' },
-  disputed: { label: 'Khiếu nại', color: '#ff4d4f' },
-  cancelled: { label: 'Đã hủy', color: '#999' },
-  no_show: { label: 'Vắng mặt', color: '#ff4d4f' },
-};
+import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 
 const ParentLessonDetail: React.FC = () => {
   const navigate = useNavigate();
@@ -100,7 +89,7 @@ const ParentLessonDetail: React.FC = () => {
     );
   }
 
-  const status = STATUS_CONFIG[lesson.status || ''] || { label: lesson.status || 'N/A', color: '#999' };
+  const status = getClassSessionStatusMeta(lesson.status);
   const startTime = new Date(lesson.scheduledStart);
   const endTime = new Date(lesson.scheduledEnd);
 
