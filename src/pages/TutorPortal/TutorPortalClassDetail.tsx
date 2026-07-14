@@ -126,7 +126,9 @@ const TutorPortalClassDetail: React.FC = () => {
         try {
             const listResponse = await getTutorClassSessions(1, 100);
             const allSessions = Array.isArray(listResponse.content) ? listResponse.content : [];
-            const classSessions = allSessions.filter(s => s.bookingId === bookingId);
+            const classSessions = allSessions.filter(
+                s => s.bookingId === bookingId && s.status !== 'reserved'
+            );
             setSessions(classSessions);
 
             if (classSessions.length > 0) {
