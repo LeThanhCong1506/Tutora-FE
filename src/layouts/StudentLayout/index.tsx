@@ -15,7 +15,14 @@ const MESSAGES_PATH = '/student-portal/messages';
 // Map sidebar path → notification types thuộc tab đó. Đồng bộ với BE
 // `MV.DomainLayer/Constants/NotificationType.cs`.
 const NOTIFICATION_TYPES_BY_PATH: Record<string, string[]> = {
-    '/student-portal/booking': ['booking_new', 'booking_accepted', 'booking_declined'],
+    '/student-portal/booking': [
+        'booking_new',
+        'booking_accepted',
+        'booking_declined',
+        'booking_cancelled',
+        'payment_remaining_required',
+        'booking_payment_due_soon',
+    ],
     '/student-portal/lessons': [
         'lesson_reminder',
         'lesson_checkin',

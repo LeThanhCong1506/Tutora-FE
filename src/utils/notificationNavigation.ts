@@ -20,7 +20,10 @@ const NOTIFICATION_TYPE = {
     BookingNew: 'booking_new',
     BookingAccepted: 'booking_accepted',
     BookingDeclined: 'booking_declined',
+    BookingCancelled: 'booking_cancelled',
     PaymentSuccess: 'payment_success',
+    PaymentRemainingRequired: 'payment_remaining_required',
+    BookingPaymentDueSoon: 'booking_payment_due_soon',
     Warning: 'warning',
     Message: 'message',
 } as const;
@@ -56,7 +59,10 @@ export function getNotificationTargetPath(notification: NotificationDTO): string
     }
     if ((type === NOTIFICATION_TYPE.BookingNew
         || type === NOTIFICATION_TYPE.BookingAccepted
-        || type === NOTIFICATION_TYPE.BookingDeclined) && refId) {
+        || type === NOTIFICATION_TYPE.BookingDeclined
+        || type === NOTIFICATION_TYPE.BookingCancelled
+        || type === NOTIFICATION_TYPE.PaymentRemainingRequired
+        || type === NOTIFICATION_TYPE.BookingPaymentDueSoon) && refId) {
         const path = prefix === '/tutor-portal' ? 'bookings' : 'booking';
         return `${prefix}/${path}/${refId}`;
     }

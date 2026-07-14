@@ -64,7 +64,7 @@ const MeetLinkCard = ({ message }: { message: ChatMessage }) => {
   );
 };
 
-/** Renders a booking_accepted or booking_declined system message */
+/** Renders a booking_accepted / booking_declined / booking_cancelled system message */
 const BookingStatusCard = ({
   message,
   isParent,
@@ -217,8 +217,12 @@ const ChatMessagesArea = ({
             return <MeetLinkCard key={msg.messageId || index} message={msg} />;
           }
 
-          // Booking accepted/declined system cards
-          if (msg.messageType === 'booking_accepted' || msg.messageType === 'booking_declined') {
+          // Booking accepted/declined/cancelled system cards
+          if (
+            msg.messageType === 'booking_accepted' ||
+            msg.messageType === 'booking_declined' ||
+            msg.messageType === 'booking_cancelled'
+          ) {
             return (
               <BookingStatusCard
                 key={msg.messageId || index}
