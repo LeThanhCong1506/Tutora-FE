@@ -1,14 +1,24 @@
 import { useState } from 'react';
-import { Send } from 'lucide-react';
+import { Send, X } from 'lucide-react';
 import styles from '../styles.module.css';
 
 type SidePanelTab = 'chat' | 'notes' | 'tools';
 
-const SidePanel = () => {
+interface SidePanelProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+const SidePanel = ({ open, onClose }: SidePanelProps) => {
   const [activeTab, setActiveTab] = useState<SidePanelTab>('chat');
+
+  if (!open) return null;
 
   return (
     <aside className={styles.sidePanel}>
+      <button className={styles.sidePanelCloseBtn} onClick={onClose} title="Đóng">
+        <X size={16} />
+      </button>
       <div className={styles.sidePanelTabs}>
         {(['chat', 'notes', 'tools'] as const).map((tab) => (
           <button
