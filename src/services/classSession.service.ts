@@ -214,6 +214,46 @@ export const getTutorClassSessions = async (
     return response.data;
 };
 
+export type TutorClassStatus =
+    | 'scheduled'
+    | 'in_progress'
+    | 'pending_confirmation'
+    | 'completed'
+    | 'cancelled';
+
+export interface TutorClassSummary {
+    bookingId: number;
+    subjectName?: string;
+    studentName?: string;
+    totalSessions: number;
+    completedSessions: number;
+    /** Distinct weekday+time slots, e.g. "T2 18:05, T3 14:30" (max 3). */
+    schedule?: string;
+    /** ISO start of the next upcoming session, or null. */
+    nextSessionStart?: string | null;
+    status: TutorClassStatus;
+}
+
+export interface TutorClassListResponse {
+    items: TutorClassSummary[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+}
+
+export const getTutorClasses = async (
+    page: number = 1,
+    pageSize: number = 10,
+    status?: string,
+    search?: string,
+): Promise<ApiResponse<TutorClassListResponse>> => {
+    const response = await api.get('/tutor/classes', {
+        headers: getAuthHeaders(),
+        params: { page, pageSize, status, search },
+    });
+    return response.data;
+};
+
 export const getTutorClassSessionDetail = async (id: number): Promise<ApiResponse<ClassSessionDetailResponse>> => {
     const response = await api.get(`/tutor/class-sessions/${id}`, { headers: getAuthHeaders() });
     return response.data;
