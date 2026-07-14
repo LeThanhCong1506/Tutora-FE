@@ -1,3 +1,4 @@
+import { PanelRightClose, PanelRightOpen } from 'lucide-react';
 import styles from '../styles.module.css';
 
 interface SessionHeaderProps {
@@ -5,9 +6,18 @@ interface SessionHeaderProps {
   elapsedLabel: string;
   endLabel: string;
   onEnd: () => void;
+  panelOpen: boolean;
+  onTogglePanel: () => void;
 }
 
-const SessionHeader = ({ subjectAndPeer, elapsedLabel, endLabel, onEnd }: SessionHeaderProps) => {
+const SessionHeader = ({
+  subjectAndPeer,
+  elapsedLabel,
+  endLabel,
+  onEnd,
+  panelOpen,
+  onTogglePanel,
+}: SessionHeaderProps) => {
   return (
     <div className={styles.header}>
       <div className={styles.headerLeft}>
@@ -17,9 +27,18 @@ const SessionHeader = ({ subjectAndPeer, elapsedLabel, endLabel, onEnd }: Sessio
         <span className={styles.headerSubject}>{subjectAndPeer}</span>
         <span className={styles.headerTimer}>{elapsedLabel}</span>
       </div>
-      <button className={styles.endBtn} onClick={onEnd}>
-        {endLabel}
-      </button>
+      <div className={styles.headerRight}>
+        <button
+          className={styles.headerIconBtn}
+          onClick={onTogglePanel}
+          title={panelOpen ? 'Ẩn bảng bên' : 'Hiện bảng bên'}
+        >
+          {panelOpen ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}
+        </button>
+        <button className={styles.endBtn} onClick={onEnd}>
+          {endLabel}
+        </button>
+      </div>
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Mic, MicOff } from 'lucide-react';
+import { Mic, MicOff, Pin, PinOff } from 'lucide-react';
 import type { ICameraVideoTrack, ILocalVideoTrack, IRemoteVideoTrack } from 'agora-rtc-sdk-ng';
 import styles from '../styles.module.css';
 
@@ -9,6 +9,15 @@ interface VideoTileProps {
   videoTrack?: ICameraVideoTrack | ILocalVideoTrack | IRemoteVideoTrack | null;
   audioOn: boolean;
   avatarUrl?: string;
+  /** Screen-share track được hiển thị "contain" (không cắt) như Google Meet;
+   * camera thường hiển thị "cover" để lấp đầy khung. */
+  fit?: 'cover' | 'contain';
+  /** Biến thể thu nhỏ dùng ở dải thumbnail khi đang spotlight. */
+  compact?: boolean;
+  /** Ô này đang được ghim (xem full) hay không. */
+  isPinned?: boolean;
+  /** Ghim/bỏ ghim ô để xem full. */
+  onTogglePin?: () => void;
 }
 
 const initialsOf = (name: string): string => {
@@ -18,22 +27,32 @@ const initialsOf = (name: string): string => {
   return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 };
 
-const VideoTile = ({ name, roleLabel, videoTrack, audioOn, avatarUrl }: VideoTileProps) => {
+const VideoTile = ({
+  name,
+  roleLabel,
+  videoTrack,
+  audioOn,
+  avatarUrl,
+  fit = 'cover',
+  compact = false,
+  isPinned = false,
+  onTogglePin,
+}: VideoTileProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el || !videoTrack) return;
-    videoTrack.play(el);
+    videoTrack.play(el, { fit });
     return () => {
       videoTrack.stop();
     };
-  }, [videoTrack]);
+  }, [videoTrack, fit]);
 
   const hasVideo = !!videoTrack;
 
   return (
-    <div className={styles.videoTile}>
+    <div className={compact ? `${styles.videoTile} ${styles.videoTileCompact}` : styles.videoTile}>
       <div ref={containerRef} className={styles.videoTileMedia} />
       {!hasVideo && (
         <div className={styles.videoTilePlaceholder}>
@@ -42,6 +61,18 @@ const VideoTile = ({ name, roleLabel, videoTrack, audioOn, avatarUrl }: VideoTil
           </div>
         </div>
       )}
+
+      {onTogglePin && (
+        <button
+          type="button"
+          className={`${styles.pinBtn} ${isPinned ? styles.pinBtnActive : ''}`}
+          onClick={onTogglePin}
+          title={isPinned ? 'Bỏ ghim' : 'Ghim để xem full'}
+        >
+          {isPinned ? <PinOff size={compact ? 13 : 16} /> : <Pin size={compact ? 13 : 16} />}
+        </button>
+      )}
+
       <div className={styles.videoTileNameOverlay}>
         <span className={audioOn ? styles.audioDotOn : styles.audioDotOff} />
         {name} ({roleLabel})
