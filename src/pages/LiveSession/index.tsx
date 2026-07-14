@@ -38,6 +38,7 @@ const LiveSession = () => {
   const [mockMicOn, setMockMicOn] = useState(true);
   const [mockCamOn, setMockCamOn] = useState(true);
   const [mockScreenSharing, setMockScreenSharing] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(true);
 
   const role = (getCurrentUserRole() || '').toLowerCase();
   const isTutor = role === 'tutor';
@@ -155,6 +156,8 @@ const LiveSession = () => {
         elapsedLabel={formatElapsed(elapsedSeconds)}
         endLabel={isTutor ? 'Kết thúc buổi học' : 'Rời buổi học'}
         onEnd={handleLeave}
+        panelOpen={panelOpen}
+        onTogglePanel={() => setPanelOpen((v) => !v)}
       />
       <div className={styles.body}>
         <VideoStage
@@ -162,6 +165,7 @@ const LiveSession = () => {
           localVideoTrack={localVideoTrack}
           localAudioOn={micOn}
           localCamOn={camOn}
+          localScreenSharing={isScreenSharing}
           remoteParticipants={remoteParticipants}
         >
           <ControlBar
@@ -184,7 +188,7 @@ const LiveSession = () => {
             leaveLabel={isTutor ? 'Kết thúc' : 'Rời đi'}
           />
         </VideoStage>
-        <SidePanel />
+        <SidePanel open={panelOpen} onClose={() => setPanelOpen(false)} />
       </div>
     </div>
   );
