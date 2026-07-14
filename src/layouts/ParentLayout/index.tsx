@@ -16,7 +16,14 @@ const MESSAGES_PATH = '/parent-portal/messages';
 // Map sidebar path → notification types thuộc tab đó. Đồng bộ với BE
 // `MV.DomainLayer/Constants/NotificationType.cs`.
 const NOTIFICATION_TYPES_BY_PATH: Record<string, string[]> = {
-    '/parent-portal/booking': ['booking_new', 'booking_accepted', 'booking_declined'],
+    '/parent-portal/booking': [
+        'booking_new',
+        'booking_accepted',
+        'booking_declined',
+        'booking_cancelled',
+        'payment_remaining_required',
+        'booking_payment_due_soon',
+    ],
 };
 
 const baseParentNavItems: NavItem[] = [
