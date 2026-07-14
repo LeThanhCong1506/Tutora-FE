@@ -15,6 +15,13 @@ const BoltIcon = () => (
     </svg>
 );
 
+const AwardIcon = () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="9" r="6" />
+        <path d="M8.5 14 7 22l5-3 5 3-1.5-8" />
+    </svg>
+);
+
 interface ProfileCompletenessProps {
     profileData: ProfileCompletionData;
     /** Trạng thái tổng thể hồ sơ (draft / pending_approval / active / rejected). */
@@ -41,6 +48,26 @@ const ProfileCompleteness: React.FC<ProfileCompletenessProps> = ({
     const percent = Math.round((completedCount / total) * 100);
     const firstIncompleteIndex = completionItems.findIndex((item) => !item.completed);
     const allDone = completedCount === total;
+
+    // Chứng chỉ KHÔNG thuộc checklist trên: Admin duyệt riêng từng chứng chỉ,
+    // chỉ chứng chỉ đã duyệt mới hiển thị trên marketplace.
+    const certCounts = useMemo(() => {
+        const list = profileData.credentials;
+        const verified = list.filter((c) => c.verificationStatus === 'verified').length;
+        const rejected = list.filter((c) => c.verificationStatus === 'rejected').length;
+        return { total: list.length, verified, rejected, pending: list.length - verified - rejected };
+    }, [profileData.credentials]);
+
+    const certSummary =
+        certCounts.total === 0
+            ? 'Chưa có chứng chỉ — bạn có thể bổ sung bất cứ lúc nào.'
+            : [
+                  certCounts.verified > 0 ? `${certCounts.verified} đã duyệt` : null,
+                  certCounts.pending > 0 ? `${certCounts.pending} chờ duyệt` : null,
+                  certCounts.rejected > 0 ? `${certCounts.rejected} bị từ chối` : null,
+              ]
+                  .filter(Boolean)
+                  .join(' · ');
 
     const handleItemClick = (key: string) => onSectionClick?.(key);
 
@@ -90,6 +117,18 @@ const ProfileCompleteness: React.FC<ProfileCompletenessProps> = ({
                         </button>
                     );
                 })}
+            </div>
+
+            {/* Bằng cấp, chứng chỉ — Admin duyệt riêng, không tính vào tiến trình gửi hồ sơ */}
+            <div className={styles.certBlock}>
+                <button type="button" className={styles.certRow} onClick={() => handleItemClick('credentials')}>
+                    <span className={styles.certDot}>
+                        <AwardIcon />
+                    </span>
+                    <span className={styles.certLabel}>Bằng cấp, chứng chỉ</span>
+                    <span className={styles.certBadge}>Duyệt riêng</span>
+                </button>
+                <p className={styles.certSummary}>{certSummary}</p>
             </div>
 
             {/* Action Button */}

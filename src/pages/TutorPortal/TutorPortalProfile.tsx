@@ -559,11 +559,6 @@ const TutorPortalProfile: React.FC = () => {
                   Đang chờ duyệt
                 </span>
               </div>
-              <p className={styles.pendingReviewDescription}>
-                Admin đang xác minh thông tin hồ sơ của bạn. Hồ sơ sẽ tự động hiển thị trên marketplace
-                ngay sau khi được phê duyệt. Quá trình này thường mất 24–48 giờ — bạn vẫn có thể chỉnh sửa
-                thông tin trong lúc chờ.
-              </p>
             </div>
           </div>
         </div>
