@@ -221,6 +221,81 @@
     padding: 3px 8px;
 }
 
+/* ===== Bằng cấp, chứng chỉ — Admin duyệt riêng, không thuộc checklist ===== */
+.certBlock {
+    border-top: 1px dashed rgba(62, 47, 40, 0.18);
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.certRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 8px;
+    background: none;
+    border: none;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: background-color 0.18s ease;
+}
+
+.certRow:hover {
+    background-color: rgba(242, 240, 228, 0.55);
+}
+
+/* Chấm tròn viền đứt để phân biệt với các bước bắt buộc (viền liền). */
+.certDot {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(26, 34, 56, 0.05);
+    border: 2px dashed rgba(62, 47, 40, 0.28);
+    color: rgba(62, 47, 40, 0.55);
+}
+
+.certLabel {
+    flex: 1;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 18px;
+    color: #1a2238;
+}
+
+.certBadge {
+    flex-shrink: 0;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: rgba(26, 34, 56, 0.65);
+    background: rgba(26, 34, 56, 0.08);
+    border-radius: 999px;
+    padding: 3px 8px;
+}
+
+/* Thụt lề khớp cột chữ của hàng trên: 8px padding + 26px chấm + 12px gap = 46px. */
+.certSummary {
+    margin: 0;
+    padding: 0 8px 0 46px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 17px;
+    color: rgba(26, 34, 56, 0.72);
+}
+
 /* Action Button */
 .actionBtn {
     width: 100%;
