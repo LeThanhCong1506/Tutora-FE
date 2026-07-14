@@ -787,7 +787,10 @@ const BookingDetailPage = () => {
             Bạn có chắc chắn muốn hủy lịch đặt <strong>BK-{booking.bookingId}</strong> không?
           </p>
           {(depositPaid || remainingPaid) && (
-            <p>Bạn đã thanh toán cho khóa học này. Hệ thống sẽ tính tiền hoàn lại dựa trên số buổi gia sư đã dạy.</p>
+            <p>
+              Bạn đã thanh toán cho khóa học này. Toàn bộ số tiền đã thanh toán sẽ được hoàn vào ví của bạn sau khi
+              hủy. Lưu ý: không thể hủy khi khóa học đã có buổi diễn ra.
+            </p>
           )}
         </div>
         <Input.TextArea
