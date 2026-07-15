@@ -18,6 +18,7 @@
     "@microsoft/signalr": "^10.0.0",
     "@supabase/supabase-js": "^2.90.0",
     "agora-rtc-sdk-ng": "^4.24.5",
+    "agora-rtm-sdk": "^2.2.4",
     "antd": "^6.1.4",
     "axios": "^1.13.2",
     "date-fns": "^4.1.0",
