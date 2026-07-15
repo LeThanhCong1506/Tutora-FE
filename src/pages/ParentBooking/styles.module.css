@@ -415,6 +415,70 @@
   font-size: 9px;
 }
 
+.responseDeadline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 13px;
+  padding: 10px 12px;
+  border: 1px solid #dbe6f5;
+  border-radius: 10px;
+  background: #f5f8fd;
+  color: #41638c;
+}
+
+.responseDeadline > svg {
+  flex: 0 0 auto;
+}
+
+.responseDeadline > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.responseDeadline strong {
+  color: #294f7d;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.responseDeadline span {
+  color: #6f8096;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.responseDeadline_warning {
+  border-color: #ead6a7;
+  background: #fff9eb;
+  color: #9a6a13;
+}
+
+.responseDeadline_warning strong {
+  color: #85590c;
+}
+
+.responseDeadline_warning span {
+  color: #8c7549;
+}
+
+.responseDeadline_critical {
+  border-color: #efc6c2;
+  background: #fff4f3;
+  color: #bd4d45;
+}
+
+.responseDeadline_critical strong {
+  color: #a83d36;
+}
+
+.responseDeadline_critical span {
+  color: #95635f;
+}
+
 .cardFooter {
   display: flex;
   align-items: center;
