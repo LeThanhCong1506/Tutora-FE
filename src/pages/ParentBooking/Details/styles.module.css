@@ -911,7 +911,6 @@
   color: #667085;
 }
 
-.paymentMeta,
 .paymentDue {
   display: flex;
   align-items: center;
@@ -921,15 +920,6 @@
   border-radius: 10px;
   background: #f8f7f5;
   color: var(--detail-muted);
-  font-size: 10px;
-}
-
-.paymentMeta {
-  justify-content: space-between;
-}
-
-.paymentMeta strong {
-  color: var(--detail-ink);
   font-size: 10px;
 }
 

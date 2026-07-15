@@ -99,6 +99,31 @@ const getUniqueSchedule = (booking: BookingResponseDTO) => {
   return Array.from(uniqueSlots.values());
 };
 
+const getFeeBreakdown = (booking: BookingResponseDTO) => {
+  const originalTuition = Math.max(0, booking.totalAmount ?? booking.price ?? 0);
+  const discount = Math.max(0, booking.discountApplied ?? 0);
+  const baseAmount = Math.max(0, booking.baseAmount ?? originalTuition - discount);
+  const parentFee = Math.max(0, booking.parentFee ?? booking.finalPrice - baseAmount);
+  const tutorServiceFee = Math.max(0, booking.tutorServiceFee ?? (booking.platformFee ?? 0) - parentFee);
+  const tutorReceivable = Math.max(0, booking.tutorReceivable ?? baseAmount - tutorServiceFee);
+  const sessionCount = Math.max(1, booking.sessionCount || booking.totalSessions || 1);
+  const firstSessionPayment = Math.max(0, booking.depositAmount ?? Math.floor(booking.finalPrice / sessionCount));
+  const paymentStatus = (booking.paymentStatus ?? '').toLowerCase();
+  const isFirstSessionPaid =
+    Boolean(booking.depositPaidAt) || ['depositedescrowed', 'escrowed', 'paid'].includes(paymentStatus);
+
+  return {
+    originalTuition,
+    discount,
+    baseAmount,
+    parentFee,
+    tutorServiceFee,
+    tutorReceivable,
+    firstSessionPayment,
+    isFirstSessionPaid,
+  };
+};
+
 const TutorPortalBookings = () => {
   const [bookings, setBookings] = useState<BookingResponseDTO[]>([]);
   const [loading, setLoading] = useState(true);
@@ -305,7 +330,7 @@ const TutorPortalBookings = () => {
               const schedule = getUniqueSchedule(booking);
               const requestDate = formatRequestDate(booking.createdAt);
               const bookingPeriod = getBookingPeriod(booking);
-              const netPrice = booking.finalPrice - (booking.platformFee ?? 0);
+              const feeBreakdown = getFeeBreakdown(booking);
               const isAccepting = processingBooking?.id === booking.bookingId && processingBooking.action === 'accept';
               const isProcessing = processingBooking?.id === booking.bookingId;
 
@@ -416,23 +441,61 @@ const TutorPortalBookings = () => {
                           <Wallet size={18} />
                         </span>
                         <div>
-                          <p>Bạn thực nhận</p>
-                          <strong>{formatPrice(netPrice)}</strong>
+                          <p>Bạn thực nhận toàn khóa</p>
+                          <strong>{formatPrice(feeBreakdown.tutorReceivable)}</strong>
                         </div>
                       </div>
+
+                      <div
+                        className={`${styles.depositSummary} ${!feeBreakdown.isFirstSessionPaid ? styles.depositPending : ''}`}
+                      >
+                        <div className={styles.depositSummaryHeader}>
+                          <span>
+                            <Check size={13} />
+                            {feeBreakdown.isFirstSessionPaid
+                              ? 'Phụ huynh đã thanh toán buổi đầu'
+                              : 'Thanh toán buổi đầu dự kiến'}
+                          </span>
+                        </div>
+                        <strong>{formatPrice(feeBreakdown.firstSessionPayment)}</strong>
+                        {!feeBreakdown.isFirstSessionPaid && (
+                          <small>Số tiền cần thanh toán để gửi yêu cầu cho gia sư.</small>
+                        )}
+                      </div>
+
                       <div className={styles.priceBreakdown}>
                         <div>
-                          <span>Tổng học phí</span>
+                          <span>Học phí gốc</span>
+                          <strong>{formatPrice(feeBreakdown.originalTuition)}</strong>
+                        </div>
+                        {feeBreakdown.discount > 0 && (
+                          <>
+                            <div>
+                              <span>Ưu đãi</span>
+                              <strong className={styles.negativeAmount}>− {formatPrice(feeBreakdown.discount)}</strong>
+                            </div>
+                            <div>
+                              <span>Học phí sau ưu đãi</span>
+                              <strong>{formatPrice(feeBreakdown.baseAmount)}</strong>
+                            </div>
+                          </>
+                        )}
+                        <div>
+                          <span>Phí phụ huynh (5%)</span>
+                          <strong className={styles.positiveAmount}>+ {formatPrice(feeBreakdown.parentFee)}</strong>
+                        </div>
+                        <div className={styles.parentTotalRow}>
+                          <span>Phụ huynh cần thanh toán</span>
                           <strong>{formatPrice(booking.finalPrice)}</strong>
                         </div>
-                        <div>
-                          <span>Phí nền tảng</span>
-                          <strong>
-                            {booking.platformFee > 0 ? `− ${formatPrice(booking.platformFee)}` : formatPrice(0)}
+                        <div className={styles.tutorFeeRow}>
+                          <span>Phí gia sư (5%)</span>
+                          <strong className={styles.negativeAmount}>
+                            − {formatPrice(feeBreakdown.tutorServiceFee)}
                           </strong>
                         </div>
                       </div>
-                      <p className={styles.payoutNote}>Số tiền dự kiến sau khi trừ phí hệ thống.</p>
+                      <p className={styles.payoutNote}>Hai khoản phí 5% được tính riêng cho phụ huynh và gia sư.</p>
                     </aside>
                   </div>
 
