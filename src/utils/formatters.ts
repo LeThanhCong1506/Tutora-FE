@@ -260,6 +260,9 @@ export const formatTransactionType = (type: string): string => {
     EscrowRelease: 'Giải phóng',
     Refund: 'Hoàn tiền',
     Withdrawal: 'Rút tiền',
+    DepositPayment: 'Tiền học buổi đầu',
+    RemainingPayment: 'Tiền học còn lại',
+    Payment: 'Thanh toán',
     Fee: 'Phí',
   };
 
