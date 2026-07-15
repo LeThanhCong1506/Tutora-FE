@@ -101,9 +101,7 @@ export const updateParentStudent = async (id: string, payload: IUpdateParentStud
  * Student tự cập nhật hồ sơ của chính mình (họ tên, ngày sinh, trường, khối lớp, mục tiêu).
  * PUT /api/students/me
  */
-export const updateMyStudentProfile = async (
-  payload: IUpdateParentStudent,
-): Promise<ApiResponse<StudentType>> => {
+export const updateMyStudentProfile = async (payload: IUpdateParentStudent): Promise<ApiResponse<StudentType>> => {
   try {
     const response = await api.put<ApiResponse<StudentType>>(`/students/me`, payload, {
       headers: getAuthHeaders(),
@@ -115,30 +113,6 @@ export const updateMyStudentProfile = async (
       data: error.response?.data,
       message: error.message,
     });
-    throw error;
-  }
-};
-
-export const generateLinkCode = async (studentId: string): Promise<ApiResponse<StudentType>> => {
-  try {
-    const response = await api.post(`/parent/students/${studentId}/generate-link-code`, {}, {
-      headers: getAuthHeaders(),
-    });
-    return response.data;
-  } catch (error: any) {
-    console.error('❌ Error generating link code:', error.response?.data);
-    throw error;
-  }
-};
-
-export const linkWithCode = async (code: string): Promise<ApiResponse<StudentType>> => {
-  try {
-    const response = await api.post(`/parent/students/link`, { code }, {
-      headers: getAuthHeaders(),
-    });
-    return response.data;
-  } catch (error: any) {
-    console.error('❌ Error linking with code:', error.response?.data);
     throw error;
   }
 };
@@ -177,7 +151,7 @@ export interface StudentCredentials {
  * Create student and returns auto-generated credentials
  */
 export const createParentStudentWithCredentials = async (
-  payload: ICreateParentStudent
+  payload: ICreateParentStudent,
 ): Promise<ApiResponse<StudentCredentials>> => {
   try {
     const response = await api.post<ApiResponse<StudentCredentials>>(`/parent/students`, payload, {
@@ -190,36 +164,6 @@ export const createParentStudentWithCredentials = async (
       data: error.response?.data,
       message: error.message,
     });
-    throw error;
-  }
-};
-
-/**
- * Parent generates an invite code for students to self-link
- */
-export const generateParentCode = async (): Promise<ApiResponse<{ parentCode: string }>> => {
-  try {
-    const response = await api.post(`/parent/students/generate-parent-code`, {}, {
-      headers: getAuthHeaders(),
-    });
-    return response.data;
-  } catch (error: any) {
-    console.error('❌ Error generating parent code:', error.response?.data);
-    throw error;
-  }
-};
-
-/**
- * Student uses a parent code to self-link with a parent
- */
-export const studentSelfLink = async (parentCode: string): Promise<ApiResponse<StudentType>> => {
-  try {
-    const response = await api.post(`/students/self-link`, { parentCode }, {
-      headers: getAuthHeaders(),
-    });
-    return response.data;
-  } catch (error: any) {
-    console.error('❌ Error self-linking with parent code:', error.response?.data);
     throw error;
   }
 };
@@ -249,14 +193,12 @@ export const getMyLinkStatus = async (): Promise<ApiResponse<LinkStatusResponse>
 /**
  * Parent resets student password — returns new credentials
  */
-export const resetStudentPassword = async (
-  studentId: string
-): Promise<ApiResponse<StudentCredentials>> => {
+export const resetStudentPassword = async (studentId: string): Promise<ApiResponse<StudentCredentials>> => {
   try {
     const response = await api.put<ApiResponse<StudentCredentials>>(
       `/parent/students/${studentId}/reset-password`,
       {},
-      { headers: getAuthHeaders() }
+      { headers: getAuthHeaders() },
     );
     return response.data;
   } catch (error: any) {
