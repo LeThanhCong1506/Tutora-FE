@@ -8,8 +8,6 @@ export type StudentType = {
   gradeLevel: string;
   learningGoals: string;
   avatarURL: string;
-  studentCode: string;
-  studentCodeExpiresAt: string;
   createdAt: string;
   age: number;
   username: string;

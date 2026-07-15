@@ -143,7 +143,7 @@
 /* ===== QUICK STATS ===== */
 .quickStats {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 16px;
 }
 
@@ -193,15 +193,7 @@
     margin: 0 0 32px 0;
 }
 
-/* ===== MAIN GRID (2 columns) ===== */
-.mainGrid {
-    display: grid;
-    grid-template-columns: 1fr 300px;
-    gap: 24px;
-    align-items: start;
-}
-
-/* ===== LEFT COLUMN ===== */
+/* ===== CHILDREN LIST ===== */
 .leftColumn {
     display: flex;
     flex-direction: column;
@@ -514,75 +506,6 @@
     border-color: #d4d4d4;
 }
 
-/* ===== RIGHT COLUMN: LINKING TIPS ===== */
-.rightColumn {
-    position: sticky;
-    top: 80px;
-}
-
-.tipsCard {
-    background: var(--color-white);
-    border: 1px solid rgba(26, 34, 56, 0.1);
-    border-radius: 16px;
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-.tipsHeader {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-/* Dark rounded icon for lightbulb (matching Figma) */
-.tipsIconWrap {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    background: var(--color-navy);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.tipsTitle {
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 16px;
-    line-height: 22px;
-    font-weight: 600;
-    color: var(--color-navy);
-    margin: 0;
-}
-
-.tipsList {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-.tipItem {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-}
-
-.tipItem svg {
-    flex-shrink: 0;
-    margin-top: 1px;
-}
-
-.tipItem p {
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 13px;
-    line-height: 20px;
-    color: #525252;
-    margin: 0;
-}
-
 /* ===== LOADING ===== */
 .loadingContainer {
     display: flex;
@@ -615,16 +538,6 @@
 }
 
 /* ===== RESPONSIVE ===== */
-@media (max-width: 1024px) {
-    .mainGrid {
-        grid-template-columns: 1fr;
-    }
-
-    .rightColumn {
-        position: static;
-    }
-}
-
 @media (max-width: 768px) {
     .topBar {
         padding: 16px;
