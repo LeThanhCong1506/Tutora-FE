@@ -63,8 +63,10 @@ export function getNotificationTargetPath(notification: NotificationDTO): string
         || type === NOTIFICATION_TYPE.BookingCancelled
         || type === NOTIFICATION_TYPE.PaymentRemainingRequired
         || type === NOTIFICATION_TYPE.BookingPaymentDueSoon) && refId) {
-        const path = prefix === '/tutor-portal' ? 'bookings' : 'booking';
-        return `${prefix}/${path}/${refId}`;
+        // Tutor portal hiện xử lý yêu cầu trực tiếp trên trang danh sách và không có
+        // route `bookings/:id`, nên không tạo deep-link dẫn tới trang 404.
+        if (prefix === '/tutor-portal') return `${prefix}/bookings`;
+        return `${prefix}/booking/${refId}`;
     }
     if (type === NOTIFICATION_TYPE.Message && refId) {
         return `${prefix}/messages`;
