@@ -511,7 +511,7 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                                 <div className={styles.summaryDetails}>
                                     {paymentInfo.totalAmount != null && paymentInfo.totalAmount > 0 && (
                                         <div className={styles.summaryRow}>
-                                            <span>Tổng giá trị booking</span>
+                                            <span>Tổng học phí dự kiến</span>
                                             <strong>{formatCurrency(paymentInfo.totalAmount)}</strong>
                                         </div>
                                     )}
