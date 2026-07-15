@@ -12,6 +12,7 @@ import {
   PermissionErrorState,
   useAgoraCall,
 } from './live-session-components';
+import type { ChatMessage } from './live-session-components/types';
 import styles from './styles.module.css';
 
 const formatElapsed = (seconds: number): string => {
@@ -38,6 +39,7 @@ const LiveSession = () => {
   const [mockMicOn, setMockMicOn] = useState(true);
   const [mockCamOn, setMockCamOn] = useState(true);
   const [mockScreenSharing, setMockScreenSharing] = useState(false);
+  const [mockMessages, setMockMessages] = useState<ChatMessage[]>([]);
   const [panelOpen, setPanelOpen] = useState(true);
 
   const role = (getCurrentUserRole() || '').toLowerCase();
@@ -85,6 +87,8 @@ const LiveSession = () => {
     camOn: realCamOn,
     isScreenSharing: realIsScreenSharing,
     remoteParticipants: realRemoteParticipants,
+    chatMessages: realChatMessages,
+    sendChatMessage: realSendChatMessage,
     toggleMic,
     toggleCam,
     toggleScreenShare,
@@ -98,6 +102,22 @@ const LiveSession = () => {
   const remoteParticipants = isMock
     ? [{ uid: 'mock-peer', name: 'Học sinh Demo', hasVideo: false, hasAudio: true }]
     : realRemoteParticipants;
+
+  const chatMessages = isMock ? mockMessages : realChatMessages;
+  const sendChatMessage = isMock
+    ? (text: string) =>
+        setMockMessages((prev) => [
+          ...prev,
+          {
+            id: `mock-${Date.now()}`,
+            senderUid: 'local',
+            senderName: 'Bạn',
+            text,
+            timestamp: Date.now(),
+            isLocal: true,
+          },
+        ])
+    : realSendChatMessage;
 
   useEffect(() => {
     if (!joined) return;
@@ -188,7 +208,13 @@ const LiveSession = () => {
             leaveLabel={isTutor ? 'Kết thúc' : 'Rời đi'}
           />
         </VideoStage>
-        <SidePanel open={panelOpen} onClose={() => setPanelOpen(false)} />
+        <SidePanel
+          open={panelOpen}
+          onClose={() => setPanelOpen(false)}
+          messages={chatMessages}
+          onSendMessage={sendChatMessage}
+          notesStorageKey={classSessionId ?? 'mock'}
+        />
       </div>
     </div>
   );

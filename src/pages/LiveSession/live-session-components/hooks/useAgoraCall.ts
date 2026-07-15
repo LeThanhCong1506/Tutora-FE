@@ -6,8 +6,9 @@ import AgoraRTC, {
   type ILocalVideoTrack,
   type IMicrophoneAudioTrack,
 } from 'agora-rtc-sdk-ng';
+import AgoraRTM, { type RTMClient, type RTMEvents } from 'agora-rtm-sdk';
 import { getAgoraRoom, type AgoraRoomInfo } from '../../../../services/agora.service';
-import type { RemoteParticipant } from '../types';
+import type { ChatMessage, RemoteParticipant } from '../types';
 
 interface UseAgoraCallResult {
   joined: boolean;
@@ -17,6 +18,8 @@ interface UseAgoraCallResult {
   camOn: boolean;
   isScreenSharing: boolean;
   remoteParticipants: RemoteParticipant[];
+  chatMessages: ChatMessage[];
+  sendChatMessage: (text: string) => void;
   toggleMic: () => Promise<void>;
   toggleCam: () => Promise<void>;
   toggleScreenShare: () => Promise<void>;
@@ -37,6 +40,11 @@ export const useAgoraCall = (
   const camTrackRef = useRef<ICameraVideoTrack | null>(null);
   const screenTrackRef = useRef<ILocalVideoTrack | null>(null);
   const leavingRef = useRef(false);
+  // RTM client để nhắn tin trong phiên — chat realtime, không lưu DB.
+  const rtmClientRef = useRef<RTMClient | null>(null);
+  const rtmChannelRef = useRef<string | null>(null);
+  const localUidRef = useRef<string | number | null>(null);
+  const localNameRef = useRef<string>('Bạn');
 
   const [joined, setJoined] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -45,6 +53,7 @@ export const useAgoraCall = (
   const [camOn, setCamOn] = useState(true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [remoteParticipants, setRemoteParticipants] = useState<RemoteParticipant[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
   const nameFor = useCallback(
     (uid: string | number) => participantNames[String(uid)] ?? `Người tham gia ${uid}`,
@@ -125,6 +134,41 @@ export const useAgoraCall = (
         camTrackRef.current = camTrack;
         await client.publish([micTrack, camTrack]);
         setLocalVideoTrack(camTrack);
+
+        localUidRef.current = room.uid;
+        localNameRef.current = participantNames[String(room.uid)] ?? 'Bạn';
+
+        // Đăng nhập RTM và subscribe kênh chat (cùng channel/token với RTC).
+        try {
+          const rtm = new AgoraRTM.RTM(room.appId, String(room.uid));
+          rtm.addEventListener('message', (event: RTMEvents.MessageEvent) => {
+            if (event.publisher === String(room.uid)) return; // bỏ echo của chính mình
+            const text = typeof event.message === 'string' ? event.message : '';
+            if (!text) return;
+            setChatMessages((prev) => [
+              ...prev,
+              {
+                id: `${event.publisher}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                senderUid: event.publisher,
+                senderName: nameFor(event.publisher),
+                text,
+                timestamp: Date.now(),
+                isLocal: false,
+              },
+            ]);
+          });
+          await rtm.login({ token: room.token });
+          await rtm.subscribe(room.channel);
+          if (cancelled) {
+            await rtm.logout();
+          } else {
+            rtmClientRef.current = rtm;
+            rtmChannelRef.current = room.channel;
+          }
+        } catch (rtmErr) {
+          console.error('❌ Agora RTM (chat) init failed:', rtmErr);
+        }
+
         setJoined(true);
       } catch (err) {
         console.error('❌ Agora join failed:', err);
@@ -147,6 +191,7 @@ export const useAgoraCall = (
       client.off('token-privilege-did-expire', handleTokenDidExpire);
       if (!leavingRef.current) {
         void cleanupTracks();
+        void cleanupRtm();
         void client.leave();
       }
     };
@@ -160,6 +205,19 @@ export const useAgoraCall = (
     micTrackRef.current = null;
     camTrackRef.current = null;
     screenTrackRef.current = null;
+  };
+
+  const cleanupRtm = async () => {
+    const rtm = rtmClientRef.current;
+    rtmClientRef.current = null;
+    rtmChannelRef.current = null;
+    if (rtm) {
+      try {
+        await rtm.logout();
+      } catch (err) {
+        console.error('❌ Error logging out RTM:', err);
+      }
+    }
   };
 
   const toggleMic = useCallback(async () => {
@@ -213,10 +271,36 @@ export const useAgoraCall = (
     }
   }, [isScreenSharing]);
 
+  const sendChatMessage = useCallback((text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+
+    // Hiển thị ngay tin của mình (optimistic) — RTM không tự vọng lại tin của publisher.
+    setChatMessages((prev) => [
+      ...prev,
+      {
+        id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        senderUid: localUidRef.current ?? 'local',
+        senderName: localNameRef.current,
+        text: trimmed,
+        timestamp: Date.now(),
+        isLocal: true,
+      },
+    ]);
+
+    const rtm = rtmClientRef.current;
+    const channel = rtmChannelRef.current;
+    if (!rtm || !channel) return;
+    void rtm.publish(channel, trimmed).catch((err) => {
+      console.error('❌ Failed to send chat message:', err);
+    });
+  }, []);
+
   const leave = useCallback(async () => {
     leavingRef.current = true;
     const client = clientRef.current;
     await cleanupTracks();
+    await cleanupRtm();
     if (client) {
       try {
         await client.unpublish();
@@ -228,6 +312,7 @@ export const useAgoraCall = (
     setJoined(false);
     setLocalVideoTrack(null);
     setRemoteParticipants([]);
+    setChatMessages([]);
   }, []);
 
   return {
@@ -238,6 +323,8 @@ export const useAgoraCall = (
     camOn,
     isScreenSharing,
     remoteParticipants,
+    chatMessages,
+    sendChatMessage,
     toggleMic,
     toggleCam,
     toggleScreenShare,
