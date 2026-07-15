@@ -25,7 +25,14 @@ import {
   XCircle,
 } from 'lucide-react';
 import BookingMonthCalendar from '../../../components/BookingMonthCalendar/BookingMonthCalendar';
-import { cancelBooking, getBookingById, isFirstLessonFinished, type BookingResponseDTO } from '../../../services/booking.service';
+import { useCurrentTime } from '../../../hooks/useCurrentTime';
+import {
+  cancelBooking,
+  getBookingById,
+  isFirstLessonFinished,
+  type BookingResponseDTO,
+} from '../../../services/booking.service';
+import { getBookingResponseDeadlineState } from '../../../utils/bookingDeadline';
 import { canLeaveBookingFeedback } from '../../../services/feedback.service';
 import { getPaymentBadge } from '../../../utils/paymentBadge';
 import CreateFeedbackModal from '../../ParentLessons/components/CreateFeedbackModal';
@@ -176,8 +183,7 @@ const getProgressSteps = (booking: BookingResponseDTO, lessons: Lesson[]): Progr
   ].includes(booking.status);
   const depositPaid =
     Boolean(booking.depositPaidAt) || ['DepositEscrowed', 'Escrowed', 'paid'].includes(booking.paymentStatus);
-  const remainingPaid =
-    Boolean(booking.remainingPaidAt) || ['Escrowed', 'paid'].includes(booking.paymentStatus);
+  const remainingPaid = Boolean(booking.remainingPaidAt) || ['Escrowed', 'paid'].includes(booking.paymentStatus);
   const firstLessonReached = ['pending_remaining_payment', 'active', 'ongoing', 'paid', 'completed'].includes(
     booking.status,
   );
@@ -262,6 +268,7 @@ const BookingDetailPage = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
+  const currentTime = useCurrentTime();
 
   useEffect(() => {
     if (!isValidBookingId) return;
@@ -339,6 +346,15 @@ const BookingDetailPage = () => {
   const progressValue = `${completedProgressSteps}/${progressSteps.length}`;
   const progressBarWidth = Math.round((completedProgressSteps / progressSteps.length) * 100);
   const isCancelled = ['cancelled', 'cancelled_noshow', 'payment_timeout'].includes(booking.status);
+  const responseDeadline =
+    booking.status === 'pending_tutor' ? getBookingResponseDeadlineState(booking.responseDeadline, currentTime) : null;
+  const responseDeadlineTone = responseDeadline
+    ? responseDeadline.urgency === 'critical'
+      ? styles.responseDeadlineCritical
+      : responseDeadline.urgency === 'warning'
+        ? styles.responseDeadlineWarning
+        : ''
+    : '';
   const paymentBadge = getPaymentBadge(booking.status, booking.paymentStatus);
   const parentServiceFee = Math.max(0, booking.finalPrice - (booking.price - booking.discountApplied));
   const depositPaid =
@@ -592,6 +608,23 @@ const BookingDetailPage = () => {
                   </div>
                   <strong className={styles.progressValue}>{progressValue}</strong>
                 </div>
+                {booking.status === 'pending_tutor' && (
+                  <div className={`${styles.responseDeadline} ${responseDeadlineTone}`}>
+                    <Clock3 size={19} />
+                    <div>
+                      <strong>
+                        {responseDeadline
+                          ? responseDeadline.isExpired
+                            ? 'Đã hết thời gian phản hồi của gia sư'
+                            : `Gia sư còn ${responseDeadline.remainingLabel} để phản hồi`
+                          : 'Đang chờ gia sư phản hồi'}
+                      </strong>
+                      <span>
+                        {responseDeadline ? responseDeadline.deadlineLabel : 'Thời hạn phản hồi đang được cập nhật.'}
+                      </span>
+                    </div>
+                  </div>
+                )}
                 <div className={styles.progressBar} aria-label={`Đã hoàn thành ${progressValue} bước`}>
                   <span style={{ width: `${progressBarWidth}%` }} />
                 </div>
@@ -835,8 +868,8 @@ const BookingDetailPage = () => {
           </p>
           {(depositPaid || remainingPaid) && (
             <p>
-              Bạn đã thanh toán cho khóa học này. Toàn bộ số tiền đã thanh toán sẽ được hoàn vào ví của bạn sau khi
-              hủy. Lưu ý: không thể hủy khi khóa học đã có buổi diễn ra.
+              Bạn đã thanh toán cho khóa học này. Toàn bộ số tiền đã thanh toán sẽ được hoàn vào ví của bạn sau khi hủy.
+              Lưu ý: không thể hủy khi khóa học đã có buổi diễn ra.
             </p>
           )}
         </div>

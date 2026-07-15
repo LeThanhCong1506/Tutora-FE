@@ -106,6 +106,7 @@ export interface BookingResponseDTO {
     startDate?: string;
     createdAt: string;
     paymentDueAt: string | null;
+    responseDeadline?: string | null;
     // 2-stage payment fields
     depositAmount?: number;
     remainingAmount?: number;

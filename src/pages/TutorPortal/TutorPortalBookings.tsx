@@ -4,6 +4,7 @@ import { BookOpen, Calendar, Check, ChevronRight, Clock, MessageCircle, Search, 
 import { Input, Modal, Pagination } from 'antd';
 import { toast } from 'react-toastify';
 import BookingMonthCalendar from '../../components/BookingMonthCalendar/BookingMonthCalendar';
+import { useCurrentTime } from '../../hooks/useCurrentTime';
 import styles from '../../styles/pages/tutor-portal-bookings.module.css';
 import {
   acceptBooking,
@@ -12,6 +13,7 @@ import {
   type BookingResponseDTO,
 } from '../../services/booking.service';
 import { getChats, getOrCreateBookingChannel, type ChatChannel } from '../../services/chat.service';
+import { getBookingResponseDeadlineState } from '../../utils/bookingDeadline';
 
 const STATUS_TABS = [
   { key: 'pending_tutor', label: 'Chờ xác nhận' },
@@ -139,6 +141,7 @@ const TutorPortalBookings = () => {
     action: 'accept' | 'decline';
   } | null>(null);
   const [openingChatId, setOpeningChatId] = useState<number | null>(null);
+  const currentTime = useCurrentTime();
   const navigate = useNavigate();
 
   const fetchBookings = async () => {
@@ -333,6 +336,17 @@ const TutorPortalBookings = () => {
               const feeBreakdown = getFeeBreakdown(booking);
               const isAccepting = processingBooking?.id === booking.bookingId && processingBooking.action === 'accept';
               const isProcessing = processingBooking?.id === booking.bookingId;
+              const responseDeadline =
+                booking.status === 'pending_tutor'
+                  ? getBookingResponseDeadlineState(booking.responseDeadline, currentTime)
+                  : null;
+              const responseHintTone = responseDeadline ? styles[`responseHint_${responseDeadline.urgency}`] : '';
+              const deadlineBadgeTone =
+                responseDeadline?.urgency === 'critical'
+                  ? styles.deadlineBadgeCritical
+                  : responseDeadline?.urgency === 'warning'
+                    ? styles.deadlineBadgeWarning
+                    : '';
 
               return (
                 <article key={booking.bookingId} className={styles.bookingCard}>
@@ -347,6 +361,17 @@ const TutorPortalBookings = () => {
                           <span className={`${styles.statusBadge} ${styles[`status_${status.tone}`]}`}>
                             {status.label}
                           </span>
+                          {responseDeadline && (
+                            <span
+                              className={`${styles.deadlineBadge} ${deadlineBadgeTone}`}
+                              title={responseDeadline.deadlineLabel}
+                            >
+                              <Clock size={13} aria-hidden="true" />
+                              {responseDeadline.isExpired
+                                ? 'Hết hạn phản hồi'
+                                : `Còn ${responseDeadline.compactRemainingLabel}`}
+                            </span>
+                          )}
                         </div>
                         <p>
                           {formatGrade(booking.student?.gradeLevel)}
@@ -500,13 +525,26 @@ const TutorPortalBookings = () => {
                   </div>
 
                   <footer className={styles.cardFooter}>
-                    <div className={styles.responseHint}>
+                    <div className={`${styles.responseHint} ${responseHintTone}`}>
                       <Clock size={16} />
-                      <span>
-                        {booking.status === 'pending_tutor'
-                          ? 'Phản hồi sớm để phụ huynh chủ động sắp xếp lịch học.'
-                          : `Yêu cầu hiện ở trạng thái “${status.label}”.`}
-                      </span>
+                      <div>
+                        {responseDeadline ? (
+                          <>
+                            <strong>
+                              {responseDeadline.isExpired
+                                ? 'Đã hết thời gian phản hồi'
+                                : `Còn ${responseDeadline.remainingLabel} để xác nhận yêu cầu`}
+                            </strong>
+                            <span>{responseDeadline.deadlineLabel}</span>
+                          </>
+                        ) : (
+                          <span>
+                            {booking.status === 'pending_tutor'
+                              ? 'Phản hồi sớm để phụ huynh chủ động sắp xếp lịch học.'
+                              : `Yêu cầu hiện ở trạng thái “${status.label}”.`}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div className={styles.actions}>
