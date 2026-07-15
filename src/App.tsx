@@ -65,6 +65,7 @@ const ParentDashboard = lazy(() => import('./pages/ParentDashboard'));
 const ParentBooking = lazy(() => import('./pages/ParentBooking'));
 const BookingDetail = lazy(() => import('./pages/ParentBooking/Details'));
 const ParentWallet = lazy(() => import('./pages/ParentWallet'));
+const ParentWalletTransactions = lazy(() => import('./pages/ParentWallet/AllTransactionsPage'));
 const ParentMessage = lazy(() => import('./pages/ParentMessage'));
 const PaymentPage = lazy(() => import('./pages/ParentBooking/Payment'));
 const ParentStudent = lazy(() => import('./pages/ParentStudent'));
@@ -229,6 +230,7 @@ function App() {
             <Route path="booking/:id/payment" element={<PaymentPage />} />
             <Route path="student" element={<ParentStudent />} />
             <Route path="wallet" element={<ParentWallet />} />
+            <Route path="wallet/transactions" element={<ParentWalletTransactions />} />
             <Route path="messages" element={<ParentMessage />} />
             <Route path="lessons" element={<ParentLessons />} />
             <Route path="lessons/:lessonId" element={<ParentLessonDetail />} />

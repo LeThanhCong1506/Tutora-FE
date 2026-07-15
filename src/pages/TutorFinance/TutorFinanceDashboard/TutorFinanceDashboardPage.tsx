@@ -5,8 +5,7 @@ import {
     PlusOutlined,
     HistoryOutlined,
     BankOutlined,
-    ArrowRightOutlined,
-    WalletOutlined
+    ArrowRightOutlined
 } from '@ant-design/icons';
 import { getFinanceSummary, getTransactions } from '../../../services/tutorFinance.service';
 import { formatCurrency, formatDateTime, formatTransactionType } from '../../../utils/formatters';
@@ -90,14 +89,6 @@ const TutorFinanceDashboardPage: React.FC = () => {
                     disabled={!summary || summary.balance < 100000}
                 >
                     Rút tiền
-                </Button>
-                <Button
-                    icon={<WalletOutlined />}
-                    size="large"
-                    style={{ color: '#52c41a', borderColor: '#52c41a' }}
-                    onClick={() => toast.info('Tính năng Nạp tiền đang được phát triển. Vui lòng quay lại sau!')}
-                >
-                    Nạp tiền
                 </Button>
                 <Button
                     icon={<HistoryOutlined />}

@@ -505,11 +505,45 @@
 .sidePanelBody {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
-  padding: 0 21px 21px;
+  display: flex;
+  flex-direction: column;
 }
 
-.sidePanelComingSoon {
+.sidePanelBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  margin-left: 6px;
+  border-radius: 9999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+/* ── Chat panel ── */
+.chatPanel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chatList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chatEmpty {
   color: rgba(255, 255, 255, 0.4);
   font-size: 12px;
   line-height: 1.7;
@@ -517,12 +551,126 @@
   padding: 32px 8px;
 }
 
+.chatBubbleRow {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.chatBubbleRowLocal {
+  justify-content: flex-end;
+}
+
+.chatBubble {
+  max-width: 82%;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+
+.chatBubbleLocal {
+  background: #2f6f4f;
+}
+
+.chatSender {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 3px;
+}
+
+.chatText {
+  font-size: 13px;
+  color: #fff;
+  line-height: 1.45;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.chatTime {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: right;
+  margin-top: 3px;
+}
+
 .sidePanelInputRow {
   display: flex;
   gap: 10px;
-  padding: 21px;
+  padding: 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+/* ── Notes panel ── */
+.notesPanel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px 16px;
+  gap: 8px;
+}
+
+.notesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.notesHint {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1.4;
+}
+
+.notesClearBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+}
+
+.notesClearBtn:hover {
+  background: rgba(220, 38, 38, 0.25);
+  color: #fca5a5;
+}
+
+.notesTextarea {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #fff;
+  font-family: 'IBM Plex Sans', sans-serif;
+  outline: none;
+}
+
+.notesTextarea::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.notesTextarea:focus {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.notesFooter {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
   flex-shrink: 0;
 }
 
