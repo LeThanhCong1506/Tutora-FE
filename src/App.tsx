@@ -27,6 +27,7 @@ import './styles/toastify.css';
 // Public
 const HomePage = lazy(() => import('./pages/Home/HomePage'));
 const TutorSearchPage = lazy(() => import('./pages/TutorSearch/TutorSearchPage'));
+const MiniAppSearchFormPage = lazy(() => import('./pages/MiniAppSearchForm/MiniAppSearchFormPage'));
 const TutorDetailPage = lazy(() => import('./pages/TutorDetail/TutorDetailPage'));
 const ParentBookingDemo = lazy(() => import('./pages/ParentBookingDemo'));
 const LoginPage = lazy(() => import('./pages/Login/LoginPage'));
@@ -175,6 +176,7 @@ function App() {
           {/* Public Routes */}
           <Route path="/" element={<HomePage />} />
           <Route path="/tutor-search" element={<TutorSearchPage />} />
+          <Route path="/mini-app-search" element={<MiniAppSearchFormPage />} />
           <Route path="/demo/parent-booking" element={<ParentBookingDemo />} />
           <Route path="/demo/parent-booking/:tutorId" element={<ParentBookingDemo />} />
           <Route path="/demo/parent-booking/tutor/:tutorId" element={<ParentBookingDemo />} />
