@@ -85,6 +85,10 @@ export interface BookingResponseDTO {
     totalAmount?: number;
     currency?: string;
     discountApplied: number;
+    baseAmount?: number;
+    parentFee?: number;
+    tutorServiceFee?: number;
+    tutorReceivable?: number;
     finalPrice: number;
     platformFee: number;
     status: string;
