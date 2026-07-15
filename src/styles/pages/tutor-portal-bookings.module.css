@@ -502,6 +502,62 @@
   letter-spacing: -0.025em;
 }
 
+.depositSummary {
+  margin-top: 13px;
+  padding: 11px 12px;
+  border: 1px solid #cae3d4;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.depositSummaryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.depositSummaryHeader span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #367054;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.depositSummaryHeader svg {
+  padding: 2px;
+  border-radius: 50%;
+  background: #dff0e6;
+}
+
+.depositSummary > strong {
+  display: block;
+  margin-top: 5px;
+  color: #185a39;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.depositSummary small {
+  display: block;
+  margin-top: 3px;
+  color: #78877e;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.depositPending {
+  border-color: #e6dbc8;
+  background: #fffcf7;
+}
+
+.depositPending .depositSummaryHeader span,
+.depositPending > strong {
+  color: #81683f;
+}
+
 .priceBreakdown {
   display: flex;
   flex-direction: column;
@@ -525,6 +581,31 @@
   color: #3f4e45;
   font-size: 11px;
   font-weight: 700;
+}
+
+.priceBreakdown .positiveAmount {
+  color: #397454;
+}
+
+.priceBreakdown .negativeAmount {
+  color: #9a5f4c;
+}
+
+.priceBreakdown .parentTotalRow {
+  margin-top: 2px;
+  padding: 9px 0;
+  border-top: 1px solid #dfe8e2;
+  border-bottom: 1px solid #dfe8e2;
+}
+
+.priceBreakdown .parentTotalRow span,
+.priceBreakdown .parentTotalRow strong {
+  color: #273d31;
+  font-weight: 750;
+}
+
+.priceBreakdown .tutorFeeRow {
+  padding-top: 2px;
 }
 
 .payoutNote {
@@ -776,12 +857,22 @@
   }
 
   .payoutTitle {
+    grid-column: 1;
+    grid-row: 1;
     padding: 0 20px 0 0;
     border-right: 1px solid #dfe8e2;
     border-bottom: 0;
   }
 
+  .depositSummary {
+    grid-column: 1;
+    grid-row: 2;
+    margin: 10px 20px 0 0;
+  }
+
   .priceBreakdown {
+    grid-column: 2;
+    grid-row: 1 / span 2;
     padding: 0;
   }
 
@@ -864,6 +955,17 @@
     padding: 0 0 13px;
     border-right: 0;
     border-bottom: 1px solid #dfe8e2;
+  }
+
+  .depositSummary {
+    margin: 12px 0 0;
+  }
+
+  .depositSummary,
+  .priceBreakdown,
+  .payoutNote {
+    grid-column: auto;
+    grid-row: auto;
   }
 
   .priceBreakdown {
