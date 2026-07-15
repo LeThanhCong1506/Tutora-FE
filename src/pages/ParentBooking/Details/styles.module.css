@@ -624,6 +624,64 @@
   font-size: 14px;
 }
 
+.responseDeadline {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 13px 14px;
+  border: 1px solid #dbe4ff;
+  border-radius: 12px;
+  background: var(--detail-blue-soft);
+  color: var(--detail-blue);
+}
+
+.responseDeadline > svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.responseDeadline > div {
+  min-width: 0;
+}
+
+.responseDeadline strong,
+.responseDeadline span {
+  display: block;
+}
+
+.responseDeadline strong {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.responseDeadline span {
+  margin-top: 3px;
+  color: #6f7d9a;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.responseDeadlineWarning {
+  border-color: #f0d5a7;
+  background: var(--detail-amber-soft);
+  color: var(--detail-amber);
+}
+
+.responseDeadlineWarning span {
+  color: #8d704b;
+}
+
+.responseDeadlineCritical {
+  border-color: #efcaca;
+  background: #fff0f0;
+  color: #bd3f43;
+}
+
+.responseDeadlineCritical span {
+  color: #936165;
+}
+
 .progressBar {
   height: 6px;
   margin-bottom: 22px;
@@ -911,7 +969,6 @@
   color: #667085;
 }
 
-.paymentMeta,
 .paymentDue {
   display: flex;
   align-items: center;
@@ -921,15 +978,6 @@
   border-radius: 10px;
   background: #f8f7f5;
   color: var(--detail-muted);
-  font-size: 10px;
-}
-
-.paymentMeta {
-  justify-content: space-between;
-}
-
-.paymentMeta strong {
-  color: var(--detail-ink);
   font-size: 10px;
 }
 

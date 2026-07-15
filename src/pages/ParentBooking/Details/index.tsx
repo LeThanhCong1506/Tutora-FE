@@ -25,7 +25,14 @@ import {
   XCircle,
 } from 'lucide-react';
 import BookingMonthCalendar from '../../../components/BookingMonthCalendar/BookingMonthCalendar';
-import { cancelBooking, getBookingById, isFirstLessonFinished, type BookingResponseDTO } from '../../../services/booking.service';
+import { useCurrentTime } from '../../../hooks/useCurrentTime';
+import {
+  cancelBooking,
+  getBookingById,
+  isFirstLessonFinished,
+  type BookingResponseDTO,
+} from '../../../services/booking.service';
+import { getBookingResponseDeadlineState } from '../../../utils/bookingDeadline';
 import { canLeaveBookingFeedback } from '../../../services/feedback.service';
 import { getPaymentBadge } from '../../../utils/paymentBadge';
 import CreateFeedbackModal from '../../ParentLessons/components/CreateFeedbackModal';
@@ -52,11 +59,11 @@ interface ApiErrorBody {
 
 const STATUS_CONFIG: Record<string, StatusConfig> = {
   pending_tutor: { label: 'Chờ gia sư xác nhận', className: 'statusPending', icon: Clock3 },
-  accepted: { label: 'Chờ đặt cọc', className: 'statusWarning', icon: CreditCard },
-  pending_payment: { label: 'Chờ thanh toán', className: 'statusWarning', icon: CreditCard },
-  deposit_paid: { label: 'Đã thanh toán buổi đầu', className: 'statusActive', icon: CheckCircle2 },
+  accepted: { label: 'Chờ thanh toán buổi đầu', className: 'statusWarning', icon: CreditCard },
+  pending_payment: { label: 'Chờ thanh toán buổi đầu', className: 'statusWarning', icon: CreditCard },
+  deposit_paid: { label: 'Gia sư đã xác nhận', className: 'statusActive', icon: CheckCircle2 },
   pending_remaining_payment: { label: 'Chờ thanh toán còn lại', className: 'statusWarning', icon: WalletCards },
-  paid: { label: 'Đã thanh toán đủ', className: 'statusActive', icon: CheckCircle2 },
+  paid: { label: 'Đang hoàn tất khóa học', className: 'statusActive', icon: CheckCircle2 },
   active: { label: 'Đang học', className: 'statusActive', icon: BookOpen },
   ongoing: { label: 'Đang học', className: 'statusActive', icon: BookOpen },
   completed: { label: 'Đã hoàn thành', className: 'statusCompleted', icon: CheckCircle2 },
@@ -139,25 +146,49 @@ const formatDuration = (minutes?: number) => {
   return `${minutes} phút/buổi`;
 };
 
-// Luồng mới: parent thanh toán buổi học đầu tiên TRƯỚC, sau đó gia sư mới xác nhận.
-// Thứ tự timeline: tạo → thanh toán buổi đầu → gia sư xác nhận → thanh toán còn lại → học → xong.
-const getProgressIndex = (status: string) => {
-  if (status === 'pending_payment' || status === 'accepted') return 1;
-  if (status === 'pending_tutor') return 2;
-  if (status === 'deposit_paid' || status === 'pending_remaining_payment') return 3;
-  if (status === 'paid' || status === 'active' || status === 'ongoing') return 4;
-  if (status === 'completed') return 5;
-  return 0;
+type ProgressStepKey =
+  | 'created'
+  | 'deposit_paid'
+  | 'tutor_confirmed'
+  | 'first_lesson'
+  | 'remaining_paid'
+  | 'ongoing'
+  | 'completed';
+
+// Luồng BE hiện tại:
+// tạo → thanh toán buổi đầu → gia sư xác nhận → học buổi đầu →
+// thanh toán phần còn lại → tiếp tục khóa học → hoàn thành.
+const getCurrentProgressStep = (status: string, isSingleSession: boolean): ProgressStepKey => {
+  if (status === 'pending_payment' || status === 'accepted') return 'deposit_paid';
+  if (status === 'pending_tutor') return 'tutor_confirmed';
+  if (status === 'deposit_paid') return 'first_lesson';
+  if (status === 'pending_remaining_payment') return isSingleSession ? 'completed' : 'remaining_paid';
+  if (status === 'active' || status === 'ongoing') return isSingleSession ? 'first_lesson' : 'ongoing';
+  if (status === 'paid' || status === 'completed') return 'completed';
+  return 'created';
 };
 
 const getProgressSteps = (booking: BookingResponseDTO, lessons: Lesson[]): ProgressStep[] => {
   const firstLesson = lessons[0];
   const lastLesson = lessons.at(-1);
-  const tutorConfirmed = !['pending_payment', 'pending_tutor'].includes(booking.status);
-  const depositPaid = Boolean(booking.depositPaidAt);
-  const remainingPaid = Boolean(booking.remainingPaidAt);
+  const sessionCount = booking.totalSessions ?? booking.sessionCount;
+  const isSingleSession = sessionCount <= 1;
+  const tutorConfirmed = [
+    'deposit_paid',
+    'pending_remaining_payment',
+    'active',
+    'ongoing',
+    'paid',
+    'completed',
+  ].includes(booking.status);
+  const depositPaid =
+    Boolean(booking.depositPaidAt) || ['DepositEscrowed', 'Escrowed', 'paid'].includes(booking.paymentStatus);
+  const remainingPaid = Boolean(booking.remainingPaidAt) || ['Escrowed', 'paid'].includes(booking.paymentStatus);
+  const firstLessonReached = ['pending_remaining_payment', 'active', 'ongoing', 'paid', 'completed'].includes(
+    booking.status,
+  );
 
-  return [
+  const steps: ProgressStep[] = [
     {
       key: 'created',
       label: 'Yêu cầu đặt lịch đã được tạo',
@@ -178,27 +209,48 @@ const getProgressSteps = (booking: BookingResponseDTO, lessons: Lesson[]): Progr
       description: tutorConfirmed ? 'Gia sư đã đồng ý nhận lớp' : 'Đang chờ gia sư phản hồi yêu cầu',
     },
     {
-      key: 'remaining_paid',
-      label: 'Thanh toán các buổi còn lại',
-      description: remainingPaid ? 'Học phí đã được thanh toán đầy đủ' : 'Thanh toán các buổi học còn lại',
-      date: booking.remainingPaidAt,
-    },
-    {
-      key: 'ongoing',
-      label: booking.status === 'ongoing' || booking.status === 'active' ? 'Đang học' : 'Bắt đầu học',
-      description:
-        booking.status === 'ongoing' || booking.status === 'active'
-          ? 'Khóa học đang diễn ra'
-          : 'Khóa học bắt đầu theo lịch đã xác nhận',
+      key: 'first_lesson',
+      label: firstLessonReached ? 'Đã học buổi đầu tiên' : 'Học buổi đầu tiên',
+      description: firstLessonReached
+        ? 'Buổi học đầu tiên đã diễn ra'
+        : 'Bắt đầu buổi học đầu tiên theo lịch đã xác nhận',
       date: firstLesson?.scheduledStart ?? booking.startDate,
     },
-    {
-      key: 'completed',
-      label: 'Hoàn thành khóa học',
-      description: 'Tất cả buổi học đã hoàn tất',
-      date: booking.status === 'completed' ? lastLesson?.scheduledEnd : null,
-    },
   ];
+
+  if (!isSingleSession) {
+    steps.push({
+      key: 'remaining_paid',
+      label: 'Thanh toán các buổi còn lại',
+      description: remainingPaid
+        ? 'Học phí các buổi còn lại đã được thanh toán'
+        : booking.status === 'pending_remaining_payment'
+          ? 'Buổi đầu đã kết thúc, vui lòng thanh toán phần còn lại'
+          : 'Mở sau khi buổi học đầu tiên kết thúc',
+      date: booking.remainingPaidAt,
+    });
+    steps.push({
+      key: 'ongoing',
+      label: booking.status === 'ongoing' || booking.status === 'active' ? 'Đang học' : 'Tiếp tục khóa học',
+      description:
+        booking.status === 'ongoing' || booking.status === 'active'
+          ? 'Các buổi học còn lại đang diễn ra'
+          : 'Các buổi còn lại bắt đầu sau khi hoàn tất thanh toán',
+      date: booking.remainingPaidAt,
+    });
+  }
+
+  steps.push({
+    key: 'completed',
+    label: booking.status === 'paid' ? 'Đang hoàn tất khóa học' : 'Hoàn thành khóa học',
+    description:
+      booking.status === 'paid'
+        ? 'Các buổi học đã kết thúc, hệ thống đang hoàn tất khóa học'
+        : 'Tất cả buổi học đã hoàn tất',
+    date: booking.status === 'completed' ? lastLesson?.scheduledEnd : null,
+  });
+
+  return steps;
 };
 
 const BookingDetailPage = () => {
@@ -216,6 +268,7 @@ const BookingDetailPage = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
+  const currentTime = useCurrentTime();
 
   useEffect(() => {
     if (!isValidBookingId) return;
@@ -282,10 +335,26 @@ const BookingDetailPage = () => {
     ).values(),
   );
   const progressSteps = getProgressSteps(booking, lessons);
-  const progressIndex = getProgressIndex(booking.status);
+  const isSingleSession = (booking.totalSessions ?? booking.sessionCount) <= 1;
+  const currentProgressStep = getCurrentProgressStep(booking.status, isSingleSession);
+  const progressIndex = Math.max(
+    0,
+    progressSteps.findIndex((step) => step.key === currentProgressStep),
+  );
   const isCourseCompleted = booking.status === 'completed';
-  const progressPercent = isCourseCompleted ? 100 : Math.round((progressIndex / (progressSteps.length - 1)) * 100);
+  const completedProgressSteps = isCourseCompleted ? progressSteps.length : progressIndex;
+  const progressValue = `${completedProgressSteps}/${progressSteps.length}`;
+  const progressBarWidth = Math.round((completedProgressSteps / progressSteps.length) * 100);
   const isCancelled = ['cancelled', 'cancelled_noshow', 'payment_timeout'].includes(booking.status);
+  const responseDeadline =
+    booking.status === 'pending_tutor' ? getBookingResponseDeadlineState(booking.responseDeadline, currentTime) : null;
+  const responseDeadlineTone = responseDeadline
+    ? responseDeadline.urgency === 'critical'
+      ? styles.responseDeadlineCritical
+      : responseDeadline.urgency === 'warning'
+        ? styles.responseDeadlineWarning
+        : ''
+    : '';
   const paymentBadge = getPaymentBadge(booking.status, booking.paymentStatus);
   const parentServiceFee = Math.max(0, booking.finalPrice - (booking.price - booking.discountApplied));
   const depositPaid =
@@ -537,10 +606,27 @@ const BookingDetailPage = () => {
                       <h2>Tiến trình đặt lịch</h2>
                     </div>
                   </div>
-                  <strong className={styles.progressValue}>{progressPercent}%</strong>
+                  <strong className={styles.progressValue}>{progressValue}</strong>
                 </div>
-                <div className={styles.progressBar} aria-label={`Tiến trình ${progressPercent}%`}>
-                  <span style={{ width: `${progressPercent}%` }} />
+                {booking.status === 'pending_tutor' && (
+                  <div className={`${styles.responseDeadline} ${responseDeadlineTone}`}>
+                    <Clock3 size={19} />
+                    <div>
+                      <strong>
+                        {responseDeadline
+                          ? responseDeadline.isExpired
+                            ? 'Đã hết thời gian phản hồi của gia sư'
+                            : `Gia sư còn ${responseDeadline.remainingLabel} để phản hồi`
+                          : 'Đang chờ gia sư phản hồi'}
+                      </strong>
+                      <span>
+                        {responseDeadline ? responseDeadline.deadlineLabel : 'Thời hạn phản hồi đang được cập nhật.'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                <div className={styles.progressBar} aria-label={`Đã hoàn thành ${progressValue} bước`}>
+                  <span style={{ width: `${progressBarWidth}%` }} />
                 </div>
                 <div className={styles.timeline}>
                   {progressSteps.map((step, index) => {
@@ -652,12 +738,6 @@ const BookingDetailPage = () => {
                 <div className={`${styles.paymentStatusBox} ${styles[`paymentTone${paymentBadge.tone}`]}`}>
                   {paymentBadge.tone === 'success' ? <CheckCircle2 size={17} /> : <AlertCircle size={17} />}
                   <span>{paymentBadge.label}</span>
-                </div>
-              )}
-              {booking.paymentCode && (
-                <div className={styles.paymentMeta}>
-                  <span>Mã thanh toán</span>
-                  <strong>{booking.paymentCode}</strong>
                 </div>
               )}
               {booking.paymentDueAt && !remainingPaid && (
@@ -787,7 +867,10 @@ const BookingDetailPage = () => {
             Bạn có chắc chắn muốn hủy lịch đặt <strong>BK-{booking.bookingId}</strong> không?
           </p>
           {(depositPaid || remainingPaid) && (
-            <p>Bạn đã thanh toán cho khóa học này. Hệ thống sẽ tính tiền hoàn lại dựa trên số buổi gia sư đã dạy.</p>
+            <p>
+              Bạn đã thanh toán cho khóa học này. Toàn bộ số tiền đã thanh toán sẽ được hoàn vào ví của bạn sau khi hủy.
+              Lưu ý: không thể hủy khi khóa học đã có buổi diễn ra.
+            </p>
           )}
         </div>
         <Input.TextArea

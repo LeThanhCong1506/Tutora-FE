@@ -8,7 +8,7 @@ import { useUnreadMessageBadge } from '../../hooks/useUnreadMessageBadge';
 import { useUnreadBadgesByTab } from '../../hooks/useUnreadBadgesByTab';
 import {
     DashboardIcon, ChildrenIcon, MessagesIcon, BookingIcon,
-    AccountIcon, ClockIcon,
+    AccountIcon, ClockIcon, WalletIcon,
 } from '../shared/icons';
 
 const MESSAGES_PATH = '/parent-portal/messages';
@@ -16,7 +16,14 @@ const MESSAGES_PATH = '/parent-portal/messages';
 // Map sidebar path → notification types thuộc tab đó. Đồng bộ với BE
 // `MV.DomainLayer/Constants/NotificationType.cs`.
 const NOTIFICATION_TYPES_BY_PATH: Record<string, string[]> = {
-    '/parent-portal/booking': ['booking_new', 'booking_accepted', 'booking_declined'],
+    '/parent-portal/booking': [
+        'booking_new',
+        'booking_accepted',
+        'booking_declined',
+        'booking_cancelled',
+        'payment_remaining_required',
+        'booking_payment_due_soon',
+    ],
 };
 
 const baseParentNavItems: NavItem[] = [
@@ -25,6 +32,7 @@ const baseParentNavItems: NavItem[] = [
     { path: MESSAGES_PATH, label: 'Tin nhắn', icon: MessagesIcon },
     { path: '/parent-portal/booking', label: 'Đặt lịch', icon: BookingIcon },
     { path: '/parent-portal/lessons', label: 'Buổi học', icon: ClockIcon },
+    { path: '/parent-portal/wallet', label: 'Tài chính', icon: WalletIcon },
     { path: '/parent-portal/account', label: 'Tài khoản', icon: AccountIcon },
 ];
 

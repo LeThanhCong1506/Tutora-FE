@@ -1,7 +1,7 @@
 /* Zalo sign-in button — song song với google-signin-button.css nhưng đơn giản hơn
    (chỉ là 1 nút redirect, không có iframe overlay như GIS). */
 .zalo-signin-button {
-    --zalo-button-height: clamp(44px, 6.2vh, 50px);
+    --zalo-button-height: clamp(52px, 6.5vh, 56px);
     position: relative;
     width: 100%;
     min-height: var(--zalo-button-height);
@@ -100,7 +100,7 @@
 
 @media (max-height: 700px) {
     .zalo-signin-button {
-        --zalo-button-height: 42px;
+        --zalo-button-height: 50px;
         grid-template-columns: 30px minmax(0, 1fr) 14px;
         gap: 10px;
         padding: 0 12px;
@@ -119,7 +119,7 @@
 
 @media (max-height: 550px) {
     .zalo-signin-button {
-        --zalo-button-height: 38px;
+        --zalo-button-height: 46px;
         grid-template-columns: 26px minmax(0, 1fr) 12px;
         gap: 8px;
         padding: 0 10px;

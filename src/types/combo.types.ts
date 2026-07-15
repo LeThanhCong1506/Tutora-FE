@@ -26,6 +26,9 @@ interface BaseCombo {
 export interface FixedCombo extends BaseCombo {
   type: 'fixed';
   sessions: ComboSessionSlot[];
+  // true = gói đang có buổi dạy được đặt & chưa hoàn tất (BE tính, chỉ có ở combo load từ API).
+  // Onboarding dùng để khóa nút Sửa/Xóa — BE cũng chặn 409 nên đây chỉ là lớp UX.
+  hasActiveBooking?: boolean;
 }
 
 export interface FlexCombo extends BaseCombo {

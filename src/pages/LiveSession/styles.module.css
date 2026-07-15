@@ -85,6 +85,24 @@
   flex-shrink: 0;
 }
 
+.headerIconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.headerIconBtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
 .attendanceBtn {
   display: inline-flex;
   align-items: center;
@@ -126,26 +144,84 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 20px;
+  padding: 20px 20px 96px;
   position: relative;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
+/* ── Grid cân đối (không ai share màn hình) ── */
 .tilesGrid {
+  flex: 1;
+  min-height: 0;
   display: grid;
+  gap: 16px;
+  justify-content: center;
+}
+
+/* 1 người: một khung lớn ở giữa. */
+.tilesGridSingle {
+  grid-template-columns: minmax(0, min(100%, 1100px));
+  grid-template-rows: minmax(0, 1fr);
+}
+
+/* 2 người (lớp 1-1): chia đôi cân đối, đầy chiều cao như Google Meet. */
+.tilesGridTwo {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr);
+}
+
+/* Nhiều người: tự xuống dòng, mỗi ô giữ tỉ lệ 16:10. */
+.tilesGridMany {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
+  grid-auto-rows: minmax(0, 1fr);
+  align-content: center;
+}
+
+/* ── Layout spotlight (có người chia sẻ màn hình) ── */
+.spotlightLayout {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 16px;
+}
+
+.spotlightMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.spotlightMain > * {
+  flex: 1;
+  aspect-ratio: auto;
+}
+
+.spotlightStrip {
+  width: 220px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
 }
 
 /* ── Video tile ── */
 .videoTile {
   position: relative;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  aspect-ratio: 16 / 10;
+  background: #10182b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
   overflow: hidden;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Ô thu nhỏ trong dải thumbnail khi đang spotlight. */
+.videoTileCompact {
+  aspect-ratio: 16 / 10;
+  height: auto;
+  border-radius: 14px;
 }
 
 .videoTileMedia {
@@ -153,9 +229,11 @@
   inset: 0;
 }
 
-.videoTileMedia > div {
+.videoTileMedia > div,
+.videoTileMedia video {
   width: 100% !important;
   height: 100% !important;
+  border-radius: inherit;
 }
 
 .videoTilePlaceholder {
@@ -190,122 +268,137 @@
 
 .videoTileNameOverlay {
   position: absolute;
-  bottom: 14px;
-  left: 14px;
+  bottom: 12px;
+  left: 12px;
+  max-width: calc(100% - 60px);
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 9999px;
   color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .audioDotOn,
 .audioDotOff {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 9999px;
   flex-shrink: 0;
 }
 
 .audioDotOn {
-  background: #3d4a3e;
+  background: #22c55e;
 }
 
 .audioDotOff {
-  background: #631b1b;
+  background: #ef4444;
 }
 
 .videoTileMicIcon {
   position: absolute;
-  bottom: 12px;
+  top: 12px;
   right: 12px;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.45);
   color: #fff;
-  border-radius: 7px;
-  padding: 5px 6px;
-  display: flex;
-}
-
-/* ── Whiteboard placeholder ── */
-.whiteboardPanel {
-  flex: 1;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  min-height: 220px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
-
-.whiteboardIconWrap {
-  width: 56px;
-  height: 56px;
   border-radius: 9999px;
-  border: 1px dashed rgba(255, 255, 255, 0.2);
+  padding: 7px;
+  display: flex;
+}
+
+/* ── Nút ghim (pin) để xem full ── */
+.pinBtn {
+  position: absolute;
+  top: 12px;
+  left: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 14px;
+  padding: 7px;
+  border: none;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.9);
+  transition:
+    opacity 0.15s ease,
+    background 0.15s ease,
+    transform 0.1s ease;
+  z-index: 2;
 }
 
-.whiteboardTitle {
-  font-size: 16px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.8);
-  font-family: 'Bricolage Grotesque', sans-serif;
+/* Hiện nút pin khi hover vào ô, hoặc luôn hiện nếu ô đang được ghim. */
+.videoTile:hover .pinBtn,
+.pinBtnActive {
+  opacity: 1;
+  transform: scale(1);
 }
 
-.whiteboardSubtitle {
-  font-size: 12px;
-  font-style: italic;
-  color: rgba(255, 255, 255, 0.4);
-  font-family: 'IBM Plex Serif', serif;
+.pinBtn:hover {
+  background: rgba(0, 0, 0, 0.7);
 }
 
-/* ── Control bar ── */
+.pinBtnActive {
+  background: #2563eb;
+}
+
+.pinBtnActive:hover {
+  background: #3b82f6;
+}
+
+/* ── Control bar (kiểu Google Meet: nút tròn nổi ở đáy) ── */
 .controlBar {
   position: absolute;
-  bottom: 20px;
+  bottom: 22px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 11px 20px;
-  background: rgba(26, 34, 56, 0.8);
-  backdrop-filter: blur(6px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  z-index: 2;
+  gap: 12px;
+  padding: 10px 16px;
+  background: rgba(16, 24, 43, 0.72);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  box-shadow: 0 12px 40px -8px rgba(0, 0, 0, 0.6);
+  z-index: 3;
 }
 
 .controlBtn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
+  width: 48px;
+  height: 48px;
+  border-radius: 9999px;
   border: none;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(255, 255, 255, 0.1);
   color: #fff;
   cursor: pointer;
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease;
 }
 
 .controlBtn:hover {
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.controlBtn:active {
+  transform: scale(0.94);
 }
 
 .controlBtnOff {
   background: #631b1b;
+  color: #fff;
 }
 
 .controlBtnOff:hover {
@@ -313,35 +406,43 @@
 }
 
 .controlBtnActive {
-  background: #3d4a3e;
+  background: #2f6f4f;
+}
+
+.controlBtnActive:hover {
+  background: #368058;
 }
 
 .controlDivider {
   width: 1px;
-  height: 21px;
+  height: 28px;
   background: rgba(255, 255, 255, 0.1);
+  margin: 0 2px;
 }
 
 .leaveBtn {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 9px 17px;
-  border-radius: 10px;
+  gap: 8px;
+  height: 48px;
+  padding: 0 22px;
+  border-radius: 9999px;
   border: none;
-  background: rgba(220, 38, 38, 0.2);
-  color: #f87171;
-  font-size: 12px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  transition: background 0.15s ease;
 }
 
 .leaveBtn:hover {
-  background: rgba(220, 38, 38, 0.32);
+  background: #ef4444;
 }
 
 /* ── Side panel ── */
 .sidePanel {
+  position: relative;
   width: 336px;
   flex-shrink: 0;
   background: rgba(0, 0, 0, 0.1);
@@ -350,10 +451,35 @@
   flex-direction: column;
 }
 
+.sidePanelCloseBtn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  z-index: 2;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.sidePanelCloseBtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
 .sidePanelTabs {
   display: flex;
   gap: 8px;
-  padding: 14px;
+  padding: 14px 52px 14px 14px;
   flex-shrink: 0;
 }
 
@@ -379,11 +505,45 @@
 .sidePanelBody {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
-  padding: 0 21px 21px;
+  display: flex;
+  flex-direction: column;
 }
 
-.sidePanelComingSoon {
+.sidePanelBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  margin-left: 6px;
+  border-radius: 9999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+/* ── Chat panel ── */
+.chatPanel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chatList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chatEmpty {
   color: rgba(255, 255, 255, 0.4);
   font-size: 12px;
   line-height: 1.7;
@@ -391,12 +551,126 @@
   padding: 32px 8px;
 }
 
+.chatBubbleRow {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.chatBubbleRowLocal {
+  justify-content: flex-end;
+}
+
+.chatBubble {
+  max-width: 82%;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+
+.chatBubbleLocal {
+  background: #2f6f4f;
+}
+
+.chatSender {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 3px;
+}
+
+.chatText {
+  font-size: 13px;
+  color: #fff;
+  line-height: 1.45;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.chatTime {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: right;
+  margin-top: 3px;
+}
+
 .sidePanelInputRow {
   display: flex;
   gap: 10px;
-  padding: 21px;
+  padding: 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+/* ── Notes panel ── */
+.notesPanel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px 16px;
+  gap: 8px;
+}
+
+.notesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.notesHint {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1.4;
+}
+
+.notesClearBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+}
+
+.notesClearBtn:hover {
+  background: rgba(220, 38, 38, 0.25);
+  color: #fca5a5;
+}
+
+.notesTextarea {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #fff;
+  font-family: 'IBM Plex Sans', sans-serif;
+  outline: none;
+}
+
+.notesTextarea::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.notesTextarea:focus {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.notesFooter {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
   flex-shrink: 0;
 }
 

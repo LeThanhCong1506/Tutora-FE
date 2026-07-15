@@ -1900,6 +1900,24 @@
   color: #3d4a3e;
 }
 
+/* Nhiều badge trên 1 hàng (Lịch cố định + Đang có lớp). */
+.comboBadgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Gói đang có buổi dạy được đặt — bị khóa sửa/xóa. */
+.comboLocked {
+  background: rgba(146, 106, 20, 0.12);
+  color: #926a14;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: help;
+}
+
 .comboName {
   font-family: 'Bricolage Grotesque', sans-serif;
   font-size: 17px;
@@ -2064,6 +2082,24 @@
 .iconBtn:hover {
   background: rgba(26, 34, 56, 0.05);
   border-color: rgba(26, 34, 56, 0.25);
+}
+
+/* Wrapper span để Tooltip vẫn hoạt động trên nút disabled (nút disabled không bắt mouse event). */
+.iconBtnWrap {
+  display: inline-flex;
+}
+
+.iconBtn:disabled {
+  color: rgba(26, 34, 56, 0.35);
+  border-color: rgba(26, 34, 56, 0.08);
+  background: rgba(26, 34, 56, 0.03);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.iconBtn:disabled:hover {
+  background: rgba(26, 34, 56, 0.03);
+  border-color: rgba(26, 34, 56, 0.08);
 }
 
 .iconBtnDanger {

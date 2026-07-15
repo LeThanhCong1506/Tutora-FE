@@ -16,6 +16,9 @@ const REMEMBERED_PHONE_KEY = 'TUTORA_remembered_phone';
 // Chỉ giữ chữ số và dấu '+' đứng đầu (cho số dạng +84...).
 const sanitizePhone = (raw: string) => raw.replace(/[^\d+]/g, '').replace(/(?!^)\+/g, '');
 
+const looksLikeEmail = (raw: string) => raw.includes('@');
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
 
@@ -35,7 +38,12 @@ const LoginForm: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: name === "phone" ? sanitizePhone(value) : value }));
+    if (name === "phone") {
+      const next = looksLikeEmail(value) || /[a-zA-Z]/.test(value) ? value.trim() : sanitizePhone(value);
+      setFormData((prev) => ({ ...prev, phone: next }));
+      return;
+    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   /**
@@ -149,23 +157,33 @@ const LoginForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.phone || !formData.password) {
-      toast.warning("Vui lòng nhập đầy đủ số điện thoại và mật khẩu!");
+    const identifier = formData.phone.trim();
+
+    if (!identifier || !formData.password) {
+      toast.warning("Vui lòng nhập đầy đủ email/số điện thoại và mật khẩu!");
       return;
     }
 
-    const phoneDigits = formData.phone.replace(/\D/g, "");
-    if (phoneDigits.length < 9 || phoneDigits.length > 11) {
-      toast.warning("Số điện thoại không hợp lệ!");
-      return;
+    // Chấp nhận email HOẶC số điện thoại — khớp với /auth/login của backend.
+    if (looksLikeEmail(identifier)) {
+      if (!EMAIL_RE.test(identifier)) {
+        toast.warning("Email không hợp lệ!");
+        return;
+      }
+    } else {
+      const phoneDigits = identifier.replace(/\D/g, "");
+      if (phoneDigits.length < 9 || phoneDigits.length > 11) {
+        toast.warning("Số điện thoại không hợp lệ!");
+        return;
+      }
     }
 
     try {
       setIsSubmitting(true);
 
-      // Call auth login API directly (no Supabase) — chỉ đăng nhập bằng số điện thoại
+      // Call auth login API directly (no Supabase) — đăng nhập bằng email HOẶC SĐT
       const response = await axios.post(`${API_BASE_URL}/auth/login`, {
-        emailOrPhone: formData.phone,
+        emailOrPhone: identifier,
         password: formData.password,
       });
 
@@ -196,7 +214,7 @@ const LoginForm: React.FC = () => {
       // Chỉ ghi nhớ SĐT khi đăng nhập user-facing thành công.
       if (loggedIn) {
         if (rememberMe) {
-          localStorage.setItem(REMEMBERED_PHONE_KEY, formData.phone);
+          localStorage.setItem(REMEMBERED_PHONE_KEY, identifier);
         } else {
           localStorage.removeItem(REMEMBERED_PHONE_KEY);
         }
@@ -232,13 +250,14 @@ const LoginForm: React.FC = () => {
             <InputGroup
               id="phone"
               name="phone"
-              type="tel"
-              label="Số điện thoại"
-              placeholder="090..."
+              type="text"
+              label="Số điện thoại hoặc email"
+              placeholder="090... hoặc email@example.com"
               icon="phone"
               value={formData.phone}
               onChange={handleChange}
               disabled={isSubmitting}
+              autoComplete="username"
             />
           </div>
 
@@ -317,13 +336,8 @@ const LoginForm: React.FC = () => {
             <span style={{ flex: 1, height: 1, background: 'rgba(26,34,56,0.12)' }} />
           </div>
 
-          {/* Đăng nhập với Google (GIS trả idToken → /auth/google) */}
-          <div className="animate-fade-in-up delay-300">
+          <div className="login-form__social animate-fade-in-up delay-300">
             <GoogleSignInButton onCredential={handleGoogleCredential} disabled={isSubmitting} />
-          </div>
-
-          {/* Đăng nhập với Zalo (Web OAuth + PKCE → redirect Zalo → /auth/zalo/callback) */}
-          <div className="animate-fade-in-up delay-300" style={{ marginTop: 10 }}>
             <ZaloSignInButton disabled={isSubmitting} />
           </div>
 

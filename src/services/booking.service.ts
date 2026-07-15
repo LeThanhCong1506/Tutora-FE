@@ -85,6 +85,10 @@ export interface BookingResponseDTO {
     totalAmount?: number;
     currency?: string;
     discountApplied: number;
+    baseAmount?: number;
+    parentFee?: number;
+    tutorServiceFee?: number;
+    tutorReceivable?: number;
     finalPrice: number;
     platformFee: number;
     status: string;
@@ -102,6 +106,7 @@ export interface BookingResponseDTO {
     startDate?: string;
     createdAt: string;
     paymentDueAt: string | null;
+    responseDeadline?: string | null;
     // 2-stage payment fields
     depositAmount?: number;
     remainingAmount?: number;

@@ -13,7 +13,9 @@ import {
   WalletCards,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { useCurrentTime } from '../../hooks/useCurrentTime';
 import { getParentBookings, isFirstLessonFinished, type BookingResponseDTO } from '../../services/booking.service';
+import { getBookingResponseDeadlineState } from '../../utils/bookingDeadline';
 import styles from './styles.module.css';
 
 const STATUS_TABS = [
@@ -155,6 +157,7 @@ const getPaymentAction = (booking: BookingResponseDTO) => {
 
 const ParentBooking = () => {
   const navigate = useNavigate();
+  const currentTime = useCurrentTime();
   const [activeTab, setActiveTab] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [bookings, setBookings] = useState<BookingResponseDTO[]>([]);
@@ -260,6 +263,16 @@ const ParentBooking = () => {
               const duration = booking.durationMinutesPerSession
                 ? ` · ${booking.durationMinutesPerSession} phút/buổi`
                 : '';
+              const responseDeadline =
+                booking.status === 'pending_tutor'
+                  ? getBookingResponseDeadlineState(booking.responseDeadline, currentTime)
+                  : null;
+              const responseDeadlineTone =
+                responseDeadline?.urgency === 'critical'
+                  ? styles.responseDeadline_critical
+                  : responseDeadline?.urgency === 'warning'
+                    ? styles.responseDeadline_warning
+                    : '';
 
               return (
                 <article key={booking.bookingId} className={styles.bookingCard}>
@@ -334,6 +347,26 @@ const ParentBooking = () => {
                       </div>
                     </div>
                   </div>
+
+                  {booking.status === 'pending_tutor' && (
+                    <div className={`${styles.responseDeadline} ${responseDeadlineTone}`}>
+                      <Clock3 size={17} aria-hidden="true" />
+                      <div>
+                        <strong>
+                          {responseDeadline
+                            ? responseDeadline.isExpired
+                              ? 'Gia sư đã hết thời gian phản hồi'
+                              : `Gia sư còn ${responseDeadline.remainingLabel} để phản hồi`
+                            : 'Đang chờ gia sư phản hồi'}
+                        </strong>
+                        <span>
+                          {responseDeadline
+                            ? responseDeadline.deadlineLabel
+                            : 'Yêu cầu đã được gửi và đang chờ gia sư xác nhận.'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
 
                   <footer className={styles.cardFooter}>
                     <span className={styles.bookingMeta}>

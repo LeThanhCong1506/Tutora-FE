@@ -7,495 +7,789 @@
     max-width: 1400px;
     margin: 0 auto;
     box-sizing: border-box;
+    color: #1a1a1a;
 }
 
-.card {
-    background: #ffffff;
-    border: 1px solid #e5e5e5;
-    border-radius: 8px;
-}
-
-.heroCard {
-    padding: 33px;
+.pageHeader {
     display: flex;
     flex-direction: column;
-    gap: 24px;
-    min-height: fit-content;
+    gap: 6px;
 }
 
-.heroTop {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 24px;
+.backBtn {
+    align-self: flex-start;
+    background: transparent;
+    border: none;
+    color: #374151;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0 0 4px;
 }
 
-.heroInfo {
+.backBtn:hover {
+    color: #1a1a1a;
+}
+
+.pageTitle {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.pageSubtitle {
+    font-size: 14px;
+    color: #374151;
+    margin: 0;
+}
+
+/* Summary cards */
+.summaryRow {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.summaryCard {
+    background: #fff;
+    border: 1px solid #f0f0f0;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    padding: 24px;
     display: flex;
     flex-direction: column;
+    gap: 10px;
+}
+
+.summaryCardPrimary {
+    border-color: #d9f0dd;
+    background: linear-gradient(180deg, #f6fef8 0%, #ffffff 60%);
+}
+
+.summaryLabel {
+    display: flex;
+    align-items: center;
     gap: 8px;
-}
-
-.label {
     font-size: 14px;
-    line-height: 20px;
-    color: #525252;
+    color: #374151;
 }
 
-.balance {
-    font-size: 36px;
-    line-height: 40px;
-    color: #171717;
-    font-weight: 400;
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    flex-shrink: 0;
 }
 
-.subtle {
-    font-size: 14px;
-    line-height: 20px;
-    color: #525252;
+.dotGreen {
+    background: #52c41a;
 }
 
-.pill {
-    background: #f5f5f5;
-    border-radius: 4px;
-    padding: 4px 12px;
-    font-size: 14px;
-    line-height: 20px;
-    color: #171717;
+.dotRed {
+    background: #ff4d4f;
 }
 
-.nextCharge {
-    background: #fafafa;
-    border-radius: 8px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+.summaryValue {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #1a1a1a;
 }
 
-.miniLabel {
+.valueGreen {
+    color: #52c41a;
+}
+
+.valueRed {
+    color: #ff4d4f;
+}
+
+.summaryFoot {
+    font-size: 13px;
+    color: #4b5563;
+    line-height: 1.5;
+}
+
+.summaryMeta {
     font-size: 12px;
-    line-height: 16px;
-    color: #525252;
+    color: #6b7280;
+    min-height: 16px;
 }
 
-.nextChargeRow {
+.withdrawBtn {
+    margin-top: 6px;
+    align-self: flex-start;
+    background: #52c41a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.withdrawBtn:hover:not(:disabled) {
+    background: #49ad17;
+}
+
+.withdrawBtn:disabled {
+    background: #d9d9d9;
+    cursor: not-allowed;
+}
+
+/* Card chung */
+.card {
+    background: #fff;
+    border: 1px solid #f0f0f0;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.cardHeader {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-}
-
-.nextChargeInfo {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.value {
-    font-size: 14px;
-    line-height: 20px;
-    color: #171717;
-}
-
-.meta {
-    font-size: 12px;
-    line-height: 16px;
-    color: #525252;
-}
-
-.amount {
-    font-size: 18px;
-    line-height: 28px;
-    color: #171717;
-}
-
-.actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.primaryButton {
-    background: #171717;
-    color: #ffffff;
-    border: none;
-    border-radius: 8px;
-    padding: 10px 24px;
-    font-size: 16px;
-    line-height: 24px;
-    cursor: pointer;
-}
-
-.secondaryButton {
-    background: transparent;
-    color: #171717;
-    border: 1px solid #d4d4d4;
-    border-radius: 8px;
-    padding: 11px 25px;
-    font-size: 16px;
-    line-height: 24px;
-    cursor: pointer;
+    padding: 20px 24px;
+    border-bottom: 1px solid #f0f0f0;
 }
 
 .sectionTitle {
     font-size: 18px;
-    line-height: 28px;
-    color: #171717;
-    font-weight: 400;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0;
 }
 
-.sectionBlock {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+.cardHeaderMeta {
+    font-size: 13px;
+    color: #4b5563;
 }
 
-.optionRow {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.amountButton {
-    border: 2px solid #d4d4d4;
-    border-radius: 8px;
-    padding: 14px 26px;
-    background: #ffffff;
-    font-size: 16px;
-    line-height: 24px;
-    color: #171717;
-    cursor: pointer;
-}
-
-.amountButtonActive {
-    background: #fafafa;
-    border-color: #171717;
-}
-
-.amountButtonCustom {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.customIcon {
-    width: 14px;
-    height: 14px;
-    border-radius: 3px;
-    background: #171717;
-    position: relative;
-}
-
-.customIcon::before,
-.customIcon::after {
-    content: '';
-    position: absolute;
-    background: #ffffff;
-}
-
-.customIcon::before {
-    width: 8px;
-    height: 2px;
-    top: 6px;
-    left: 3px;
-}
-
-.customIcon::after {
-    width: 2px;
-    height: 8px;
-    top: 3px;
-    left: 6px;
-}
-
-.methodRow {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.methodCard {
-    border: 2px solid #d4d4d4;
-    border-radius: 8px;
-    background: #ffffff;
-    padding: 18px;
-    min-width: 160px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-}
-
-.methodCardActive {
-    background: #fafafa;
-    border-color: #171717;
-}
-
-.methodIcon {
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
-    background: #171717;
-}
-
-.methodIconMomo {
-    background: #a3005f;
-}
-
-.methodIconZalo {
-    background: #0068ff;
-}
-
-.methodIconBank {
-    background: #111827;
-}
-
-.methodIconCard {
-    background: #6b7280;
-}
-
-.methodLabel {
-    font-size: 12px;
-    line-height: 16px;
-    color: #171717;
-}
-
-.methodLabelMuted {
-    font-size: 12px;
-    line-height: 16px;
-    color: #525252;
-}
-
-.cardHeader {
-    border-bottom: 1px solid #e5e5e5;
-    padding: 24px;
-}
-
-.rowBetween {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 24px;
-    gap: 24px;
-    flex-wrap: wrap;
-}
-
-.rowInfo {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.rowActions {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-}
-
-.amountBlock {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-}
-
-.status {
-    font-size: 12px;
-    line-height: 16px;
-    color: #525252;
-}
-
-.primaryButtonSmall {
-    background: #171717;
-    color: #ffffff;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 16px;
-    font-size: 14px;
-    line-height: 20px;
-    cursor: pointer;
-}
-
-.secondaryButtonSmall {
+.viewAllBtn {
     background: transparent;
-    color: #171717;
-    border: 1px solid #d4d4d4;
-    border-radius: 8px;
-    padding: 9px 17px;
-    font-size: 14px;
-    line-height: 20px;
+    border: none;
+    color: #1890ff;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
+    padding: 0;
 }
 
-.cardHeaderRow {
-    border-bottom: 1px solid #e5e5e5;
-    padding: 24px;
+.viewAllBtn:hover {
+    text-decoration: underline;
+}
+
+.emptyState {
+    padding: 40px 24px;
+    text-align: center;
+    color: #4b5563;
+    font-size: 14px;
+}
+
+/* Transaction list */
+.txList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.txRow {
+    width: 100%;
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 16px;
-    flex-wrap: wrap;
-}
-
-.filterRow {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.filterButton {
-    background: #efefef;
-    border: 1px solid #d4d4d4;
-    border-radius: 8px;
-    padding: 9px 17px;
-    font-size: 14px;
-    line-height: 14px;
-    color: #000000;
+    padding: 16px 24px;
+    background: transparent;
+    border: none;
+    border-top: 1px solid #f5f5f5;
     cursor: pointer;
+    text-align: left;
+    transition: background 0.12s ease;
 }
 
-.transactionList {
-    display: flex;
-    flex-direction: column;
-}
-
-.transactionRow {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 24px;
-    border-top: 1px solid #e5e5e5;
-}
-
-.transactionRow:first-of-type {
+.txList li:first-child .txRow {
     border-top: none;
 }
 
-.transactionInfo {
-    display: flex;
-    align-items: center;
-    gap: 16px;
+.txRow:hover {
+    background: #fafafa;
 }
 
-.transactionIcon {
+.txIcon {
     width: 40px;
     height: 40px;
     border-radius: 9999px;
-    background: #f5f5f5;
-    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 700;
+    flex-shrink: 0;
 }
 
-.transactionIcon::before,
-.transactionIcon::after {
-    content: '';
-    position: absolute;
-    border-radius: 2px;
-    background: #171717;
+.txIconIn {
+    background: #f0fbe9;
+    color: #52c41a;
 }
 
-.transactionIcon::before {
-    width: 12px;
-    height: 2px;
-    top: 19px;
-    left: 14px;
+.txIconOut {
+    background: #fff1f0;
+    color: #ff4d4f;
 }
 
-.transactionIcon::after {
-    width: 2px;
-    height: 12px;
-    top: 14px;
-    left: 19px;
-}
-
-.transactionIconLesson::after {
-    display: none;
-}
-
-.transactionIconLesson::before {
-    width: 16px;
-    left: 12px;
-}
-
-.transactionIconRefund::before {
-    width: 16px;
-    left: 12px;
-    background: #171717;
-}
-
-.transactionIconTopup::before,
-.transactionIconTopup::after {
-    background: #171717;
-}
-
-.transactionAmount {
+.txInfo {
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
+    gap: 3px;
+    min-width: 0;
+    flex: 1;
 }
 
-.statusPill {
+.txTitle {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.txTag {
+    font-size: 11px;
+    font-weight: 500;
+    color: #374151;
     background: #f5f5f5;
     border-radius: 4px;
-    padding: 4px 8px;
+    padding: 2px 8px;
+}
+
+.txMeta {
     font-size: 12px;
-    line-height: 16px;
-    color: #171717;
+    color: #4b5563;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.chevron {
-    width: 10px;
-    height: 16px;
-    position: relative;
+/* Cột Hình thức giao dịch */
+.txMethod {
+    width: 160px;
+    flex-shrink: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: #1a1a1a;
 }
 
-.chevron::before {
-    content: '';
-    position: absolute;
-    width: 6px;
-    height: 6px;
-    border-right: 2px solid #171717;
-    border-top: 2px solid #171717;
-    transform: rotate(45deg);
-    top: 4px;
-    left: 1px;
+/* Cột Ngày */
+.txDate {
+    width: 150px;
+    flex-shrink: 0;
+    font-size: 13px;
+    color: #1a1a1a;
+    font-variant-numeric: tabular-nums;
 }
 
-.linkButton {
-    background: transparent;
-    border: none;
-    color: #525252;
-    font-size: 14px;
-    line-height: 20px;
-    padding: 24px;
-    text-align: left;
+/* Header (thead) của bảng giao dịch */
+.txHead {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 24px;
+    border-bottom: 1px solid #f0f0f0;
+    background: #fafafa;
+}
+
+.txHeadContent,
+.txHeadMethod,
+.txHeadDate,
+.txHeadAmount {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* Căn tiêu đề khớp với dữ liệu: chừa chỗ cho icon (40px) + gap (16px) */
+.txHeadContent {
+    flex: 1;
+    min-width: 0;
+    padding-left: 56px;
+}
+
+.txHeadMethod {
+    width: 160px;
+    flex-shrink: 0;
+}
+
+.txHeadDate {
+    width: 150px;
+    flex-shrink: 0;
+}
+
+.txHeadAmount {
+    width: 130px;
+    flex-shrink: 0;
+    text-align: right;
+}
+
+.txHeadChevron {
+    width: 20px;
+    flex-shrink: 0;
+}
+
+.txAmount {
+    font-size: 15px;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+    width: 130px;
+    text-align: right;
+}
+
+.txChevron {
+    color: #9ca3af;
+    font-size: 20px;
+    flex-shrink: 0;
+    width: 20px;
+    text-align: center;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 16px 24px;
+    border-top: 1px solid #f5f5f5;
+}
+
+.pageBtn {
+    background: #fff;
+    border: 1px solid #d9d9d9;
+    border-radius: 8px;
+    padding: 7px 16px;
+    font-size: 13px;
+    color: #1a1a1a;
     cursor: pointer;
 }
 
-@media (max-width: 960px) {
+.pageBtn:hover:not(:disabled) {
+    border-color: #52c41a;
+    color: #52c41a;
+}
 
-    .heroTop,
-    .nextChargeRow,
-    .actions,
-    .rowBetween,
-    .rowActions,
-    .transactionRow,
-    .cardHeaderRow {
-        flex-direction: column;
-        align-items: flex-start;
+.pageBtn:disabled {
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.pageInfo {
+    font-size: 13px;
+    color: #374151;
+}
+
+/* Drawer (panel trượt từ bên phải — dùng cho form rút tiền) */
+.drawerOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1000;
+    animation: drawerFade 0.2s ease;
+}
+
+.drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: 600px;
+    max-width: 100vw;
+    background: #fff;
+    box-shadow: -8px 0 30px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    animation: drawerSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes drawerFade {
+    from {
+        opacity: 0;
     }
 
-    .amountBlock,
-    .transactionAmount {
-        align-items: flex-start;
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes drawerSlideIn {
+    from {
+        transform: translateX(100%);
     }
 
+    to {
+        transform: translateX(0);
+    }
+}
+
+@media (max-width: 640px) {
+    .drawer {
+        width: 100vw;
+    }
+}
+
+/* Modal */
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 1000;
+}
+
+.modal {
+    background: #fff;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.modalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.modalTitle {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    color: #1a1a1a;
+}
+
+.modalCloseBtn {
+    background: transparent;
+    border: none;
+    font-size: 26px;
+    line-height: 1;
+    color: #4b5563;
+    cursor: pointer;
+    padding: 0 4px;
+}
+
+.modalCloseBtn:hover {
+    color: #1a1a1a;
+}
+
+.modalBody {
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.modalFooter {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.primaryBtn {
+    background: #52c41a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.primaryBtn:hover:not(:disabled) {
+    background: #49ad17;
+}
+
+.primaryBtn:disabled {
+    background: #d9d9d9;
+    cursor: not-allowed;
+}
+
+.secondaryBtn {
+    background: #fff;
+    color: #1a1a1a;
+    border: 1px solid #d9d9d9;
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.secondaryBtn:hover:not(:disabled) {
+    border-color: #6b7280;
+}
+
+.secondaryBtn:disabled {
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+/* Skeleton chi tiết giao dịch */
+.skeletonWrap {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.skeleton {
+    display: block;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e6e6e6 37%, #f0f0f0 63%);
+    background-size: 400% 100%;
+    animation: skeletonShimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes skeletonShimmer {
+    0% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0 50%;
+    }
+}
+
+.skeletonAmountBlock {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0 4px;
+}
+
+.skeletonType {
+    width: 120px;
+    height: 14px;
+}
+
+.skeletonAmount {
+    width: 180px;
+    height: 30px;
+}
+
+.skeletonDate {
+    width: 140px;
+    height: 12px;
+}
+
+.skeletonNote {
+    width: 100%;
+    height: 42px;
+}
+
+.skeletonSection {
+    border: 1px solid #f0f0f0;
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.skeletonSectionTitle {
+    width: 40%;
+    height: 13px;
+}
+
+.skeletonLine {
+    width: 100%;
+    height: 13px;
+}
+
+.skeletonLine:nth-child(3) {
+    width: 85%;
+}
+
+.skeletonLine:nth-child(5) {
+    width: 70%;
+}
+
+/* Invoice (chi tiết giao dịch) */
+.invoiceAmountBlock {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 0 4px;
+}
+
+.invoiceType {
+    font-size: 13px;
+    color: #4b5563;
+}
+
+.invoiceAmount {
+    font-size: 30px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.invoiceDate {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.invoiceNote {
+    background: #fafafa;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: #374151;
+    line-height: 1.5;
+}
+
+.invoiceSection {
+    border: 1px solid #f0f0f0;
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.invoiceSectionTitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a1a1a;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.invoiceRow {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.invoiceLabel {
+    font-size: 13px;
+    color: #4b5563;
+    flex-shrink: 0;
+}
+
+.invoiceValue {
+    font-size: 13px;
+    color: #1a1a1a;
+    font-weight: 500;
+    text-align: right;
+}
+
+.linkBtn {
+    align-self: flex-start;
+    background: transparent;
+    border: none;
+    color: #1890ff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 0 0;
+}
+
+.linkBtn:hover {
+    text-decoration: underline;
+}
+
+/* Withdraw form */
+.balanceHint {
+    font-size: 14px;
+    color: #374151;
+    background: #f6fef8;
+    border: 1px solid #d9f0dd;
+    border-radius: 8px;
+    padding: 12px 14px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.fieldLabel {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1a1a1a;
+}
+
+.input {
+    border: 1px solid #d9d9d9;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    color: #1a1a1a;
+    background: #fff;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.input:focus {
+    border-color: #52c41a;
+}
+
+.fieldError {
+    font-size: 12px;
+    color: #ff4d4f;
+}
+
+.modalNote {
+    font-size: 12px;
+    color: #4b5563;
+    line-height: 1.5;
+    background: #fafafa;
+    border-radius: 8px;
+    padding: 12px 14px;
+}
+
+@media (max-width: 640px) {
     .page {
         padding: 16px;
+    }
+
+    .summaryRow {
+        grid-template-columns: 1fr;
+    }
+
+    .cardHeader {
+        padding: 16px;
+    }
+
+    /* Bảng giao dịch cuộn ngang trên màn nhỏ để giữ đủ cột. */
+    .txTable {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .txHead,
+    .txRow {
+        min-width: 640px;
     }
 }

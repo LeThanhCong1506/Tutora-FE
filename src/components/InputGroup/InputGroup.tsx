@@ -60,6 +60,8 @@ interface InputGroupProps {
     };
     showPasswordToggle?: boolean; // Prop để bật/tắt chức năng toggle password
     disabled?: boolean;
+    inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
+    autoComplete?: string;
 }
 
 const InputGroup: React.FC<InputGroupProps> = ({
@@ -73,7 +75,9 @@ const InputGroup: React.FC<InputGroupProps> = ({
     onChange,
     rightLink,
     showPasswordToggle = false,
-    disabled = false
+    disabled = false,
+    inputMode,
+    autoComplete
 }) => {
     // State để quản lý việc hiển thị password
     const [showPassword, setShowPassword] = useState(false);
@@ -108,6 +112,8 @@ const InputGroup: React.FC<InputGroupProps> = ({
                     value={value}
                     onChange={onChange}
                     disabled={disabled}
+                    inputMode={inputMode}
+                    autoComplete={autoComplete}
                 />
 
                 {/* Nút toggle password - chỉ hiển thị khi type='password' và showPasswordToggle=true */}

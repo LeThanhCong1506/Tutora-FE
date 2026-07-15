@@ -18,6 +18,7 @@
     "@microsoft/signalr": "^10.0.0",
     "@supabase/supabase-js": "^2.90.0",
     "agora-rtc-sdk-ng": "^4.24.5",
+    "agora-rtm-sdk": "^2.2.4",
     "antd": "^6.1.4",
     "axios": "^1.13.2",
     "date-fns": "^4.1.0",
@@ -51,6 +52,12 @@
     "tailwindcss": "^4.1.18",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vite": "^5.4.20"
+    "vite": "npm:rolldown-vite@7.2.5"
+  },
+  "overrides": {
+    "vite": "npm:rolldown-vite@7.2.5",
+    "agora-rtm-sdk": {
+      "agora-rtc-sdk-ng": "$agora-rtc-sdk-ng"
+    }
   }
 }

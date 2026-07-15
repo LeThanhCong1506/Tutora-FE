@@ -20,7 +20,10 @@ const NOTIFICATION_TYPE = {
     BookingNew: 'booking_new',
     BookingAccepted: 'booking_accepted',
     BookingDeclined: 'booking_declined',
+    BookingCancelled: 'booking_cancelled',
     PaymentSuccess: 'payment_success',
+    PaymentRemainingRequired: 'payment_remaining_required',
+    BookingPaymentDueSoon: 'booking_payment_due_soon',
     Warning: 'warning',
     Message: 'message',
 } as const;
@@ -56,9 +59,14 @@ export function getNotificationTargetPath(notification: NotificationDTO): string
     }
     if ((type === NOTIFICATION_TYPE.BookingNew
         || type === NOTIFICATION_TYPE.BookingAccepted
-        || type === NOTIFICATION_TYPE.BookingDeclined) && refId) {
-        const path = prefix === '/tutor-portal' ? 'bookings' : 'booking';
-        return `${prefix}/${path}/${refId}`;
+        || type === NOTIFICATION_TYPE.BookingDeclined
+        || type === NOTIFICATION_TYPE.BookingCancelled
+        || type === NOTIFICATION_TYPE.PaymentRemainingRequired
+        || type === NOTIFICATION_TYPE.BookingPaymentDueSoon) && refId) {
+        // Tutor portal hiện xử lý yêu cầu trực tiếp trên trang danh sách và không có
+        // route `bookings/:id`, nên không tạo deep-link dẫn tới trang 404.
+        if (prefix === '/tutor-portal') return `${prefix}/bookings`;
+        return `${prefix}/booking/${refId}`;
     }
     if (type === NOTIFICATION_TYPE.Message && refId) {
         return `${prefix}/messages`;

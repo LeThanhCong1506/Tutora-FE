@@ -16,9 +16,7 @@ import {
 import StatCard from '../../components/shared/StatCard/StatCard';
 import AddStudentModal from './components/AddStudentModal';
 import EditStudentModal from './components/EditStudentModal';
-import LinkCodeModal from './components/LinkCodeModal';
 import CredentialsModal from './components/CredentialsModal';
-import ParentCodeModal from './components/ParentCodeModal';
 
 // ── Icons ──
 
@@ -55,7 +53,13 @@ const ChatIcon = () => (
 const VerifiedBadge = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
     <circle cx="9" cy="9" r="8" fill="var(--color-navy)" />
-    <path d="M5.5 9l2.5 2.5L12.5 7" stroke="var(--color-gold)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path
+      d="M5.5 9l2.5 2.5L12.5 7"
+      stroke="var(--color-gold)"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
@@ -81,13 +85,6 @@ const ChartIcon = () => (
   </svg>
 );
 
-const PendingClockIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-    <circle cx="10" cy="10" r="8" />
-    <path d="M10 5v5l3.5 2" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
-  </svg>
-);
-
 // ClockAlertIcon - commented out to avoid TS6133 (noUnusedLocals)
 // const ClockAlertIcon = () => (
 //   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -105,37 +102,18 @@ const CalSmallIcon = () => (
   </svg>
 );
 
-// Tips lightbulb icon
-const LightbulbIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
-    <path d="M8 1.5a4.5 4.5 0 012.5 8.2V12a1 1 0 01-1 1H6.5a1 1 0 01-1-1V9.7A4.5 4.5 0 018 1.5z" />
-    <path d="M6 14h4" strokeLinecap="round" />
-  </svg>
-);
-
-// Tip checkmark
-const CheckIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M3 8.5l3 3 7-7" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
 const EditIcon = () => (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3">
     <path d="M8.5 2.5l3 3M2 9l6.5-6.5 3 3L5 12H2V9z" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
-const LinkIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4">
-    <path d="M5.5 8.5a3.5 3.5 0 005 0l1.5-1.5a3.5 3.5 0 00-5-5L6 3" strokeLinecap="round" />
-    <path d="M8.5 5.5a3.5 3.5 0 00-5 0L2 7a3.5 3.5 0 005 5L8 11" strokeLinecap="round" />
-  </svg>
-);
-
 const TrashIcon = () => (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3">
-    <path d="M3 4h8l-.5 8a1 1 0 01-1 1H4.5a1 1 0 01-1-1L3 4zM5.5 6v4M8.5 6v4M1 4h12M5 4V2.5a.5.5 0 01.5-.5h3a.5.5 0 01.5.5V4" strokeLinecap="round" />
+    <path
+      d="M3 4h8l-.5 8a1 1 0 01-1 1H4.5a1 1 0 01-1-1L3 4zM5.5 6v4M8.5 6v4M1 4h12M5 4V2.5a.5.5 0 01.5-.5h3a.5.5 0 01.5.5V4"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
@@ -155,10 +133,8 @@ const ParentStudent = () => {
   const [editingStudent, setEditingStudent] = useState<StudentType | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [linkCodeStudent, setLinkCodeStudent] = useState<StudentType | null>(null);
   const [newCredentials, setNewCredentials] = useState<StudentCredentials | null>(null);
   const [credentialsTitle, setCredentialsTitle] = useState<string | undefined>(undefined);
-  const [isParentCodeOpen, setIsParentCodeOpen] = useState(false);
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -206,16 +182,6 @@ const ParentStudent = () => {
       toast.error(detail || 'Thêm học sinh thất bại');
       throw err;
     }
-  };
-
-  const handleLinkCodeClick = (student: StudentType) => {
-    setLinkCodeStudent(student);
-    setOpenMenuId(null);
-  };
-
-  const handleLinkCodeGenerated = (updated: StudentType) => {
-    setLinkCodeStudent(updated);
-    setStudents((prev) => prev.map((s) => s.studentId === updated.studentId ? updated : s));
   };
 
   const handleEditClick = (student: StudentType) => {
@@ -274,12 +240,15 @@ const ParentStudent = () => {
     }
   };
 
-  const filteredStudents = students.filter((s) =>
-    s.fullName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredStudents = students.filter((s) => s.fullName.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const getInitials = (name: string) =>
-    name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
+    name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
 
   const activeCount = students.length;
 
@@ -290,7 +259,9 @@ const ParentStudent = () => {
         <h1 className={styles.pageTitle}>Quản lý con</h1>
         <div className={styles.topBarActions}>
           <div className={styles.searchWrap}>
-            <div className={styles.searchIconPos}><SearchIcon /></div>
+            <div className={styles.searchIconPos}>
+              <SearchIcon />
+            </div>
             <input
               type="text"
               className={styles.searchInput}
@@ -299,14 +270,6 @@ const ParentStudent = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <button
-            className={`${styles.addChildBtn} ${styles.btnNavy}`}
-            onClick={() => setIsParentCodeOpen(true)}
-            type="button"
-          >
-            <LinkIcon />
-            <span>Mã mời</span>
-          </button>
           <button className={`${styles.addChildBtn} ${styles.btnGold}`} onClick={handleAddClick} type="button">
             <PlusIcon />
             <span>Thêm con</span>
@@ -323,35 +286,16 @@ const ParentStudent = () => {
         <div className={styles.content}>
           {/* ── Quick Stats ── */}
           <div className={styles.quickStats}>
-            <StatCard
-              icon={<PeopleIcon />}
-              value={activeCount}
-              label="Số con"
-              badgeVariant="green"
-            />
-            <StatCard
-              icon={<SessionsStatIcon />}
-              value="—"
-              label="Tổng buổi học"
-              badgeVariant="blue"
-            />
-            <StatCard
-              icon={<ChartIcon />}
-              value="—"
-              label="Tiến độ TB"
-              badgeVariant="blue"
-            />
-            <StatCard
-              icon={<PendingClockIcon />}
-              value="0"
-              label="Lời mời chờ"
-              badgeVariant="red"
-            />
+            <StatCard icon={<PeopleIcon />} value={activeCount} label="Số con" badgeVariant="green" />
+            <StatCard icon={<SessionsStatIcon />} value="—" label="Tổng buổi học" badgeVariant="blue" />
+            <StatCard icon={<ChartIcon />} value="—" label="Tiến độ TB" badgeVariant="blue" />
           </div>
 
           {students.length === 0 ? (
             <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}><PlusIcon /></div>
+              <div className={styles.emptyIcon}>
+                <PlusIcon />
+              </div>
               <h3 className={styles.emptyTitle}>Chưa có hồ sơ học sinh nào</h3>
               <p className={styles.emptyText}>
                 Bắt đầu bằng cách thêm thông tin con của bạn để theo dõi hành trình học tập.
@@ -362,178 +306,164 @@ const ParentStudent = () => {
               </button>
             </div>
           ) : (
-            <div className={styles.mainGrid}>
-              {/* ── Left Column: Children Cards ── */}
-              <div className={styles.leftColumn}>
-                {filteredStudents.map((student) => (
-                  <div key={student.studentId} className={styles.childCard}>
-                    {/* Card Header: Avatar + Info + Menu */}
-                    <div className={styles.cardHeader}>
-                      <div className={styles.cardHeaderLeft}>
-                        <div className={styles.avatarWrap}>
-                          <div className={styles.avatar}>
-                            {student.avatarURL ? (
-                              <img
-                                src={student.avatarURL}
-                                alt={student.fullName}
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                  const span = e.currentTarget.parentElement?.querySelector('span');
-                                  if (span) span.style.display = 'flex';
-                                }}
-                              />
-                            ) : null}
-                            <span
-                              className={styles.avatarInitials}
-                              style={student.avatarURL ? { display: 'none' } : {}}
-                            >
-                              {getInitials(student.fullName)}
-                            </span>
-                          </div>
-                          <div className={styles.verifiedBadge}><VerifiedBadge /></div>
+            <div className={styles.leftColumn}>
+              {filteredStudents.map((student) => (
+                <div key={student.studentId} className={styles.childCard}>
+                  {/* Card Header: Avatar + Info + Menu */}
+                  <div className={styles.cardHeader}>
+                    <div className={styles.cardHeaderLeft}>
+                      <div className={styles.avatarWrap}>
+                        <div className={styles.avatar}>
+                          {student.avatarURL ? (
+                            <img
+                              src={student.avatarURL}
+                              alt={student.fullName}
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                const span = e.currentTarget.parentElement?.querySelector('span');
+                                if (span) span.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          <span className={styles.avatarInitials} style={student.avatarURL ? { display: 'none' } : {}}>
+                            {getInitials(student.fullName)}
+                          </span>
                         </div>
-                        <div className={styles.childInfo}>
-                          <h4 className={styles.childName}>{student.fullName}</h4>
-                          <div className={styles.childMeta}>
-                            {student.username && (
-                              <>
-                                <span className={styles.childGrade} style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}>@{student.username}</span>
-                                <span className={styles.metaDot}>•</span>
-                              </>
-                            )}
-                            {student.gradeLevel && (
-                              <>
-                                <span className={styles.childGrade}>{student.gradeLevel}</span>
-                                <span className={styles.metaDot}>•</span>
-                              </>
-                            )}
-                            <span className={styles.childStatus}>Đang hoạt động</span>
-                          </div>
+                        <div className={styles.verifiedBadge}>
+                          <VerifiedBadge />
                         </div>
                       </div>
-                      <div className={styles.cardMenuWrap}>
-                        <button
-                          className={styles.moreBtn}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenMenuId(openMenuId === student.studentId ? null : student.studentId);
-                          }}
-                          type="button"
-                        >
-                          <MoreHorizIcon />
-                        </button>
-                        {openMenuId === student.studentId && (
-                          <div className={styles.dropdownMenu} onClick={(e) => e.stopPropagation()}>
-                            <button className={styles.dropdownItem} onClick={() => handleLinkCodeClick(student)} type="button">
-                              <LinkIcon /><span>Mã liên kết</span>
-                            </button>
-                            <button className={styles.dropdownItem} onClick={() => handleEditClick(student)} type="button">
-                              <EditIcon /><span>Chỉnh sửa</span>
-                            </button>
-                            <button className={styles.dropdownItem} onClick={() => handleResetPassword(student)} type="button">
-                              <KeyIcon /><span>Đặt lại mật khẩu</span>
-                            </button>
-                            <Popconfirm
-                              title="Xoá học sinh"
-                              description={`Bạn có chắc muốn xoá ${student.fullName}?`}
-                              onConfirm={() => handleDeleteConfirm(student)}
-                              okText="Xoá"
-                              cancelText="Huỷ"
-                              okButtonProps={{ danger: true }}
-                            >
-                              <button className={`${styles.dropdownItem} ${styles.dropdownItemDanger}`} type="button">
-                                <TrashIcon /><span>Xoá</span>
-                              </button>
-                            </Popconfirm>
-                          </div>
-                        )}
+                      <div className={styles.childInfo}>
+                        <h4 className={styles.childName}>{student.fullName}</h4>
+                        <div className={styles.childMeta}>
+                          {student.username && (
+                            <>
+                              <span
+                                className={styles.childGrade}
+                                style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}
+                              >
+                                @{student.username}
+                              </span>
+                              <span className={styles.metaDot}>•</span>
+                            </>
+                          )}
+                          {student.gradeLevel && (
+                            <>
+                              <span className={styles.childGrade}>{student.gradeLevel}</span>
+                              <span className={styles.metaDot}>•</span>
+                            </>
+                          )}
+                          <span className={styles.childStatus}>Đang hoạt động</span>
+                        </div>
                       </div>
                     </div>
-
-                    {/* Stats Row */}
-                    <div className={styles.cardStats}>
-                      <div className={styles.cardStatItem}>
-                        <span className={styles.cardStatLabel}>Buổi học</span>
-                        <span className={styles.cardStatValue}>—</span>
-                      </div>
-                      <div className={styles.cardStatItem}>
-                        <span className={styles.cardStatLabel}>Tiến độ</span>
-                        <span className={styles.cardStatValue}>—</span>
-                      </div>
-                      <div className={styles.cardStatItem}>
-                        <span className={styles.cardStatLabel}>Chuỗi</span>
-                        <span className={styles.cardStatValue}>—</span>
-                      </div>
-                    </div>
-
-                    {/* Next Lesson / School Bar */}
-                    <div className={styles.nextBar}>
-                      <CalSmallIcon />
-                      <span className={styles.nextBarText}>
-                        Trường: <strong>{student.school || 'Chưa cập nhật'}</strong>
-                      </span>
-                    </div>
-
-                    {/* Card Actions */}
-                    <div className={styles.cardActions}>
-                      <button className={styles.viewDetailsBtn} type="button" onClick={() => handleEditClick(student)}>Xem chi tiết</button>
-                      <button className={styles.chatBtn} type="button" title="Tin nhắn" onClick={() => navigate('/parent-portal/messages')}>
-                        <ChatIcon />
+                    <div className={styles.cardMenuWrap}>
+                      <button
+                        className={styles.moreBtn}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMenuId(openMenuId === student.studentId ? null : student.studentId);
+                        }}
+                        type="button"
+                      >
+                        <MoreHorizIcon />
                       </button>
+                      {openMenuId === student.studentId && (
+                        <div className={styles.dropdownMenu} onClick={(e) => e.stopPropagation()}>
+                          <button
+                            className={styles.dropdownItem}
+                            onClick={() => handleEditClick(student)}
+                            type="button"
+                          >
+                            <EditIcon />
+                            <span>Chỉnh sửa</span>
+                          </button>
+                          <button
+                            className={styles.dropdownItem}
+                            onClick={() => handleResetPassword(student)}
+                            type="button"
+                          >
+                            <KeyIcon />
+                            <span>Đặt lại mật khẩu</span>
+                          </button>
+                          <Popconfirm
+                            title="Xoá học sinh"
+                            description={`Bạn có chắc muốn xoá ${student.fullName}?`}
+                            onConfirm={() => handleDeleteConfirm(student)}
+                            okText="Xoá"
+                            cancelText="Huỷ"
+                            okButtonProps={{ danger: true }}
+                          >
+                            <button className={`${styles.dropdownItem} ${styles.dropdownItemDanger}`} type="button">
+                              <TrashIcon />
+                              <span>Xoá</span>
+                            </button>
+                          </Popconfirm>
+                        </div>
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
 
-              {/* ── Right Column: Linking Tips ── */}
-              <div className={styles.rightColumn}>
-                <div className={styles.tipsCard}>
-                  <div className={styles.tipsHeader}>
-                    <div className={styles.tipsIconWrap}><LightbulbIcon /></div>
-                    <h3 className={styles.tipsTitle}>Mẹo liên kết</h3>
+                  {/* Stats Row */}
+                  <div className={styles.cardStats}>
+                    <div className={styles.cardStatItem}>
+                      <span className={styles.cardStatLabel}>Buổi học</span>
+                      <span className={styles.cardStatValue}>—</span>
+                    </div>
+                    <div className={styles.cardStatItem}>
+                      <span className={styles.cardStatLabel}>Tiến độ</span>
+                      <span className={styles.cardStatValue}>—</span>
+                    </div>
+                    <div className={styles.cardStatItem}>
+                      <span className={styles.cardStatLabel}>Chuỗi</span>
+                      <span className={styles.cardStatValue}>—</span>
+                    </div>
                   </div>
-                  <div className={styles.tipsList}>
-                    <div className={styles.tipItem}>
-                      <CheckIcon />
-                      <p>Chia sẻ mã mời qua Zalo hoặc WhatsApp để gửi nhanh đến con.</p>
-                    </div>
-                    <div className={styles.tipItem}>
-                      <CheckIcon />
-                      <p>Dùng mã QR để liên kết trực tiếp khi con ở gần.</p>
-                    </div>
-                    <div className={styles.tipItem}>
-                      <CheckIcon />
-                      <p>Lời mời hết hạn sau 7 ngày vì lý do bảo mật.</p>
-                    </div>
-                    <div className={styles.tipItem}>
-                      <CheckIcon />
-                      <p>Bạn có thể liên kết nhiều con vào một tài khoản phụ huynh.</p>
-                    </div>
+
+                  {/* Next Lesson / School Bar */}
+                  <div className={styles.nextBar}>
+                    <CalSmallIcon />
+                    <span className={styles.nextBarText}>
+                      Trường: <strong>{student.school || 'Chưa cập nhật'}</strong>
+                    </span>
+                  </div>
+
+                  {/* Card Actions */}
+                  <div className={styles.cardActions}>
+                    <button className={styles.viewDetailsBtn} type="button" onClick={() => handleEditClick(student)}>
+                      Xem chi tiết
+                    </button>
+                    <button
+                      className={styles.chatBtn}
+                      type="button"
+                      title="Tin nhắn"
+                      onClick={() => navigate('/parent-portal/messages')}
+                    >
+                      <ChatIcon />
+                    </button>
                   </div>
                 </div>
-              </div>
+              ))}
             </div>
           )}
         </div>
       )}
 
       <AddStudentModal isOpen={isAddModalOpen} onClose={handleAddModalClose} onSubmit={handleAddStudent} />
-      <EditStudentModal isOpen={isEditModalOpen} onClose={handleEditModalClose} onSubmit={handleEditSubmit} student={editingStudent} />
-      {linkCodeStudent && (
-        <LinkCodeModal
-          student={linkCodeStudent}
-          onClose={() => setLinkCodeStudent(null)}
-          onCodeGenerated={handleLinkCodeGenerated}
-        />
-      )}
+      <EditStudentModal
+        isOpen={isEditModalOpen}
+        onClose={handleEditModalClose}
+        onSubmit={handleEditSubmit}
+        student={editingStudent}
+      />
       <CredentialsModal
         credentials={newCredentials}
-        onClose={() => { setNewCredentials(null); setCredentialsTitle(undefined); }}
+        onClose={() => {
+          setNewCredentials(null);
+          setCredentialsTitle(undefined);
+        }}
         title={credentialsTitle}
       />
-      {isParentCodeOpen && (
-        <ParentCodeModal onClose={() => setIsParentCodeOpen(false)} />
-      )}
     </div>
   );
 };

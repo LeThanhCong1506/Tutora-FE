@@ -53,7 +53,9 @@ const TutorPortalClasses = lazy(() => import('./pages/TutorPortal/TutorPortalCla
 const TutorPortalClassDetail = lazy(() => import('./pages/TutorPortal/TutorPortalClassDetail'));
 const TutorPortalStudentProfile = lazy(() => import('./pages/TutorPortal/TutorPortalStudentProfile'));
 const TutorPortalBookings = lazy(() => import('./pages/TutorPortal/TutorPortalBookings'));
-const TutorFinanceDashboardPage = lazy(() => import('./pages/TutorFinance/TutorFinanceDashboard/TutorFinanceDashboardPage'));
+const TutorFinanceDashboardPage = lazy(
+  () => import('./pages/TutorFinance/TutorFinanceDashboard/TutorFinanceDashboardPage'),
+);
 const TransactionHistoryPage = lazy(() => import('./pages/TutorFinance/TransactionHistory/TransactionHistoryPage'));
 const BankInfoManagementPage = lazy(() => import('./pages/TutorFinance/BankInfoManagement/BankInfoManagementPage'));
 const TutorAccount = lazy(() => import('./pages/TutorAccount'));
@@ -66,6 +68,7 @@ const ParentDashboard = lazy(() => import('./pages/ParentDashboard'));
 const ParentBooking = lazy(() => import('./pages/ParentBooking'));
 const BookingDetail = lazy(() => import('./pages/ParentBooking/Details'));
 const ParentWallet = lazy(() => import('./pages/ParentWallet'));
+const ParentWalletTransactions = lazy(() => import('./pages/ParentWallet/AllTransactionsPage'));
 const ParentMessage = lazy(() => import('./pages/ParentMessage'));
 const PaymentPage = lazy(() => import('./pages/ParentBooking/Payment'));
 const ParentStudent = lazy(() => import('./pages/ParentStudent'));
@@ -79,7 +82,6 @@ const StudentBooking = lazy(() => import('./pages/StudentBooking'));
 const StudentLessons = lazy(() => import('./pages/StudentLessons'));
 const StudentLessonDetail = lazy(() => import('./pages/StudentLessons/StudentLessonDetail'));
 const StudentCalendar = lazy(() => import('./pages/StudentLessons/StudentCalendar'));
-const StudentLinkAccount = lazy(() => import('./pages/StudentLinkAccount'));
 const StudentAccount = lazy(() => import('./pages/StudentAccount'));
 const StudentProfile = lazy(() => import('./pages/StudentProfile'));
 
@@ -150,10 +152,7 @@ function App() {
 
   return (
     <div>
-      <SessionExpiredModal
-        isOpen={showSessionExpired}
-        onClose={() => setShowSessionExpired(false)}
-      />
+      <SessionExpiredModal isOpen={showSessionExpired} onClose={() => setShowSessionExpired(false)} />
       <ToastContainer
         position="top-right"
         autoClose={5000}
@@ -169,138 +168,141 @@ function App() {
       />
 
       <ErrorBoundary>
-      <Suspense fallback={<PageLoader />}>
-        {inMiniApp && <DeeplinkHandler />}
-        <Routes>
-          {/* Public Routes */}
-          {/* Public Routes */}
-          <Route path="/" element={<HomePage />} />
-          <Route path="/tutor-search" element={<TutorSearchPage />} />
-          <Route path="/mini-app-search" element={<MiniAppSearchFormPage />} />
-          <Route path="/demo/parent-booking" element={<ParentBookingDemo />} />
-          <Route path="/demo/parent-booking/:tutorId" element={<ParentBookingDemo />} />
-          <Route path="/demo/parent-booking/tutor/:tutorId" element={<ParentBookingDemo />} />
-          <Route path="/tutor-detail" element={<Navigate to="/" replace />} />
-          <Route path="/tutor-detail/:id" element={<TutorDetailPage />} />
+        <Suspense fallback={<PageLoader />}>
+          {inMiniApp && <DeeplinkHandler />}
+          <Routes>
+            {/* Public Routes */}
+            {/* Public Routes */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/tutor-search" element={<TutorSearchPage />} />
+            <Route path="/mini-app-search" element={<MiniAppSearchFormPage />} />
+            <Route path="/demo/parent-booking" element={<ParentBookingDemo />} />
+            <Route path="/demo/parent-booking/:tutorId" element={<ParentBookingDemo />} />
+            <Route path="/demo/parent-booking/tutor/:tutorId" element={<ParentBookingDemo />} />
+            <Route path="/tutor-detail" element={<Navigate to="/" replace />} />
+            <Route path="/tutor-detail/:id" element={<TutorDetailPage />} />
 
-          {/* Tutor Portal — không có trong Zalo Mini App */}
-          {!inMiniApp && (
-            <>
-              {/* Tutor Portal - PROTECTED */}
-              <Route path="/tutor-portal" element={
-                <ProtectedRoute allowedRoles={["Tutor"]}>
-                  <TutorPortalLayout />
+            {/* Tutor Portal — không có trong Zalo Mini App */}
+            {!inMiniApp && (
+              <>
+                {/* Tutor Portal - PROTECTED */}
+                <Route
+                  path="/tutor-portal"
+                  element={
+                    <ProtectedRoute allowedRoles={['Tutor']}>
+                      <TutorPortalLayout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route index element={<Navigate to="/tutor-portal/dashboard" replace />} />
+                  <Route path="onboarding" element={<TutorOnboarding />} />
+                  <Route path="dashboard" element={<TutorPortalDashboard />} />
+                  <Route path="profile" element={<TutorPortalProfile />} />
+                  {/* Lịch dạy đã gộp vào Onboarding — mọi URL /tutor-portal/schedule điều hướng sang onboarding */}
+                  <Route path="schedule" element={<Navigate to="/tutor-portal/onboarding" replace />} />
+                  <Route path="messages" element={<TutorPortalMessages />} />
+                  <Route path="classes" element={<TutorPortalClasses />} />
+                  <Route path="classes/:classId" element={<TutorPortalClassDetail />} />
+                  <Route path="students/:studentId" element={<TutorPortalStudentProfile />} />
+                  <Route path="bookings" element={<TutorPortalBookings />} />
+                  <Route path="finance" element={<TutorFinanceDashboardPage />} />
+                  <Route path="finance/transactions" element={<TransactionHistoryPage />} />
+                  <Route path="finance/bank-info" element={<BankInfoManagementPage />} />
+                  <Route path="finance/withdraw" element={<CreateWithdrawalPage />} />
+                  <Route path="finance/withdrawals" element={<WithdrawalListPage />} />
+                  <Route path="finance/withdrawals/:id" element={<WithdrawalDetailPage />} />
+                  <Route path="account" element={<TutorAccount />} />
+                  <Route path="notifications" element={<NotificationsPage />} />
+                </Route>
+              </>
+            )}
+
+            {/* Parent Layout - PROTECTED */}
+            <Route
+              path="/parent-portal"
+              element={
+                <ProtectedRoute allowedRoles={['Parent']}>
+                  <ParentLayout />
                 </ProtectedRoute>
-              }>
-                <Route index element={<Navigate to="/tutor-portal/dashboard" replace />} />
-                <Route path="onboarding" element={<TutorOnboarding />} />
-                <Route path="dashboard" element={<TutorPortalDashboard />} />
-                <Route path="profile" element={<TutorPortalProfile />} />
-                {/* Lịch dạy đã gộp vào Onboarding — mọi URL /tutor-portal/schedule điều hướng sang onboarding */}
-                <Route path="schedule" element={<Navigate to="/tutor-portal/onboarding" replace />} />
-                <Route path="messages" element={<TutorPortalMessages />} />
-                <Route path="classes" element={<TutorPortalClasses />} />
-                <Route path="classes/:classId" element={<TutorPortalClassDetail />} />
-                <Route path="students/:studentId" element={<TutorPortalStudentProfile />} />
-                <Route path="bookings" element={<TutorPortalBookings />} />
-                <Route path="finance" element={<TutorFinanceDashboardPage />} />
-                <Route path="finance/transactions" element={<TransactionHistoryPage />} />
-                <Route path="finance/bank-info" element={<BankInfoManagementPage />} />
-                <Route path="finance/withdraw" element={<CreateWithdrawalPage />} />
-                <Route path="finance/withdrawals" element={<WithdrawalListPage />} />
-                <Route path="finance/withdrawals/:id" element={<WithdrawalDetailPage />} />
-                <Route path="account" element={<TutorAccount />} />
-                <Route path="notifications" element={<NotificationsPage />} />
-              </Route>
-            </>
-          )}
-
-          {/* Parent Layout - PROTECTED */}
-          <Route
-            path="/parent-portal"
-            element={
-              <ProtectedRoute allowedRoles={["Parent"]}>
-                <ParentLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="/parent-portal/dashboard" replace />} />
-            <Route path="dashboard" element={<ParentDashboard />} />
-            <Route path="booking" element={<ParentBooking />} />
-            <Route path="booking/:id" element={<BookingDetail />} />
-            <Route path="booking/:id/payment" element={<PaymentPage />} />
-            <Route path="student" element={<ParentStudent />} />
-            <Route path="wallet" element={<ParentWallet />} />
-            <Route path="messages" element={<ParentMessage />} />
-            <Route path="lessons" element={<ParentLessons />} />
-            <Route path="lessons/:lessonId" element={<ParentLessonDetail />} />
-            <Route path="account" element={<ParentAccount />} />
-            <Route path="notifications" element={<NotificationsPage />} />
-            {/* <Route path="disputes" element={<ParentDisputes />} /> */}
-          </Route>
-
-          {/* Student Layout - PROTECTED */}
-          <Route
-            path="/student-portal"
-            element={
-              <ProtectedRoute allowedRoles={["Student"]}>
-                <StudentLayout />
-              </ProtectedRoute>
-            }
-          >
-            {/* Gate: ép hoàn tất hồ sơ học sinh ở lần đăng nhập đầu tiên trước khi vào các trang khác */}
-            <Route element={<StudentProfileGate />}>
-              <Route index element={<Navigate to="/student-portal/dashboard" replace />} />
-              <Route path="dashboard" element={<StudentDashboard />} />
-              <Route path="booking" element={<StudentBooking />} />
+              }
+            >
+              <Route index element={<Navigate to="/parent-portal/dashboard" replace />} />
+              <Route path="dashboard" element={<ParentDashboard />} />
+              <Route path="booking" element={<ParentBooking />} />
               <Route path="booking/:id" element={<BookingDetail />} />
               <Route path="booking/:id/payment" element={<PaymentPage />} />
-              <Route path="lessons" element={<StudentLessons />} />
-              <Route path="lessons/:lessonId" element={<StudentLessonDetail />} />
-              <Route path="calendar" element={<StudentCalendar />} />
+              <Route path="student" element={<ParentStudent />} />
+              <Route path="wallet" element={<ParentWallet />} />
+              <Route path="wallet/transactions" element={<ParentWalletTransactions />} />
               <Route path="messages" element={<ParentMessage />} />
-              <Route path="link-account" element={<StudentLinkAccount />} />
-              <Route path="profile" element={<StudentProfile />} />
-              <Route path="account" element={<StudentAccount />} />
+              <Route path="lessons" element={<ParentLessons />} />
+              <Route path="lessons/:lessonId" element={<ParentLessonDetail />} />
+              <Route path="account" element={<ParentAccount />} />
               <Route path="notifications" element={<NotificationsPage />} />
+              {/* <Route path="disputes" element={<ParentDisputes />} /> */}
             </Route>
-          </Route>
 
-          {/* PayOS callback - loaded inside iframe after payment */}
-          <Route path="/payment/success" element={<PaymentCallback />} />
-          <Route path="/payment/cancel" element={<PaymentCallback />} />
+            {/* Student Layout - PROTECTED */}
+            <Route
+              path="/student-portal"
+              element={
+                <ProtectedRoute allowedRoles={['Student']}>
+                  <StudentLayout />
+                </ProtectedRoute>
+              }
+            >
+              {/* Gate: ép hoàn tất hồ sơ học sinh ở lần đăng nhập đầu tiên trước khi vào các trang khác */}
+              <Route element={<StudentProfileGate />}>
+                <Route index element={<Navigate to="/student-portal/dashboard" replace />} />
+                <Route path="dashboard" element={<StudentDashboard />} />
+                <Route path="booking" element={<StudentBooking />} />
+                <Route path="booking/:id" element={<BookingDetail />} />
+                <Route path="booking/:id/payment" element={<PaymentPage />} />
+                <Route path="lessons" element={<StudentLessons />} />
+                <Route path="lessons/:lessonId" element={<StudentLessonDetail />} />
+                <Route path="calendar" element={<StudentCalendar />} />
+                <Route path="messages" element={<ParentMessage />} />
+                <Route path="profile" element={<StudentProfile />} />
+                <Route path="account" element={<StudentAccount />} />
+                <Route path="notifications" element={<NotificationsPage />} />
+              </Route>
+            </Route>
 
-          {/* Live video-call session — full-screen, không có portal chrome */}
-          <Route
-            path="/live-session/:classSessionId"
-            element={
-              <ProtectedRoute allowedRoles={["Tutor", "Parent", "Student"]}>
-                <LiveSession />
-              </ProtectedRoute>
-            }
-          />
+            {/* PayOS callback - loaded inside iframe after payment */}
+            <Route path="/payment/success" element={<PaymentCallback />} />
+            <Route path="/payment/cancel" element={<PaymentCallback />} />
 
-          {/* Auth routes — không có trong Zalo Mini App (auth qua Zalo token) */}
-          {!inMiniApp && (
-            <>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/verify-phone" element={<VerifyPhonePage />} />
-              <Route path="/auth/social-complete" element={<SocialRegisterPage />} />
-              <Route path="/auth/zalo/callback" element={<ZaloCallbackPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-            </>
-          )}
+            {/* Live video-call session — full-screen, không có portal chrome */}
+            <Route
+              path="/live-session/:classSessionId"
+              element={
+                <ProtectedRoute allowedRoles={['Tutor', 'Parent', 'Student']}>
+                  <LiveSession />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Error Pages */}
-          <Route path="/401" element={<UnauthorizedPage />} />
-          <Route path="/403" element={<ForbiddenPage />} />
-          <Route path="/404" element={<NotFoundPage />} />
+            {/* Auth routes — không có trong Zalo Mini App (auth qua Zalo token) */}
+            {!inMiniApp && (
+              <>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/verify-phone" element={<VerifyPhonePage />} />
+                <Route path="/auth/social-complete" element={<SocialRegisterPage />} />
+                <Route path="/auth/zalo/callback" element={<ZaloCallbackPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+              </>
+            )}
 
-          {/* Catch-all Route - Must be last */}
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </Suspense>
+            {/* Error Pages */}
+            <Route path="/401" element={<UnauthorizedPage />} />
+            <Route path="/403" element={<ForbiddenPage />} />
+            <Route path="/404" element={<NotFoundPage />} />
+
+            {/* Catch-all Route - Must be last */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
       </ErrorBoundary>
     </div>
   );

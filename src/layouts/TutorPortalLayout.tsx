@@ -14,7 +14,13 @@ const MESSAGES_PATH = '/tutor-portal/messages';
 // `MV.DomainLayer/Constants/NotificationType.cs`. Tin nhắn không vào đây
 // (đã có `useUnreadMessageBadge` đếm chat unread riêng).
 const NOTIFICATION_TYPES_BY_PATH: Record<string, string[]> = {
-    '/tutor-portal/bookings': ['booking_new', 'booking_accepted', 'booking_declined'],
+    '/tutor-portal/bookings': [
+        'booking_new',
+        'booking_accepted',
+        'booking_declined',
+        'booking_cancelled',
+        'payment_remaining_required',
+    ],
     '/tutor-portal/finance': ['payment_success'],
 };
 

@@ -5,7 +5,9 @@ export interface ProfileCompletionData {
     teachingAreaDistrict: string;
     videoIntroUrl: string | null;
     bio: string;
-    credentials: Array<{ id: string | number }>;
+    /** KHÔNG tính vào tiến trình gửi hồ sơ — Admin duyệt riêng từng chứng chỉ,
+     *  chỉ chứng chỉ đã duyệt mới hiển thị trên marketplace. */
+    credentials: Array<{ id: string | number; verificationStatus?: 'pending' | 'verified' | 'rejected' }>;
     availability: Array<{ dayOfWeek: number }>;
     identityVerification: {
         verificationStatus: 'not_submitted' | 'pending' | 'verified' | 'rejected';
@@ -43,11 +45,8 @@ export const getProfileCompletionItems = (profileData: ProfileCompletionData): P
         label: 'Giới thiệu bản thân',
         completed: !!(profileData.bio && profileData.bio.length >= 100),
     },
-    {
-        key: 'credentials',
-        label: 'Bằng cấp, chứng chỉ',
-        completed: profileData.credentials.length >= 1,
-    },
+    // 'credentials' không còn nằm trong checklist: chứng chỉ được Admin duyệt riêng
+    // (xem khối riêng trong ProfileCompleteness), không chặn việc gửi hồ sơ.
     {
         key: 'identity',
         label: 'Xác minh danh tính',

@@ -17,61 +17,84 @@
 }
 
 /* ===== PENDING APPROVAL BANNER ===== */
-/* Hiển thị khi profileStatus === 'pending_approval'. Tông kem/hổ phách + chấm
-   nhấp nháy để truyền tải "đang được xử lý / chờ duyệt", khớp palette trang. */
+/* Hiển thị khi profileStatus === 'pending_approval'. Tông kem/hổ phách và chấm trạng thái
+   chuyển động nhẹ để truyền tải "đang được xử lý / chờ duyệt", khớp palette trang. */
 .pendingReviewWrapper {
   max-width: min(1120px, 90vw);
   width: 100%;
   margin: 0 auto;
-  padding: clamp(1.5rem, 1rem + 1vw, 2.5rem) clamp(1.5rem, 1rem + 1vw, 2.5rem) 0;
+  padding: clamp(1.25rem, 0.9rem + 0.8vw, 2rem) clamp(1.5rem, 1rem + 1vw, 2.5rem) 0;
 }
 
 .pendingReviewBanner {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 18px 20px;
-  background: linear-gradient(135deg, #fdf6e9 0%, #f6edd9 100%);
-  border: 1px solid rgba(180, 130, 40, 0.28);
-  border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(26, 34, 56, 0.06);
+  align-items: center;
+  gap: 16px;
+  min-height: 80px;
+  padding: 16px 20px 16px 18px;
+  background: linear-gradient(105deg, #fffdf8 0%, #fbf4e5 62%, #f6ead0 100%);
+  border: 1px solid #e8d5aa;
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(55, 43, 24, 0.06);
+}
+
+.pendingReviewBanner::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(180deg, #e4b653 0%, #b77b12 100%);
+}
+
+.pendingReviewBanner::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: -66px;
+  right: -34px;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  border: 30px solid rgba(194, 139, 31, 0.06);
 }
 
 .pendingReviewIcon {
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   flex-shrink: 0;
-  border-radius: 13px;
-  background-color: #fff;
-  border: 1px solid rgba(180, 130, 40, 0.3);
-  box-shadow: 0 4px 12px rgba(26, 34, 56, 0.06);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(183, 123, 18, 0.24);
+  box-shadow: 0 3px 10px rgba(84, 60, 18, 0.06);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #b07d18;
-  animation: pendingReviewPulse 2s ease-in-out infinite;
+  color: #aa7010;
 }
 
 .pendingReviewText {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding-top: 1px;
+  gap: 5px;
   min-width: 0;
 }
 
 .pendingReviewTitleRow {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 18px;
 }
 
 .pendingReviewTitle {
   margin: 0;
-  font-size: 17px;
-  line-height: 23px;
-  font-weight: 750;
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 700;
   color: #1a2238;
   font-family: 'Bricolage Grotesque', sans-serif;
 }
@@ -80,31 +103,34 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
-  background-color: rgba(176, 125, 24, 0.12);
+  flex-shrink: 0;
+  padding: 6px 11px;
+  background-color: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(183, 123, 18, 0.2);
   border-radius: 9999px;
-  font-size: 11px;
-  line-height: 14px;
+  font-size: 12px;
+  line-height: 16px;
   font-weight: 700;
-  color: #946410;
-  letter-spacing: 0.4px;
+  color: #8b5d0d;
+  letter-spacing: 0.15px;
   white-space: nowrap;
 }
 
 .pendingReviewDot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background-color: #c98a12;
-  animation: pendingReviewPulse 1.4s ease-in-out infinite;
+  background-color: #c7830d;
+  box-shadow: 0 0 0 3px rgba(199, 131, 13, 0.12);
+  animation: pendingReviewPulse 1.8s ease-in-out infinite;
 }
 
 .pendingReviewDescription {
   margin: 0;
-  max-width: 760px;
+  max-width: 800px;
   font-size: 13px;
-  line-height: 19px;
-  color: rgba(62, 47, 40, 0.74);
+  line-height: 20px;
+  color: rgba(62, 47, 40, 0.72);
 }
 
 @keyframes pendingReviewPulse {
@@ -118,9 +144,51 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pendingReviewIcon,
   .pendingReviewDot {
     animation: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .pendingReviewWrapper {
+    max-width: none;
+    padding: 14px 14px 0;
+  }
+
+  .pendingReviewBanner {
+    align-items: flex-start;
+    gap: 12px;
+    min-height: 0;
+    padding: 14px 14px 14px 16px;
+    border-radius: 12px;
+  }
+
+  .pendingReviewIcon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+
+  .pendingReviewIcon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .pendingReviewTitleRow {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .pendingReviewTitle {
+    font-size: 16px;
+    line-height: 22px;
+  }
+
+  .pendingReviewBadge {
+    padding: 4px 9px;
+    font-size: 11px;
+    line-height: 15px;
   }
 }
 
