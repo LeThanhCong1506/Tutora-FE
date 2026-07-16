@@ -11,6 +11,7 @@ import {
   getStudentLessons,
 } from '../../services/student-lesson.service';
 import { getUserInfoFromToken } from '../../services/auth.service';
+import { canJoinLiveSession } from '../../utils/liveSession';
 import { isZaloMiniApp } from '../../services/zalo-env';
 import { StatCard } from '../../components/shared';
 import styles from './styles.module.css';
@@ -290,7 +291,15 @@ const StudentDashboard = () => {
                     const isWithinTimeWindow =
                       startTime && endTime && dayjs().isAfter(dayjs(startTime)) && dayjs().isBefore(dayjs(endTime));
                     const isActive = isInProgress || isWithinTimeWindow;
-                    const canJoin = lesson.meetingLink && isActive;
+                    // Phòng mở từ 30ph trước giờ học, không cần gia sư vào trước (khớp BE AgoraController)
+                    const canJoin =
+                      lesson.lessonId &&
+                      canJoinLiveSession({
+                        status: lesson.status,
+                        meetingLink: lesson.meetingLink,
+                        scheduledStart: startTime,
+                        scheduledEnd: endTime,
+                      });
                     return (
                       <div
                         key={lesson.lessonId || idx}
@@ -313,16 +322,14 @@ const StudentDashboard = () => {
                           {endTime ? dayjs(endTime).format('HH:mm') : ''}
                         </div>
                         {canJoin && (
-                          <a
-                            href={lesson.meetingLink}
-                            target="_blank"
-                            rel="noreferrer"
+                          <Link
+                            to={`/live-session/${lesson.lessonId}`}
                             className={styles.joinBtn}
                             onClick={(e) => e.stopPropagation()}
                           >
                             <Video size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
                             Tham gia ngay
-                          </a>
+                          </Link>
                         )}
                       </div>
                     );

@@ -558,17 +558,6 @@ const TutorPortalClassDetail: React.FC = () => {
                                                                     </div>
                                                                 </div>
                                                             )}
-                                                            {detail.meetingLink && (
-                                                                <div style={{ gridColumn: '1 / -1' }}>
-                                                                    <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                                        <span>Link học online</span>
-                                                                    </div>
-                                                                    <a href={detail.meetingLink} target="_blank" rel="noopener noreferrer"
-                                                                        style={{ fontSize: '14px', color: '#1890ff', wordBreak: 'break-all' }}>
-                                                                        {detail.meetingLink}
-                                                                    </a>
-                                                                </div>
-                                                            )}
                                                             {detail.classSessionContent && (
                                                                 <div style={{ gridColumn: '1 / -1' }}>
                                                                     <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Nội dung đã dạy</div>

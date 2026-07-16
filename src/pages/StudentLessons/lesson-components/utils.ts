@@ -1,0 +1,49 @@
+import dayjs, { type Dayjs } from 'dayjs';
+import { formatLocalTime, parseUtc } from '../../../utils/datetime';
+import type { LessonGroup, LessonSummary } from './types';
+
+export const getLessonDate = (lesson: LessonSummary): Dayjs => {
+  const parsed = parseUtc(lesson.scheduledStart);
+  return parsed ? dayjs(parsed) : dayjs(lesson.scheduledStart);
+};
+
+export const getLessonEndDate = (lesson: LessonSummary): Dayjs => {
+  const parsed = parseUtc(lesson.scheduledEnd);
+  return parsed ? dayjs(parsed) : dayjs(lesson.scheduledEnd);
+};
+
+export const getLessonTime = (lesson: LessonSummary): string => {
+  const start = formatLocalTime(lesson.scheduledStart) || '--:--';
+  const end = formatLocalTime(lesson.scheduledEnd);
+  return end ? `${start}–${end}` : start;
+};
+
+export const getMonday = (date: Dayjs): Dayjs => date.startOf('day').subtract((date.day() + 6) % 7, 'day');
+
+export const groupLessonsByDate = (lessons: LessonSummary[]): LessonGroup[] => {
+  const groups = new Map<string, LessonSummary[]>();
+  lessons.forEach((lesson) => {
+    const key = getLessonDate(lesson).format('YYYY-MM-DD');
+    groups.set(key, [...(groups.get(key) || []), lesson]);
+  });
+
+  return Array.from(groups.entries())
+    .sort(([first], [second]) => first.localeCompare(second))
+    .map(([dateKey, dayLessons]) => ({
+      dateKey,
+      date: dayjs(dateKey),
+      lessons: dayLessons.sort((first, second) => getLessonDate(first).valueOf() - getLessonDate(second).valueOf()),
+    }));
+};
+
+export const isCancelledLesson = (lesson: LessonSummary): boolean =>
+  ['cancelled', 'cancelled_noshow', 'no_show'].includes(lesson.status.toLowerCase());
+
+export const formatDayHeading = (date: Dayjs): string => {
+  const diff = date.startOf('day').diff(dayjs().startOf('day'), 'day');
+  const weekday = date.format('dddd');
+  if (diff === 0) return `Hôm nay · ${date.format('DD/MM')}`;
+  if (diff === 1) return `Ngày mai · ${date.format('DD/MM')}`;
+  if (diff === -1) return `Hôm qua · ${date.format('DD/MM')}`;
+  return `${weekday} · ${date.format('DD/MM')}`;
+};

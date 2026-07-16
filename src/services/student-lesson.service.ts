@@ -11,7 +11,6 @@ import {
     type StudentClassSessionSummaryResponse,
     type StudentClassSessionDetailResponse,
 } from './classSession.service';
-import type { CalendarDayDto } from './parent-lesson.service';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -90,6 +89,22 @@ const mapDetail = (d: StudentClassSessionDetailResponse): StudentLessonDetailDto
 
 type StudentLessonSummaryDto = ReturnType<typeof mapSummary>;
 
+export interface StudentCalendarLessonDto {
+    lessonId: number;
+    scheduledStart: string;
+    scheduledEnd: string;
+    studentName?: string;
+    tutorName?: string;
+    subjectName?: string;
+    status: string;
+    meetingLink?: string;
+}
+
+export interface StudentCalendarDayDto {
+    date: string;
+    lessons: StudentCalendarLessonDto[];
+}
+
 export const getStudentLessons = async (params: {
     page?: number;
     pageSize?: number;
@@ -123,7 +138,7 @@ export const confirmStudentLesson = async (
 export const getStudentCalendar = async (
     startDate?: string,
     endDate?: string
-): Promise<ApiResponse<CalendarDayDto[]>> => {
+): Promise<ApiResponse<StudentCalendarDayDto[]>> => {
     const response = await getStudentCalendarReal(startDate, endDate);
     return {
         ...response,

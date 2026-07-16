@@ -14,6 +14,7 @@ import { message as antMessage, Spin, Modal } from 'antd';
 import CreateFeedbackModal from '../ParentLessons/components/CreateFeedbackModal';
 import s from '../StudentPages.module.css';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
+import { canJoinLiveSession, ROOM_OPENS_BEFORE_MINUTES } from '../../utils/liveSession';
 
 // ── Status definitions — nguồn duy nhất là classSessionStatus.ts (khớp BE ClassSessionStatus) ──
 type StatusInfo = { label: string; color: string; bg: string; icon: string };
@@ -136,7 +137,8 @@ const StudentLessonDetail = () => {
 
     const status = getStatus(lesson.status);
     const isInProgress = lesson.status === 'in_progress';
-    const canJoin = isInProgress;
+    // Phòng Agora mở từ 30ph trước giờ học — không cần đợi gia sư vào trước (khớp BE AgoraController)
+    const canJoin = canJoinLiveSession(lesson);
     const tutorName = (lesson as any).tutorName ?? (lesson as any).tutor?.fullName ?? 'Gia sư';
     const subjectName = (lesson as any).subjectName ?? (lesson as any).subject?.subjectName ?? 'Buổi học';
     const report = (lesson as any).report;
@@ -160,7 +162,7 @@ const StudentLessonDetail = () => {
                     </button>
                 </div>
 
-                {/* Hero Join Banner — only when in_progress + meetingLink */}
+                {/* Hero Join Banner — hiện khi phòng Agora đã mở (in_progress hoặc sắp tới giờ học) */}
                 {canJoin && (
                     <div style={heroCard}>
                         {/* Animated background circles */}
@@ -173,9 +175,13 @@ const StudentLessonDetail = () => {
                                     <span style={heroSolidDot} />
                                 </div>
                                 <div>
-                                    <div style={heroBadgeText}>BUỔI HỌC ĐÃ BẮT ĐẦU</div>
+                                    <div style={heroBadgeText}>
+                                        {isInProgress ? 'BUỔI HỌC ĐÃ BẮT ĐẦU' : 'PHÒNG HỌC ĐÃ MỞ'}
+                                    </div>
                                     <div style={heroSubtext}>
-                                        Gia sư đang chờ bạn trong lớp
+                                        {isInProgress
+                                            ? 'Gia sư đang chờ bạn trong lớp'
+                                            : `Bạn có thể vào lớp sớm ${ROOM_OPENS_BEFORE_MINUTES} phút trước giờ học`}
                                     </div>
                                 </div>
                             </div>
@@ -230,21 +236,6 @@ const StudentLessonDetail = () => {
                             </div>
                         </div>
 
-                        {/* Meeting link — subtle inline (when not showing hero) */}
-                        {lesson.meetingLink && !canJoin && (
-                            <div style={meetingLinkBox}>
-                                <Video size={14} style={{ color: '#6366F1', flexShrink: 0 }} />
-                                <span style={meetingLinkLabel}>Link buổi học:</span>
-                                <a
-                                    href={lesson.meetingLink}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    style={meetingLinkValue}
-                                >
-                                    {lesson.meetingLink}
-                                </a>
-                            </div>
-                        )}
                     </div>
                 </div>
 
@@ -724,38 +715,6 @@ const timeConnectorDot: React.CSSProperties = {
     borderRadius: '50%',
     background: '#d1d5db',
     flexShrink: 0,
-};
-
-// ── Meeting link ──
-const meetingLinkBox: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 18,
-    padding: '12px 16px',
-    background: 'rgba(99,102,241,0.04)',
-    border: '1px solid rgba(99,102,241,0.12)',
-    borderRadius: 10,
-};
-
-const meetingLinkLabel: React.CSSProperties = {
-    fontSize: 12,
-    fontWeight: 600,
-    color: '#6366F1',
-    fontFamily: FONT_BODY,
-    whiteSpace: 'nowrap',
-    flexShrink: 0,
-};
-
-const meetingLinkValue: React.CSSProperties = {
-    fontSize: 13,
-    color: '#4338ca',
-    fontWeight: 500,
-    textDecoration: 'underline',
-    textDecorationColor: 'rgba(99,102,241,0.3)',
-    textUnderlineOffset: 3,
-    wordBreak: 'break-all',
-    minWidth: 0,
 };
 
 // ── Tutor card ──

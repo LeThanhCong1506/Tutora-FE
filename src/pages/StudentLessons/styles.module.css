@@ -1,0 +1,1625 @@
+.page {
+  --ink: #17213a;
+  --muted: #687086;
+  --line: #e3e7ec;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--ink);
+  font-family:
+    'IBM Plex Sans',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  background: radial-gradient(circle at 14% -8%, rgba(15, 143, 131, 0.06), transparent 28%), transparent;
+}
+
+.main {
+  display: flex;
+  width: 100%;
+  max-width: 1320px;
+  min-height: 0;
+  margin: 0 auto;
+  padding: 18px 36px;
+  flex: 1 1 auto;
+  box-sizing: border-box;
+}
+
+.workspace {
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(23, 33, 58, 0.09);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow:
+    0 16px 44px rgba(23, 33, 58, 0.06),
+    0 2px 6px rgba(23, 33, 58, 0.025);
+}
+
+.toolbar {
+  display: grid;
+  min-height: 82px;
+  padding: 15px 18px;
+  grid-template-columns: auto minmax(260px, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  border-bottom: 1px solid #edf0f3;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+}
+
+.todayButton,
+.periodNavigation > button,
+.viewSwitcher button {
+  min-width: 44px;
+  height: 44px;
+  border: 1px solid #dde3ea;
+  background: #fff;
+  color: #5f687b;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease,
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.todayButton {
+  padding: 0 17px;
+  border-radius: 12px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.todayButton:hover,
+.periodNavigation > button:hover {
+  border-color: rgba(23, 33, 58, 0.24);
+  background: #f5f6f8;
+  color: var(--ink);
+  box-shadow: 0 5px 13px rgba(23, 33, 58, 0.08);
+}
+
+.periodNavigation {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.periodNavigation > button {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--ink);
+}
+
+.periodHeading {
+  position: relative;
+  width: min(340px, 100%);
+  min-width: 280px;
+}
+
+/* Cụm lọc thời gian được tạo hình như một control để nhìn là biết có thể bấm. */
+.periodPickerTrigger {
+  display: grid;
+  width: 100%;
+  min-height: 52px;
+  padding: 7px 9px;
+  grid-template-columns: 34px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid #dfe3e9;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #fff, #fbfdfc);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(23, 33, 58, 0.035);
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.periodPickerTrigger:hover {
+  border-color: rgba(23, 33, 58, 0.26);
+  background: linear-gradient(145deg, #fff, #f6f7f9);
+  box-shadow: 0 8px 20px rgba(23, 33, 58, 0.08);
+  transform: translateY(-1px);
+}
+
+.periodPickerOpen {
+  border-color: rgba(23, 33, 58, 0.38);
+  background: linear-gradient(145deg, #fff, #f3f5f8);
+  box-shadow:
+    0 0 0 3px rgba(23, 33, 58, 0.08),
+    0 8px 20px rgba(23, 33, 58, 0.09);
+}
+
+.periodPickerTrigger:focus-visible {
+  outline: 3px solid rgba(23, 33, 58, 0.18);
+  outline-offset: 2px;
+}
+
+.periodPickerIcon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid rgba(23, 33, 58, 0.12);
+  border-radius: 10px;
+  background: rgba(23, 33, 58, 0.07);
+  color: var(--ink);
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.periodPickerTrigger:hover .periodPickerIcon,
+.periodPickerOpen .periodPickerIcon {
+  background: rgba(23, 33, 58, 0.12);
+  transform: scale(1.03);
+}
+
+.periodPickerCopy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.periodPickerMeta {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+}
+
+.periodPickerMeta > span {
+  min-width: 0;
+  overflow: hidden;
+  color: #7b8393;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.045em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.periodTitle {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
+  font-size: 16.5px;
+  font-weight: 700;
+  letter-spacing: -0.012em;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.periodPickerChevron {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 9px;
+  background: rgba(23, 33, 58, 0.055);
+  color: var(--ink);
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.periodPickerTrigger:hover .periodPickerChevron {
+  background: rgba(23, 33, 58, 0.08);
+  color: var(--ink);
+}
+
+.periodPickerOpen .periodPickerChevron {
+  background: rgba(23, 33, 58, 0.11);
+  color: var(--ink);
+  transform: rotate(180deg);
+}
+
+/* Input ẩn của DatePicker — chỉ dùng làm anchor cho popup, không hiển thị */
+.periodPickerInput {
+  position: absolute !important;
+  bottom: 0;
+  left: 50%;
+  width: 1px !important;
+  height: 1px;
+  padding: 0 !important;
+  border: none !important;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.periodPickerPopup :global(.ant-picker-panel-container) {
+  overflow: hidden;
+  border: 1px solid rgba(26, 34, 56, 0.12);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow:
+    0 18px 44px rgba(26, 34, 56, 0.14),
+    0 3px 10px rgba(26, 34, 56, 0.07);
+}
+
+.periodPickerPopup :global(.ant-picker-panel),
+.periodPickerPopup :global(.ant-picker-content) {
+  color: var(--color-navy, #1a2238);
+}
+
+.periodPickerPopup :global(.ant-picker-header) {
+  border-bottom-color: rgba(26, 34, 56, 0.09);
+  color: var(--color-navy, #1a2238);
+}
+
+.periodPickerPopup :global(.ant-picker-header button) {
+  border-radius: 7px;
+  color: rgba(26, 34, 56, 0.58);
+}
+
+.periodPickerPopup :global(.ant-picker-header > button:hover) {
+  background: rgba(26, 34, 56, 0.06);
+  color: var(--color-navy, #1a2238);
+}
+
+.periodPickerPopup :global(.ant-picker-header-view button) {
+  color: var(--color-navy, #1a2238);
+}
+
+.periodPickerPopup :global(.ant-picker-header-view button:hover),
+.periodPickerPopup :global(.ant-picker-today-btn) {
+  color: var(--color-navy, #1a2238);
+}
+
+.periodPickerPopup
+  :global(.ant-picker-cell:hover:not(.ant-picker-cell-selected):not(.ant-picker-cell-disabled) .ant-picker-cell-inner),
+.periodPickerPopup
+  :global(.ant-picker-week-panel-row:not(.ant-picker-week-panel-row-selected):hover td.ant-picker-cell::before) {
+  background: #f1f3f6;
+}
+
+.periodPickerPopup
+  :global(.ant-picker-cell-in-view.ant-picker-cell-selected:not(.ant-picker-cell-disabled) .ant-picker-cell-inner) {
+  background: var(--color-navy, #1a2238);
+  color: #fff;
+}
+
+.periodPickerPopup :global(.ant-picker-cell-in-view.ant-picker-cell-today .ant-picker-cell-inner::before) {
+  border-color: var(--color-navy, #1a2238);
+}
+
+.periodPickerPopup :global(.ant-picker-week-panel-row-selected td.ant-picker-cell::before) {
+  background: var(--color-navy, #1a2238);
+}
+
+.periodPickerPopup :global(.ant-picker-week-panel-row-selected td.ant-picker-cell-week) {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.periodPickerPopup :global(.ant-picker-week-panel-row-selected .ant-picker-cell-inner) {
+  color: #fff;
+}
+
+.viewSwitcher {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid #dce5ef;
+  border-radius: 13px;
+  background: #f4f7fa;
+}
+
+.viewSwitcher button {
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+}
+
+.viewSwitcher button:hover:not(.activeView) {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.viewSwitcher .activeView {
+  background: #e2efff;
+  color: #2478e5;
+  box-shadow: 0 2px 7px rgba(36, 120, 229, 0.12);
+}
+
+.filterBar {
+  display: flex;
+  min-height: 64px;
+  padding: 10px 18px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 18px;
+  border-bottom: 1px solid #edf0f3;
+  background: #fdfefd;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+}
+
+.statusFilters {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.statusFilters::-webkit-scrollbar {
+  display: none;
+}
+
+.statusFilters button {
+  display: inline-flex;
+  min-height: 42px;
+  padding: 0 13px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: transparent;
+  color: #6d7587;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 550;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.statusFilters button:hover:not(.activeFilter) {
+  background: #f3f5f7;
+  color: var(--ink);
+}
+
+.statusFilters button span {
+  display: inline-grid;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  place-items: center;
+  border-radius: 999px;
+  background: #edf0f3;
+  color: #737b8c;
+  font-size: 10px;
+  box-sizing: border-box;
+}
+
+.statusFilters .activeFilter {
+  border-color: rgba(23, 33, 58, 0.9);
+  background: var(--ink);
+  color: #fff;
+  box-shadow: 0 5px 13px rgba(23, 33, 58, 0.13);
+}
+
+.statusFilters .activeFilter span {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.results {
+  position: relative;
+  min-height: 0;
+  padding: 18px;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #f7f9fb;
+  box-sizing: border-box;
+  scrollbar-gutter: stable;
+}
+
+.weekCalendar {
+  display: grid;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border: 1px solid #dde3e9;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.dayColumn {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  border-right: 1px solid #e4e8ed;
+  background: #fff;
+}
+
+.dayColumn:last-child {
+  border-right: 0;
+}
+
+.todayColumn {
+  background: linear-gradient(180deg, rgba(36, 120, 229, 0.055), #fff 38%);
+}
+
+.dayHeader {
+  position: relative;
+  display: flex;
+  min-height: 82px;
+  padding: 12px 8px 10px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  border-bottom: 1px solid #e7eaee;
+  box-sizing: border-box;
+}
+
+.dayHeader > span {
+  color: #777f90;
+  font-size: 11px;
+  font-weight: 550;
+}
+
+.dayHeader > strong {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  margin-top: 3px;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--ink);
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.dayHeader .todayNumber {
+  background: #2478e5;
+  color: #fff;
+  box-shadow: 0 5px 12px rgba(36, 120, 229, 0.24);
+}
+
+.dayHeader small {
+  position: absolute;
+  right: 7px;
+  bottom: 5px;
+  color: #969dab;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.dayBody {
+  display: flex;
+  max-height: none;
+  min-height: 0;
+  padding: 8px;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+}
+
+.emptyDay {
+  padding-top: 14px;
+  color: #a6acb8;
+  font-size: 10.5px;
+  text-align: center;
+}
+
+.calendarEvent {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 112px;
+  padding: 10px;
+  align-items: flex-start;
+  /* Không cho flexbox nén card khi cột ngày quá tải — cột đã có scroll,
+     nén sẽ làm overflow:hidden cắt mất footer (status + nút Vào lớp) */
+  flex: 0 0 auto;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--status-color) 28%, #dfe4e8);
+  border-radius: 11px;
+  background: linear-gradient(145deg, var(--status-bg), #fff 72%);
+  color: var(--ink);
+  box-sizing: border-box;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    border-color 150ms ease;
+}
+
+.calendarEvent:hover {
+  border-color: color-mix(in srgb, var(--status-color) 46%, #d8dee3);
+  box-shadow: 0 8px 18px rgba(23, 33, 58, 0.09);
+  transform: translateY(-1px);
+}
+
+.calendarEventMain {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0;
+  align-items: flex-start;
+  flex: 1;
+  flex-direction: column;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.eventTime {
+  margin-bottom: 5px;
+  color: var(--status-color);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.calendarEventMain > strong {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.calendarEventFooter {
+  display: flex;
+  width: 100%;
+  margin-top: 8px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  /* Cột calendar hẹp: khi có nút "Vào lớp" thì cho nút xuống dòng thay vì cắt chữ status */
+  flex-wrap: wrap;
+}
+
+.statusPill {
+  display: inline-flex;
+  min-height: 25px;
+  padding: 3px 8px;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  background: var(--status-bg);
+  color: var(--status-color);
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.statusPill > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* line-height 1 của pill làm overflow:hidden cắt dấu tiếng Việt (ỗ, ủ) và
+     phần thòng xuống (y, g) — nới line box đủ cao cho glyph */
+  line-height: 1.6;
+}
+
+.calendarEvent .statusPill {
+  min-width: 0;
+  padding-right: 6px;
+  padding-left: 6px;
+}
+
+.statusPill i {
+  width: 5px;
+  height: 5px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--status-color);
+}
+
+.meetLink {
+  display: inline-flex;
+  min-height: 30px;
+  padding: 4px 9px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid rgba(11, 132, 116, 0.16);
+  border-radius: 9px;
+  background: #e9f8f4;
+  color: #0b796a;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    color 150ms ease,
+    transform 150ms ease;
+}
+
+.meetLink:hover {
+  border-color: rgba(11, 121, 106, 0.32);
+  background: #d9f3ec;
+  color: #08685c;
+  transform: translateY(-1px);
+}
+
+.calendarEvent .meetLink {
+  min-height: 25px;
+  padding: 3px 6px;
+  border-radius: 7px;
+  font-size: 9.5px;
+}
+
+.lessonTooltipRoot {
+  max-width: 300px !important;
+}
+
+.lessonTooltipContainer {
+  padding: 12px 13px !important;
+  border: 1px solid #e1e6e5;
+  border-radius: 14px !important;
+  box-shadow: 0 14px 34px rgba(23, 33, 58, 0.14) !important;
+}
+
+.lessonTooltip {
+  display: flex;
+  min-width: 236px;
+  max-width: 270px;
+  flex-direction: column;
+  gap: 9px;
+  color: #17213a;
+  font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif;
+}
+
+.lessonTooltip > strong {
+  padding-bottom: 9px;
+  border-bottom: 1px solid #edf0ef;
+  color: #17213a;
+  font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.tooltipMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.tooltipMeta > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #687086;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.tooltipMeta svg {
+  flex: 0 0 auto;
+  color: #0f8f83;
+}
+
+.tooltipMeta .tooltipTutor {
+  color: #596176;
+}
+
+.tooltipTutor b {
+  color: #303a51;
+  font-weight: 650;
+}
+
+.tooltipFooter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tooltipStatus,
+.tooltipMeetState {
+  display: inline-flex;
+  min-height: 24px;
+  padding: 3px 7px;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.tooltipStatus {
+  background: var(--status-bg);
+  color: var(--status-color);
+}
+
+.tooltipMeetState {
+  background: #f1f3f5;
+  color: #747c8d;
+}
+
+.tooltipMeetState.tooltipMeetReady {
+  background: #e9f8f4;
+  color: #0b796a;
+}
+
+.tooltipStatusDot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--status-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-color) 22%, transparent);
+}
+
+.mobileCalendar {
+  display: none;
+}
+
+.lessonGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.gridCard {
+  display: flex;
+  min-width: 0;
+  min-height: 210px;
+  padding: 16px;
+  flex-direction: column;
+  border: 1px solid color-mix(in srgb, var(--status-color) 28%, #dfe4e8);
+  border-radius: 16px;
+  background: linear-gradient(145deg, var(--status-bg), #fff 70%);
+  color: var(--ink);
+  box-shadow: 0 3px 9px rgba(23, 33, 58, 0.03);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+
+.gridCard:hover {
+  border-color: color-mix(in srgb, var(--status-color) 46%, #d8dee3);
+  box-shadow: 0 12px 26px rgba(23, 33, 58, 0.09);
+  transform: translateY(-2px);
+}
+
+.gridCardMain {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  flex: 1;
+  flex-direction: column;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gridCardTop,
+.gridCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.gridDate {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  color: #6e7688;
+  font-size: 11px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gridCardBody {
+  display: flex;
+  margin: 23px 0 20px;
+  align-items: center;
+  gap: 13px;
+}
+
+.subjectMark {
+  display: grid;
+  width: 45px;
+  height: 45px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--status-color) 16%, transparent);
+  border-radius: 13px;
+  background: #fff;
+  color: var(--status-color);
+  box-shadow: 0 4px 12px rgba(23, 33, 58, 0.055);
+}
+
+.gridCardBody > span:last-child {
+  min-width: 0;
+}
+
+.gridCardBody strong {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.gridTime {
+  display: flex;
+  margin-top: 7px;
+  align-items: center;
+  gap: 6px;
+  color: #737b8c;
+  font-size: 11.5px;
+}
+
+.gridCardFooter {
+  margin-top: auto;
+  padding-top: 12px;
+  justify-content: flex-end;
+  border-top: 1px solid rgba(23, 33, 58, 0.07);
+}
+
+.gridCardFooter .meetLink {
+  margin-right: auto;
+}
+
+.openCard {
+  display: inline-flex;
+  min-height: 30px;
+  padding: 4px 2px 4px 8px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 650;
+}
+
+.listGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.listDateHeader {
+  display: flex;
+  min-height: 28px;
+  padding: 0 3px 9px;
+  align-items: center;
+  gap: 8px;
+}
+
+.listDateIcon {
+  display: grid;
+  width: 27px;
+  height: 27px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(36, 120, 229, 0.09);
+  color: #2478e5;
+}
+
+.listDateHeader h3 {
+  margin: 0;
+  color: #555e72;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.listDateHeader > i {
+  height: 1px;
+  flex: 1;
+  background: linear-gradient(90deg, #dfe4e9, rgba(223, 228, 233, 0.25));
+}
+
+.listDateHeader small {
+  color: #969dab;
+  font-size: 10.5px;
+}
+
+.listRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.listRow {
+  position: relative;
+  display: grid;
+  min-height: 76px;
+  padding: 10px 14px 10px 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--status-color) 28%, #dfe4e8);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(23, 33, 58, 0.025);
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    border-color 150ms ease;
+}
+
+.listRow:hover {
+  border-color: color-mix(in srgb, var(--status-color) 46%, #d8dee3);
+  box-shadow: 0 9px 22px rgba(23, 33, 58, 0.075);
+  transform: translateY(-1px);
+}
+
+.listRowMain {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  grid-template-columns: 74px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.listTime {
+  display: flex;
+  min-height: 54px;
+  padding: 7px 9px;
+  flex-direction: column;
+  justify-content: center;
+  border-radius: 10px;
+  background: #f3f5f6;
+  box-sizing: border-box;
+}
+
+.listTime strong {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 16px;
+  line-height: 1.05;
+}
+
+.listTime span {
+  margin-top: 4px;
+  color: #9299a8;
+  font-size: 10.5px;
+}
+
+.listInfo {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.listInfo > strong {
+  overflow: hidden;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.listActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.detailIconButton {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.rowChevron {
+  flex: 0 0 auto;
+  color: #a3aab7;
+  transition:
+    color 150ms ease,
+    transform 150ms ease;
+}
+
+.listRow:hover .rowChevron {
+  color: var(--status-color);
+  transform: translateX(2px);
+}
+
+.detailIconButton:hover {
+  background: var(--status-bg);
+}
+
+.cancelled {
+  background: #fafafa;
+}
+
+.cancelled strong {
+  color: #8d94a2;
+}
+
+.cancelled .listTime strong,
+.cancelled .eventTime {
+  text-decoration: line-through;
+}
+
+.stateBox {
+  display: flex;
+  height: 100%;
+  min-height: 260px;
+  padding: 42px 24px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.stateIcon {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 14px;
+  place-items: center;
+  border-radius: 17px;
+  background: rgba(15, 143, 131, 0.1);
+  color: #0f8f83;
+}
+
+.errorIcon {
+  background: #fff1ef;
+  color: #c64c3f;
+}
+
+.stateBox > strong {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 16px;
+}
+
+.stateBox > p {
+  max-width: 390px;
+  margin: 6px 0 0;
+  color: #7b8294;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.stateBox > button {
+  display: inline-flex;
+  min-height: 42px;
+  margin-top: 16px;
+  padding: 0 15px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 11px;
+  background: var(--ink);
+  color: #fff;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.loadingLayout {
+  display: grid;
+  height: 100%;
+  min-height: 260px;
+  gap: 12px;
+}
+
+.loadingLayout > span {
+  position: relative;
+  display: block;
+  min-height: 130px;
+  overflow: hidden;
+  border: 1px solid #e5e9ed;
+  border-radius: 15px;
+  background: #eef1f4;
+}
+
+.loadingLayout > span::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.72) 48%, transparent 76%);
+  content: '';
+  transform: translateX(-100%);
+  animation: shimmer 1.25s infinite;
+}
+
+.calendarLoading {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.calendarLoading > span {
+  min-height: 260px;
+}
+
+.gridLoading {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.listLoading {
+  grid-template-columns: 1fr;
+}
+
+.listLoading > span {
+  min-height: 76px;
+}
+
+@keyframes shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  margin: -1px;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.todayButton:focus-visible,
+.periodNavigation button:focus-visible,
+.viewSwitcher button:focus-visible,
+.statusFilters button:focus-visible,
+.calendarEventMain:focus-visible,
+.gridCardMain:focus-visible,
+.listRowMain:focus-visible,
+.meetLink:focus-visible,
+.openCard:focus-visible,
+.detailIconButton:focus-visible,
+.mobileDayStrip button:focus-visible,
+.stateBox button:focus-visible {
+  outline: 3px solid rgba(36, 120, 229, 0.26);
+  outline-offset: 2px;
+}
+
+@media (min-width: 761px) and (max-height: 760px) {
+  .main {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .toolbar {
+    min-height: 72px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .filterBar {
+    min-height: 54px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  .results {
+    padding: 12px;
+  }
+
+  .dayHeader {
+    min-height: 70px;
+    padding-top: 8px;
+    padding-bottom: 7px;
+  }
+
+  .calendarEvent {
+    min-height: 98px;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1400px) {
+  .calendarEventMain {
+    min-height: 38px;
+  }
+
+  .calendarEventFooter {
+    margin-top: 5px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .calendarEvent .statusPill {
+    flex: 0 1 auto;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 1080px) {
+  .main {
+    padding-right: 24px;
+    padding-left: 24px;
+  }
+
+  .lessonGrid,
+  .gridLoading {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .calendarEvent {
+    padding: 8px;
+  }
+
+  .calendarEvent .statusPill {
+    flex: 1 1 auto;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 760px) {
+  .main {
+    padding: 11px 11px 10px;
+  }
+
+  .workspace {
+    border-radius: 16px;
+  }
+
+  .toolbar {
+    min-height: 138px;
+    padding: 12px;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 10px;
+  }
+
+  .todayButton {
+    padding: 0 14px;
+  }
+
+  .periodNavigation {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: space-between;
+  }
+
+  .periodHeading {
+    width: auto;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .periodTitle {
+    font-size: 15.5px;
+  }
+
+  .viewSwitcher {
+    grid-column: 3;
+  }
+
+  .filterBar {
+    min-height: 58px;
+    padding: 8px 11px;
+  }
+
+  .statusFilters button {
+    min-height: 40px;
+    padding: 0 11px;
+    font-size: 12px;
+  }
+
+  .results {
+    min-height: 0;
+    padding: 11px;
+  }
+
+  .weekCalendar {
+    display: none;
+  }
+
+  .mobileCalendar {
+    display: block;
+  }
+
+  .mobileDayStrip {
+    display: grid;
+    padding: 6px;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+    border: 1px solid #e0e5ea;
+    border-radius: 14px;
+    background: #fff;
+  }
+
+  .mobileDayStrip button {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    min-height: 68px;
+    padding: 6px 2px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #737b8c;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .mobileDayStrip button > span {
+    font-size: 9px;
+    font-weight: 600;
+  }
+
+  .mobileDayStrip button > strong {
+    margin-top: 3px;
+    color: var(--ink);
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 17px;
+  }
+
+  .mobileDayStrip button > i {
+    width: 4px;
+    height: 4px;
+    margin-top: 4px;
+    border-radius: 50%;
+    background: transparent;
+  }
+
+  .mobileDayStrip button > .hasLesson {
+    background: #2478e5;
+  }
+
+  .mobileDayStrip .selectedMobileDay {
+    background: #e5f0ff;
+    color: #2478e5;
+  }
+
+  .mobileDayStrip .selectedMobileDay > strong {
+    color: #2478e5;
+  }
+
+  .mobileAgenda {
+    margin-top: 11px;
+    padding: 13px;
+    border: 1px solid #e0e5ea;
+    border-radius: 14px;
+    background: #fff;
+  }
+
+  .mobileAgendaHeader {
+    display: flex;
+    margin-bottom: 12px;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .mobileAgendaHeader > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .mobileAgendaHeader span {
+    color: #9299a8;
+    font-size: 9.5px;
+    font-weight: 650;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .mobileAgendaHeader strong {
+    font-size: 13px;
+  }
+
+  .mobileAgendaHeader small {
+    color: #858c9b;
+    font-size: 10.5px;
+  }
+
+  .mobileAgendaList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mobileEmptyDay {
+    display: flex;
+    min-height: 145px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+    border-radius: 12px;
+    background: #f6f8fa;
+    color: #9097a6;
+    font-size: 11.5px;
+  }
+
+  .lessonGrid,
+  .gridLoading {
+    grid-template-columns: 1fr;
+  }
+
+  .gridCard {
+    min-height: 190px;
+  }
+
+  .listRow {
+    min-height: 112px;
+    padding: 9px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .listRowMain {
+    grid-template-columns: 65px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .listTime {
+    min-height: 64px;
+    padding: 7px;
+    align-self: stretch;
+  }
+
+  .listActions {
+    padding-left: 75px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .listActions .detailIconButton {
+    margin-left: auto;
+  }
+
+  .calendarLoading,
+  .listLoading {
+    grid-template-columns: 1fr;
+  }
+
+  .calendarLoading > span:nth-child(n + 4),
+  .gridLoading > span:nth-child(n + 4),
+  .listLoading > span:nth-child(n + 5) {
+    display: none;
+  }
+
+  .calendarLoading > span {
+    min-height: 96px;
+  }
+}
+
+@media (max-width: 430px) {
+  .viewSwitcher button,
+  .periodNavigation > button {
+    min-width: 42px;
+    height: 42px;
+  }
+
+  .todayButton {
+    height: 42px;
+  }
+
+  .viewSwitcher {
+    padding: 2px;
+  }
+
+  .periodPickerTrigger {
+    min-height: 50px;
+    padding: 6px;
+    grid-template-columns: 30px minmax(0, 1fr) 26px;
+    gap: 7px;
+    border-radius: 12px;
+  }
+
+  .periodPickerIcon {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+  }
+
+  .periodPickerChevron {
+    width: 26px;
+    height: 26px;
+  }
+
+  .mobileDayStrip {
+    gap: 2px;
+    padding: 5px;
+  }
+
+  .mobileDayStrip button {
+    min-height: 62px;
+  }
+
+  .statusPill {
+    padding: 3px 7px;
+    font-size: 9.5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .todayButton,
+  .periodNavigation > button,
+  .viewSwitcher button,
+  .periodPickerTrigger,
+  .periodPickerIcon,
+  .periodPickerChevron,
+  .calendarEvent,
+  .gridCard,
+  .listRow,
+  .rowChevron,
+  .meetLink {
+    transition: none;
+  }
+
+  .loadingLayout > span::after {
+    animation: none;
+  }
+}
