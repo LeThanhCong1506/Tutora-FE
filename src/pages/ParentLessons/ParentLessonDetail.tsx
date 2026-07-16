@@ -5,7 +5,7 @@ import { isZaloMiniApp } from '../../services/zalo-env';
 const inMiniApp = isZaloMiniApp();
 import { ArrowLeft, Video } from 'lucide-react';
 import { getParentLessonDetail } from '../../services/parent-lesson.service';
-import { isJitsiFallbackLink } from '../../services/googleAuth.service';
+import { canJoinLiveSession } from '../../utils/liveSession';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
 import { Spin, Tag, Button } from 'antd';
 import { toast } from 'react-toastify';
@@ -134,8 +134,8 @@ const ParentLessonDetail: React.FC = () => {
         </div>
       )}
 
-      {/* Join Banner — chỉ hiện khi tutor đã check-in & có link */}
-      {lesson.status === 'in_progress' && lesson.meetingLink && (
+      {/* Join Banner — phòng Agora mở từ 30ph trước giờ học, không cần tutor check-in trước */}
+      {canJoinLiveSession(lesson) && (
         <div style={{
           background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
           color: '#fff',
@@ -160,26 +160,21 @@ const ParentLessonDetail: React.FC = () => {
             </div>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 2 }}>
-                Buổi học đã bắt đầu
+                {lesson.status === 'in_progress' ? 'Buổi học đã bắt đầu' : 'Phòng học đã mở'}
               </div>
               <div style={{ fontSize: 13, opacity: 0.9, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                <span>Gia sư đang chờ trong lớp</span>
-                {isJitsiFallbackLink(lesson.meetingLink) && (
-                  <span style={{
-                    fontSize: 10, fontWeight: 600,
-                    background: 'rgba(255,255,255,0.25)',
-                    padding: '1px 8px', borderRadius: 4, letterSpacing: 0.3,
-                  }}>
-                    Jitsi (dự phòng)
-                  </span>
-                )}
+                <span>
+                  {lesson.status === 'in_progress'
+                    ? 'Gia sư đang chờ trong lớp'
+                    : 'Có thể vào lớp sớm 30 phút trước giờ học'}
+                </span>
               </div>
             </div>
           </div>
-          <a
-            href={lesson.meetingLink}
-            target="_blank"
-            rel="noopener noreferrer"
+          {/* meetingLink là channel Agora — vào lớp qua trang LiveSession nội bộ */}
+          <button
+            type="button"
+            onClick={() => navigate(`/live-session/${id}`)}
             style={{
               background: '#fff',
               color: '#15803d',
@@ -187,7 +182,8 @@ const ParentLessonDetail: React.FC = () => {
               borderRadius: 8,
               fontSize: 14,
               fontWeight: 700,
-              textDecoration: 'none',
+              border: 'none',
+              cursor: 'pointer',
               whiteSpace: 'nowrap',
               display: 'inline-flex',
               alignItems: 'center',
@@ -195,7 +191,7 @@ const ParentLessonDetail: React.FC = () => {
             }}
           >
             ▶ Tham gia ngay
-          </a>
+          </button>
         </div>
       )}
 
@@ -227,24 +223,7 @@ const ParentLessonDetail: React.FC = () => {
             />
           )}
           {lesson.meetingLink && (
-            <div style={{ gridColumn: '1 / -1' }}>
-              <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span>Link học online</span>
-                {isJitsiFallbackLink(lesson.meetingLink) && (
-                  <span style={{
-                    fontSize: 10, fontWeight: 600,
-                    color: '#92400e', background: '#fef3c7',
-                    padding: '1px 6px', borderRadius: 4, letterSpacing: 0.3,
-                  }}>
-                    Jitsi (dự phòng)
-                  </span>
-                )}
-              </div>
-              <a href={lesson.meetingLink} target="_blank" rel="noopener noreferrer"
-                style={{ fontSize: '14px', color: '#1890ff', wordBreak: 'break-all' }}>
-                {lesson.meetingLink}
-              </a>
-            </div>
+            <InfoRow label="Hình thức" value="Học online" />
           )}
         </div>
       </div>

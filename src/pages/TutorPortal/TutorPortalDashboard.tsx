@@ -290,29 +290,17 @@ const TutorPortalDashboard: React.FC = () => {
     };
 
     const handleEnterLesson = async (lesson: CalendarClassSessionResponse) => {
-        // Re-join nếu lesson đang chạy & đã có link
-        if (lesson.status === 'in_progress' && lesson.meetingLink) {
-            window.open(lesson.meetingLink, '_blank', 'noopener,noreferrer');
+        // Re-join nếu lesson đang chạy → vào thẳng phòng học Agora nội bộ
+        if (lesson.status === 'in_progress') {
+            navigate(`/live-session/${lesson.classSessionId}`);
             return;
         }
 
         try {
             setCheckingInLessonId(lesson.classSessionId);
-            const response = await checkInClassSession(lesson.classSessionId);
-            const link = response.content?.meetingLink;
-            if (link) {
-                window.open(link, '_blank', 'noopener,noreferrer');
-                toast.success('Check-in thành công! Đang mở lớp học…');
-            } else {
-                toast.success('Check-in thành công!');
-            }
-            // Refetch calendar — lesson đã đổi sang in_progress + có meetingLink
-            try {
-                const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-                const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-                const calendarResponse = await getTutorCalendar(firstDay.toISOString(), lastDay.toISOString());
-                if (calendarResponse.content) setCalendarData(calendarResponse.content);
-            } catch { /* non-critical */ }
+            await checkInClassSession(lesson.classSessionId);
+            toast.success('Check-in thành công! Đang vào lớp học…');
+            navigate(`/live-session/${lesson.classSessionId}`);
         } catch (error: unknown) {
             const e = error as { response?: { data?: { message?: string } } };
             toast.error(e.response?.data?.message || 'Không thể check-in. Vui lòng thử lại.');
