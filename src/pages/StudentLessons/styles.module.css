@@ -1125,33 +1125,8 @@
   margin-bottom: 14px;
   place-items: center;
   border-radius: 17px;
-}
-
-.emptyStateIcon {
-  position: relative;
-  width: 60px;
-  height: 60px;
-  margin-bottom: 16px;
-  border: 1px solid rgba(36, 120, 229, 0.14);
-  border-radius: 20px;
-  background: linear-gradient(145deg, #edf6ff 0%, #e3efff 100%);
-  color: #2478e5;
-  box-shadow:
-    0 10px 24px rgba(36, 120, 229, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-
-.emptyStateIcon::after {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 6px;
-  height: 6px;
-  border: 2px solid #edf6ff;
-  border-radius: 50%;
-  background: #17213a;
-  box-sizing: content-box;
-  content: '';
+  background: rgba(15, 143, 131, 0.1);
+  color: #0f8f83;
 }
 
 .errorIcon {

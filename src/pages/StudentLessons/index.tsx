@@ -189,7 +189,7 @@ const StudentLessons = () => {
     updateQuery({ date: nextDate.format('YYYY-MM-DD') });
   };
 
-  const openLesson = (lessonId: number) => navigate(`/student-portal/calendar/${lessonId}`);
+  const openLesson = (lessonId: number) => navigate(`/student-portal/lessons/${lessonId}`);
   const isFilteredEmpty = activeStatus !== '' && lessons.length > 0;
 
   return (

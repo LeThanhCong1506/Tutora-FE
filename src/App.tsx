@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { isZaloMiniApp } from './services/zalo-env';
 import { DeeplinkHandler } from './components/DeeplinkHandler/DeeplinkHandler';
 
@@ -80,6 +80,7 @@ const StudentDashboard = lazy(() => import('./pages/StudentDashboard'));
 const StudentBooking = lazy(() => import('./pages/StudentBooking'));
 const StudentLessons = lazy(() => import('./pages/StudentLessons'));
 const StudentLessonDetail = lazy(() => import('./pages/StudentLessons/StudentLessonDetail'));
+const StudentCalendar = lazy(() => import('./pages/StudentLessons/StudentCalendar'));
 const StudentAccount = lazy(() => import('./pages/StudentAccount'));
 const StudentProfile = lazy(() => import('./pages/StudentProfile'));
 
@@ -93,14 +94,6 @@ const LiveSession = lazy(() => import('./pages/LiveSession'));
 // ---------------------
 
 const inMiniApp = isZaloMiniApp();
-
-function LegacyStudentLessonsRedirect() {
-  const { lessonId } = useParams();
-  const location = useLocation();
-  const pathname = lessonId ? `/student-portal/calendar/${lessonId}` : '/student-portal/calendar';
-
-  return <Navigate to={{ pathname, search: location.search, hash: location.hash }} replace />;
-}
 
 function App() {
   const location = useLocation();
@@ -263,10 +256,9 @@ function App() {
                 <Route path="booking" element={<StudentBooking />} />
                 <Route path="booking/:id" element={<BookingDetail />} />
                 <Route path="booking/:id/payment" element={<PaymentPage />} />
-                <Route path="calendar" element={<StudentLessons />} />
-                <Route path="calendar/:lessonId" element={<StudentLessonDetail />} />
-                <Route path="lessons" element={<LegacyStudentLessonsRedirect />} />
-                <Route path="lessons/:lessonId" element={<LegacyStudentLessonsRedirect />} />
+                <Route path="lessons" element={<StudentLessons />} />
+                <Route path="lessons/:lessonId" element={<StudentLessonDetail />} />
+                <Route path="calendar" element={<StudentCalendar />} />
                 <Route path="messages" element={<ParentMessage />} />
                 <Route path="profile" element={<StudentProfile />} />
                 <Route path="account" element={<StudentAccount />} />

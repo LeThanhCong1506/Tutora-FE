@@ -10,6 +10,7 @@ import {
   MessagesIcon,
   BookingIcon,
   AccountIcon,
+  LessonsIcon,
   CalendarIcon,
   ChildrenIcon,
 } from '../shared/icons';
@@ -27,7 +28,7 @@ const NOTIFICATION_TYPES_BY_PATH: Record<string, string[]> = {
     'payment_remaining_required',
     'booking_payment_due_soon',
   ],
-  '/student-portal/calendar': [
+  '/student-portal/lessons': [
     'lesson_reminder',
     'lesson_checkin',
     'lesson_confirmed',
@@ -39,6 +40,7 @@ const NOTIFICATION_TYPES_BY_PATH: Record<string, string[]> = {
 const baseStudentNavItems: NavItem[] = [
   { path: '/student-portal/dashboard', label: 'Tổng quan', icon: DashboardIcon },
   { path: '/student-portal/booking', label: 'Đặt lịch', icon: BookingIcon },
+  { path: '/student-portal/lessons', label: 'Buổi học', icon: LessonsIcon },
   { path: '/student-portal/calendar', label: 'Thời khóa biểu', icon: CalendarIcon },
   { path: MESSAGES_PATH, label: 'Tin nhắn', icon: MessagesIcon },
   { path: '/student-portal/profile', label: 'Hồ sơ học sinh', icon: ChildrenIcon },
