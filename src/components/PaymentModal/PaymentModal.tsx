@@ -21,6 +21,8 @@ import {
 import styles from './PaymentModal.module.css';
 import { getPaymentInfo, getPaymentStatus, payWithWallet, type PaymentInfoDTO } from '../../services/payment.service';
 import { toast } from 'react-toastify';
+import { useBookingTopup } from '../../hooks/useBookingTopup';
+import TopupQRView from '../TopupQR/TopupQRView';
 
 interface PaymentModalProps {
     bookingId: number;
@@ -176,6 +178,17 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
         return () => clearInterval(interval);
     }, [showQRView, bookingId, paymentInfo?.paymentPhase, paymentSuccess, isExpired, onClose, onPaymentSuccess]);
 
+    // Luồng "nạp bù phần thiếu rồi tự động thanh toán bằng ví" (khi số dư không đủ).
+    const topup = useBookingTopup({
+        bookingId,
+        amountDue: paymentInfo?.amount ?? 0,
+        walletBalance: paymentInfo?.walletBalance ?? 0,
+        onPaymentSuccess: () => {
+            onPaymentSuccess();
+            onClose();
+        },
+    });
+
     const handleWalletPayment = async () => {
         if (!paymentInfo?.canPayWithWallet) return;
 
@@ -220,6 +233,22 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
     }, []);
 
     if (!isOpen) return null;
+
+    if (topup.isActive) {
+        return (
+            <TopupQRView
+                topup={topup.topup}
+                phase={topup.phase}
+                shortfall={topup.shortfall}
+                topupAmount={topup.topupAmount}
+                secondsRemaining={topup.secondsRemaining}
+                error={topup.error}
+                onRegenerate={topup.regenerate}
+                onRetryPay={topup.retryPay}
+                onCancel={topup.cancel}
+            />
+        );
+    }
 
     const formatCurrency = (amount: number) =>
         new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -543,9 +572,9 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
 
                             <div className={styles.paymentOptions}>
                                 {/* Option 1: Wallet */}
-                                <div className={`${styles.optionCard} ${!paymentInfo.canPayWithWallet ? styles.disabled : ''}`}>
+                                <div className={styles.optionCard}>
                                     <span className={`${styles.optionBadge} ${paymentInfo.canPayWithWallet ? styles.optionBadgeReady : styles.optionBadgeMuted}`}>
-                                        {paymentInfo.canPayWithWallet ? 'Có thể dùng' : 'Không khả dụng'}
+                                        {paymentInfo.canPayWithWallet ? 'Có thể dùng' : 'Cần nạp thêm'}
                                     </span>
                                     <div className={styles.optionHeader}>
                                         <div className={styles.optionIconWrap}>
@@ -557,7 +586,19 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                                         </div>
                                     </div>
                                     {!paymentInfo.canPayWithWallet ? (
-                                        <div className={styles.insufficientText}>Số dư không đủ</div>
+                                        <div className={styles.payAction}>
+                                            <div className={styles.insufficientText}>
+                                                Thiếu {formatCurrency(Math.max(0, paymentInfo.amount - paymentInfo.walletBalance))} — nạp thêm để thanh toán
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className={styles.payBtn}
+                                                onClick={() => topup.start()}
+                                                disabled={topup.phase === 'creating'}
+                                            >
+                                                {topup.phase === 'creating' ? 'Đang tạo mã...' : 'Nạp thêm & thanh toán bằng ví'}
+                                            </button>
+                                        </div>
                                     ) : (
                                         <div className={styles.payAction}>
                                             <button

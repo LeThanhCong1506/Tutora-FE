@@ -34,6 +34,58 @@ export interface WalletBalanceResponse {
   lastUpdated?: string;
 }
 
+// Nạp ví (dùng trong luồng "nạp bù rồi thanh toán booking")
+
+/** Khớp `TopupResponse` của backend (dữ liệu tạo QR nạp tiền PayOS). */
+export interface TopupResponse {
+  paymentLinkId: string;
+  orderCode: number;
+  amount: number;
+  currency: string;
+  checkoutUrl: string;
+  qrCode: string;
+  accountNumber: string;
+  accountName: string;
+  bin: string;
+  description: string;
+  expiredAt: string | null;
+}
+
+/** Khớp `TopupStatusResponse` của backend. `walletCredited` là cờ FE dựa vào để auto-pay. */
+export interface TopupStatusResponse {
+  orderCode: number;
+  status: string;
+  walletCredited: boolean;
+  amount: number;
+  walletBalance: number;
+}
+
+/** Tạo lệnh nạp ví qua PayOS, trả về dữ liệu QR. `amount` tính bằng VND (tối thiểu 10.000). */
+export const createTopup = async (amount: number): Promise<ApiResponse<TopupResponse>> => {
+  try {
+    const response = await api.post('/wallet/top-up', { amount }, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error: unknown) {
+    logRequestError('❌ Error creating topup:', error);
+    throw error;
+  }
+};
+
+/** Poll trạng thái lệnh nạp ví (có self-heal ở backend). */
+export const getTopupStatus = async (orderCode: number): Promise<ApiResponse<TopupStatusResponse>> => {
+  try {
+    const response = await api.get(`/wallet/topups/${orderCode}/status`, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error: unknown) {
+    logRequestError('❌ Error fetching topup status:', error);
+    throw error;
+  }
+};
+
 /**
  * Get wallet balance
  */

@@ -11,6 +11,8 @@ import {
   type BookingResponseDTO,
 } from '../../../services/booking.service';
 import { isZaloMiniApp } from '../../../services/zalo-env';
+import { useBookingTopup } from '../../../hooks/useBookingTopup';
+import TopupQRView from '../../../components/TopupQR/TopupQRView';
 import styles from './styles.module.css';
 import {
   CreditCard,
@@ -103,6 +105,14 @@ const PaymentPage = () => {
     }
     return () => clearInterval(interval);
   }, [bookingId, paymentMethod, paymentSuccess, loading, paymentInfo?.paymentPhase, remainingLocked]);
+
+  // Luồng "nạp bù phần thiếu rồi tự động thanh toán bằng ví" (khi số dư không đủ).
+  const topup = useBookingTopup({
+    bookingId,
+    amountDue: paymentInfo?.amount ?? 0,
+    walletBalance: paymentInfo?.walletBalance ?? 0,
+    onPaymentSuccess: () => setPaymentSuccess(true),
+  });
 
   const handleWalletPay = async () => {
     if (!paymentInfo || paymentInfo.walletBalance < paymentInfo.amount) {
@@ -258,6 +268,22 @@ const PaymentPage = () => {
           </div>
         </div>
       </div>
+    );
+  }
+
+  if (topup.isActive) {
+    return (
+      <TopupQRView
+        topup={topup.topup}
+        phase={topup.phase}
+        shortfall={topup.shortfall}
+        topupAmount={topup.topupAmount}
+        secondsRemaining={topup.secondsRemaining}
+        error={topup.error}
+        onRegenerate={topup.regenerate}
+        onRetryPay={topup.retryPay}
+        onCancel={topup.cancel}
+      />
     );
   }
 
@@ -511,27 +537,48 @@ const PaymentPage = () => {
                 ) : (
                   <div className={styles.walletArea}>
                     {paymentInfo && paymentInfo.walletBalance < paymentInfo.amount ? (
-                      <div className={styles.insufficientFunds}>
-                        <AlertCircle size={20} />
-                        <p>Số dư không đủ để thanh toán. Vui lòng chọn phương thức khác hoặc nạp thêm tiền.</p>
-                      </div>
+                      <>
+                        <div className={styles.insufficientFunds}>
+                          <AlertCircle size={20} />
+                          <p>
+                            Số dư thiếu{' '}
+                            <strong>
+                              {formatPrice(Math.max(0, (paymentInfo.amount || 0) - (paymentInfo.walletBalance || 0)))}
+                            </strong>
+                            . Nạp thêm để thanh toán ngay bằng ví.
+                          </p>
+                        </div>
+                        <Button
+                          type="primary"
+                          size="large"
+                          block
+                          loading={topup.phase === 'creating'}
+                          onClick={() => topup.start()}
+                          className={styles.payBtn}
+                          style={{ marginTop: '16px' }}
+                        >
+                          Nạp thêm &amp; thanh toán bằng ví
+                        </Button>
+                      </>
                     ) : (
-                      <p className={styles.walletHint}>
-                        Hệ thống sẽ khấu trừ trực tiếp <strong>{formatPrice(paymentInfo?.amount || 0)}</strong> từ ví
-                        của bạn.
-                      </p>
+                      <>
+                        <p className={styles.walletHint}>
+                          Hệ thống sẽ khấu trừ trực tiếp <strong>{formatPrice(paymentInfo?.amount || 0)}</strong> từ ví
+                          của bạn.
+                        </p>
+                        <Button
+                          type="primary"
+                          size="large"
+                          block
+                          disabled={!paymentInfo || isPaying}
+                          loading={isPaying}
+                          onClick={handleWalletPay}
+                          className={styles.payBtn}
+                        >
+                          Xác nhận thanh toán bằng ví
+                        </Button>
+                      </>
                     )}
-                    <Button
-                      type="primary"
-                      size="large"
-                      block
-                      disabled={!paymentInfo || paymentInfo.walletBalance < paymentInfo.amount || isPaying}
-                      loading={isPaying}
-                      onClick={handleWalletPay}
-                      className={styles.payBtn}
-                    >
-                      Xác nhận thanh toán bằng ví
-                    </Button>
                   </div>
                 )}
               </div>
