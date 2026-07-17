@@ -1,4 +1,4 @@
-import { ArrowUpRight, BookOpen, CircleAlert, RefreshCw } from 'lucide-react';
+import { ArrowUpRight, CalendarSearch, CircleAlert, RefreshCw } from 'lucide-react';
 import styles from '../styles.module.css';
 import type { LessonViewMode } from './types';
 
@@ -33,8 +33,8 @@ export const EmptyState = ({
   onBooking: () => void;
 }) => (
   <div className={styles.stateBox}>
-    <span className={styles.stateIcon}>
-      <BookOpen size={24} />
+    <span className={`${styles.stateIcon} ${styles.emptyStateIcon}`}>
+      <CalendarSearch size={26} strokeWidth={1.9} />
     </span>
     <strong>{filtered ? 'Không có buổi học phù hợp' : `Chưa có buổi học trong ${period}`}</strong>
     <p>
