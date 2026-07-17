@@ -126,8 +126,8 @@ const StudentLessonDetail = () => {
                         </div>
                         <div style={notFoundTitle}>Không tìm thấy buổi học</div>
                         <div style={notFoundSub}>Buổi học này có thể đã bị xóa hoặc bạn không có quyền truy cập.</div>
-                        <button style={notFoundBackBtn} onClick={() => navigate('/student-portal/lessons')}>
-                            <ArrowLeft size={14} /> Quay lại danh sách
+                        <button style={notFoundBackBtn} onClick={() => navigate('/student-portal/calendar')}>
+                            <ArrowLeft size={14} /> Quay lại thời khóa biểu
                         </button>
                     </div>
                 </div>
@@ -156,9 +156,9 @@ const StudentLessonDetail = () => {
             <div className={s.mainContent} style={{ maxWidth: 860, margin: '0 auto', width: '100%' }}>
                 {/* Breadcrumb-style back nav */}
                 <div style={breadcrumbRow}>
-                    <button style={backBtnStyle} onClick={() => navigate('/student-portal/lessons')}>
+                    <button style={backBtnStyle} onClick={() => navigate('/student-portal/calendar')}>
                         <ArrowLeft size={15} />
-                        <span>Danh sách buổi học</span>
+                        <span>Thời khóa biểu</span>
                     </button>
                 </div>
 
