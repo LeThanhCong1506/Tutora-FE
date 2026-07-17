@@ -213,9 +213,17 @@ export interface TransactionDetail {
   referenceId: number | null;
   referenceTable: string | null;
   createdAt: string;
-  booking: BookingInvoiceDetail | null;
-  dispute: DisputeTransactionDetail | null;
-  withdrawal: WithdrawalTransactionDetail | null;
+  /** Set only when referenceTable is 'withdrawal' — backend-generated payout reference. */
+  providerTransactionId: string | null;
+  paidAt: string | null;
+  proofImageUrl: string | null;
+  // NOTE: the backend's flat wallet-transaction-detail endpoint does not enrich these —
+  // kept optional so any future booking/dispute enrichment can populate them without a
+  // breaking type change; for withdrawal-type transactions the modal fetches the full
+  // WithdrawalDetail separately instead (see TransactionDetailModal.tsx).
+  booking?: BookingInvoiceDetail | null;
+  dispute?: DisputeTransactionDetail | null;
+  withdrawal?: WithdrawalTransactionDetail | null;
 }
 
 /**
@@ -253,6 +261,13 @@ export interface WithdrawalDetail {
   accountHolderName: string | null;
   requestedAt: string;
   processedAt: string | null;
+  claimedAt: string | null;
+  completionNote: string | null;
+  rejectionReason: string | null;
+  /** Backend-generated payout reference — NOT a real bank trace code. */
+  transactionId: string | null;
+  paidAt: string | null;
+  proofImageUrl: string | null;
 }
 
 export interface WithdrawalItem {
@@ -302,6 +317,22 @@ export const getWithdrawals = async (
     return response.data;
   } catch (error: unknown) {
     logRequestError('❌ Error fetching withdrawals:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get a single withdrawal's detail — ownership-checked on the backend, includes the
+ * backend-generated payout reference and a signed proof-image URL when available.
+ */
+export const getWithdrawalDetail = async (id: number): Promise<ApiResponse<WithdrawalDetail>> => {
+  try {
+    const response = await api.get(`/wallet/withdrawals/${id}`, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error: unknown) {
+    logRequestError('❌ Error fetching withdrawal detail:', error);
     throw error;
   }
 };

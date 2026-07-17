@@ -11,7 +11,7 @@ import EarningsChart from './components/EarningsChart';
 import '../../../styles/pages/tutor-finance.css';
 import { toast } from 'react-toastify';
 
-const MIN_WITHDRAWAL = 100000;
+const MIN_WITHDRAWAL = 10000;
 
 const TutorFinanceDashboardPage: React.FC = () => {
   const navigate = useNavigate();

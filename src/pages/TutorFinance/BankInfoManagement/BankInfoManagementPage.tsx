@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Modal } from 'antd';
 import { CheckCircleFilled, InfoCircleOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
-import { getBankInfo } from '../../../services/tutorFinance.service';
+import { toast } from 'react-toastify';
+import { getBankInfo, deleteBankInfo } from '../../../services/tutorFinance.service';
 import type { BankInfo } from '../../../types/finance.types';
 import FinancePageShell from '../components/FinancePageShell';
 import BankInfoCard from './components/BankInfoCard';
@@ -11,6 +12,7 @@ import '../../../styles/pages/tutor-finance.css';
 const BankInfoManagementPage: React.FC = () => {
   const [bankInfo, setBankInfo] = useState<BankInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const fetchData = async () => {
@@ -34,13 +36,33 @@ const BankInfoManagementPage: React.FC = () => {
     fetchData();
   };
 
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await deleteBankInfo();
+      toast.success('Đã xoá tài khoản ngân hàng.');
+      await fetchData();
+    } catch (error) {
+      console.error('Failed to delete bank info:', error);
+      toast.error('Không thể xoá tài khoản ngân hàng. Vui lòng thử lại.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <FinancePageShell
       title="Tài khoản ngân hàng"
       subtitle="Quản lý tài khoản nhận tiền khi yêu cầu rút thu nhập từ TUTORA."
     >
       <div className="finance-bank-layout">
-        <BankInfoCard bankInfo={bankInfo} loading={loading} onEdit={() => setIsEditModalOpen(true)} />
+        <BankInfoCard
+          bankInfo={bankInfo}
+          loading={loading}
+          deleting={deleting}
+          onEdit={() => setIsEditModalOpen(true)}
+          onDelete={handleDelete}
+        />
 
         <aside className="finance-surface finance-policy-card">
           <div className="finance-policy-card__header">
@@ -64,7 +86,7 @@ const BankInfoManagementPage: React.FC = () => {
             </li>
             <li>
               <CheckCircleFilled aria-hidden="true" />
-              <span>Số tiền rút tối thiểu là 100.000 VND cho mỗi giao dịch.</span>
+              <span>Số tiền rút tối thiểu là 10.000 VND cho mỗi giao dịch.</span>
             </li>
             <li>
               <CheckCircleFilled aria-hidden="true" />

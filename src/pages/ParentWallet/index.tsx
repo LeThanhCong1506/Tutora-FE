@@ -12,6 +12,7 @@ import TransactionsCard from './TransactionsCard';
 import styles from './styles.module.css';
 
 const TransactionDetailModal = lazy(() => import('./TransactionDetailModal'));
+const WithdrawModal = lazy(() => import('./WithdrawModal'));
 
 const PREVIEW_SIZE = 10;
 
@@ -24,6 +25,7 @@ const ParentWallet = () => {
   const [txLoading, setTxLoading] = useState(true);
 
   const [selectedTxId, setSelectedTxId] = useState<number | null>(null);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
 
   const loadBalance = useCallback(async () => {
     setBalanceLoading(true);
@@ -61,6 +63,14 @@ const ParentWallet = () => {
         <p className={styles.pageSubtitle}>
           Quản lý số dư, rút tiền và xem lịch sử giao dịch của bạn.
         </p>
+        <button
+          className={styles.withdrawBtn}
+          type="button"
+          onClick={() => setWithdrawOpen(true)}
+          disabled={balanceLoading || (balance?.balance ?? 0) <= 0}
+        >
+          Rút tiền
+        </button>
       </div>
 
       <WalletSummaryCards balance={balance} loading={balanceLoading} />
@@ -82,8 +92,19 @@ const ParentWallet = () => {
         </Suspense>
       )}
 
-      {/* Form rút tiền (WithdrawModal) tạm ẩn — chờ BE hỗ trợ tài khoản ngân hàng
-          cho phụ huynh. */}
+      {withdrawOpen && (
+        <Suspense fallback={null}>
+          <WithdrawModal
+            availableBalance={balance?.balance ?? 0}
+            onClose={() => setWithdrawOpen(false)}
+            onSuccess={() => {
+              setWithdrawOpen(false);
+              void loadBalance();
+              void loadTransactions();
+            }}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };
