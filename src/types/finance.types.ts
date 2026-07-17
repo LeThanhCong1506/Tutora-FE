@@ -2,8 +2,9 @@
  * Financial summary for tutor dashboard
  */
 export interface FinanceSummary {
-    balance: number;
+    availableBalance: number;
     frozenBalance: number;
+    totalBalance: number;
     totalEarned: number;
     pendingSettlement: number;
     lastWithdrawalAt: string | null;
@@ -51,22 +52,7 @@ export interface BankInfo {
     bankName: string | null;
     accountNumber: string | null;
     accountHolderName: string | null;
-    isVerified: boolean;
     bankChangedAt: string | null;
-}
-
-/**
- * Bank verification status and flow data
- */
-export interface BankVerificationStatus {
-    isVerified: boolean;
-    isPending: boolean;
-    isReadyToConfirm: boolean;
-    attemptsLeft: number;
-    expiresAt: string | null;
-    status: string;
-    bankName: string | null;
-    maskedAccountNumber: string | null;
 }
 
 /**
@@ -114,7 +100,6 @@ export interface WithdrawalDetail {
     accountHolderName: string | null;
     requestedAt: string;
     processedAt: string | null;
-    adminNote: string | null;
 }
 
 /**

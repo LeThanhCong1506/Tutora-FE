@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { getAgoraRoom, type AgoraRoomInfo } from '../../services/agora.service';
+import { checkOutClassSession } from '../../services/classSession.service';
 import { getCurrentUserRole, getUserIdFromToken } from '../../services/auth.service';
 import {
   SessionHeader,
@@ -88,7 +89,10 @@ const LiveSession = () => {
     isScreenSharing: realIsScreenSharing,
     remoteParticipants: realRemoteParticipants,
     chatMessages: realChatMessages,
+    presenceStatus,
+    sessionEnded,
     sendChatMessage: realSendChatMessage,
+    broadcastSessionEnded,
     toggleMic,
     toggleCam,
     toggleScreenShare,
@@ -125,12 +129,11 @@ const LiveSession = () => {
     return () => clearInterval(interval);
   }, [joined]);
 
-  const peerName = useMemo(() => {
+  const participantLabel = useMemo(() => {
     if (isMock) return 'Học sinh Demo';
-    if (!room) return 'Buổi học';
-    const entries = Object.entries(room.participantNames).filter(([uid]) => uid !== currentUserId);
-    return entries.map(([, name]) => name).join(', ') || 'Buổi học';
-  }, [isMock, room, currentUserId]);
+    if (!room) return '';
+    return [room.tutorName, room.studentName].filter(Boolean).join(', ');
+  }, [isMock, room]);
 
   const localName = useMemo(() => {
     if (isMock) return isTutor ? 'Gia sư Demo' : 'Học sinh Demo';
@@ -139,9 +142,32 @@ const LiveSession = () => {
   }, [isMock, room, currentUserId, isTutor]);
 
   const handleLeave = async () => {
-    if (!isMock) await leave();
+    if (isMock) {
+      navigate(-1);
+      return;
+    }
+    // Gia sư "Kết thúc buổi học": ghi check-out (đóng phòng) + đá mọi người còn lại ra.
+    if (isTutor && classSessionId) {
+      try {
+        await checkOutClassSession(parseInt(classSessionId, 10));
+      } catch {
+        // Buổi có thể chưa từng check-in (chưa đủ 2 người vào) → vẫn cho rời phòng.
+      }
+      await broadcastSessionEnded();
+    }
+    await leave();
     navigate(-1);
   };
+
+  // Bị đá khỏi phòng: gia sư đã kết thúc buổi (nhận tín hiệu SESSION_ENDED hoặc phòng đã đóng).
+  useEffect(() => {
+    if (isMock || !sessionEnded) return;
+    toast.info('Gia sư đã kết thúc buổi học.');
+    void (async () => {
+      await leave();
+      navigate(-1);
+    })();
+  }, [sessionEnded, isMock, leave, navigate]);
 
   const handleBack = () => navigate(-1);
 
@@ -172,13 +198,34 @@ const LiveSession = () => {
   return (
     <div className={styles.page}>
       <SessionHeader
-        subjectAndPeer={peerName}
+        participantLabel={participantLabel}
         elapsedLabel={formatElapsed(elapsedSeconds)}
         endLabel={isTutor ? 'Kết thúc buổi học' : 'Rời buổi học'}
         onEnd={handleLeave}
         panelOpen={panelOpen}
         onTogglePanel={() => setPanelOpen((v) => !v)}
       />
+      {!isMock && joined && presenceStatus && !presenceStatus.isCheckedIn && (
+        <div
+          style={{
+            padding: '8px 16px',
+            background: '#FEF3C7',
+            color: '#92400E',
+            fontSize: 14,
+            textAlign: 'center',
+          }}
+        >
+          {presenceStatus.blockedByPayment
+            ? 'Buổi học chưa được điểm danh: phụ huynh chưa thanh toán các buổi còn lại.'
+            : isTutor
+              ? presenceStatus.studentPresent
+                ? 'Đang điểm danh buổi học…'
+                : 'Đang chờ học viên vào phòng để điểm danh buổi học…'
+              : presenceStatus.tutorPresent
+                ? 'Đang điểm danh buổi học…'
+                : 'Đang chờ gia sư vào phòng để điểm danh buổi học…'}
+        </div>
+      )}
       <div className={styles.body}>
         <VideoStage
           localName={localName}
