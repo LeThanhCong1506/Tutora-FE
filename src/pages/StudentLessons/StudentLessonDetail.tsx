@@ -14,7 +14,7 @@ import { message as antMessage, Spin, Modal } from 'antd';
 import CreateFeedbackModal from '../ParentLessons/components/CreateFeedbackModal';
 import s from '../StudentPages.module.css';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
-import { canJoinLiveSession, ROOM_OPENS_BEFORE_MINUTES } from '../../utils/liveSession';
+import { canJoinLiveSession } from '../../utils/liveSession';
 
 // ── Status definitions — nguồn duy nhất là classSessionStatus.ts (khớp BE ClassSessionStatus) ──
 type StatusInfo = { label: string; color: string; bg: string; icon: string };
@@ -181,7 +181,7 @@ const StudentLessonDetail = () => {
                                     <div style={heroSubtext}>
                                         {isInProgress
                                             ? 'Gia sư đang chờ bạn trong lớp'
-                                            : `Bạn có thể vào lớp sớm ${ROOM_OPENS_BEFORE_MINUTES} phút trước giờ học`}
+                                            : 'Phòng học đã sẵn sàng — bạn có thể vào lớp bất cứ lúc nào'}
                                     </div>
                                 </div>
                             </div>

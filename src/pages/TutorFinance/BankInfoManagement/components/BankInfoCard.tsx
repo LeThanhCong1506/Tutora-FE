@@ -1,131 +1,89 @@
 import React from 'react';
-import { Card, Badge, Typography, Space, Button, Descriptions, Empty, Alert } from 'antd';
-import {
-    CheckCircleFilled,
-    ExclamationCircleFilled,
-    BankOutlined,
-    LoadingOutlined,
-    EditOutlined
-} from '@ant-design/icons';
+import { Button, Card, Empty } from 'antd';
+import { BankOutlined, CalendarOutlined, EditOutlined } from '@ant-design/icons';
 import { maskBankAccount } from '../../../../utils/formatters';
-import type { BankInfo, BankVerificationStatus } from '../../../../types/finance.types';
-
-const { Title, Text } = Typography;
+import type { BankInfo } from '../../../../types/finance.types';
 
 interface Props {
-    bankInfo: BankInfo | null;
-    verifyStatus: BankVerificationStatus | null;
-    loading: boolean;
-    onVerify: () => void;
-    onUpdate: () => void;
+  bankInfo: BankInfo | null;
+  loading: boolean;
+  onEdit: () => void;
 }
 
-const BankInfoCard: React.FC<Props> = ({ bankInfo, verifyStatus, loading, onVerify, onUpdate }) => {
-    const isVerified = bankInfo?.isVerified;
-    const isPending = verifyStatus?.isPending;
+const BankInfoCard: React.FC<Props> = ({ bankInfo, loading, onEdit }) => {
+  const hasBankInfo = Boolean(bankInfo?.bankName && bankInfo?.accountNumber && bankInfo?.accountHolderName);
 
-    if (!bankInfo && !loading) {
-        return (
-            <Card className="finance-card">
-                <Empty
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description="Chưa có thông tin ngân hàng"
-                >
-                    <Button type="primary" icon={<BankOutlined />} onClick={onVerify}>
-                        Thêm tài khoản ngay
-                    </Button>
-                </Empty>
-            </Card>
-        );
-    }
+  if (loading) {
+    return <Card className="finance-surface finance-bank-info-card" loading />;
+  }
 
+  if (!hasBankInfo) {
     return (
-        <Card
-            className="finance-card"
-            loading={loading}
-            title={
-                <Space>
-                    <BankOutlined />
-                    <span>Thông tin tài khoản nhận tiền</span>
-                </Space>
-            }
-            extra={
-                isVerified ? (
-                    <Button type="link" icon={<EditOutlined />} onClick={onUpdate}>Thay đổi</Button>
-                ) : null
-            }
-        >
-            <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                    <Title level={4} style={{ margin: 0 }}>{bankInfo?.bankName}</Title>
-                    <Text strong style={{ fontSize: '18px' }}>{maskBankAccount(bankInfo?.accountNumber || '')}</Text>
-                    <div style={{ marginTop: '4px' }}>
-                        <Text type="secondary">{bankInfo?.accountHolderName}</Text>
-                    </div>
-                </div>
-                <div>
-                    {isVerified ? (
-                        <Badge
-                            count={
-                                <Space style={{ background: '#f6ffed', border: '1px solid #b7eb8f', padding: '4px 12px', borderRadius: '20px' }}>
-                                    <CheckCircleFilled style={{ color: '#52c41a' }} />
-                                    <span style={{ color: '#52c41a', fontSize: '12px', fontWeight: 600 }}>ĐÃ XÁC THỰC</span>
-                                </Space>
-                            }
-                        />
-                    ) : isPending ? (
-                        <Badge
-                            count={
-                                <Space style={{ background: '#fff7e6', border: '1px solid #ffd591', padding: '4px 12px', borderRadius: '20px' }}>
-                                    <LoadingOutlined style={{ color: '#faad14' }} />
-                                    <span style={{ color: '#faad14', fontSize: '12px', fontWeight: 600 }}>CHỜ XÁC THỰC</span>
-                                </Space>
-                            }
-                        />
-                    ) : (
-                        <Badge
-                            count={
-                                <Space style={{ background: '#fff2f0', border: '1px solid #ffccc7', padding: '4px 12px', borderRadius: '20px' }}>
-                                    <ExclamationCircleFilled style={{ color: '#ff4d4f' }} />
-                                    <span style={{ color: '#ff4d4f', fontSize: '12px', fontWeight: 600 }}>CHƯA XÁC THỰC</span>
-                                </Space>
-                            }
-                        />
-                    )}
-                </div>
+      <section className="finance-surface finance-bank-info-card finance-bank-empty">
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={
+            <div className="finance-empty-copy">
+              <strong>Chưa có tài khoản nhận tiền</strong>
+              <span>Thêm tài khoản ngân hàng trước khi tạo yêu cầu rút tiền.</span>
             </div>
-
-            {!isVerified && (
-                <Alert
-                    type={isPending ? "warning" : "error"}
-                    message={isPending ? "Đang trong quá trình xác thực" : "Tài khoản chưa được xác thực"}
-                    description={
-                        <div style={{ marginTop: '8px' }}>
-                            <p>Bạn cần xác thực tài khoản ngân hàng để có thể thực hiện rút tiền.</p>
-                            <Button
-                                type="primary"
-                                danger={!isPending}
-                                onClick={onVerify}
-                                style={{ marginTop: '8px' }}
-                            >
-                                {isPending ? "Tiếp tục xác thực" : "Bắt đầu xác thực ngay"}
-                            </Button>
-                        </div>
-                    }
-                    showIcon
-                />
-            )}
-
-            {isVerified && (
-                <Descriptions column={1} size="small" style={{ marginTop: '16px' }}>
-                    <Descriptions.Item label="Thời gian cập nhật">
-                        {bankInfo?.bankChangedAt ? new Date(bankInfo.bankChangedAt).toLocaleDateString('vi-VN') : 'N/A'}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Hỗ trợ nhận tiền">Tức thì (24/7)</Descriptions.Item>
-                </Descriptions>
-            )}
-        </Card>
+          }
+        >
+          <Button
+            type="primary"
+            size="large"
+            className="finance-primary-action"
+            icon={<BankOutlined />}
+            onClick={onEdit}
+          >
+            Thêm tài khoản
+          </Button>
+        </Empty>
+      </section>
     );
+  }
+
+  const changedDate = bankInfo?.bankChangedAt
+    ? new Date(bankInfo.bankChangedAt).toLocaleDateString('vi-VN')
+    : 'Chưa ghi nhận';
+
+  return (
+    <section className="finance-surface finance-bank-info-card">
+      <div className="finance-card-heading">
+        <div>
+          <span className="finance-card-heading__icon" aria-hidden="true">
+            <BankOutlined />
+          </span>
+          <div>
+            <h2>Tài khoản nhận tiền</h2>
+            <p>Được sử dụng cho mọi yêu cầu rút tiền</p>
+          </div>
+        </div>
+        <Button icon={<EditOutlined />} onClick={onEdit}>
+          Thay đổi
+        </Button>
+      </div>
+
+      <div className="finance-bank-visual" aria-label="Thông tin tài khoản ngân hàng">
+        <div className="finance-bank-visual__top">
+          <span>TUTORA PAYOUT</span>
+          <BankOutlined aria-hidden="true" />
+        </div>
+        <div className="finance-bank-visual__name">{bankInfo?.bankName}</div>
+        <div className="finance-bank-visual__number">{maskBankAccount(bankInfo?.accountNumber || '')}</div>
+        <div className="finance-bank-visual__holder">
+          <span>Chủ tài khoản</span>
+          <strong>{bankInfo?.accountHolderName}</strong>
+        </div>
+      </div>
+
+      <div className="finance-bank-meta">
+        <CalendarOutlined aria-hidden="true" />
+        <span>Cập nhật gần nhất</span>
+        <strong>{changedDate}</strong>
+      </div>
+    </section>
+  );
 };
 
 export default BankInfoCard;

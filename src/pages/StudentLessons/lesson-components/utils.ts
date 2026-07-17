@@ -39,6 +39,29 @@ export const groupLessonsByDate = (lessons: LessonSummary[]): LessonGroup[] => {
 export const isCancelledLesson = (lesson: LessonSummary): boolean =>
   ['cancelled', 'cancelled_noshow', 'no_show'].includes(lesson.status.toLowerCase());
 
+/** Trạng thái "nóng" của buổi học để highlight trên UI. */
+export type LessonLiveState = 'live' | 'due' | null;
+
+/** Buổi scheduled được coi là "tới giờ học" từ mốc này trước giờ bắt đầu. */
+export const DUE_SOON_MINUTES = 15;
+
+/**
+ * 'live' — buổi đang diễn ra (đã điểm danh, in_progress).
+ * 'due'  — buổi đã lên lịch và tới giờ học: now ∈ [start − 15ph, end].
+ * null   — còn lại (không cần highlight).
+ */
+export const getLessonLiveState = (lesson: LessonSummary): LessonLiveState => {
+  const status = lesson.status.trim().toLowerCase();
+  if (status === 'in_progress') return 'live';
+  if (status !== 'scheduled') return null;
+
+  const now = dayjs();
+  const start = getLessonDate(lesson);
+  const end = getLessonEndDate(lesson);
+  if (now.isBefore(start.subtract(DUE_SOON_MINUTES, 'minute')) || now.isAfter(end)) return null;
+  return 'due';
+};
+
 export const formatDayHeading = (date: Dayjs): string => {
   const diff = date.startOf('day').diff(dayjs().startOf('day'), 'day');
   const weekday = date.format('dddd');
