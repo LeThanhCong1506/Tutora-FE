@@ -7,6 +7,7 @@ import type {
     TransactionPagedResponse,
     TutorTransaction,
     BankInfo,
+    UpdateBankInfoRequest,
     WithdrawalListResponse,
     WithdrawalDetail,
     CreateWithdrawalRequest
@@ -29,8 +30,9 @@ const is404 = (error: unknown): boolean =>
 
 /** Default empty summary for tutors without a wallet */
 const EMPTY_SUMMARY: FinanceSummary = {
-    balance: 0,
+    availableBalance: 0,
     frozenBalance: 0,
+    totalBalance: 0,
     totalEarned: 0,
     pendingSettlement: 0,
     lastWithdrawalAt: null,
@@ -116,7 +118,7 @@ export const getBankInfo = async (): Promise<BankInfo> => {
 /**
  * Update bank info
  */
-export const updateBankInfo = async (request: Partial<BankInfo>): Promise<BankInfo> => {
+export const updateBankInfo = async (request: UpdateBankInfoRequest): Promise<BankInfo> => {
     const { data } = await api.put('/tutor/bank', request);
     return data.content;
 };
@@ -151,17 +153,6 @@ export const getWithdrawalDetail = async (id: number): Promise<WithdrawalDetail>
     try {
         const { data } = await api.get(`/tutor/withdrawals/${id}`);
         return data.content;
-    } catch (error) {
-        throw error;
-    }
-};
-
-/**
- * Cancel a pending/delayed withdrawal
- */
-export const cancelWithdrawal = async (id: number): Promise<void> => {
-    try {
-        await api.delete(`/tutor/withdrawals/${id}`);
     } catch (error) {
         throw error;
     }

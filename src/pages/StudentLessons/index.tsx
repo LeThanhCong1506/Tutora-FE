@@ -5,6 +5,7 @@ import { ConfigProvider, DatePicker, type ThemeConfig } from 'antd';
 import viVN from 'antd/es/date-picker/locale/vi_VN';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
+import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
 import { getStudentCalendar } from '../../services/student-lesson.service';
 import { localDateTimeToUtcIso } from '../../utils/datetime';
 import {
@@ -54,9 +55,9 @@ const LESSON_DATE_PICKER_THEME: ThemeConfig = {
   },
 };
 
-// "Đang diễn ra" (in_progress) đã bỏ khỏi bộ lọc: BE chỉ gán trạng thái này khi
-// gia sư check-in (không auto theo giờ), nên buổi trong khung giờ mà gia sư chưa
-// vào vẫn là "scheduled" — để lại tab này gây hiểu nhầm là filter hỏng.
+// "Lên lịch" là nhóm các buổi học đang hoạt động: sắp diễn ra (scheduled)
+// và đã bắt đầu (in_progress). Giữ một tab duy nhất để học sinh luôn tìm thấy
+// buổi đang học tại đúng nơi họ vẫn xem lịch sắp tới.
 const STATUS_FILTERS: Array<{ key: StatusFilter; label: string }> = [
   { key: 'scheduled', label: 'Lên lịch' },
   { key: 'pending_confirmation', label: 'Chờ xác nhận' },
@@ -72,6 +73,13 @@ const VIEW_OPTIONS = [
 
 const VALID_VIEWS = new Set<LessonViewMode>(VIEW_OPTIONS.map((option) => option.key));
 const VALID_STATUSES = new Set<StatusFilter>(STATUS_FILTERS.map((filter) => filter.key));
+const SCHEDULED_TAB_STATUSES = new Set(['scheduled', 'in_progress']);
+
+const matchesStatusFilter = (lesson: LessonSummary, status: StatusFilter): boolean => {
+  if (!status) return true;
+  const lessonStatus = lesson.status.trim().toLowerCase();
+  return status === 'scheduled' ? SCHEDULED_TAB_STATUSES.has(lessonStatus) : lessonStatus === status;
+};
 
 const StudentLessons = () => {
   const navigate = useNavigate();
@@ -80,6 +88,7 @@ const StudentLessons = () => {
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
+  const [, refreshClock] = useState(0);
   const [periodPickerOpen, setPeriodPickerOpen] = useState(false);
 
   const viewParam = searchParams.get('view') as LessonViewMode | null;
@@ -112,6 +121,15 @@ const StudentLessons = () => {
 
   const rangeStartKey = range.start.format('YYYY-MM-DD');
   const rangeEndKey = range.end.format('YYYY-MM-DD');
+
+  const refreshLessons = useCallback(() => setRetryKey((current) => current + 1), []);
+  useLessonStartedListener(refreshLessons);
+
+  // Cập nhật highlight "tới giờ học" ngay cả khi người dùng giữ trang mở.
+  useEffect(() => {
+    const timer = window.setInterval(() => refreshClock((current) => current + 1), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -152,7 +170,7 @@ const StudentLessons = () => {
   }, [rangeEndKey, rangeStartKey, retryKey]);
 
   const filteredLessons = useMemo(
-    () => (activeStatus ? lessons.filter((lesson) => lesson.status === activeStatus) : lessons),
+    () => lessons.filter((lesson) => matchesStatusFilter(lesson, activeStatus)),
     [activeStatus, lessons],
   );
 
@@ -161,7 +179,7 @@ const StudentLessons = () => {
       Object.fromEntries(
         STATUS_FILTERS.map((filter) => [
           filter.key,
-          filter.key ? lessons.filter((lesson) => lesson.status === filter.key).length : lessons.length,
+          lessons.filter((lesson) => matchesStatusFilter(lesson, filter.key)).length,
         ]),
       ) as Record<StatusFilter, number>,
     [lessons],
@@ -189,7 +207,7 @@ const StudentLessons = () => {
     updateQuery({ date: nextDate.format('YYYY-MM-DD') });
   };
 
-  const openLesson = (lessonId: number) => navigate(`/student-portal/lessons/${lessonId}`);
+  const openLesson = (lessonId: number) => navigate(`/student-portal/calendar/${lessonId}`);
   const isFilteredEmpty = activeStatus !== '' && lessons.length > 0;
 
   return (
@@ -303,7 +321,7 @@ const StudentLessons = () => {
             {loading ? (
               <LoadingState mode={viewMode} />
             ) : hasError ? (
-              <ErrorState onRetry={() => setRetryKey((current) => current + 1)} />
+              <ErrorState onRetry={refreshLessons} />
             ) : filteredLessons.length === 0 ? (
               <EmptyState
                 filtered={isFilteredEmpty}

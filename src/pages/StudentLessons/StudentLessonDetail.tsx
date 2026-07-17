@@ -14,7 +14,7 @@ import { message as antMessage, Spin, Modal } from 'antd';
 import CreateFeedbackModal from '../ParentLessons/components/CreateFeedbackModal';
 import s from '../StudentPages.module.css';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
-import { canJoinLiveSession, ROOM_OPENS_BEFORE_MINUTES } from '../../utils/liveSession';
+import { canJoinLiveSession } from '../../utils/liveSession';
 
 // ── Status definitions — nguồn duy nhất là classSessionStatus.ts (khớp BE ClassSessionStatus) ──
 type StatusInfo = { label: string; color: string; bg: string; icon: string };
@@ -126,8 +126,8 @@ const StudentLessonDetail = () => {
                         </div>
                         <div style={notFoundTitle}>Không tìm thấy buổi học</div>
                         <div style={notFoundSub}>Buổi học này có thể đã bị xóa hoặc bạn không có quyền truy cập.</div>
-                        <button style={notFoundBackBtn} onClick={() => navigate('/student-portal/lessons')}>
-                            <ArrowLeft size={14} /> Quay lại danh sách
+                        <button style={notFoundBackBtn} onClick={() => navigate('/student-portal/calendar')}>
+                            <ArrowLeft size={14} /> Quay lại thời khóa biểu
                         </button>
                     </div>
                 </div>
@@ -156,9 +156,9 @@ const StudentLessonDetail = () => {
             <div className={s.mainContent} style={{ maxWidth: 860, margin: '0 auto', width: '100%' }}>
                 {/* Breadcrumb-style back nav */}
                 <div style={breadcrumbRow}>
-                    <button style={backBtnStyle} onClick={() => navigate('/student-portal/lessons')}>
+                    <button style={backBtnStyle} onClick={() => navigate('/student-portal/calendar')}>
                         <ArrowLeft size={15} />
-                        <span>Danh sách buổi học</span>
+                        <span>Thời khóa biểu</span>
                     </button>
                 </div>
 
@@ -181,7 +181,7 @@ const StudentLessonDetail = () => {
                                     <div style={heroSubtext}>
                                         {isInProgress
                                             ? 'Gia sư đang chờ bạn trong lớp'
-                                            : `Bạn có thể vào lớp sớm ${ROOM_OPENS_BEFORE_MINUTES} phút trước giờ học`}
+                                            : 'Phòng học đã sẵn sàng — bạn có thể vào lớp bất cứ lúc nào'}
                                     </div>
                                 </div>
                             </div>

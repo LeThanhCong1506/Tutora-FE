@@ -7,7 +7,14 @@ import { CalendarDays, ChevronRight, Clock3, UserRound, Video } from 'lucide-rea
 import { getClassSessionStatusMeta } from '../../../utils/classSessionStatus';
 import styles from '../styles.module.css';
 import type { LessonSummary, LessonViewProps } from './types';
-import { formatDayHeading, getLessonDate, getLessonTime, groupLessonsByDate, isCancelledLesson } from './utils';
+import {
+  formatDayHeading,
+  getLessonDate,
+  getLessonLiveState,
+  getLessonTime,
+  groupLessonsByDate,
+  isCancelledLesson,
+} from './utils';
 
 const WEEK_DAYS = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'];
 
@@ -29,8 +36,20 @@ const getLessonStatusMeta = (status: string) => {
   return tone ? { ...meta, ...tone } : meta;
 };
 
-const getLessonStyle = (lesson: LessonSummary): CSSProperties => {
+const getLessonDisplayMeta = (lesson: LessonSummary) => {
   const status = getLessonStatusMeta(lesson.status);
+  const liveState = getLessonLiveState(lesson);
+  if (liveState === 'due') {
+    return { ...status, label: 'Tới giờ học', color: '#c96b08', bg: '#fff3dc' };
+  }
+  if (liveState === 'live') {
+    return { ...status, color: '#087f6d', bg: '#def7ef' };
+  }
+  return status;
+};
+
+const getLessonStyle = (lesson: LessonSummary): CSSProperties => {
+  const status = getLessonDisplayMeta(lesson);
   return {
     '--status-color': status.color,
     '--status-bg': status.bg,
@@ -39,11 +58,20 @@ const getLessonStyle = (lesson: LessonSummary): CSSProperties => {
 
 const getSubject = (lesson: LessonSummary) => lesson.subjectName || `Buổi học #${lesson.lessonId}`;
 
-const canShowJoinButton = (lesson: LessonSummary) =>
-  lesson.status.trim().toLowerCase() === 'scheduled' && Boolean(lesson.meetingLink?.trim());
+const canShowJoinButton = (lesson: LessonSummary) => {
+  const status = lesson.status.trim().toLowerCase();
+  return ['scheduled', 'in_progress'].includes(status) && Boolean(lesson.meetingLink?.trim());
+};
+
+const getAttentionClass = (lesson: LessonSummary): string => {
+  const liveState = getLessonLiveState(lesson);
+  if (liveState === 'live') return `${styles.attentionLesson} ${styles.liveLesson}`;
+  if (liveState === 'due') return `${styles.attentionLesson} ${styles.dueLesson}`;
+  return '';
+};
 
 const StatusPill = ({ lesson }: { lesson: LessonSummary }) => {
-  const status = getLessonStatusMeta(lesson.status);
+  const status = getLessonDisplayMeta(lesson);
   return (
     <span className={styles.statusPill}>
       <i />
@@ -56,6 +84,7 @@ const StatusPill = ({ lesson }: { lesson: LessonSummary }) => {
 // của trang danh sách, mọi buổi scheduled đã có channel đều cho phép đi tới phòng học nội bộ.
 const MeetLink = ({ lesson, compact = false }: { lesson: LessonSummary; compact?: boolean }) => {
   if (!canShowJoinButton(lesson)) return null;
+  const isAttentionNeeded = Boolean(getLessonLiveState(lesson));
 
   return (
     <Link
@@ -64,13 +93,13 @@ const MeetLink = ({ lesson, compact = false }: { lesson: LessonSummary; compact?
       aria-label={`Vào lớp học ${getSubject(lesson)}`}
     >
       <Video size={compact ? 12 : 14} strokeWidth={2.1} aria-hidden="true" />
-      <span>Vào lớp</span>
+      <span>{isAttentionNeeded ? (compact ? 'Vào ngay' : 'Vào lớp ngay') : 'Vào lớp'}</span>
     </Link>
   );
 };
 
 const LessonHoverDetails = ({ lesson }: { lesson: LessonSummary }) => {
-  const status = getLessonStatusMeta(lesson.status);
+  const status = getLessonDisplayMeta(lesson);
   const canJoin = canShowJoinButton(lesson);
   return (
     <div
@@ -119,7 +148,7 @@ const LessonTooltip = ({ lesson, children }: { lesson: LessonSummary; children: 
 const CalendarEvent = ({ lesson, onOpen }: { lesson: LessonSummary; onOpen: () => void }) => (
   <LessonTooltip lesson={lesson}>
     <article
-      className={`${styles.calendarEvent} ${isCancelledLesson(lesson) ? styles.cancelled : ''}`}
+      className={`${styles.calendarEvent} ${getAttentionClass(lesson)} ${isCancelledLesson(lesson) ? styles.cancelled : ''}`}
       style={getLessonStyle(lesson)}
     >
       <button
@@ -142,7 +171,7 @@ const CalendarEvent = ({ lesson, onOpen }: { lesson: LessonSummary; onOpen: () =
 const ListLessonRow = ({ lesson, onOpen }: { lesson: LessonSummary; onOpen: () => void }) => (
   <LessonTooltip lesson={lesson}>
     <article
-      className={`${styles.listRow} ${isCancelledLesson(lesson) ? styles.cancelled : ''}`}
+      className={`${styles.listRow} ${getAttentionClass(lesson)} ${isCancelledLesson(lesson) ? styles.cancelled : ''}`}
       style={getLessonStyle(lesson)}
     >
       <button
@@ -271,7 +300,7 @@ export const GridLessonView = ({ lessons, onOpenLesson }: LessonViewProps) => (
       return (
         <LessonTooltip lesson={lesson} key={lesson.lessonId}>
           <article
-            className={`${styles.gridCard} ${isCancelledLesson(lesson) ? styles.cancelled : ''}`}
+            className={`${styles.gridCard} ${getAttentionClass(lesson)} ${isCancelledLesson(lesson) ? styles.cancelled : ''}`}
             style={getLessonStyle(lesson)}
           >
             <button

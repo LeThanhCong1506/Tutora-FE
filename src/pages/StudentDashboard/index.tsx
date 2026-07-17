@@ -187,8 +187,8 @@ const StudentDashboard = () => {
                   </div>
                   Đặt lịch học
                 </Link>
-                <Link to="/student-portal/lessons" className={styles.quickActionBtn}>
-                  Buổi học
+                <Link to="/student-portal/calendar" className={styles.quickActionBtn}>
+                  Thời khóa biểu
                 </Link>
               </div>
             </div>
@@ -202,7 +202,7 @@ const StudentDashboard = () => {
             label="Buổi sắp tới"
             subLabel="Trong 14 ngày tới"
             variant="default"
-            onClick={() => navigate('/student-portal/lessons')}
+            onClick={() => navigate('/student-portal/calendar')}
           />
           <StatCard
             icon={<CircleAlert size={20} />}
@@ -210,7 +210,7 @@ const StudentDashboard = () => {
             label="Chờ xác nhận"
             subLabel={pendingCount > 0 ? 'Cần bạn kiểm tra' : 'Không có yêu cầu mới'}
             variant="default"
-            onClick={() => navigate('/student-portal/lessons')}
+            onClick={() => navigate('/student-portal/calendar')}
           />
           <StatCard
             icon={<CheckCircle2 size={20} />}
@@ -218,7 +218,7 @@ const StudentDashboard = () => {
             label="Hoàn thành"
             subLabel="Tổng số buổi học"
             variant="default"
-            onClick={() => navigate('/student-portal/lessons')}
+            onClick={() => navigate('/student-portal/calendar')}
           />
         </div>
 
@@ -276,7 +276,7 @@ const StudentDashboard = () => {
             <div className={styles.scheduleWidget}>
               <div className={`${styles.scheduleTitle} ${styles.scheduleHeader}`}>
                 <span>Buổi học sắp tới</span>
-                <Link to="/student-portal/lessons" className={styles.scheduleLink}>
+                <Link to="/student-portal/calendar" className={styles.scheduleLink}>
                   Xem tất cả →
                 </Link>
               </div>
@@ -304,7 +304,7 @@ const StudentDashboard = () => {
                       <div
                         key={lesson.lessonId || idx}
                         className={`${styles.scheduleItem} ${isActive ? styles.active : ''}`}
-                        onClick={() => lesson.lessonId && navigate(`/student-portal/lessons/${lesson.lessonId}`)}
+                        onClick={() => lesson.lessonId && navigate(`/student-portal/calendar/${lesson.lessonId}`)}
                         style={{ cursor: lesson.lessonId ? 'pointer' : 'default' }}
                       >
                         <div className={styles.scheduleItemHeader}>

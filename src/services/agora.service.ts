@@ -14,11 +14,26 @@ setupAuthInterceptor(api);
 
 export interface AgoraRoomInfo {
   channel: string;
+  /** ID buổi học hiện tại — dùng để gia hạn token / heartbeat (channel dùng chung theo booking). */
+  classSessionId: number;
   uid: string;
   token: string;
   appId: string;
   expireAt: number;
+  /** Hai phía chính của lớp học, dùng cho tiêu đề cố định Tutor – Student. */
+  tutorName: string;
+  studentName: string;
+  /** Bảng tra UID → tên cho video/chat; có thể gồm Parent nếu Parent được phép tham gia. */
   participantNames: Record<string, string>;
+}
+
+/** Trạng thái presence trả về sau mỗi heartbeat. */
+export interface SessionPresenceStatus {
+  tutorPresent: boolean;
+  studentPresent: boolean;
+  isCheckedIn: boolean;
+  roomClosed: boolean;
+  blockedByPayment: boolean;
 }
 
 /**
@@ -30,4 +45,32 @@ export const getAgoraRoom = async (classSessionId: number): Promise<ApiResponse<
     headers: getAuthHeaders(),
   });
   return response.data;
+};
+
+/**
+ * Heartbeat presence: báo "tôi đang trong phòng" của buổi học. Gọi định kỳ (~20s) khi đang
+ * join. BE tự auto check-in khi cả gia sư và học viên cùng có mặt, và trả về trạng thái để FE
+ * hiển thị / tự rời khi phòng đã đóng (roomClosed).
+ */
+export const sendRoomHeartbeat = async (classSessionId: number): Promise<ApiResponse<SessionPresenceStatus>> => {
+  const response = await api.post(
+    `/agora/room/${classSessionId}/heartbeat`,
+    {},
+    {
+      headers: getAuthHeaders(),
+    },
+  );
+  return response.data;
+};
+
+/**
+ * Báo cho BE rằng mình đã rời phòng (xoá presence ngay). Best-effort — nuốt lỗi mạng để việc
+ * rời phòng không bao giờ bị chặn.
+ */
+export const leaveRoom = async (classSessionId: number): Promise<void> => {
+  try {
+    await api.post(`/agora/room/${classSessionId}/leave`, {}, { headers: getAuthHeaders() });
+  } catch {
+    // ignore
+  }
 };

@@ -1,10 +1,7 @@
 /* eslint-disable no-useless-catch */
 import axios from 'axios';
 import { getCurrentUser } from './auth.service';
-import type {
-    BankVerificationStatus,
-    BankListItem
-} from '../types/finance.types';
+import type { BankListItem } from '../types/finance.types';
 
 const API_BASE_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5166') + '/api';
 
@@ -29,47 +26,6 @@ api.interceptors.request.use(
         return Promise.reject(error);
     }
 );
-
-/**
- * Step 1: Request bank verification (triggers micro-transfer)
- */
-export const requestVerification = async (params: {
-    bankCode: string;
-    accountNumber: string;
-}): Promise<any> => {
-    try {
-        const { data } = await api.post('/tutor/bank-verification/request', params);
-        return data.content;
-    } catch (error) {
-        throw error;
-    }
-};
-
-/**
- * Step 2: Confirm verification with code from transfer description
- */
-export const confirmVerification = async (params: {
-    verificationCode: string;
-}): Promise<any> => {
-    try {
-        const { data } = await api.post('/tutor/bank-verification/confirm', params);
-        return data.content;
-    } catch (error) {
-        throw error;
-    }
-};
-
-/**
- * Get current verification status
- */
-export const getVerificationStatus = async (): Promise<BankVerificationStatus> => {
-    try {
-        const { data } = await api.get('/tutor/bank-verification/status');
-        return data.content;
-    } catch (error) {
-        throw error;
-    }
-};
 
 /**
  * Get list of supported banks for dropdown

@@ -1,207 +1,296 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Breadcrumb, Typography, Button, Descriptions, Steps, Alert, Spin } from 'antd';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Alert, Button, Empty, Spin, Steps, Timeline } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-    ArrowLeftOutlined,
-    CloseCircleOutlined,
-    CheckCircleOutlined,
-    ClockCircleOutlined,
-    SyncOutlined
+  BankOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  HistoryOutlined,
+  SafetyCertificateOutlined,
+  SyncOutlined,
+  WalletOutlined,
 } from '@ant-design/icons';
-import { getWithdrawalDetail, cancelWithdrawal } from '../../../services/tutorFinance.service';
-import type { WithdrawalDetail } from '../../../types/finance.types';
-import { formatCurrency, formatDateTime, formatApprovalDecision, formatEstimatedTime } from '../../../utils/formatters';
-import WithdrawalStatusBadge from './components/WithdrawalStatusBadge';
-import CancelWithdrawalModal from './components/CancelWithdrawalModal';
-import '../../../styles/pages/tutor-finance.css';
 import { toast } from 'react-toastify';
-
-const { Title, Text, Paragraph } = Typography;
+import { getWithdrawalDetail } from '../../../services/tutorFinance.service';
+import type { WithdrawalDetail } from '../../../types/finance.types';
+import { formatCurrency, formatDateTime } from '../../../utils/formatters';
+import FinancePageShell from '../components/FinancePageShell';
+import WithdrawalStatusBadge from './components/WithdrawalStatusBadge';
+import '../../../styles/pages/tutor-finance.css';
 
 const WithdrawalDetailPage: React.FC = () => {
-    const { id: idStr } = useParams<{ id: string }>();
-    const id = idStr ? parseInt(idStr) : 0;
-    const navigate = useNavigate();
-    const [loading, setLoading] = useState(true);
-    const [withdrawal, setWithdrawal] = useState<WithdrawalDetail | null>(null);
-    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-    const [cancelling, setCancelling] = useState(false);
+  const { id: idString } = useParams<{ id: string }>();
+  const id = idString ? Number.parseInt(idString, 10) : 0;
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [withdrawal, setWithdrawal] = useState<WithdrawalDetail | null>(null);
 
-    const fetchDetail = useCallback(async () => {
-        if (!id) return;
-        setLoading(true);
-        try {
-            const data = await getWithdrawalDetail(id);
-            setWithdrawal(data);
-        } catch (error) {
-            console.error('Failed to fetch withdrawal detail:', error);
-            toast.error('Không thể tải thông tin chi tiết yêu cầu rút tiền');
-            navigate('/tutor-portal/finance/withdrawals');
-        } finally {
-            setLoading(false);
-        }
-    }, [id, navigate]);
-
-    useEffect(() => {
-        fetchDetail();
-    }, [fetchDetail]);
-
-    const handleCancelWithdrawal = async () => {
-        if (!id) return;
-        setCancelling(true);
-        try {
-            await cancelWithdrawal(id);
-            toast.success('Đã hủy yêu cầu rút tiền thành công');
-            setIsCancelModalOpen(false);
-            fetchDetail();
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Không thể hủy yêu cầu này');
-        } finally {
-            setCancelling(false);
-        }
-    };
-
-    if (loading) {
-        return (
-            <div style={{ textAlign: 'center', padding: '100px' }}>
-                <Spin size="large" tip="Đang tải thông tin..." />
-            </div>
-        );
+  const fetchDetail = useCallback(async () => {
+    if (!id) {
+      setLoading(false);
+      return;
     }
 
-    if (!withdrawal) return null;
+    setLoading(true);
+    try {
+      const data = await getWithdrawalDetail(id);
+      setWithdrawal(data);
+    } catch (error) {
+      console.error('Failed to fetch withdrawal detail:', error);
+      toast.error('Không thể tải thông tin chi tiết yêu cầu rút tiền');
+      navigate('/tutor-portal/finance/withdrawals');
+    } finally {
+      setLoading(false);
+    }
+  }, [id, navigate]);
 
-    const currentStep =
-        withdrawal.status === 'Pending' ? 0 :
-            withdrawal.status === 'Approved' ? 1 :
-                withdrawal.status === 'Completed' ? 2 : 0;
+  useEffect(() => {
+    fetchDetail();
+  }, [fetchDetail]);
 
-    return (
-        <div className="tutor-finance-container">
-            <div className="finance-header">
-                <Breadcrumb
-                    items={[
-                        { title: <a onClick={() => navigate('/tutor-portal/finance')}>Tài chính</a> },
-                        { title: <a onClick={() => navigate('/tutor-portal/finance/withdrawals')}>Lịch sử rút tiền</a> },
-                        { title: `Yêu cầu #${id}` },
-                    ]}
-                    style={{ marginBottom: '16px' }}
-                />
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                        <Title level={2}>Chi tiết yêu cầu rút tiền</Title>
-                        <Text type="secondary">Mã yêu cầu: #{id}</Text>
-                    </div>
-                    {withdrawal.status === 'Pending' && (
-                        <Button danger icon={<CloseCircleOutlined />} onClick={() => setIsCancelModalOpen(true)}>
-                            Hủy yêu cầu
-                        </Button>
-                    )}
-                </div>
+  const status = (withdrawal?.status || '').toLowerCase();
+  const isCompleted = status === 'completed';
+  const isProcessing = ['approved', 'processing'].includes(status);
+  const isRejected = status === 'rejected';
+  const isCancelled = status === 'cancelled';
+  const isPendingReview = ['pending', 'pending_review', 'delayed'].includes(status);
+  const currentStep = isCompleted ? 2 : isProcessing ? 1 : 0;
+  const stepsStatus: 'error' | 'finish' | 'process' =
+    isRejected || isCancelled ? 'error' : isCompleted ? 'finish' : 'process';
+
+  const historyItems = withdrawal
+    ? [
+        {
+          color: '#3d4a3e',
+          children: (
+            <div className="finance-timeline-entry">
+              <time>{formatDateTime(withdrawal.requestedAt)}</time>
+              <strong>Đã tạo yêu cầu</strong>
+              <p>Số tiền được tạm trừ khỏi số dư khả dụng.</p>
             </div>
+          ),
+        },
+        ...(isProcessing
+          ? [
+              {
+                color: '#d4b483',
+                children: (
+                  <div className="finance-timeline-entry">
+                    <time>{withdrawal.processedAt ? formatDateTime(withdrawal.processedAt) : 'Đang xử lý'}</time>
+                    <strong>Đã được xét duyệt</strong>
+                    <p>Giao dịch đang chờ xác nhận chuyển khoản.</p>
+                  </div>
+                ),
+              },
+            ]
+          : []),
+        ...(isCompleted || isRejected || isCancelled
+          ? [
+              {
+                color: isCompleted ? '#3d4a3e' : '#8b4545',
+                children: (
+                  <div className="finance-timeline-entry">
+                    <time>{withdrawal.processedAt ? formatDateTime(withdrawal.processedAt) : 'Đã cập nhật'}</time>
+                    <strong>
+                      {isCompleted ? 'Chuyển khoản thành công' : isRejected ? 'Yêu cầu bị từ chối' : 'Yêu cầu đã hủy'}
+                    </strong>
+                    <p>
+                      {isCompleted
+                        ? 'Admin/staff đã xác nhận hoàn tất chuyển khoản.'
+                        : 'Số tiền đã được hoàn lại vào số dư khả dụng.'}
+                    </p>
+                  </div>
+                ),
+              },
+            ]
+          : []),
+      ]
+    : [];
 
-            <div className="withdrawal-detail-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
-                <div className="detail-main">
-                    <Card
-                        title="Trạng thái xử lý"
-                        style={{ marginBottom: '24px' }}
-                        extra={<WithdrawalStatusBadge status={withdrawal.status} />}
-                    >
-                        <Steps
-                            current={withdrawal.status === 'Rejected' || withdrawal.status === 'Cancelled' ? -1 : currentStep}
-                            status={withdrawal.status === 'Rejected' || withdrawal.status === 'Cancelled' ? 'error' : 'process'}
-                            items={[
-                                { title: 'Chờ duyệt', icon: <ClockCircleOutlined /> },
-                                { title: 'Đang xử lý', icon: <SyncOutlined spin={withdrawal.status === 'Approved'} /> },
-                                { title: 'Hoàn tất', icon: <CheckCircleOutlined /> },
-                            ]}
-                        />
-
-                        {withdrawal.status === 'Rejected' && (
-                            <Alert
-                                type="error"
-                                showIcon
-                                message="Yêu cầu bị từ chối"
-                                description={
-                                    <div>
-                                        <Paragraph strong style={{ margin: 0 }}>Lý do: {withdrawal.adminNote || 'Không có lý do cụ thể'}</Paragraph>
-                                        <Text type="secondary">Số tiền đã được hoàn lại vào số dư khả dụng của bạn.</Text>
-                                    </div>
-                                }
-                                style={{ marginTop: '24px' }}
-                            />
-                        )}
-
-                        {withdrawal.status === 'Approved' && (
-                            <Alert
-                                type="info"
-                                showIcon
-                                message="Đã được phê duyệt"
-                                description={`Yêu cầu đã được quản trị viên phê duyệt và đang được hệ thống chuyển tiền. Thời gian nhận tiền dự kiến: ${formatEstimatedTime('Approved')}.`}
-                                style={{ marginTop: '24px' }}
-                            />
-                        )}
-                    </Card>
-
-                    <Card title="Thông tin giao dịch">
-                        <Descriptions column={1} bordered>
-                            <Descriptions.Item label="Số tiền rút">
-                                <Text strong style={{ fontSize: '18px', color: '#1890ff' }}>{formatCurrency(withdrawal.amount)}</Text>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="Thời gian yêu cầu">{formatDateTime(withdrawal.requestedAt)}</Descriptions.Item>
-                            {withdrawal.processedAt && (
-                                <Descriptions.Item label="Thời gian xử lý">{formatDateTime(withdrawal.processedAt)}</Descriptions.Item>
-                            )}
-                            <Descriptions.Item label="Phí giao dịch">Miễn phí</Descriptions.Item>
-                        </Descriptions>
-                    </Card>
-                </div>
-
-                <div className="detail-sidebar">
-                    <Card title="Tài khoản nhận tiền" style={{ marginBottom: '24px' }}>
-                        <Descriptions column={1} size="small">
-                            <Descriptions.Item label="Ngân hàng">{withdrawal.bankName}</Descriptions.Item>
-                            <Descriptions.Item label="Số tài khoản">{withdrawal.accountNumber}</Descriptions.Item>
-                            <Descriptions.Item label="Chủ tài khoản">{withdrawal.accountHolderName}</Descriptions.Item>
-                        </Descriptions>
-                    </Card>
-
-                    <Card title="Lịch sử thay đổi">
-                        <div style={{ fontSize: '12px', color: '#888' }}>
-                            <div>• {formatDateTime(withdrawal.requestedAt)}: Tạo yêu cầu rút tiền.</div>
-                            {withdrawal.status === 'Approved' && (
-                                <div>• {withdrawal.processedAt ? formatDateTime(withdrawal.processedAt) : 'Vừa xong'}: Quyết định: {formatApprovalDecision('Approved')}.</div>
-                            )}
-                            {withdrawal.status === 'Completed' && (
-                                <>
-                                    <div>• {withdrawal.processedAt ? formatDateTime(withdrawal.processedAt) : '...'}: Quyết định: {formatApprovalDecision('Approved')}.</div>
-                                    <div>• {withdrawal.processedAt ? formatDateTime(withdrawal.processedAt) : '...'}: Hệ thống xác nhận chuyển tiền thành công.</div>
-                                </>
-                            )}
-                            {withdrawal.status === 'Rejected' && (
-                                <div>• {withdrawal.processedAt ? formatDateTime(withdrawal.processedAt) : '...'}: Quyết định: {formatApprovalDecision('Rejected')}.</div>
-                            )}
-                        </div>
-                    </Card>
-                </div>
-            </div>
-
-            <CancelWithdrawalModal
-                open={isCancelModalOpen}
-                withdrawalId={withdrawal.withdrawalId.toString()}
-                amount={withdrawal.amount}
-                loading={cancelling}
-                onConfirm={handleCancelWithdrawal}
-                onCancel={() => setIsCancelModalOpen(false)}
-            />
-
-            <div style={{ marginTop: '24px' }}>
-                <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/tutor-portal/finance/withdrawals')}>
-                    Quay lại danh sách
-                </Button>
-            </div>
+  return (
+    <FinancePageShell
+      title={id ? `Yêu cầu rút tiền #${id}` : 'Chi tiết yêu cầu rút tiền'}
+      subtitle="Kiểm tra tiến độ xử lý, thông tin giao dịch và tài khoản nhận tiền."
+      backLink={{ label: 'Về lịch sử rút tiền', to: '/tutor-portal/finance/withdrawals' }}
+      actions={
+        <>
+          {withdrawal && <WithdrawalStatusBadge status={withdrawal.status} />}
+          <Button icon={<SyncOutlined />} onClick={fetchDetail} loading={loading}>
+            Làm mới
+          </Button>
+        </>
+      }
+    >
+      {loading ? (
+        <div className="finance-surface finance-detail-loading">
+          <Spin size="large" />
+          <span>Đang tải thông tin yêu cầu...</span>
         </div>
-    );
+      ) : !withdrawal ? (
+        <div className="finance-surface finance-detail-loading">
+          <Empty description="Không tìm thấy yêu cầu rút tiền" />
+        </div>
+      ) : (
+        <div className="finance-detail-grid">
+          <div className="finance-detail-main">
+            <section className="finance-surface finance-status-card">
+              <div className="finance-panel-heading">
+                <div>
+                  <span className="finance-panel-heading__icon" aria-hidden="true">
+                    <SafetyCertificateOutlined />
+                  </span>
+                  <div>
+                    <h2>Trạng thái xử lý</h2>
+                    <p>Theo dõi yêu cầu qua từng giai đoạn</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="finance-status-steps">
+                <Steps
+                  current={currentStep}
+                  status={stepsStatus}
+                  responsive
+                  items={[
+                    { title: 'Chờ duyệt', icon: <ClockCircleOutlined /> },
+                    { title: 'Chuyển tiền', icon: <SyncOutlined spin={isProcessing} /> },
+                    { title: 'Hoàn tất', icon: <CheckCircleOutlined /> },
+                  ]}
+                />
+              </div>
+
+              {isPendingReview && (
+                <Alert
+                  type="info"
+                  showIcon
+                  message="Đang chờ xét duyệt"
+                  description="Admin/staff đang kiểm tra yêu cầu và dự kiến chuyển khoản trong vòng 24 giờ. Số tiền đã được tạm trừ khỏi số dư khả dụng."
+                  className="finance-status-alert"
+                />
+              )}
+              {isProcessing && (
+                <Alert
+                  type="info"
+                  showIcon
+                  message="Đã được phê duyệt"
+                  description="Yêu cầu đã được duyệt và đang trong quá trình chuyển tiền vào tài khoản ngân hàng."
+                  className="finance-status-alert"
+                />
+              )}
+              {isCompleted && (
+                <Alert
+                  type="success"
+                  showIcon
+                  message="Đã chuyển tiền thành công"
+                  description="Giao dịch đã hoàn tất. Vui lòng kiểm tra biến động số dư trong tài khoản ngân hàng."
+                  className="finance-status-alert"
+                />
+              )}
+              {isRejected && (
+                <Alert
+                  type="error"
+                  showIcon
+                  message="Yêu cầu bị từ chối"
+                  description="Lý do đã được gửi qua thông báo và số tiền đã được hoàn vào số dư khả dụng."
+                  className="finance-status-alert"
+                />
+              )}
+              {isCancelled && (
+                <Alert
+                  type="warning"
+                  showIcon
+                  message="Yêu cầu đã hủy"
+                  description="Yêu cầu không còn hiệu lực và số tiền đã được hoàn vào số dư khả dụng."
+                  className="finance-status-alert"
+                />
+              )}
+            </section>
+
+            <section className="finance-surface finance-transaction-detail-card">
+              <div className="finance-panel-heading">
+                <div>
+                  <span className="finance-panel-heading__icon finance-panel-heading__icon--gold" aria-hidden="true">
+                    <WalletOutlined />
+                  </span>
+                  <div>
+                    <h2>Thông tin giao dịch</h2>
+                    <p>Chi tiết số tiền và thời điểm xử lý</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="finance-detail-amount">
+                <span>Số tiền rút</span>
+                <strong>{formatCurrency(withdrawal.amount)}</strong>
+                <small>Phí giao dịch: Miễn phí</small>
+              </div>
+
+              <dl className="finance-detail-list">
+                <div>
+                  <dt>Thời gian yêu cầu</dt>
+                  <dd>{formatDateTime(withdrawal.requestedAt)}</dd>
+                </div>
+                <div>
+                  <dt>Thời gian xử lý</dt>
+                  <dd>{withdrawal.processedAt ? formatDateTime(withdrawal.processedAt) : 'Chưa xử lý'}</dd>
+                </div>
+                <div>
+                  <dt>Mã yêu cầu</dt>
+                  <dd>#{withdrawal.withdrawalId}</dd>
+                </div>
+              </dl>
+            </section>
+          </div>
+
+          <aside className="finance-detail-sidebar">
+            <section className="finance-surface finance-detail-bank-card">
+              <div className="finance-panel-heading">
+                <div>
+                  <span className="finance-panel-heading__icon" aria-hidden="true">
+                    <BankOutlined />
+                  </span>
+                  <div>
+                    <h2>Tài khoản nhận tiền</h2>
+                    <p>Thông tin tại thời điểm tạo yêu cầu</p>
+                  </div>
+                </div>
+              </div>
+
+              <dl className="finance-detail-list finance-detail-list--stacked">
+                <div>
+                  <dt>Ngân hàng</dt>
+                  <dd>{withdrawal.bankName || '—'}</dd>
+                </div>
+                <div>
+                  <dt>Số tài khoản</dt>
+                  <dd>{withdrawal.accountNumber || '—'}</dd>
+                </div>
+                <div>
+                  <dt>Chủ tài khoản</dt>
+                  <dd>{withdrawal.accountHolderName || '—'}</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section className="finance-surface finance-timeline-card">
+              <div className="finance-panel-heading">
+                <div>
+                  <span className="finance-panel-heading__icon finance-panel-heading__icon--gold" aria-hidden="true">
+                    <HistoryOutlined />
+                  </span>
+                  <div>
+                    <h2>Lịch sử thay đổi</h2>
+                    <p>Các mốc cập nhật của yêu cầu</p>
+                  </div>
+                </div>
+              </div>
+              <Timeline items={historyItems} />
+            </section>
+          </aside>
+        </div>
+      )}
+    </FinancePageShell>
+  );
 };
 
 export default WithdrawalDetailPage;

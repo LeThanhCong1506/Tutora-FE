@@ -126,10 +126,6 @@ export interface ClassSessionDetailResponse {
 
 // ── Request DTOs ──
 
-export interface CheckInRequest {
-    note?: string;
-}
-
 export interface CheckOutRequest {
     note?: string;
 }
@@ -272,16 +268,6 @@ export const getTutorCalendar = async (
 
 export const getTutorDashboardStats = async (): Promise<ApiResponse<TutorDashboardStatsResponse>> => {
     const response = await api.get('/tutor/class-sessions/dashboard', { headers: getAuthHeaders() });
-    return response.data;
-};
-
-export const checkInClassSession = async (
-    classSessionId: number,
-    request: CheckInRequest = {},
-): Promise<ApiResponse<ClassSessionDetailResponse>> => {
-    const response = await api.put(`/tutor/class-sessions/${classSessionId}/checkin`, request, {
-        headers: getAuthHeaders(),
-    });
     return response.data;
 };
 

@@ -2,7 +2,7 @@ import { PanelRightClose, PanelRightOpen } from 'lucide-react';
 import styles from '../styles.module.css';
 
 interface SessionHeaderProps {
-  subjectAndPeer: string;
+  participantLabel: string;
   elapsedLabel: string;
   endLabel: string;
   onEnd: () => void;
@@ -11,7 +11,7 @@ interface SessionHeaderProps {
 }
 
 const SessionHeader = ({
-  subjectAndPeer,
+  participantLabel,
   elapsedLabel,
   endLabel,
   onEnd,
@@ -23,8 +23,12 @@ const SessionHeader = ({
       <div className={styles.headerLeft}>
         <span className={styles.liveDot} />
         <span className={styles.liveLabel}>Buổi học trực tiếp</span>
-        <span className={styles.headerDivider} />
-        <span className={styles.headerSubject}>{subjectAndPeer}</span>
+        {participantLabel && (
+          <>
+            <span className={styles.headerDivider} />
+            <span className={styles.headerSubject}>{participantLabel}</span>
+          </>
+        )}
         <span className={styles.headerTimer}>{elapsedLabel}</span>
       </div>
       <div className={styles.headerRight}>
