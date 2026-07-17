@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
     getTutorClassSessions,
     getTutorClassSessionDetail,
-    checkInClassSession,
     checkOutClassSession,
     type ClassSessionResponse,
     type ClassSessionDetailResponse,
@@ -94,7 +93,6 @@ const TutorPortalClassDetail: React.FC = () => {
     // Session management state
     const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
     const [showReportForm, setShowReportForm] = useState(false);
-    const [checkingInId, setCheckingInId] = useState<number | null>(null);
     const [checkingOutId, setCheckingOutId] = useState<number | null>(null);
     // URL các file đính kèm đã upload cho từng buổi, chờ gộp vào khi nộp báo cáo (SubmitReportRequest.Attachments).
     const [pendingAttachments, setPendingAttachments] = useState<Record<number, string[]>>({});
@@ -234,41 +232,11 @@ const TutorPortalClassDetail: React.FC = () => {
     // === Session Management Functions ===
 
     /**
-     * Tutor được phép check-in trong cửa sổ ±15 phút quanh giờ bắt đầu.
-     * BE enforce cùng rule (ClassSessionService.CheckInAsync). FE check trước để
-     * disable UI sớm, tránh round-trip nếu rõ ràng ngoài range.
+     * Click "Vào lớp": chỉ điều hướng vào phòng học. Check-in nay là TỰ ĐỘNG khi cả gia sư và
+     * học viên cùng vào phòng (không còn gọi check-in thủ công). Phòng mở 24/7.
      */
-    const canCheckIn = (session: ClassSessionResponse): boolean => {
-        if (session.status !== 'scheduled') return false;
-        const now = Date.now();
-        const start = new Date(session.scheduledStart).getTime();
-        const diffMinutes = Math.abs(now - start) / (1000 * 60);
-        return diffMinutes <= 15;
-    };
-
-    /**
-     * Click "Vào lớp": gọi check-in thật → BE tạo Meet link → mở tab Meet.
-     * Nếu session đã in_progress mà có meetingLink (vd tutor lỡ đóng tab) → re-open thẳng.
-     */
-    const handleEnterSession = async (session: ClassSessionResponse) => {
-        // Case re-join: session đang chạy → vào thẳng phòng học, không cần check-in lại
-        if (session.status === 'in_progress') {
-            navigate(`/live-session/${session.classSessionId}`);
-            return;
-        }
-
-        try {
-            setCheckingInId(session.classSessionId);
-            const response = await checkInClassSession(session.classSessionId);
-            applyDetail(response.content);
-            toast.success('Check-in thành công! Đang vào lớp học…');
-            navigate(`/live-session/${session.classSessionId}`);
-        } catch (error: unknown) {
-            const e = error as { response?: { data?: { message?: string } } };
-            toast.error(e.response?.data?.message || 'Không thể check-in. Vui lòng thử lại.');
-        } finally {
-            setCheckingInId(null);
-        }
+    const handleEnterSession = (session: ClassSessionResponse) => {
+        navigate(`/live-session/${session.classSessionId}`);
     };
 
     const handleCheckOut = async (classSessionId: number) => {
@@ -472,14 +440,13 @@ const TutorPortalClassDetail: React.FC = () => {
                                                 </div>
 
                                                 <div className={sessionStyles.actionGroup} onClick={(e) => e.stopPropagation()}>
-                                                    {/* "Vào lớp" — gọi check-in + auto mở Meet link */}
-                                                    {session.status === 'scheduled' && canCheckIn(session) && (
+                                                    {/* "Vào lớp" — phòng mở 24/7; check-in tự động khi cả 2 cùng vào */}
+                                                    {session.status === 'scheduled' && session.meetingLink && (
                                                         <button
                                                             className={sessionStyles.joinActionBtn}
                                                             onClick={() => handleEnterSession(session)}
-                                                            disabled={checkingInId === session.classSessionId}
                                                         >
-                                                            {checkingInId === session.classSessionId ? 'Đang xử lý...' : 'Vào lớp'}
+                                                            Vào lớp
                                                         </button>
                                                     )}
 
@@ -501,8 +468,8 @@ const TutorPortalClassDetail: React.FC = () => {
                                                         </button>
                                                     )}
 
-                                                    {/* Cho phép nộp báo cáo mà không cần Check-in/Check-out (MVP Phase 2) */}
-                                                    {(session.status === 'in_progress' || session.status === 'scheduled') && (
+                                                    {/* Nộp báo cáo — chỉ khi buổi đã điểm danh (in_progress) */}
+                                                    {session.status === 'in_progress' && (
                                                         <button
                                                             className={sessionStyles.primaryActionBtn}
                                                             onClick={() => {
@@ -585,8 +552,8 @@ const TutorPortalClassDetail: React.FC = () => {
                                                         </div>
                                                         )}
 
-                                                        {/* Report Form */}
-                                                        {showReportForm && activeSessionId === session.classSessionId && (session.status === 'in_progress' || session.status === 'scheduled') && (
+                                                        {/* Report Form — chỉ khi buổi đã điểm danh (in_progress) */}
+                                                        {showReportForm && activeSessionId === session.classSessionId && session.status === 'in_progress' && (
                                                             <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                                                 <LessonReportForm
                                                                     classSessionId={session.classSessionId}
@@ -604,14 +571,14 @@ const TutorPortalClassDetail: React.FC = () => {
                                                             </div>
                                                         )}
 
-                                                        {/* Check-in hint for scheduled sessions ngoài cửa sổ 15ph */}
-                                                        {session.status === 'scheduled' && !canCheckIn(session) && (
+                                                        {/* Gợi ý: buổi đã lên lịch, phòng mở 24/7 — check-in tự động khi cả 2 vào */}
+                                                        {session.status === 'scheduled' && session.meetingLink && (
                                                             <div style={{
                                                                 marginTop: '16px', padding: '12px 16px',
                                                                 background: '#f2f0e4', borderRadius: '8px',
                                                                 fontSize: '13px', color: '#666',
                                                             }}>
-                                                                Check-in chỉ khả dụng trong vòng 15 phút trước và sau giờ bắt đầu buổi học.
+                                                                Buổi học sẽ tự điểm danh khi cả gia sư và học viên cùng vào phòng.
                                                             </div>
                                                         )}
                                                     </div>

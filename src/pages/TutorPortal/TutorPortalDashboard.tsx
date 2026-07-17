@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import styles from '../../styles/pages/tutor-portal-dashboard.module.css';
 import {
     getTutorDashboardStats,
     getTutorCalendar,
-    checkInClassSession,
     type TutorDashboardStatsResponse,
     type CalendarDayResponse,
     type CalendarClassSessionResponse,
@@ -280,33 +278,9 @@ const TutorPortalDashboard: React.FC = () => {
             .sort((a, b) => new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime());
     };
 
-    // ── Check-in / Vào lớp helpers (shared với ClassDetail) ──
-    const [checkingInLessonId, setCheckingInLessonId] = useState<number | null>(null);
-
-    const canCheckIn = (lesson: CalendarClassSessionResponse): boolean => {
-        if (lesson.status !== 'scheduled') return false;
-        const diffMinutes = Math.abs(Date.now() - new Date(lesson.scheduledStart).getTime()) / (1000 * 60);
-        return diffMinutes <= 15;
-    };
-
-    const handleEnterLesson = async (lesson: CalendarClassSessionResponse) => {
-        // Re-join nếu lesson đang chạy → vào thẳng phòng học Agora nội bộ
-        if (lesson.status === 'in_progress') {
-            navigate(`/live-session/${lesson.classSessionId}`);
-            return;
-        }
-
-        try {
-            setCheckingInLessonId(lesson.classSessionId);
-            await checkInClassSession(lesson.classSessionId);
-            toast.success('Check-in thành công! Đang vào lớp học…');
-            navigate(`/live-session/${lesson.classSessionId}`);
-        } catch (error: unknown) {
-            const e = error as { response?: { data?: { message?: string } } };
-            toast.error(e.response?.data?.message || 'Không thể check-in. Vui lòng thử lại.');
-        } finally {
-            setCheckingInLessonId(null);
-        }
+    // ── "Vào lớp" — phòng mở 24/7; check-in tự động khi cả gia sư và học viên cùng vào ──
+    const handleEnterLesson = (lesson: CalendarClassSessionResponse) => {
+        navigate(`/live-session/${lesson.classSessionId}`);
     };
 
     const formatTime = (dateString: string) => {
@@ -625,14 +599,13 @@ const TutorPortalDashboard: React.FC = () => {
                                             </div>
                                         </div>
                                         <div className={styles.lessonActions}>
-                                            {/* Scheduled & trong cửa sổ 15ph → nút Vào lớp (gọi check-in) */}
-                                            {canCheckIn(lesson) && (
+                                            {/* Scheduled & online → nút Vào lớp (phòng mở 24/7) */}
+                                            {lesson.status === 'scheduled' && lesson.meetingLink && (
                                                 <button
                                                     className={styles.primaryBtn}
                                                     onClick={() => handleEnterLesson(lesson)}
-                                                    disabled={checkingInLessonId === lesson.classSessionId}
                                                 >
-                                                    {checkingInLessonId === lesson.classSessionId ? 'Đang xử lý…' : '▶ Vào lớp'}
+                                                    ▶ Vào lớp
                                                 </button>
                                             )}
                                             {/* In-progress & đã có link → nút Vào lại lớp (re-open) */}
