@@ -2,8 +2,9 @@
  * Financial summary for tutor dashboard
  */
 export interface FinanceSummary {
-    balance: number;
+    availableBalance: number;
     frozenBalance: number;
+    totalBalance: number;
     totalEarned: number;
     pendingSettlement: number;
     lastWithdrawalAt: string | null;

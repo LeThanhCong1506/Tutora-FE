@@ -111,7 +111,7 @@ const CreateWithdrawalPage: React.FC = () => {
         {currentStep < 2 ? (
           <div className="finance-withdraw-layout">
             <WithdrawForm
-              balance={summary?.balance ?? 0}
+              balance={summary?.availableBalance ?? 0}
               bankInfo={bankInfo}
               loading={loading}
               onSubmit={handleSubmitForm}

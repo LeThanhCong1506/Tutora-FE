@@ -40,12 +40,12 @@ const TutorFinanceDashboardPage: React.FC = () => {
     fetchDashboardData();
   }, []);
 
-  const canWithdraw = (summary?.balance ?? 0) >= MIN_WITHDRAWAL;
+  const canWithdraw = (summary?.availableBalance ?? 0) >= MIN_WITHDRAWAL;
 
   return (
     <FinancePageShell
       title="Tài chính của tôi"
-      subtitle="Theo dõi thu nhập, số dư và mọi biến động tài chính tại một nơi."
+      headerClassName="finance-page-header--dashboard"
       actions={
         <Tooltip
           title={!loading && !canWithdraw ? `Cần tối thiểu ${formatCurrency(MIN_WITHDRAWAL)} để rút tiền` : undefined}
@@ -74,7 +74,6 @@ const TutorFinanceDashboardPage: React.FC = () => {
           <div className="finance-section-heading">
             <div>
               <h2>Giao dịch gần đây</h2>
-              <p>5 biến động mới nhất trong ví của bạn</p>
             </div>
             <Button
               type="link"

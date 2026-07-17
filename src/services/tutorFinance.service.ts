@@ -30,8 +30,9 @@ const is404 = (error: unknown): boolean =>
 
 /** Default empty summary for tutors without a wallet */
 const EMPTY_SUMMARY: FinanceSummary = {
-    balance: 0,
+    availableBalance: 0,
     frozenBalance: 0,
+    totalBalance: 0,
     totalEarned: 0,
     pendingSettlement: 0,
     lastWithdrawalAt: null,

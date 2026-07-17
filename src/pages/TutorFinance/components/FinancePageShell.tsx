@@ -4,10 +4,11 @@ import { ArrowLeftOutlined, BankOutlined, DashboardOutlined, HistoryOutlined, Sw
 
 interface FinancePageShellProps {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   children: ReactNode;
   actions?: ReactNode;
   eyebrow?: string;
+  headerClassName?: string;
   contentClassName?: string;
   backLink?: {
     label: string;
@@ -48,13 +49,14 @@ const FinancePageShell = ({
   children,
   actions,
   eyebrow = 'Trung tâm tài chính',
+  headerClassName = '',
   contentClassName = '',
   backLink,
 }: FinancePageShellProps) => {
   return (
     <div className="tutor-finance-container">
       <div className="finance-page-shell">
-        <header className="finance-page-header">
+        <header className={`finance-page-header ${headerClassName}`.trim()}>
           {backLink && (
             <NavLink className="finance-back-link" to={backLink.to}>
               <ArrowLeftOutlined aria-hidden="true" />
@@ -67,7 +69,7 @@ const FinancePageShell = ({
           <div className="finance-title-row">
             <div className="finance-title-block">
               <h1>{title}</h1>
-              <p>{subtitle}</p>
+              {subtitle && <p>{subtitle}</p>}
             </div>
             {actions && <div className="finance-header-actions">{actions}</div>}
           </div>
