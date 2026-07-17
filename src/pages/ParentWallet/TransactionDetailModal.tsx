@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import {
   formatCurrency,
@@ -29,6 +29,8 @@ const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
 
 const TransactionDetailModal = ({ transactionId, onClose }: Props) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const portalBase = location.pathname.startsWith('/student-portal') ? '/student-portal' : '/parent-portal';
   const [detail, setDetail] = useState<TransactionDetail | null>(null);
   const [withdrawalDetail, setWithdrawalDetail] = useState<WithdrawalDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -148,7 +150,7 @@ const TransactionDetailModal = ({ transactionId, onClose }: Props) => {
                   <button
                     className={styles.linkBtn}
                     type="button"
-                    onClick={() => navigate(`/parent-portal/booking/${detail.booking!.bookingId}`)}
+                    onClick={() => navigate(`${portalBase}/booking/${detail.booking!.bookingId}`)}
                   >
                     Xem chi tiết đặt lịch →
                   </button>
@@ -178,7 +180,7 @@ const TransactionDetailModal = ({ transactionId, onClose }: Props) => {
                     <button
                       className={styles.linkBtn}
                       type="button"
-                      onClick={() => navigate(`/parent-portal/booking/${detail.dispute!.bookingId}`)}
+                      onClick={() => navigate(`${portalBase}/booking/${detail.dispute!.bookingId}`)}
                     >
                       Xem đặt lịch liên quan →
                     </button>
@@ -223,14 +225,31 @@ const TransactionDetailModal = ({ transactionId, onClose }: Props) => {
                     <Row label="Lý do từ chối" value={withdrawalDetail.rejectionReason} />
                   )}
                   {withdrawalDetail.proofImageUrl && (
-                    <Row
-                      label="Biên lai"
-                      value={
-                        <a href={withdrawalDetail.proofImageUrl} target="_blank" rel="noopener noreferrer">
-                          Xem ảnh biên lai →
+                    <div className={styles.invoiceRow}>
+                      <span className={styles.invoiceLabel}>Biên lai chuyển khoản</span>
+                      <div className={styles.invoiceValue}>
+                        <a
+                          href={withdrawalDetail.proofImageUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.proofImageLink}
+                        >
+                          <img
+                            src={withdrawalDetail.proofImageUrl}
+                            alt="Biên lai chuyển khoản"
+                            className={styles.proofImage}
+                            loading="lazy"
+                          />
                         </a>
-                      }
-                    />
+                        <button
+                          type="button"
+                          className={styles.viewFullImageBtn}
+                          onClick={() => window.open(withdrawalDetail.proofImageUrl!, '_blank')}
+                        >
+                          Xem ảnh đầy đủ →
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}

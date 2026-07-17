@@ -12,6 +12,7 @@ import {
   AccountIcon,
   CalendarIcon,
   ChildrenIcon,
+  WalletIcon,
 } from '../shared/icons';
 
 const MESSAGES_PATH = '/student-portal/messages';
@@ -34,6 +35,7 @@ const NOTIFICATION_TYPES_BY_PATH: Record<string, string[]> = {
     'lesson_no_show',
     'lesson_report',
   ],
+  '/student-portal/wallet': ['withdrawal_request'],
 };
 
 const baseStudentNavItems: NavItem[] = [
@@ -41,6 +43,7 @@ const baseStudentNavItems: NavItem[] = [
   { path: '/student-portal/booking', label: 'Đặt lịch', icon: BookingIcon },
   { path: '/student-portal/calendar', label: 'Thời khóa biểu', icon: CalendarIcon },
   { path: MESSAGES_PATH, label: 'Tin nhắn', icon: MessagesIcon },
+  { path: '/student-portal/wallet', label: 'Tài chính', icon: WalletIcon },
   { path: '/student-portal/profile', label: 'Hồ sơ học sinh', icon: ChildrenIcon },
   { path: '/student-portal/account', label: 'Tài khoản', icon: AccountIcon },
 ];

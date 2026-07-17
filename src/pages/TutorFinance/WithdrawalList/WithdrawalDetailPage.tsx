@@ -263,12 +263,29 @@ const WithdrawalDetailPage: React.FC = () => {
                   </div>
                 )}
                 {withdrawal.proofImageUrl && (
-                  <div>
-                    <dt>Ảnh biên lai chuyển khoản</dt>
+                  <div className="finance-proof-image-container">
+                    <dt>Biên lai chuyển khoản</dt>
                     <dd>
-                      <a href={withdrawal.proofImageUrl} target="_blank" rel="noopener noreferrer">
-                        Xem ảnh biên lai →
+                      <a
+                        href={withdrawal.proofImageUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="finance-proof-image-link"
+                      >
+                        <img
+                          src={withdrawal.proofImageUrl}
+                          alt="Biên lai chuyển khoản"
+                          className="finance-proof-image"
+                          loading="lazy"
+                        />
                       </a>
+                      <button
+                        type="button"
+                        className="finance-proof-image-btn"
+                        onClick={() => window.open(withdrawal.proofImageUrl!, '_blank')}
+                      >
+                        Xem ảnh đầy đủ →
+                      </button>
                     </dd>
                   </div>
                 )}
