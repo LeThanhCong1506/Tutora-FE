@@ -43,19 +43,29 @@ export function getNotificationTargetPath(notification: NotificationDTO): string
     const combined = title + ' ' + message;
     const type = notification.type ?? '';
     const refId = notification.referenceid ?? '';
+    const lessonDetailPath = (lessonId: string) =>
+        prefix === '/student-portal'
+            ? `${prefix}/calendar/${lessonId}`
+            : `${prefix}/lessons/${lessonId}`;
+    const lessonListPath =
+        prefix === '/student-portal'
+            ? `${prefix}/calendar`
+            : prefix === '/tutor-portal'
+                ? `${prefix}/schedule`
+                : `${prefix}/lessons`;
 
     // ── Layer 1: Type + Referenceid (deep-link chính xác) ──
     if (type === NOTIFICATION_TYPE.LessonCheckin && refId) {
-        return `${prefix}/lessons/${refId}`;
+        return lessonDetailPath(refId);
     }
     if (type === NOTIFICATION_TYPE.LessonReport && refId) {
-        return `${prefix}/lessons/${refId}`;
+        return lessonDetailPath(refId);
     }
     if (type === NOTIFICATION_TYPE.LessonConfirmed && refId) {
-        return `${prefix}/lessons/${refId}`;
+        return lessonDetailPath(refId);
     }
     if (type === NOTIFICATION_TYPE.LessonNoShow && refId) {
-        return `${prefix}/lessons/${refId}`;
+        return lessonDetailPath(refId);
     }
     if ((type === NOTIFICATION_TYPE.BookingNew
         || type === NOTIFICATION_TYPE.BookingAccepted
@@ -80,12 +90,11 @@ export function getNotificationTargetPath(notification: NotificationDTO): string
         || title.includes('xác nhận buổi học');
     if (isLessonTitle) {
         // Nếu BE đã truyền referenceid mà chưa truyền type → vẫn dùng được
-        if (refId) return `${prefix}/lessons/${refId}`;
+        if (refId) return lessonDetailPath(refId);
         // Best-effort: parse lessonId từ message (vd "#123")
         const idMatch = message.match(/#(\d+)/);
-        if (idMatch) return `${prefix}/lessons/${idMatch[1]}`;
-        // Fallback: về calendar (entry point duy nhất hiện có cho parent xem scheduled lessons)
-        return `${prefix}/calendar`;
+        if (idMatch) return lessonDetailPath(idMatch[1]);
+        return lessonListPath;
     }
 
     if (combined.includes('booking') || combined.includes('request') || combined.includes('đặt lịch') || combined.includes('cọc')) {
@@ -102,7 +111,7 @@ export function getNotificationTargetPath(notification: NotificationDTO): string
     }
     if (combined.includes('schedule') || combined.includes('session') || combined.includes('lịch') || combined.includes('buổi')) {
         if (prefix === '/tutor-portal') return `${prefix}/schedule`;
-        return `${prefix}/calendar`;
+        return lessonListPath;
     }
 
     // ── Layer 3: Fallback ──
