@@ -63,14 +63,7 @@ const ParentWallet = () => {
         </p>
       </div>
 
-      <WalletSummaryCards
-        balance={balance}
-        loading={balanceLoading}
-        // Rút tiền tạm chặn, đang được triển khai.
-        // Giữ nguyên UI, chỉ báo toast.
-        // Bật lại bằng: onWithdraw={() => setWithdrawOpen(true)}
-        onWithdraw={() => toast.info('Chức năng rút tiền đang trong quá trình triển khai')}
-      />
+      <WalletSummaryCards balance={balance} loading={balanceLoading} />
 
       <TransactionsCard
         variant="preview"

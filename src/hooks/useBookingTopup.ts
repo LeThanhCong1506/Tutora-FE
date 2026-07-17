@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { payWithWallet } from '../services/payment.service';
-import { createTopup, getTopupStatus, type TopupResponse } from '../services/wallet.service';
+import { applyBookingShortfallTopup, createTopup, getTopupStatus, type TopupResponse } from '../services/wallet.service';
 
 const POLL_INTERVAL_MS = 5000;
 const MIN_TOPUP_VND = 10000; // PayOS yêu cầu tối thiểu 10.000đ
@@ -46,8 +45,8 @@ interface ApiErrorLike {
 
 /**
  * Luồng "nạp bù phần thiếu rồi thanh toán booking bằng ví":
- * tạo QR nạp đúng phần thiếu (làm tròn LÊN, tối thiểu 10k) → poll trạng thái nạp
- * → khi ví đã được cộng tiền thì TỰ ĐỘNG gọi pay/wallet.
+ * backend tự tính phần thiếu và tạo QR gắn booking/phase → poll trạng thái nạp
+ * → khi ví đã được cộng tiền thì gọi endpoint apply của chính lệnh nạp bù đó.
  */
 export const useBookingTopup = ({
   bookingId,
@@ -88,26 +87,29 @@ export const useBookingTopup = ({
 
   const doPay = useCallback(async () => {
     try {
-      await payWithWallet(bookingId);
+      if (!topup) {
+        throw new Error('Missing booking shortfall top-up.');
+      }
+
+      await applyBookingShortfallTopup(bookingId, topup.orderCode);
       clearPoll();
       setPhase('success');
       onSuccessRef.current();
     } catch (err) {
       const e = err as ApiErrorLike;
       const code = e.response?.data?.errorCode;
-      // Booking (giai đoạn hiện tại) đã được thanh toán rồi (vd. gọi trùng) → coi như thành công.
+      // Booking (giai đoạn đã tạo QR) đã được thanh toán rồi (vd. gọi trùng) → coi như thành công.
       if (code && ALREADY_PAID_CODES.includes(code)) {
         clearPoll();
         setPhase('success');
         onSuccessRef.current();
         return;
       }
-      // Các lỗi khác (kể cả 409 BOOKING_EXPIRED/INVALID_BOOKING_STATUS): booking CHƯA trả được.
-      // Tiền đã ở trong ví (an toàn) — cho retry, KHÔNG báo thành công giả, KHÔNG gây cảm giác mất tiền.
+      // Các lỗi khác: tiền nạp bù đã ở trong ví và không bị tự động dùng cho phase khác.
       setError(e.response?.data?.message || 'Không hoàn tất được thanh toán. Số dư đã được nạp, vui lòng thử lại.');
       setPhase('pay_error');
     }
-  }, [bookingId, clearPoll]);
+  }, [bookingId, topup, clearPoll]);
 
   const start = useCallback(async () => {
     if (creatingRef.current) return; // chặn double-click
@@ -116,7 +118,7 @@ export const useBookingTopup = ({
     creatingRef.current = true;
     setPhase('creating');
     try {
-      const res = await createTopup(topupAmount);
+      const res = await createTopup(bookingId);
       setTopup(res.content);
       setPhase('awaiting_topup');
     } catch (err) {
@@ -126,7 +128,7 @@ export const useBookingTopup = ({
     } finally {
       creatingRef.current = false;
     }
-  }, [topupAmount]);
+  }, [bookingId]);
 
   const cancel = useCallback(() => {
     clearPoll();
@@ -151,7 +153,7 @@ export const useBookingTopup = ({
 
     const poll = async () => {
       try {
-        const res = await getTopupStatus(topup.orderCode);
+        const res = await getTopupStatus(bookingId, topup.orderCode);
         if (res.content.walletCredited && !paidGuardRef.current) {
           paidGuardRef.current = true;
           clearPoll();
@@ -168,7 +170,7 @@ export const useBookingTopup = ({
     pollRef.current = setInterval(poll, POLL_INTERVAL_MS);
     void poll(); // poll ngay lần đầu, không đợi 5s
     return () => clearPoll();
-  }, [phase, topup, clearPoll, clearCountdown, doPay]);
+  }, [phase, topup, bookingId, clearPoll, clearCountdown, doPay]);
 
   // Đếm ngược hết hạn QR; hết giờ → dừng poll, chuyển sang 'expired'.
   useEffect(() => {
@@ -205,7 +207,7 @@ export const useBookingTopup = ({
     isActive: phase !== 'idle',
     topup,
     shortfall,
-    topupAmount,
+    topupAmount: topup?.amount ?? topupAmount,
     secondsRemaining,
     error,
     start,

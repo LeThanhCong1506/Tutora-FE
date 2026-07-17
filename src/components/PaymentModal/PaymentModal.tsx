@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
     X,
     Wallet,
@@ -19,7 +19,14 @@ import {
     RefreshCw,
 } from 'lucide-react';
 import styles from './PaymentModal.module.css';
-import { getPaymentInfo, getPaymentStatus, payWithWallet, type PaymentInfoDTO } from '../../services/payment.service';
+import {
+    getPaymentSummary,
+    getPaymentInfo,
+    getPaymentStatus,
+    payWithWallet,
+    type PaymentInfoDTO,
+    type PaymentSummaryDTO,
+} from '../../services/payment.service';
 import { toast } from 'react-toastify';
 import { useBookingTopup } from '../../hooks/useBookingTopup';
 import TopupQRView from '../TopupQR/TopupQRView';
@@ -64,7 +71,11 @@ const BANK_MAP: Record<string, { name: string; logo?: string }> = {
 const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentModalProps) => {
     const [loading, setLoading] = useState(true);
     const [paying, setPaying] = useState(false);
+    // Màn chọn phương thức chỉ cần summary (KHÔNG tạo link PayOS).
+    const [summary, setSummary] = useState<PaymentSummaryDTO | null>(null);
+    // Thông tin PayOS đầy đủ (QR/checkout) — chỉ tải khi user chọn chuyển khoản.
     const [paymentInfo, setPaymentInfo] = useState<PaymentInfoDTO | null>(null);
+    const [qrLoading, setQrLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showQRView, setShowQRView] = useState(false);
     const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -72,6 +83,8 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
     const [paymentSuccess, setPaymentSuccess] = useState(false);
     const [qrImageError, setQrImageError] = useState(false);
     const [isExpired, setIsExpired] = useState(false);
+    // Chặn tạo link PayOS trùng khi click dội (card + button cùng bắt sự kiện).
+    const qrFetchingRef = useRef(false);
 
     // Build VietQR image URL from bank details
     const getQRCodeUrl = (info: PaymentInfoDTO): string => {
@@ -86,45 +99,49 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
         return info.qrCode;
     };
 
-    // assumeExpired: FE đã biết QR hết hạn (countdown về 0). Khi đó booking có thể đã bị job
-    // hủy (BE trả INVALID_BOOKING_STATUS thay vì BOOKING_EXPIRED) — vẫn hiển thị màn "hết hạn"
-    // cho rõ ràng, trừ khi BE báo đã thanh toán (vừa kịp trả tiền).
-    const fetchPaymentInfo = useCallback(async (assumeExpired = false) => {
+    // Ánh xạ lỗi API sang trạng thái hiển thị. Dùng chung cho cả tải summary lẫn tạo link PayOS.
+    const mapPaymentError = useCallback((err: unknown, fallback: string): void => {
+        const apiError = err as PaymentApiError;
+        console.warn('Payment request failed:', apiError.response?.status, apiError.response?.data);
+        const errorCode = apiError.response?.data?.errorCode;
+
+        if (errorCode === 'BOOKING_ALREADY_PAID') {
+            setError('BOOKING_ALREADY_PAID');
+            setTimeout(() => {
+                onPaymentSuccess();
+                onClose();
+            }, 2000);
+        } else if (errorCode === 'BOOKING_EXPIRED') {
+            setError('BOOKING_EXPIRED');
+        } else {
+            setError(apiError.response?.data?.message || fallback);
+        }
+    }, [onClose, onPaymentSuccess]);
+
+    // Tải summary (không tạo link PayOS) để hiển thị màn chọn phương thức.
+    const fetchSummary = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
-            const info = await getPaymentInfo(bookingId);
-            setPaymentInfo(info);
+            const info = await getPaymentSummary(bookingId);
+            setSummary(info);
         } catch (err: unknown) {
-            const apiError = err as PaymentApiError;
-            console.warn('Failed to fetch payment info:', apiError.response?.status, apiError.response?.data);
-            const errorCode = apiError.response?.data?.errorCode;
-
-            if (errorCode === 'BOOKING_ALREADY_PAID') {
-                setError('BOOKING_ALREADY_PAID');
-                setTimeout(() => {
-                    onPaymentSuccess();
-                    onClose();
-                }, 2000);
-            } else if (errorCode === 'BOOKING_EXPIRED' || assumeExpired) {
-                setError('BOOKING_EXPIRED');
-            } else {
-                setError(apiError.response?.data?.message || 'Không thể tải thông tin thanh toán. Vui lòng thử lại.');
-            }
+            mapPaymentError(err, 'Không thể tải thông tin thanh toán. Vui lòng thử lại.');
         } finally {
             setLoading(false);
         }
-    }, [bookingId, onClose, onPaymentSuccess]);
+    }, [bookingId, mapPaymentError]);
 
     useEffect(() => {
         if (isOpen) {
-            void fetchPaymentInfo();
+            void fetchSummary();
             setShowQRView(false);
             setPaymentSuccess(false);
             setQrImageError(false);
             setIsExpired(false);
+            setPaymentInfo(null);
         }
-    }, [isOpen, bookingId, fetchPaymentInfo]);
+    }, [isOpen, bookingId, fetchSummary]);
 
     // Countdown timer for QR view. Khi hết giờ → đánh dấu isExpired để che QR + dừng poll.
     useEffect(() => {
@@ -181,8 +198,8 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
     // Luồng "nạp bù phần thiếu rồi tự động thanh toán bằng ví" (khi số dư không đủ).
     const topup = useBookingTopup({
         bookingId,
-        amountDue: paymentInfo?.amount ?? 0,
-        walletBalance: paymentInfo?.walletBalance ?? 0,
+        amountDue: summary?.amount ?? 0,
+        walletBalance: summary?.walletBalance ?? 0,
         onPaymentSuccess: () => {
             onPaymentSuccess();
             onClose();
@@ -190,13 +207,13 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
     });
 
     const handleWalletPayment = async () => {
-        if (!paymentInfo?.canPayWithWallet) return;
+        if (!summary?.canPayWithWallet) return;
 
         try {
             setPaying(true);
             await payWithWallet(bookingId);
             toast.success(
-                paymentInfo.paymentPhase === 'deposit'
+                summary.paymentPhase === 'deposit'
                     ? 'Đặt cọc thành công!'
                     : 'Thanh toán phần còn lại thành công!'
             );
@@ -211,9 +228,41 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
         }
     };
 
-    const handleOpenQRView = () => {
-        setIsExpired(false);
-        setShowQRView(true);
+    // Chuyển khoản ngân hàng: tạo link PayOS LÚC NÀY (lazy) rồi mở màn QR. Nhờ vậy nếu
+    // user trả bằng ví thì không có bản ghi/ link PayOS nào được tạo ra.
+    const handleOpenQRView = async () => {
+        if (paymentInfo) {
+            setIsExpired(false);
+            setShowQRView(true);
+            return;
+        }
+
+        // Guard đồng bộ: một cú click có thể kích hoạt cả card lẫn button → tránh tạo 2 link PayOS.
+        if (qrFetchingRef.current) return;
+        qrFetchingRef.current = true;
+
+        try {
+            setQrLoading(true);
+            const info = await getPaymentInfo(bookingId);
+            setPaymentInfo(info);
+            setIsExpired(false);
+            setShowQRView(true);
+        } catch (err: unknown) {
+            const apiError = err as PaymentApiError;
+            const errorCode = apiError.response?.data?.errorCode;
+            if (errorCode === 'BOOKING_ALREADY_PAID') {
+                toast.info('Booking đã được thanh toán.');
+                onPaymentSuccess();
+                onClose();
+            } else if (errorCode === 'BOOKING_EXPIRED') {
+                setError('BOOKING_EXPIRED');
+            } else {
+                toast.error(apiError.response?.data?.message || 'Không thể tạo liên kết thanh toán. Vui lòng thử lại.');
+            }
+        } finally {
+            setQrLoading(false);
+            qrFetchingRef.current = false;
+        }
     };
 
     // Hết hạn → quay về màn chọn phương thức và fetch lại; BE sẽ trả BOOKING_EXPIRED
@@ -221,7 +270,8 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
     const handleReloadAfterExpiry = () => {
         setShowQRView(false);
         setIsExpired(false);
-        void fetchPaymentInfo(true);
+        setPaymentInfo(null);
+        void fetchSummary();
     };
 
     const handleCopy = useCallback((text: string, field: string) => {
@@ -257,15 +307,15 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
         new Intl.NumberFormat('vi-VN').format(amount) + ' VND';
 
     const getPhaseTitle = () => {
-        if (!paymentInfo) return 'Hoàn tất thanh toán';
-        return paymentInfo.paymentPhase === 'remaining'
+        if (!summary) return 'Hoàn tất thanh toán';
+        return summary.paymentPhase === 'remaining'
             ? 'Thanh toán các buổi còn lại'
             : 'Thanh toán buổi học đầu tiên';
     };
 
     const getPhaseDescription = () => {
-        if (!paymentInfo) return 'Hoàn tất thanh toán để xác nhận lịch học của bạn.';
-        return paymentInfo.paymentPhase === 'remaining'
+        if (!summary) return 'Hoàn tất thanh toán để xác nhận lịch học của bạn.';
+        return summary.paymentPhase === 'remaining'
             ? 'Hoàn tất phần học phí còn lại để tiếp tục lịch học đã đặt.'
             : 'Thanh toán buổi đầu để gửi yêu cầu đặt lịch tới gia sư.';
     };
@@ -525,45 +575,45 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                         <div className={styles.errorContainer}>
                             <AlertTriangle className={styles.errorIcon} />
                             <p>{error}</p>
-                            <button onClick={() => fetchPaymentInfo()} className={styles.retryBtn}>Thử lại</button>
+                            <button onClick={() => fetchSummary()} className={styles.retryBtn}>Thử lại</button>
                         </div>
-                    ) : paymentInfo ? (
+                    ) : summary ? (
                         <>
                             <div className={styles.summaryBox}>
                                 <div className={styles.summaryTop}>
                                     <div>
                                         <span className={styles.summaryKicker}>Cần thanh toán</span>
-                                        <strong className={styles.summaryAmountLarge}>{formatCurrency(paymentInfo.amount)}</strong>
+                                        <strong className={styles.summaryAmountLarge}>{formatCurrency(summary.amount)}</strong>
                                     </div>
                                 </div>
 
                                 <div className={styles.summaryDetails}>
-                                    {paymentInfo.totalAmount != null && paymentInfo.totalAmount > 0 && (
+                                    {summary.totalAmount != null && summary.totalAmount > 0 && (
                                         <div className={styles.summaryRow}>
                                             <span>Tổng học phí dự kiến</span>
-                                            <strong>{formatCurrency(paymentInfo.totalAmount)}</strong>
+                                            <strong>{formatCurrency(summary.totalAmount)}</strong>
                                         </div>
                                     )}
-                                    {paymentInfo.paymentPhase === 'remaining' && paymentInfo.depositAmount != null && (
+                                    {summary.paymentPhase === 'remaining' && summary.depositAmount != null && (
                                         <div className={styles.summaryRow}>
                                             <span>Đã thanh toán buổi đầu</span>
-                                            <strong className={styles.paidAmount}>- {formatCurrency(paymentInfo.depositAmount)}</strong>
+                                            <strong className={styles.paidAmount}>- {formatCurrency(summary.depositAmount)}</strong>
                                         </div>
                                     )}
                                     <div className={styles.summaryRow}>
                                         <span>
-                                            {paymentInfo.paymentPhase === 'remaining'
+                                            {summary.paymentPhase === 'remaining'
                                                 ? 'Các buổi còn lại'
                                                 : 'Buổi học đầu tiên'}
                                         </span>
-                                        <strong>{formatCurrency(paymentInfo.amount)}</strong>
+                                        <strong>{formatCurrency(summary.amount)}</strong>
                                     </div>
                                 </div>
 
-                                {paymentInfo.expiredAt && (
+                                {summary.expiredAt && (
                                     <div className={styles.deadlineRow}>
                                         <Clock size={14} />
-                                        <span>Hết hạn: {new Date(paymentInfo.expiredAt).toLocaleString('vi-VN')}</span>
+                                        <span>Hết hạn: {new Date(summary.expiredAt).toLocaleString('vi-VN')}</span>
                                     </div>
                                 )}
                             </div>
@@ -573,8 +623,8 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                             <div className={styles.paymentOptions}>
                                 {/* Option 1: Wallet */}
                                 <div className={styles.optionCard}>
-                                    <span className={`${styles.optionBadge} ${paymentInfo.canPayWithWallet ? styles.optionBadgeReady : styles.optionBadgeMuted}`}>
-                                        {paymentInfo.canPayWithWallet ? 'Có thể dùng' : 'Cần nạp thêm'}
+                                    <span className={`${styles.optionBadge} ${summary.canPayWithWallet ? styles.optionBadgeReady : styles.optionBadgeMuted}`}>
+                                        {summary.canPayWithWallet ? 'Có thể dùng' : 'Cần nạp thêm'}
                                     </span>
                                     <div className={styles.optionHeader}>
                                         <div className={styles.optionIconWrap}>
@@ -582,13 +632,13 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                                         </div>
                                         <div className={styles.optionInfo}>
                                             <div className={styles.optionName}>Thanh toán bằng ví</div>
-                                            <div className={styles.walletBalance}>Số dư: {formatCurrency(paymentInfo.walletBalance)}</div>
+                                            <div className={styles.walletBalance}>Số dư: {formatCurrency(summary.walletBalance)}</div>
                                         </div>
                                     </div>
-                                    {!paymentInfo.canPayWithWallet ? (
+                                    {!summary.canPayWithWallet ? (
                                         <div className={styles.payAction}>
                                             <div className={styles.insufficientText}>
-                                                Thiếu {formatCurrency(Math.max(0, paymentInfo.amount - paymentInfo.walletBalance))} — nạp thêm để thanh toán
+                                                Thiếu {formatCurrency(Math.max(0, summary.amount - summary.walletBalance))} — nạp thêm để thanh toán
                                             </div>
                                             <button
                                                 type="button"
@@ -605,7 +655,7 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                                                 type="button"
                                                 className={styles.payBtn}
                                                 onClick={handleWalletPayment}
-                                                disabled={paying}
+                                                disabled={paying || qrLoading}
                                             >
                                                 {paying ? 'Đang xử lý...' : 'Thanh toán ngay'}
                                             </button>
@@ -613,8 +663,8 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                                     )}
                                 </div>
 
-                                {/* Option 2: Bank Transfer / QR Code — opens in-app view */}
-                                <div className={`${styles.optionCard} ${styles.recommendedOption}`} onClick={handleOpenQRView}>
+                                {/* Option 2: Bank Transfer / QR Code — creates the PayOS link lazily */}
+                                <div className={`${styles.optionCard} ${styles.recommendedOption}`} onClick={qrLoading ? undefined : handleOpenQRView}>
                                     <span className={`${styles.optionBadge} ${styles.optionBadgeRecommended}`}>Khuyên dùng</span>
                                     <div className={styles.optionHeader}>
                                         <div className={styles.optionIconWrap} style={{ background: '#eff6ff', color: '#2563eb' }}>
@@ -626,8 +676,13 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                                         </div>
                                     </div>
                                     <div className={styles.payAction}>
-                                        <button type="button" className={styles.payBtn} style={{ background: '#2563eb' }}>
-                                            Thanh toán chuyển khoản
+                                        <button
+                                            type="button"
+                                            className={styles.payBtn}
+                                            style={{ background: '#2563eb' }}
+                                            disabled={qrLoading || paying}
+                                        >
+                                            {qrLoading ? 'Đang tạo liên kết...' : 'Thanh toán chuyển khoản'}
                                         </button>
                                     </div>
                                 </div>

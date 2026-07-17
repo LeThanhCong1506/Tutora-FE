@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import {
+  getPaymentSummary,
   getPaymentInfo,
   payWithWallet,
   getBookingById,
   getPaymentStatus,
   isFirstLessonFinished,
   type PaymentInfoResponse,
+  type PaymentSummaryResponse,
   type BookingResponseDTO,
 } from '../../../services/booking.service';
 import { isZaloMiniApp } from '../../../services/zalo-env';
@@ -34,7 +36,11 @@ const PaymentPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [booking, setBooking] = useState<BookingResponseDTO | null>(null);
+  // summary: dữ liệu nhẹ để hiển thị + chọn phương thức, KHÔNG tạo link PayOS.
+  const [summary, setSummary] = useState<PaymentSummaryResponse | null>(null);
+  // paymentInfo (QR/checkout PayOS) chỉ được tải khi user chọn chuyển khoản.
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfoResponse | null>(null);
+  const [payosLoading, setPayosLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const inMiniApp = isZaloMiniApp();
   const [paymentMethod, setPaymentMethod] = useState<'payos' | 'wallet' | 'zalopay'>(inMiniApp ? 'zalopay' : 'payos');
@@ -48,23 +54,29 @@ const PaymentPage = () => {
   // Bắt buộc gác ở đây vì BE vẫn chấp nhận trả phần còn lại ở trạng thái deposit_paid,
   // nên nếu chỉ ẩn nút ở danh sách/chi tiết thì vào thẳng URL này vẫn trả được.
   const remainingLocked =
-    !!paymentInfo && paymentInfo.paymentPhase === 'remaining' && !!booking && !isFirstLessonFinished(booking);
+    !!summary && summary.paymentPhase === 'remaining' && !!booking && !isFirstLessonFinished(booking);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [bookingRes, paymentRes] = await Promise.all([getBookingById(bookingId), getPaymentInfo(bookingId)]);
-        if (!bookingRes?.content || !paymentRes?.content) {
+        const [bookingRes, summaryRes] = await Promise.all([getBookingById(bookingId), getPaymentSummary(bookingId)]);
+        if (!bookingRes?.content || !summaryRes?.content) {
           throw new Error('Dữ liệu không hợp lệ');
         }
         setBooking(bookingRes.content);
-        setPaymentInfo(paymentRes.content);
+        setSummary(summaryRes.content);
 
         // Nếu đã thanh toán, redirect ngay để tránh tạo lại booking khi nhấn Back
         if (bookingRes.content.paymentStatus === 'paid') {
           navigate(`/parent-portal/booking/${bookingId}`, { replace: true });
           return;
+        }
+
+        // Đủ số dư ví → mặc định chọn ví, để KHÔNG tạo link PayOS trừ khi user chủ động
+        // chuyển sang chuyển khoản. Nhờ vậy trả bằng ví không sinh bản ghi PayOS nào.
+        if (!inMiniApp && summaryRes.content.canPayWithWallet) {
+          setPaymentMethod('wallet');
         }
       } catch (err) {
         // BE trả BOOKING_ALREADY_PAID khi booking đã thanh toán — gồm cả trường hợp self-heal:
@@ -82,17 +94,49 @@ const PaymentPage = () => {
     };
 
     if (bookingId) fetchData();
-  }, [bookingId, navigate]);
+  }, [bookingId, navigate, inMiniApp]);
+
+  // Tạo link PayOS (lazy) chỉ khi user thực sự chọn "chuyển khoản ngân hàng".
+  useEffect(() => {
+    if (paymentMethod !== 'payos' || paymentInfo || loading || remainingLocked) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        setPayosLoading(true);
+        const res = await getPaymentInfo(bookingId);
+        if (cancelled) return;
+        if (!res?.content) throw new Error('Dữ liệu không hợp lệ');
+        setPaymentInfo(res.content);
+      } catch (err) {
+        if (cancelled) return;
+        if (isAxiosError(err) && err.response?.data?.errorCode === 'BOOKING_ALREADY_PAID') {
+          antMessage.success('Thanh toán của bạn đã được ghi nhận!');
+          navigate(`/parent-portal/booking/${bookingId}`, { replace: true });
+          return;
+        }
+        antMessage.error(
+          (isAxiosError(err) ? err.response?.data?.message : null) || 'Không thể tạo liên kết thanh toán.',
+        );
+      } finally {
+        if (!cancelled) setPayosLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [paymentMethod, paymentInfo, loading, remainingLocked, bookingId, navigate]);
 
   // Polling payment status for PayOS
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
-    if (paymentMethod === 'payos' && !paymentSuccess && !loading && !remainingLocked) {
+    if (paymentMethod === 'payos' && !!paymentInfo && !paymentSuccess && !loading && !remainingLocked) {
       interval = setInterval(async () => {
         try {
           const res = await getPaymentStatus(bookingId);
           const data = res?.content;
-          const phaseComplete = paymentInfo?.paymentPhase === 'remaining' ? data?.isRemainingPaid : data?.isDepositPaid;
+          const phaseComplete = summary?.paymentPhase === 'remaining' ? data?.isRemainingPaid : data?.isDepositPaid;
           if (data?.isPaid || phaseComplete) {
             setPaymentSuccess(true);
             antMessage.success('Thanh toán thành công!');
@@ -104,18 +148,18 @@ const PaymentPage = () => {
       }, 5000);
     }
     return () => clearInterval(interval);
-  }, [bookingId, paymentMethod, paymentSuccess, loading, paymentInfo?.paymentPhase, remainingLocked]);
+  }, [bookingId, paymentMethod, paymentSuccess, loading, paymentInfo, summary?.paymentPhase, remainingLocked]);
 
   // Luồng "nạp bù phần thiếu rồi tự động thanh toán bằng ví" (khi số dư không đủ).
   const topup = useBookingTopup({
     bookingId,
-    amountDue: paymentInfo?.amount ?? 0,
-    walletBalance: paymentInfo?.walletBalance ?? 0,
+    amountDue: summary?.amount ?? 0,
+    walletBalance: summary?.walletBalance ?? 0,
     onPaymentSuccess: () => setPaymentSuccess(true),
   });
 
   const handleWalletPay = async () => {
-    if (!paymentInfo || paymentInfo.walletBalance < paymentInfo.amount) {
+    if (!summary || summary.walletBalance < summary.amount) {
       antMessage.error('Số dư ví không đủ. Vui lòng nạp thêm tiền.');
       return;
     }
@@ -242,11 +286,11 @@ const PaymentPage = () => {
               </div>
               <div>
                 <span>Khoản thanh toán</span>
-                <strong>{paymentInfo?.paymentPhase === 'remaining' ? 'Các buổi còn lại' : 'Buổi học đầu tiên'}</strong>
+                <strong>{summary?.paymentPhase === 'remaining' ? 'Các buổi còn lại' : 'Buổi học đầu tiên'}</strong>
               </div>
               <div>
                 <span>Số tiền</span>
-                <strong>{formatPrice(paymentInfo?.amount ?? 0)}</strong>
+                <strong>{formatPrice(summary?.amount ?? 0)}</strong>
               </div>
             </div>
 
@@ -349,11 +393,11 @@ const PaymentPage = () => {
               </div>
               <div className={`${styles.priceRow} ${styles.totalRow}`}>
                 <span>
-                  {paymentInfo?.paymentPhase === 'remaining'
+                  {summary?.paymentPhase === 'remaining'
                     ? 'Thanh toán lần này (các buổi còn lại):'
                     : 'Thanh toán lần này (buổi học đầu tiên):'}
                 </span>
-                <span className={styles.totalPrice}>{formatPrice(paymentInfo?.amount || 0)}</span>
+                <span className={styles.totalPrice}>{formatPrice(summary?.amount || 0)}</span>
               </div>
             </div>
 
@@ -416,7 +460,7 @@ const PaymentPage = () => {
                     <div className={styles.methodInfo}>
                       <h3>Số dư ví TUTORA</h3>
                       <p>
-                        Số dư hiện tại: <strong>{formatPrice(paymentInfo?.walletBalance || 0)}</strong>
+                        Số dư hiện tại: <strong>{formatPrice(summary?.walletBalance || 0)}</strong>
                       </p>
                     </div>
                   </div>
@@ -427,7 +471,7 @@ const PaymentPage = () => {
                 {paymentMethod === 'zalopay' ? (
                   <div className={styles.walletArea}>
                     <p className={styles.walletHint}>
-                      Thanh toán <strong>{formatPrice(paymentInfo?.amount || 0)}</strong> qua ZaloPay.
+                      Thanh toán <strong>{formatPrice(summary?.amount || 0)}</strong> qua ZaloPay.
                     </p>
                     <Button
                       type="primary"
@@ -445,6 +489,11 @@ const PaymentPage = () => {
                   </div>
                 ) : paymentMethod === 'payos' ? (
                   <div className={styles.payosArea}>
+                    {!paymentInfo && (
+                      <div className={styles.walletHint} style={{ textAlign: 'center', padding: '16px 0' }}>
+                        {payosLoading ? 'Đang tạo liên kết thanh toán...' : 'Đang chuẩn bị thông tin chuyển khoản...'}
+                      </div>
+                    )}
                     {paymentInfo && (
                       <div className={styles.payosContent}>
                         {/* QR ngay trong app */}
@@ -536,14 +585,14 @@ const PaymentPage = () => {
                   </div>
                 ) : (
                   <div className={styles.walletArea}>
-                    {paymentInfo && paymentInfo.walletBalance < paymentInfo.amount ? (
+                    {summary && summary.walletBalance < summary.amount ? (
                       <>
                         <div className={styles.insufficientFunds}>
                           <AlertCircle size={20} />
                           <p>
                             Số dư thiếu{' '}
                             <strong>
-                              {formatPrice(Math.max(0, (paymentInfo.amount || 0) - (paymentInfo.walletBalance || 0)))}
+                              {formatPrice(Math.max(0, (summary.amount || 0) - (summary.walletBalance || 0)))}
                             </strong>
                             . Nạp thêm để thanh toán ngay bằng ví.
                           </p>
@@ -563,14 +612,14 @@ const PaymentPage = () => {
                     ) : (
                       <>
                         <p className={styles.walletHint}>
-                          Hệ thống sẽ khấu trừ trực tiếp <strong>{formatPrice(paymentInfo?.amount || 0)}</strong> từ ví
+                          Hệ thống sẽ khấu trừ trực tiếp <strong>{formatPrice(summary?.amount || 0)}</strong> từ ví
                           của bạn.
                         </p>
                         <Button
                           type="primary"
                           size="large"
                           block
-                          disabled={!paymentInfo || isPaying}
+                          disabled={!summary || isPaying}
                           loading={isPaying}
                           onClick={handleWalletPay}
                           className={styles.payBtn}

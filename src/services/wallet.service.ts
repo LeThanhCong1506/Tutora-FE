@@ -54,38 +54,61 @@ export interface TopupResponse {
 /** Khớp `TopupStatusResponse` của backend. `walletCredited` là cờ FE dựa vào để auto-pay. */
 export interface TopupStatusResponse {
   orderCode: number;
+  bookingId: number;
+  paymentPhase: string;
   status: string;
   walletCredited: boolean;
   amount: number;
   walletBalance: number;
 }
 
-/** Tạo lệnh nạp ví qua PayOS, trả về dữ liệu QR. `amount` tính bằng VND (tối thiểu 10.000). */
-export const createTopup = async (amount: number): Promise<ApiResponse<TopupResponse>> => {
+/** Tạo QR nạp đúng phần thiếu của booking; backend tự tính số tiền từ payment summary và số dư ví. */
+export const createTopup = async (bookingId: number): Promise<ApiResponse<TopupResponse>> => {
   try {
-    const response = await api.post('/wallet/top-up', { amount }, {
+    const response = await api.post(`/bookings/${bookingId}/payment/wallet-shortfall`, undefined, {
       headers: getAuthHeaders(),
     });
     return response.data;
   } catch (error: unknown) {
-    logRequestError('❌ Error creating topup:', error);
+    logRequestError('❌ Error creating booking shortfall topup:', error);
     throw error;
   }
 };
 
-/** Poll trạng thái lệnh nạp ví (có self-heal ở backend). */
-export const getTopupStatus = async (orderCode: number): Promise<ApiResponse<TopupStatusResponse>> => {
+/** Poll trạng thái lệnh nạp bù đã được ràng buộc với booking. */
+export const getTopupStatus = async (
+  bookingId: number,
+  orderCode: number
+): Promise<ApiResponse<TopupStatusResponse>> => {
   try {
-    const response = await api.get(`/wallet/topups/${orderCode}/status`, {
-      headers: getAuthHeaders(),
-    });
+    const response = await api.get(
+      `/bookings/${bookingId}/payment/wallet-shortfall/${orderCode}/status`,
+      { headers: getAuthHeaders() }
+    );
     return response.data;
   } catch (error: unknown) {
-    logRequestError('❌ Error fetching topup status:', error);
+    logRequestError('❌ Error fetching booking shortfall topup status:', error);
     throw error;
   }
 };
 
+/** Dùng khoản nạp bù đã hoàn tất để thanh toán đúng booking và phase đã tạo QR. */
+export const applyBookingShortfallTopup = async (
+  bookingId: number,
+  orderCode: number
+): Promise<ApiResponse<unknown>> => {
+  try {
+    const response = await api.post(
+      `/bookings/${bookingId}/payment/wallet-shortfall/${orderCode}/apply`,
+      undefined,
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error: unknown) {
+    logRequestError('❌ Error applying booking shortfall topup:', error);
+    throw error;
+  }
+};
 /**
  * Get wallet balance
  */
