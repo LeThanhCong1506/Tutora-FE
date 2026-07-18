@@ -39,6 +39,14 @@ export const groupLessonsByDate = (lessons: LessonSummary[]): LessonGroup[] => {
 export const isCancelledLesson = (lesson: LessonSummary): boolean =>
   ['cancelled', 'cancelled_noshow', 'no_show'].includes(lesson.status.toLowerCase());
 
+/**
+ * Buổi in_progress nhưng ĐÃ check-out: phòng học đã đóng vĩnh viễn, chỉ còn chờ gia sư
+ * gửi báo cáo (status chỉ chuyển pending_confirmation sau khi báo cáo được gửi).
+ * KHÔNG được hiện "Đang diễn ra" / nút "Vào lớp" cho các buổi này.
+ */
+export const isAwaitingReport = (lesson: LessonSummary): boolean =>
+  lesson.status.trim().toLowerCase() === 'in_progress' && Boolean(lesson.checkOutTime);
+
 /** Trạng thái "nóng" của buổi học để highlight trên UI. */
 export type LessonLiveState = 'live' | 'due' | null;
 
@@ -52,7 +60,7 @@ export const DUE_SOON_MINUTES = 15;
  */
 export const getLessonLiveState = (lesson: LessonSummary): LessonLiveState => {
   const status = lesson.status.trim().toLowerCase();
-  if (status === 'in_progress') return 'live';
+  if (status === 'in_progress') return isAwaitingReport(lesson) ? null : 'live';
   if (status !== 'scheduled') return null;
 
   const now = dayjs();

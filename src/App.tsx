@@ -9,7 +9,7 @@ import { DeeplinkHandler } from './components/DeeplinkHandler/DeeplinkHandler';
 import TutorPortalLayout from './layouts/TutorPortalLayout';
 import ParentLayout from './layouts/ParentLayout';
 import StudentLayout from './layouts/StudentLayout';
-import { StudentProfileGate } from './contexts/StudentProfileContext';
+import { StudentProfileGate, StudentSelfRegisteredGate } from './contexts/StudentProfileContext';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import SessionExpiredModal from './components/SessionExpiredModal';
 import PageLoader from './components/PageLoader/PageLoader';
@@ -48,7 +48,7 @@ const TutorOnboarding = lazy(() => import('./pages/TutorOnboarding'));
 const TutorPortalProfile = lazy(() => import('./pages/TutorPortal/TutorPortalProfile'));
 const TutorPortalDashboard = lazy(() => import('./pages/TutorPortal/TutorPortalDashboard'));
 const TutorPortalMessages = lazy(() => import('./pages/TutorPortal/TutorPortalMessages'));
-const TutorPortalClasses = lazy(() => import('./pages/TutorPortal/TutorPortalClasses'));
+const TutorPortalCalendar = lazy(() => import('./pages/TutorPortal/TutorPortalCalendar'));
 const TutorPortalClassDetail = lazy(() => import('./pages/TutorPortal/TutorPortalClassDetail'));
 const TutorPortalStudentProfile = lazy(() => import('./pages/TutorPortal/TutorPortalStudentProfile'));
 const TutorPortalBookings = lazy(() => import('./pages/TutorPortal/TutorPortalBookings'));
@@ -78,6 +78,7 @@ const ParentAccount = lazy(() => import('./pages/ParentAccount'));
 
 // Student pages
 const StudentDashboard = lazy(() => import('./pages/StudentDashboard'));
+const StudentWallet = lazy(() => import('./pages/StudentWallet'));
 const StudentBooking = lazy(() => import('./pages/StudentBooking'));
 const StudentLessons = lazy(() => import('./pages/StudentLessons'));
 const StudentLessonDetail = lazy(() => import('./pages/StudentLessons/StudentLessonDetail'));
@@ -90,6 +91,8 @@ const NotificationsPage = lazy(() => import('./pages/Notifications/Notifications
 
 // Live video-call session (full-screen, no portal chrome)
 const LiveSession = lazy(() => import('./pages/LiveSession'));
+// Phòng chờ trước khi vào lớp — chờ đủ cả gia sư và học viên rồi mới vào phòng học
+const SessionLobby = lazy(() => import('./pages/SessionLobby'));
 
 // ---------------------
 
@@ -207,7 +210,10 @@ function App() {
                   {/* Lịch dạy đã gộp vào Onboarding — mọi URL /tutor-portal/schedule điều hướng sang onboarding */}
                   <Route path="schedule" element={<Navigate to="/tutor-portal/onboarding" replace />} />
                   <Route path="messages" element={<TutorPortalMessages />} />
-                  <Route path="classes" element={<TutorPortalClasses />} />
+                  {/* Lịch dạy — đồng bộ giao diện với /student-portal/calendar */}
+                  <Route path="calendar" element={<TutorPortalCalendar />} />
+                  {/* Legacy: trang "Quản lý lớp học" cũ đã thay bằng lịch dạy */}
+                  <Route path="classes" element={<Navigate to="/tutor-portal/calendar" replace />} />
                   <Route path="classes/:classId" element={<TutorPortalClassDetail />} />
                   <Route path="students/:studentId" element={<TutorPortalStudentProfile />} />
                   <Route path="bookings" element={<TutorPortalBookings />} />
@@ -269,9 +275,13 @@ function App() {
                 <Route path="calendar/:lessonId" element={<StudentLessonDetail />} />
                 <Route path="lessons" element={<LegacyStudentLessonsRedirect />} />
                 <Route path="lessons/:lessonId" element={<LegacyStudentLessonsRedirect />} />
-                <Route path="wallet" element={<ParentWallet />} />
-                <Route path="wallet/transactions" element={<ParentWalletTransactions />} />
-                <Route path="wallet/withdrawals" element={<ParentWalletWithdrawals />} />
+                {/* Ví CHỈ cho học sinh tự đăng ký — tài khoản do phụ huynh quản lý bị chặn (kể cả gõ URL).
+                    Trang ví student riêng (copy UI parent) để tương lai tùy biến UI/UX/tính năng độc lập. */}
+                <Route element={<StudentSelfRegisteredGate />}>
+                  <Route path="wallet" element={<StudentWallet />} />
+                  <Route path="wallet/transactions" element={<ParentWalletTransactions />} />
+                  <Route path="wallet/withdrawals" element={<ParentWalletWithdrawals />} />
+                </Route>
                 <Route path="messages" element={<ParentMessage />} />
                 <Route path="profile" element={<StudentProfile />} />
                 <Route path="account" element={<StudentAccount />} />
@@ -289,6 +299,16 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['Tutor', 'Parent', 'Student']}>
                   <LiveSession />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Phòng chờ trước buổi học — chờ đủ 2 phía rồi tự chuyển vào live-session */}
+            <Route
+              path="/session-lobby/:classSessionId"
+              element={
+                <ProtectedRoute allowedRoles={['Tutor', 'Parent', 'Student']}>
+                  <SessionLobby />
                 </ProtectedRoute>
               }
             />

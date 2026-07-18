@@ -13,10 +13,13 @@ export interface JoinableLesson {
     meetingLink?: string | null;
     scheduledStart?: string | null;
     scheduledEnd?: string | null;
+    /** Buổi đã check-out → BE đóng phòng vĩnh viễn (kể cả khi status còn in_progress). */
+    checkOutTime?: string | null;
 }
 
 export function canJoinLiveSession(lesson: JoinableLesson): boolean {
     if (!lesson.meetingLink) return false; // buổi offline (tại nhà) không có phòng online
+    if (lesson.checkOutTime) return false; // đã kết thúc — BE trả lobbyClosed/"Buổi học đã kết thúc"
 
     const status = lesson.status?.toLowerCase();
     return status === 'scheduled' || status === 'in_progress';

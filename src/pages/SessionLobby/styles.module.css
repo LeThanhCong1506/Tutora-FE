@@ -1,0 +1,364 @@
+/*
+  Phòng chờ (lobby) trước khi vào lớp — cùng ngôn ngữ thiết kế với trang Live Session:
+  nền Mirage #1a2238, panel kính mờ (bg trắng 5%, border trắng 10%),
+  tiêu đề Bricolage Grotesque, phần thân IBM Plex Sans.
+*/
+
+.page {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1a2238;
+  z-index: 1000;
+  font-family: 'IBM Plex Sans', sans-serif;
+  padding: 24px;
+}
+
+.card {
+  width: 100%;
+  max-width: 480px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  backdrop-filter: blur(8px);
+  padding: 40px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: #fff;
+}
+
+/* ── Quỹ đạo chờ ── */
+.spinnerWrap {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  margin-bottom: 28px;
+  isolation: isolate;
+}
+
+.spinnerGlow {
+  position: absolute;
+  inset: 20px;
+  border-radius: 50%;
+  background: rgba(212, 180, 131, 0.28);
+  filter: blur(15px);
+  animation: spinnerGlow 2.4s ease-in-out infinite;
+}
+
+.spinnerTrack {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 0 18px rgba(255, 255, 255, 0.025),
+    0 0 24px rgba(212, 180, 131, 0.08);
+}
+
+.spinnerOrbit {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  animation: spinnerOrbit 2.3s linear infinite;
+  will-change: transform;
+}
+
+.spinnerOrbit::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 210deg,
+    transparent 0deg,
+    rgba(212, 180, 131, 0.08) 80deg,
+    rgba(212, 180, 131, 0.48) 185deg,
+    #f1d6ad 260deg,
+    transparent 330deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+  filter: drop-shadow(0 0 5px rgba(212, 180, 131, 0.55));
+}
+
+.spinnerOrbitDot {
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f1d6ad;
+  box-shadow:
+    0 0 0 4px rgba(212, 180, 131, 0.12),
+    0 0 12px rgba(241, 214, 173, 0.75);
+  transform: translateX(-50%);
+}
+
+.spinnerIcon {
+  position: absolute;
+  inset: 19px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #f1d6ad;
+  background: radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.13), transparent 42%), rgba(212, 180, 131, 0.1);
+  border: 1px solid rgba(212, 180, 131, 0.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 10px 28px rgba(0, 0, 0, 0.2);
+  animation: spinnerBreathe 2.4s ease-in-out infinite;
+}
+
+@keyframes spinnerOrbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spinnerGlow {
+  0%,
+  100% {
+    opacity: 0.42;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes spinnerBreathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.025);
+  }
+}
+
+/* ── Trạng thái sẵn sàng (đủ người) ── */
+.readyBadge {
+  width: 88px;
+  height: 88px;
+  margin-bottom: 28px;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.15);
+  border: 3px solid #22c55e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  animation: pop 0.35s ease-out;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.title {
+  font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 10px;
+  line-height: 1.35;
+}
+
+.subtitle {
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.65);
+  margin: 0 0 24px;
+}
+
+/* Chấm chờ nhấp nháy sau tiêu đề */
+.waitingDots::after {
+  content: '';
+  display: inline-block;
+  width: 1.2em;
+  text-align: left;
+  animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+  0% {
+    content: '';
+  }
+  25% {
+    content: '.';
+  }
+  50% {
+    content: '..';
+  }
+  75% {
+    content: '...';
+  }
+}
+
+/* ── Thông tin buổi học ── */
+.sessionMeta {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.metaRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.metaLabel {
+  color: rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+}
+
+.metaValue {
+  font-weight: 600;
+  color: #fff;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Chips hiện diện 2 phía ── */
+.presenceRow {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 26px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.presenceChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.55);
+  max-width: 100%;
+}
+
+.presenceChipActive {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.45);
+  color: #d1fae5;
+}
+
+.presenceDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+}
+
+.presenceChipActive .presenceDot {
+  background: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
+}
+
+.chipName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Nút ── */
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btnSecondary {
+  padding: 10px 22px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.btnSecondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btnPrimary {
+  padding: 10px 22px;
+  border-radius: 12px;
+  border: none;
+  background: #f59e0b;
+  color: #1a2238;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    filter 0.15s ease,
+    transform 0.15s ease;
+}
+
+.btnPrimary:hover {
+  filter: brightness(1.08);
+}
+
+/* ── Icon trạng thái kết thúc / lỗi ── */
+.stateIcon {
+  font-size: 46px;
+  margin-bottom: 20px;
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinnerOrbit,
+  .spinnerGlow,
+  .spinnerIcon,
+  .waitingDots::after {
+    animation: none;
+  }
+
+  .spinnerOrbit {
+    transform: rotate(24deg);
+  }
+
+  .waitingDots::after {
+    width: auto;
+    content: '…';
+  }
+}

@@ -98,6 +98,8 @@ export interface StudentCalendarLessonDto {
     subjectName?: string;
     status: string;
     meetingLink?: string;
+    /** Đã check-out (phòng đóng) — in_progress + checkOutTime = chờ gia sư gửi báo cáo. */
+    checkOutTime?: string;
 }
 
 export interface StudentCalendarDayDto {
@@ -153,6 +155,7 @@ export const getStudentCalendar = async (
                 subjectName: c.subjectName,
                 status: c.status ?? '',
                 meetingLink: c.meetingLink,
+                checkOutTime: c.checkOutTime,
             })),
         })),
     };

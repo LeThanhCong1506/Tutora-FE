@@ -1,13 +1,15 @@
-import { Mic, MicOff, Video, VideoOff, ScreenShare, ScreenShareOff, PhoneOff } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, ScreenShare, ScreenShareOff, Presentation, PhoneOff } from 'lucide-react';
 import styles from '../styles.module.css';
 
 interface ControlBarProps {
   micOn: boolean;
   camOn: boolean;
   isScreenSharing: boolean;
+  whiteboardOn: boolean;
   onToggleMic: () => void;
   onToggleCam: () => void;
   onToggleScreenShare: () => void;
+  onToggleWhiteboard: () => void;
   onLeave: () => void;
   leaveLabel: string;
 }
@@ -16,9 +18,11 @@ const ControlBar = ({
   micOn,
   camOn,
   isScreenSharing,
+  whiteboardOn,
   onToggleMic,
   onToggleCam,
   onToggleScreenShare,
+  onToggleWhiteboard,
   onLeave,
   leaveLabel,
 }: ControlBarProps) => {
@@ -44,6 +48,13 @@ const ControlBar = ({
         title={isScreenSharing ? 'Dừng chia sẻ màn hình' : 'Chia sẻ màn hình'}
       >
         {isScreenSharing ? <ScreenShareOff size={18} /> : <ScreenShare size={18} />}
+      </button>
+      <button
+        className={`${styles.controlBtn} ${whiteboardOn ? styles.controlBtnActive : ''}`}
+        onClick={onToggleWhiteboard}
+        title={whiteboardOn ? 'Đóng bảng vẽ' : 'Mở bảng vẽ'}
+      >
+        <Presentation size={18} />
       </button>
       <div className={styles.controlDivider} />
       <button className={styles.leaveBtn} onClick={onLeave}>

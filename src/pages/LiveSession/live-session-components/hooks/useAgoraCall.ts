@@ -77,22 +77,6 @@ export const useAgoraCall = (
     [participantNames],
   );
 
-  const upsertRemote = useCallback((user: IAgoraRTCRemoteUser) => {
-    setRemoteParticipants((prev) => {
-      const next = prev.filter((p) => p.uid !== user.uid);
-      next.push({
-        uid: user.uid,
-        name: nameFor(user.uid),
-        videoTrack: user.videoTrack,
-        audioTrack: user.audioTrack,
-        hasVideo: !!user.videoTrack,
-        hasAudio: !!user.audioTrack,
-      });
-      return next;
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   useEffect(() => {
     if (!room) return;
 
@@ -101,17 +85,31 @@ export const useAgoraCall = (
     const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
     clientRef.current = client;
 
+    // Dựng lại danh sách remote TỪ client.remoteUsers (nguồn chân lý của SDK) thay vì tự thêm/bớt.
+    // Nhờ vậy khi remote gỡ track (dừng share) hoặc rời phòng, tile được cập nhật/xoá đúng ngay,
+    // không còn "khung hình đóng băng" do state cũ còn sót.
+    const syncRemotes = () => {
+      setRemoteParticipants(
+        client.remoteUsers.map((u) => ({
+          uid: u.uid,
+          name: nameFor(u.uid),
+          videoTrack: u.videoTrack,
+          audioTrack: u.audioTrack,
+          hasVideo: !!u.videoTrack,
+          hasAudio: !!u.audioTrack,
+        })),
+      );
+    };
+
     const handleUserPublished = async (user: IAgoraRTCRemoteUser, mediaType: 'audio' | 'video') => {
       await client.subscribe(user, mediaType);
       if (mediaType === 'audio') user.audioTrack?.play();
-      upsertRemote(user);
+      syncRemotes();
     };
 
-    const handleUserUnpublished = (user: IAgoraRTCRemoteUser) => upsertRemote(user);
+    const handleUserUnpublished = () => syncRemotes();
 
-    const handleUserLeft = (user: IAgoraRTCRemoteUser) => {
-      setRemoteParticipants((prev) => prev.filter((p) => p.uid !== user.uid));
-    };
+    const handleUserLeft = () => syncRemotes();
 
     // Token Agora hết hạn theo thời gian (thời hạn cấu hình ở AgoraSettings.TokenExpireSeconds
     // bên backend) — sự kiện này bắn ra ít lâu trước khi hết hạn để client kịp xin token mới và

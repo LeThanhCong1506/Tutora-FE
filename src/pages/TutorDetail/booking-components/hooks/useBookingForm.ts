@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { getStudents, getMyLinkStatus } from "../../../../services/student.service";
+import { getStudents, getMyLinkStatus, getBookingEligibility, type BookingReasonCode } from "../../../../services/student.service";
 import { createBooking } from "../../../../services/booking.service";
 import { getCurrentUserRole, getUserIdFromToken } from "../../../../services/auth.service";
 import { useFormDraft } from "../../../../hooks/useFormDraft";
@@ -79,6 +79,9 @@ export function useBookingForm({ isOpen, tutorId, tutorTeachingMode }: Args) {
     const [loadingStudents, setLoadingStudents] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
+    const [eligibilityBlock, setEligibilityBlock] =
+        useState<{ reason: string; reasonCode: BookingReasonCode | null } | null>(null);
+    const [checkingEligibility, setCheckingEligibility] = useState(false);
     // Luồng mới: booking vừa tạo ở trạng thái `pending_payment`. Parent phải thanh toán
     // buổi học đầu tiên (cọc) TRƯỚC khi yêu cầu được gửi tới gia sư (→ `pending_tutor`).
     //   form     → đang điền form đặt lịch
@@ -102,6 +105,24 @@ export function useBookingForm({ isOpen, tutorId, tutorTeachingMode }: Args) {
         step: number;
         slotDuration: number;
     }>(`draft_booking_${currentUserId || 'anon'}_${tutorId}`);
+
+    useEffect(() => {
+        if (!isOpen || userRole !== "Student") {
+            setEligibilityBlock(null);
+            return;
+        }
+        setCheckingEligibility(true);
+        getBookingEligibility().then(res => {
+            const e = res?.content;
+            setEligibilityBlock(e && !e.canBook
+                ? { reason: e.reason || "Bạn chưa đủ điều kiện đặt lịch học.", reasonCode: e.reasonCode }
+                : null);
+        }).catch(() => {
+            setEligibilityBlock(null);
+        }).finally(() => {
+            setCheckingEligibility(false);
+        });
+    }, [isOpen, userRole]);
 
     // Fetch student profile for Student role (to get correct studentId)
     useEffect(() => {
@@ -182,6 +203,10 @@ export function useBookingForm({ isOpen, tutorId, tutorTeachingMode }: Args) {
     }, [submitError]);
 
     const handleSubmit = async (selectedSlots: BookingSlot[] = []) => {
+        if (eligibilityBlock) {
+            setSubmitError(eligibilityBlock.reason);
+            return;
+        }
         setSubmitting(true);
         setSubmitError(null);
         try {
@@ -265,6 +290,8 @@ export function useBookingForm({ isOpen, tutorId, tutorTeachingMode }: Args) {
         submitError,
         setSubmitError,
         handleSubmit,
+        eligibilityBlock,
+        checkingEligibility,
         // Post-create payment flow
         bookingPhase,
         successBookingId,
