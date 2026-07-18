@@ -299,6 +299,7 @@ const StudentDashboard = () => {
                         meetingLink: lesson.meetingLink,
                         scheduledStart: startTime,
                         scheduledEnd: endTime,
+                        checkOutTime: lesson.checkOutTime,
                       });
                     return (
                       <div
