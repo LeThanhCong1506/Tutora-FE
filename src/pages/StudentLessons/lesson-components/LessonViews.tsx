@@ -58,6 +58,12 @@ const getLessonStyle = (lesson: LessonSummary): CSSProperties => {
 
 const getSubject = (lesson: LessonSummary) => lesson.subjectName || `Buổi học #${lesson.lessonId}`;
 
+/** Nhãn + tên người đối diện: học sinh thấy gia sư (mặc định), gia sư thấy học sinh. */
+const getCounterpart = (lesson: LessonSummary) => ({
+  label: lesson.counterpartLabel || 'Gia sư',
+  name: lesson.counterpartName || lesson.tutorName || 'Chưa cập nhật',
+});
+
 const canShowJoinButton = (lesson: LessonSummary) => {
   const status = lesson.status.trim().toLowerCase();
   return ['scheduled', 'in_progress'].includes(status) && Boolean(lesson.meetingLink?.trim());
@@ -89,7 +95,7 @@ const MeetLink = ({ lesson, compact = false }: { lesson: LessonSummary; compact?
   return (
     <Link
       className={styles.meetLink}
-      to={`/live-session/${lesson.lessonId}`}
+      to={`/session-lobby/${lesson.lessonId}`}
       aria-label={`Vào lớp học ${getSubject(lesson)}`}
     >
       <Video size={compact ? 12 : 14} strokeWidth={2.1} aria-hidden="true" />
@@ -114,7 +120,7 @@ const LessonHoverDetails = ({ lesson }: { lesson: LessonSummary }) => {
         </span>
         <span className={styles.tooltipTutor}>
           <UserRound size={14} aria-hidden="true" />
-          Gia sư: <b>{lesson.tutorName || 'Chưa cập nhật'}</b>
+          {getCounterpart(lesson).label}: <b>{getCounterpart(lesson).name}</b>
         </span>
       </div>
       <div className={styles.tooltipFooter}>
@@ -159,6 +165,7 @@ const CalendarEvent = ({ lesson, onOpen }: { lesson: LessonSummary; onOpen: () =
       >
         <span className={styles.eventTime}>{getLessonTime(lesson)}</span>
         <strong>{getSubject(lesson)}</strong>
+        {lesson.counterpartName && <span className={styles.lessonPerson}>{lesson.counterpartName}</span>}
       </button>
       <div className={styles.calendarEventFooter}>
         <StatusPill lesson={lesson} />
@@ -186,6 +193,7 @@ const ListLessonRow = ({ lesson, onOpen }: { lesson: LessonSummary; onOpen: () =
         </span>
         <span className={styles.listInfo}>
           <strong>{getSubject(lesson)}</strong>
+          {lesson.counterpartName && <span className={styles.lessonPerson}>{lesson.counterpartName}</span>}
         </span>
       </button>
       <div className={styles.listActions}>
@@ -322,6 +330,11 @@ export const GridLessonView = ({ lessons, onOpenLesson }: LessonViewProps) => (
                 </span>
                 <span>
                   <strong>{getSubject(lesson)}</strong>
+                  {lesson.counterpartName && (
+                    <span className={styles.lessonPerson}>
+                      <UserRound size={13} aria-hidden="true" /> {lesson.counterpartName}
+                    </span>
+                  )}
                   <span className={styles.gridTime}>
                     <Clock3 size={14} /> {getLessonTime(lesson)}
                   </span>

@@ -11,6 +11,14 @@ export interface LessonSummary {
   subjectName?: string;
   status: string;
   meetingLink?: string;
+  /** Booking chứa buổi học — trang lịch của gia sư dùng để mở chi tiết lớp. */
+  bookingId?: number;
+  /**
+   * Người "đối diện" hiển thị trên card/tooltip: học sinh thấy gia sư (mặc định),
+   * gia sư thấy học sinh. Không set thì fallback về tutorName như cũ.
+   */
+  counterpartLabel?: string;
+  counterpartName?: string;
 }
 
 export interface LessonGroup {

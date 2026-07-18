@@ -48,7 +48,7 @@ const TutorOnboarding = lazy(() => import('./pages/TutorOnboarding'));
 const TutorPortalProfile = lazy(() => import('./pages/TutorPortal/TutorPortalProfile'));
 const TutorPortalDashboard = lazy(() => import('./pages/TutorPortal/TutorPortalDashboard'));
 const TutorPortalMessages = lazy(() => import('./pages/TutorPortal/TutorPortalMessages'));
-const TutorPortalClasses = lazy(() => import('./pages/TutorPortal/TutorPortalClasses'));
+const TutorPortalCalendar = lazy(() => import('./pages/TutorPortal/TutorPortalCalendar'));
 const TutorPortalClassDetail = lazy(() => import('./pages/TutorPortal/TutorPortalClassDetail'));
 const TutorPortalStudentProfile = lazy(() => import('./pages/TutorPortal/TutorPortalStudentProfile'));
 const TutorPortalBookings = lazy(() => import('./pages/TutorPortal/TutorPortalBookings'));
@@ -91,6 +91,8 @@ const NotificationsPage = lazy(() => import('./pages/Notifications/Notifications
 
 // Live video-call session (full-screen, no portal chrome)
 const LiveSession = lazy(() => import('./pages/LiveSession'));
+// Phòng chờ trước khi vào lớp — chờ đủ cả gia sư và học viên rồi mới vào phòng học
+const SessionLobby = lazy(() => import('./pages/SessionLobby'));
 
 // ---------------------
 
@@ -208,7 +210,10 @@ function App() {
                   {/* Lịch dạy đã gộp vào Onboarding — mọi URL /tutor-portal/schedule điều hướng sang onboarding */}
                   <Route path="schedule" element={<Navigate to="/tutor-portal/onboarding" replace />} />
                   <Route path="messages" element={<TutorPortalMessages />} />
-                  <Route path="classes" element={<TutorPortalClasses />} />
+                  {/* Lịch dạy — đồng bộ giao diện với /student-portal/calendar */}
+                  <Route path="calendar" element={<TutorPortalCalendar />} />
+                  {/* Legacy: trang "Quản lý lớp học" cũ đã thay bằng lịch dạy */}
+                  <Route path="classes" element={<Navigate to="/tutor-portal/calendar" replace />} />
                   <Route path="classes/:classId" element={<TutorPortalClassDetail />} />
                   <Route path="students/:studentId" element={<TutorPortalStudentProfile />} />
                   <Route path="bookings" element={<TutorPortalBookings />} />
@@ -294,6 +299,16 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['Tutor', 'Parent', 'Student']}>
                   <LiveSession />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Phòng chờ trước buổi học — chờ đủ 2 phía rồi tự chuyển vào live-session */}
+            <Route
+              path="/session-lobby/:classSessionId"
+              element={
+                <ProtectedRoute allowedRoles={['Tutor', 'Parent', 'Student']}>
+                  <SessionLobby />
                 </ProtectedRoute>
               }
             />

@@ -174,7 +174,7 @@ const ParentLessonDetail: React.FC = () => {
           {/* meetingLink là channel Agora — vào lớp qua trang LiveSession nội bộ */}
           <button
             type="button"
-            onClick={() => navigate(`/live-session/${id}`)}
+            onClick={() => navigate(`/session-lobby/${id}`)}
             style={{
               background: '#fff',
               color: '#15803d',

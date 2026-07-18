@@ -145,6 +145,8 @@ export interface SubmitReportRequest {
 
 export interface CalendarClassSessionResponse {
     classSessionId: number;
+    /** Booking chứa buổi học — tutor calendar dùng để mở trang chi tiết lớp. */
+    bookingId?: number;
     scheduledStart: string;
     scheduledEnd: string;
     studentName?: string;

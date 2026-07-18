@@ -27,6 +27,10 @@ export interface AgoraRoomInfo {
   studentName: string;
   /** Bảng tra UID → tên cho video/chat; có thể gồm Parent nếu Parent được phép tham gia. */
   participantNames: Record<string, string>;
+  /** Trạng thái buổi học — FE dùng để ép deep-link đi qua phòng chờ khi buổi chưa bắt đầu. */
+  status?: string;
+  /** True nếu buổi đã được điểm danh vào (check-in). */
+  checkedIn?: boolean;
 }
 
 /** Trạng thái presence trả về sau mỗi heartbeat. */

@@ -243,7 +243,7 @@ const TutorPortalStudentProfile: React.FC = () => {
         if (classId) {
             navigate(`/tutor-portal/classes/${classId}`);
         } else {
-            navigate('/tutor-portal/classes');
+            navigate('/tutor-portal/calendar');
         }
     };
 
