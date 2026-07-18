@@ -1,5 +1,5 @@
 .page {
-  max-width: 760px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: 24px 20px 48px;
 }
@@ -56,6 +56,30 @@
   line-height: 1.5;
 }
 
+/* Layout 2 cột */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: start;
+}
+
+.layoutSingle {
+  grid-template-columns: 1fr;
+}
+
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.rightColumn {
+  position: sticky;
+  top: 24px;
+}
+
 .card {
   background: #fff;
   border: 1px solid #ececec;
@@ -65,6 +89,16 @@
   flex-direction: column;
   gap: 18px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a2238;
 }
 
 .row {
@@ -117,6 +151,12 @@
   box-shadow: 0 0 0 3px rgba(26, 34, 56, 0.1);
 }
 
+.field input:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
 .counter {
   align-self: flex-end;
   font-size: 12px;
@@ -162,8 +202,369 @@
   cursor: not-allowed;
 }
 
+/* Card xác minh CCCD */
+.cccdHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.badgeVerified {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badgeWarn {
+  background: #fef3c7;
+  color: #92700c;
+}
+
+.badgeNeutral {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.cccdVerifiedNote {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.instructions {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.instructions h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a2238;
+}
+
+.instructions ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.instructions li {
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.uploadRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.uploadCol {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.uploadLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.uploadArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 150px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  color: #64748b;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: center;
+  padding: 12px;
+}
+
+.uploadArea:hover {
+  border-color: #1a2238;
+  background: #f8fafc;
+}
+
+.uploadArea span {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.uploadHint {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: #94a3b8;
+}
+
+.imagePreview {
+  position: relative;
+  height: 150px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.imagePreview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.removeBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(15, 23, 42, 0.7);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.previewOk {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #16a34a;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fileInput {
+  display: none;
+}
+
+.privacyNote {
+  margin: 0;
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+/* ===== Card tracking (cột phải) ===== */
+.trackCard {
+  padding: 24px 24px 22px;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid rgba(62, 47, 40, 0.1);
+  box-shadow: 0 4px 18px rgba(26, 34, 56, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.trackHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.trackLabel {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a2238;
+}
+
+.trackCount {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+  color: #1a2238;
+}
+
+.trackTotal {
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(26, 34, 56, 0.4);
+}
+
+.progressBar {
+  height: 9px;
+  border-radius: 9999px;
+  background: #f0eee2;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #1a2238 0%, #3d4a3e 100%);
+  transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.trackStatus {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.trackComplete {
+  color: #3d4a3e;
+}
+
+.trackNeeds {
+  color: #92700c;
+}
+
+.trackSteps {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+}
+
+.trackStep {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 8px;
+  border-radius: 10px;
+}
+
+.trackStep::before {
+  content: '';
+  position: absolute;
+  left: 21px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(62, 47, 40, 0.14);
+  transform: translateX(-50%);
+}
+
+.trackStep:first-child::before {
+  top: 50%;
+}
+
+.trackStep:last-child::before {
+  bottom: 50%;
+}
+
+.trackDot {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 2px solid rgba(62, 47, 40, 0.18);
+  color: rgba(62, 47, 40, 0.4);
+  transition: all 0.2s ease;
+}
+
+.trackNum {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.trackStepDone .trackDot {
+  background: linear-gradient(135deg, #1a2238 0%, #3d4a3e 100%);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(26, 34, 56, 0.22);
+}
+
+.trackStepCurrent .trackDot {
+  border-color: #92700c;
+  color: #92700c;
+  box-shadow: 0 0 0 4px rgba(146, 112, 12, 0.12);
+}
+
+.trackStepLabel {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  color: #1a2238;
+}
+
+.trackStepDone .trackStepLabel {
+  color: rgba(26, 34, 56, 0.45);
+}
+
+.trackStepCurrent .trackStepLabel {
+  font-weight: 700;
+}
+
+.trackNext {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #92700c;
+  background: rgba(146, 112, 12, 0.12);
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+
+.trackHint {
+  margin: 4px 0 0;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(62, 47, 40, 0.18);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #92700c;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .rightColumn {
+    position: static;
+    order: -1;
+  }
+}
+
 @media (max-width: 560px) {
-  .row {
+  .row,
+  .uploadRow {
     grid-template-columns: 1fr;
   }
 }
