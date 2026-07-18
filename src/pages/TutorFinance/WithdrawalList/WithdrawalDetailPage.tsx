@@ -76,9 +76,9 @@ const WithdrawalDetailPage: React.FC = () => {
                 color: '#d4b483',
                 children: (
                   <div className="finance-timeline-entry">
-                    <time>{withdrawal.processedAt ? formatDateTime(withdrawal.processedAt) : 'Đang xử lý'}</time>
-                    <strong>Đã được xét duyệt</strong>
-                    <p>Giao dịch đang chờ xác nhận chuyển khoản.</p>
+                    <time>{withdrawal.claimedAt ? formatDateTime(withdrawal.claimedAt) : 'Đang xử lý'}</time>
+                    <strong>Đã có nhân viên nhận xử lý</strong>
+                    <p>Nhân viên đang kiểm tra và thực hiện chuyển khoản ngân hàng.</p>
                   </div>
                 ),
               },
@@ -172,8 +172,8 @@ const WithdrawalDetailPage: React.FC = () => {
                 <Alert
                   type="info"
                   showIcon
-                  message="Đã được phê duyệt"
-                  description="Yêu cầu đã được duyệt và đang trong quá trình chuyển tiền vào tài khoản ngân hàng."
+                  message="Đang chuyển tiền"
+                  description="Một nhân viên đã nhận yêu cầu và đang thực hiện chuyển tiền vào tài khoản ngân hàng."
                   className="finance-status-alert"
                 />
               )}
@@ -191,7 +191,7 @@ const WithdrawalDetailPage: React.FC = () => {
                   type="error"
                   showIcon
                   message="Yêu cầu bị từ chối"
-                  description="Lý do đã được gửi qua thông báo và số tiền đã được hoàn vào số dư khả dụng."
+                  description={`${withdrawal.rejectionReason || 'Yêu cầu không đáp ứng điều kiện xử lý.'} Số tiền đã được hoàn vào số dư khả dụng.`}
                   className="finance-status-alert"
                 />
               )}
@@ -238,6 +238,57 @@ const WithdrawalDetailPage: React.FC = () => {
                   <dt>Mã yêu cầu</dt>
                   <dd>#{withdrawal.withdrawalId}</dd>
                 </div>
+                {withdrawal.transactionId && (
+                  <div>
+                    <dt>Mã tham chiếu thanh toán</dt>
+                    <dd>{withdrawal.transactionId}</dd>
+                  </div>
+                )}
+                {withdrawal.paidAt && (
+                  <div>
+                    <dt>Thời gian chuyển khoản</dt>
+                    <dd>{formatDateTime(withdrawal.paidAt)}</dd>
+                  </div>
+                )}
+                {withdrawal.completionNote && (
+                  <div>
+                    <dt>Ghi chú đối soát</dt>
+                    <dd>{withdrawal.completionNote}</dd>
+                  </div>
+                )}
+                {withdrawal.rejectionReason && (
+                  <div>
+                    <dt>Lý do từ chối</dt>
+                    <dd>{withdrawal.rejectionReason}</dd>
+                  </div>
+                )}
+                {withdrawal.proofImageUrl && (
+                  <div className="finance-proof-image-container">
+                    <dt>Biên lai chuyển khoản</dt>
+                    <dd>
+                      <a
+                        href={withdrawal.proofImageUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="finance-proof-image-link"
+                      >
+                        <img
+                          src={withdrawal.proofImageUrl}
+                          alt="Biên lai chuyển khoản"
+                          className="finance-proof-image"
+                          loading="lazy"
+                        />
+                      </a>
+                      <button
+                        type="button"
+                        className="finance-proof-image-btn"
+                        onClick={() => window.open(withdrawal.proofImageUrl!, '_blank')}
+                      >
+                        Xem ảnh đầy đủ →
+                      </button>
+                    </dd>
+                  </div>
+                )}
               </dl>
             </section>
           </div>

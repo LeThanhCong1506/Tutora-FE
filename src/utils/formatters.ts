@@ -277,7 +277,7 @@ export const formatTransactionType = (type: string): string => {
 export const formatWithdrawalStatus = (status: string): string => {
   const statusMap: Record<string, string> = {
     pending: 'Chờ xử lý',
-    approved: 'Đã phê duyệt',
+    approved: 'Đang chuyển tiền',
     rejected: 'Đã từ chối',
     completed: 'Hoàn thành',
   };
@@ -291,7 +291,7 @@ export const formatWithdrawalStatus = (status: string): string => {
 export const formatWithdrawalStatusV2 = (status: string): string => {
   const statusMap: Record<string, string> = {
     pending: 'Chờ xử lý',
-    approved: 'Đã phê duyệt',
+    approved: 'Đang chuyển tiền',
     processing: 'Đang xử lý',
     completed: 'Hoàn thành',
     rejected: 'Đã từ chối',

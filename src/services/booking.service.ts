@@ -344,6 +344,33 @@ export interface PaymentInfoResponse {
     isRemainingPaid?: boolean;
 }
 
+/**
+ * Lightweight payment summary (amounts + wallet balance) for the current unpaid phase.
+ * Does NOT create a PayOS link — use it to render the payment-method choice; the link
+ * is created lazily via {@link getPaymentInfo} only when the user picks bank transfer.
+ */
+export interface PaymentSummaryResponse {
+    bookingId: number;
+    amount: number;
+    paymentPhase: 'deposit' | 'remaining';
+    totalAmount: number;
+    depositAmount: number;
+    remainingAmount: number;
+    isDepositPaid: boolean;
+    isRemainingPaid: boolean;
+    walletBalance: number;
+    canPayWithWallet: boolean;
+    expiredAt: string | null;
+}
+
+export const getPaymentSummary = async (bookingId: number): Promise<ApiResponse<PaymentSummaryResponse>> => {
+    const response = await api.get(`/bookings/${bookingId}/payment/summary`, {
+        headers: getAuthHeaders(),
+    });
+    return response.data;
+};
+
+/** Creates a PayOS link — only call when the user chooses bank transfer. */
 export const getPaymentInfo = async (bookingId: number): Promise<ApiResponse<PaymentInfoResponse>> => {
     try {
         const response = await api.get(`/bookings/${bookingId}/payment`, {

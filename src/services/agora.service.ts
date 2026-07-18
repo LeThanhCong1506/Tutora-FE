@@ -20,11 +20,17 @@ export interface AgoraRoomInfo {
   token: string;
   appId: string;
   expireAt: number;
+  /** Thời điểm buổi học bắt đầu (UTC, từ server) — để timer 2 màn hình đồng bộ. */
+  startedAt?: string;
   /** Hai phía chính của lớp học, dùng cho tiêu đề cố định Tutor – Student. */
   tutorName: string;
   studentName: string;
   /** Bảng tra UID → tên cho video/chat; có thể gồm Parent nếu Parent được phép tham gia. */
   participantNames: Record<string, string>;
+  /** Trạng thái buổi học — FE dùng để ép deep-link đi qua phòng chờ khi buổi chưa bắt đầu. */
+  status?: string;
+  /** True nếu buổi đã được điểm danh vào (check-in). */
+  checkedIn?: boolean;
 }
 
 /** Trạng thái presence trả về sau mỗi heartbeat. */
@@ -73,4 +79,34 @@ export const leaveRoom = async (classSessionId: number): Promise<void> => {
   } catch {
     // ignore
   }
+};
+
+/**
+ * Ghi hình buổi học được BACKEND tự bật khi buổi vào phòng học chính (cả gia sư + học viên
+ * cùng có mặt → auto check-in). FE không cần — và không nên — kích hoạt record thủ công nữa.
+ */
+
+/** Thông tin join phòng Agora Interactive Whiteboard (Netless) của một buổi học. */
+export interface WhiteboardRoomInfo {
+  /** App Identifier để khởi tạo Whiteboard SDK ở client. */
+  appIdentifier: string;
+  /** Region của phòng (vd "sg"). */
+  region: string;
+  /** UUID phòng whiteboard. */
+  roomUuid: string;
+  /** Room token của người dùng (đã gắn role). */
+  roomToken: string;
+  /** "0" admin (tutor), "1" writer (học viên), "2" reader. */
+  role: string;
+}
+
+/**
+ * Lấy thông tin để join phòng Interactive Whiteboard của buổi học.
+ * BE tự tạo phòng nếu chưa có. Chỉ Tutor/Parent/Student thuộc buổi học mới gọi thành công.
+ */
+export const getWhiteboardRoom = async (classSessionId: number): Promise<ApiResponse<WhiteboardRoomInfo>> => {
+  const response = await api.get(`/agora/whiteboard/${classSessionId}`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
 };

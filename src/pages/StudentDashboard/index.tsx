@@ -299,6 +299,7 @@ const StudentDashboard = () => {
                         meetingLink: lesson.meetingLink,
                         scheduledStart: startTime,
                         scheduledEnd: endTime,
+                        checkOutTime: lesson.checkOutTime,
                       });
                     return (
                       <div
@@ -323,7 +324,7 @@ const StudentDashboard = () => {
                         </div>
                         {canJoin && (
                           <Link
-                            to={`/live-session/${lesson.lessonId}`}
+                            to={`/session-lobby/${lesson.lessonId}`}
                             className={styles.joinBtn}
                             onClick={(e) => e.stopPropagation()}
                           >

@@ -11,7 +11,7 @@ interface Props {
   loading: boolean;
 }
 
-const MIN_WITHDRAW = 100000;
+const MIN_WITHDRAW = 10000;
 
 const WithdrawForm: React.FC<Props> = ({ balance, bankInfo, onSubmit, loading }) => {
   const [form] = Form.useForm();

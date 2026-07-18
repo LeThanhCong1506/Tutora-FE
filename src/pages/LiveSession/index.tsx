@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { getAgoraRoom, type AgoraRoomInfo } from '../../services/agora.service';
@@ -16,6 +16,9 @@ import {
 import type { ChatMessage } from './live-session-components/types';
 import styles from './styles.module.css';
 
+// SDK whiteboard nặng → lazy-load để không nằm trong bundle chính (đặc biệt cho bản Zalo).
+const WhiteboardOverlay = lazy(() => import('./live-session-components/WhiteboardOverlay'));
+
 const formatElapsed = (seconds: number): string => {
   const m = Math.floor(seconds / 60)
     .toString()
@@ -29,10 +32,13 @@ const formatElapsed = (seconds: number): string => {
 const LiveSession = () => {
   const { classSessionId } = useParams<{ classSessionId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   // ?mock=1 — dựng UI tại chỗ bằng dữ liệu giả, không gọi API/Agora thật.
   // Dùng để duyệt layout khi chưa có backend chạy hoặc chưa có classSessionId thật.
   const isMock = searchParams.get('mock') === '1';
+  // True khi được lobby chuyển vào (đã đủ 2 người) — deep-link trực tiếp sẽ không có cờ này.
+  const fromLobby = Boolean((location.state as { fromLobby?: boolean } | null)?.fromLobby);
 
   const [room, setRoom] = useState<AgoraRoomInfo | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -42,6 +48,7 @@ const LiveSession = () => {
   const [mockScreenSharing, setMockScreenSharing] = useState(false);
   const [mockMessages, setMockMessages] = useState<ChatMessage[]>([]);
   const [panelOpen, setPanelOpen] = useState(true);
+  const [whiteboardOpen, setWhiteboardOpen] = useState(false);
 
   const role = (getCurrentUserRole() || '').toLowerCase();
   const isTutor = role === 'tutor';
@@ -53,7 +60,16 @@ const LiveSession = () => {
 
     getAgoraRoom(parseInt(classSessionId, 10))
       .then((response) => {
-        if (!cancelled) setRoom(response.content);
+        if (cancelled) return;
+        // Buổi chưa bắt đầu (scheduled, chưa check-in) mà vào thẳng bằng URL → ép qua
+        // phòng chờ để chờ đủ 2 người. Vào từ lobby (fromLobby) hoặc buổi đang diễn ra
+        // (rớt mạng vào lại) thì join phòng ngay.
+        const { status, checkedIn } = response.content;
+        if (!fromLobby && status === 'scheduled' && !checkedIn) {
+          navigate(`/session-lobby/${classSessionId}`, { replace: true });
+          return;
+        }
+        setRoom(response.content);
       })
       .catch((error: unknown) => {
         if (cancelled) return;
@@ -77,7 +93,7 @@ const LiveSession = () => {
     return () => {
       cancelled = true;
     };
-  }, [isMock, classSessionId]);
+  }, [isMock, classSessionId, fromLobby, navigate]);
 
   // Ở mock mode không join Agora thật — truyền room=null để hook no-op.
   const {
@@ -123,11 +139,23 @@ const LiveSession = () => {
         ])
     : realSendChatMessage;
 
+  // Ghi hình do BACKEND tự bật đúng lúc buổi vào phòng học chính (cả gia sư + học viên
+  // cùng có mặt → auto check-in trong TryAutoCheckInAsync). FE không còn kích hoạt record.
+
   useEffect(() => {
     if (!joined) return;
-    const interval = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
+    // Đếm từ MỐC CHUNG (thời điểm buổi bắt đầu do server trả về) để 2 màn hình đồng bộ,
+    // thay vì mỗi máy đếm cục bộ từ lúc tự join. DateTime từ DB là UTC không kèm hậu tố
+    // → thêm 'Z' để trình duyệt hiểu đúng là UTC. Không có startedAt (hoặc mock) → fallback về giờ hiện tại.
+    const startedAt = isMock ? undefined : room?.startedAt;
+    const startMs = startedAt
+      ? new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(startedAt) ? startedAt : `${startedAt}Z`).getTime()
+      : Date.now();
+    const tick = () => setElapsedSeconds(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
+    tick();
+    const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [joined]);
+  }, [joined, isMock, room?.startedAt]);
 
   const participantLabel = useMemo(() => {
     if (isMock) return 'Học sinh Demo';
@@ -251,6 +279,11 @@ const LiveSession = () => {
               if (isMock) return setMockScreenSharing((v) => !v);
               toggleScreenShare().catch(() => toast.error('Không thể chia sẻ màn hình'));
             }}
+            whiteboardOn={whiteboardOpen}
+            onToggleWhiteboard={() => {
+              if (isMock) return toast.info('Bảng vẽ không khả dụng ở chế độ demo');
+              setWhiteboardOpen((v) => !v);
+            }}
             onLeave={handleLeave}
             leaveLabel={isTutor ? 'Kết thúc' : 'Rời đi'}
           />
@@ -263,6 +296,15 @@ const LiveSession = () => {
           notesStorageKey={classSessionId ?? 'mock'}
         />
       </div>
+
+      {!isMock && whiteboardOpen && classSessionId && (
+        <Suspense fallback={<div className={styles.centerState}>Đang tải bảng vẽ…</div>}>
+          <WhiteboardOverlay
+            classSessionId={parseInt(classSessionId, 10)}
+            onClose={() => setWhiteboardOpen(false)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };

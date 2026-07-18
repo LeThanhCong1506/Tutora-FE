@@ -179,7 +179,7 @@ const TutorPortalClassDetail: React.FC = () => {
     };
 
     const handleBack = () => {
-        navigate('/tutor-portal/classes');
+        navigate('/tutor-portal/calendar');
     };
 
     const toggleStudentSelection = (studentId: number) => {
@@ -236,7 +236,7 @@ const TutorPortalClassDetail: React.FC = () => {
      * học viên cùng vào phòng (không còn gọi check-in thủ công). Phòng mở 24/7.
      */
     const handleEnterSession = (session: ClassSessionResponse) => {
-        navigate(`/live-session/${session.classSessionId}`);
+        navigate(`/session-lobby/${session.classSessionId}`);
     };
 
     const handleCheckOut = async (classSessionId: number) => {
@@ -258,10 +258,10 @@ const TutorPortalClassDetail: React.FC = () => {
         setShowReportForm(false);
         setActiveSessionId(null);
         setPendingAttachments((prev) => {
-            const { [detail.classSessionId]: _submitted, ...rest } = prev;
+            const rest = { ...prev };
+            delete rest[detail.classSessionId];
             return rest;
         });
-        toast.success('Báo cáo đã được nộp thành công!');
     };
 
     const sortedSessions = React.useMemo(() => {

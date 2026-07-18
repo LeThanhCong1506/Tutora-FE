@@ -24,6 +24,7 @@ const NOTIFICATION_TYPES_BY_PATH: Record<string, string[]> = {
         'payment_remaining_required',
         'booking_payment_due_soon',
     ],
+    '/parent-portal/wallet': ['withdrawal_request'],
 };
 
 const baseParentNavItems: NavItem[] = [

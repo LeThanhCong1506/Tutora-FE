@@ -1,16 +1,18 @@
 import React from 'react';
-import { Button, Card, Empty } from 'antd';
-import { BankOutlined, CalendarOutlined, EditOutlined } from '@ant-design/icons';
+import { Button, Card, Empty, Popconfirm } from 'antd';
+import { BankOutlined, CalendarOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { maskBankAccount } from '../../../../utils/formatters';
 import type { BankInfo } from '../../../../types/finance.types';
 
 interface Props {
   bankInfo: BankInfo | null;
   loading: boolean;
+  deleting?: boolean;
   onEdit: () => void;
+  onDelete?: () => void;
 }
 
-const BankInfoCard: React.FC<Props> = ({ bankInfo, loading, onEdit }) => {
+const BankInfoCard: React.FC<Props> = ({ bankInfo, loading, deleting, onEdit, onDelete }) => {
   const hasBankInfo = Boolean(bankInfo?.bankName && bankInfo?.accountNumber && bankInfo?.accountHolderName);
 
   if (loading) {
@@ -59,9 +61,25 @@ const BankInfoCard: React.FC<Props> = ({ bankInfo, loading, onEdit }) => {
             <p>Được sử dụng cho mọi yêu cầu rút tiền</p>
           </div>
         </div>
-        <Button icon={<EditOutlined />} onClick={onEdit}>
-          Thay đổi
-        </Button>
+        <div className="finance-card-heading__actions">
+          <Button icon={<EditOutlined />} onClick={onEdit}>
+            Thay đổi
+          </Button>
+          {onDelete && (
+            <Popconfirm
+              title="Xoá tài khoản ngân hàng?"
+              description="Bạn sẽ cần thêm lại tài khoản mới trước khi rút tiền lần sau."
+              okText="Xoá"
+              cancelText="Huỷ"
+              okButtonProps={{ danger: true, loading: deleting }}
+              onConfirm={onDelete}
+            >
+              <Button danger icon={<DeleteOutlined />} loading={deleting}>
+                Xoá
+              </Button>
+            </Popconfirm>
+          )}
+        </div>
       </div>
 
       <div className="finance-bank-visual" aria-label="Thông tin tài khoản ngân hàng">

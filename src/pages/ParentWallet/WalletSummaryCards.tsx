@@ -5,13 +5,11 @@ import styles from './styles.module.css';
 interface Props {
   balance: WalletBalanceResponse | null;
   loading: boolean;
-  onWithdraw: () => void;
 }
 
-const WalletSummaryCards = ({ balance, loading, onWithdraw }: Props) => {
+const WalletSummaryCards = ({ balance, loading }: Props) => {
   const available = balance?.balance ?? 0;
   const frozen = balance?.frozenBalance ?? 0;
-  const canWithdraw = available >= 100000;
 
   return (
     <div className={styles.summaryRow}>
@@ -24,17 +22,8 @@ const WalletSummaryCards = ({ balance, loading, onWithdraw }: Props) => {
           {loading ? '—' : formatCurrency(available)}
         </div>
         <div className={styles.summaryFoot}>
-          Có thể rút hoặc được hoàn khi gia sư không nhận đặt lịch / bạn thắng tranh chấp.
+          Số dư này được dùng để thanh toán các buổi học và được hoàn khi gia sư không nhận đặt lịch / bạn thắng tranh chấp.
         </div>
-        <button
-          className={styles.withdrawBtn}
-          type="button"
-          onClick={onWithdraw}
-          disabled={loading || !canWithdraw}
-          title={!canWithdraw ? 'Số dư tối thiểu để rút là 100.000₫' : undefined}
-        >
-          Gửi yêu cầu rút tiền
-        </button>
       </section>
 
       <section className={styles.summaryCard}>

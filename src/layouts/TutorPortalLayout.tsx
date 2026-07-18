@@ -99,7 +99,7 @@ const baseNavItems: NavItem[] = [
     { path: '/tutor-portal/onboarding', label: 'Thiết lập giảng dạy', icon: TeachingSetupIcon, dataTour: 'nav-onboarding' },
     { path: MESSAGES_PATH, label: 'Tin nhắn', icon: MessagesIcon, dataTour: 'nav-messages' },
     { path: '/tutor-portal/bookings', label: 'Yêu cầu đặt lịch', icon: BookingIcon, dataTour: 'nav-bookings' },
-    { path: '/tutor-portal/classes', label: 'Quản lý lớp học', icon: ClassIcon, dataTour: 'nav-classes' },
+    { path: '/tutor-portal/calendar', label: 'Lịch dạy', icon: ClassIcon, dataTour: 'nav-classes' },
     { path: '/tutor-portal/finance', label: 'Tài chính', icon: FinanceIcon, dataTour: 'nav-finance' },
     { path: '/tutor-portal/account', label: 'Tài khoản', icon: AccountIcon, dataTour: 'nav-account' },
 ];
@@ -157,8 +157,8 @@ const tourSteps: TourStep[] = [
     },
     {
         target: '[data-tour="nav-classes"]',
-        title: '🎓 Quản lý lớp học',
-        description: 'Xem danh sách lớp, điểm danh học sinh, ghi nhận bài học, theo dõi tiến độ.',
+        title: '🎓 Lịch dạy',
+        description: 'Xem lịch dạy theo tuần, biết buổi nào sắp tới giờ, vào lớp online và mở chi tiết lớp học.',
         placement: 'right',
     },
     {
@@ -246,7 +246,7 @@ const TutorPortalLayout: React.FC = () => {
             import('../pages/TutorPortal/TutorPortalProfile');
             import('../pages/TutorPortal/TutorPortalDashboard');
             import('../pages/TutorPortal/TutorPortalMessages');
-            import('../pages/TutorPortal/TutorPortalClasses');
+            import('../pages/TutorPortal/TutorPortalCalendar');
             import('../pages/TutorPortal/TutorPortalBookings');
             import('../pages/TutorFinance/TutorFinanceDashboard/TutorFinanceDashboardPage');
         }, 1500);
@@ -254,7 +254,11 @@ const TutorPortalLayout: React.FC = () => {
     }, []);
 
     const isActive = (path: string, pathname: string) => {
-        if (path === '/tutor-portal/finance' || path === '/tutor-portal/classes' || path === '/tutor-portal/sessions') {
+        // "Lịch dạy" cũng sáng khi đang xem chi tiết lớp (/tutor-portal/classes/:id).
+        if (path === '/tutor-portal/calendar') {
+            return pathname === path || pathname.startsWith('/tutor-portal/classes');
+        }
+        if (path === '/tutor-portal/finance' || path === '/tutor-portal/sessions') {
             return pathname.startsWith(path);
         }
         return pathname === path;
