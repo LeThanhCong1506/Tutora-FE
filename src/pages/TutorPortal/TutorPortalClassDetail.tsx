@@ -258,10 +258,10 @@ const TutorPortalClassDetail: React.FC = () => {
         setShowReportForm(false);
         setActiveSessionId(null);
         setPendingAttachments((prev) => {
-            const { [detail.classSessionId]: _submitted, ...rest } = prev;
+            const rest = { ...prev };
+            delete rest[detail.classSessionId];
             return rest;
         });
-        toast.success('Báo cáo đã được nộp thành công!');
     };
 
     const sortedSessions = React.useMemo(() => {
