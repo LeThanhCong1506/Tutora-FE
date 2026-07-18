@@ -99,6 +99,9 @@ export default defineConfig(({ mode, command }) => ({
   plugins: [react(), stripConsoleDebug()],
   base: mode === "zalo" && command === "build" ? "./" : "/",
   build: {
+    // Zalo Mini App Extension mặc định tìm output ở "www" (quy ước cũ của zmp-cli),
+    // khác với "dist" mặc định của Vite — không đổi cho build thường (Vercel...).
+    outDir: mode === "zalo" ? "www" : "dist",
     polyfillModulePreload: false,
     rollupOptions: {
       output: {
