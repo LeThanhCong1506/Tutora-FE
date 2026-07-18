@@ -82,16 +82,9 @@ export const leaveRoom = async (classSessionId: number): Promise<void> => {
 };
 
 /**
- * Bắt đầu ghi hình buổi học — gọi khi TUTOR vào lớp (join call thành công), thay cho lúc check-in.
- * Best-effort: nuốt lỗi để việc vào lớp không bao giờ bị chặn. Idempotent ở BE (đã ghi thì bỏ qua).
+ * Ghi hình buổi học được BACKEND tự bật khi buổi vào phòng học chính (cả gia sư + học viên
+ * cùng có mặt → auto check-in). FE không cần — và không nên — kích hoạt record thủ công nữa.
  */
-export const startSessionRecording = async (classSessionId: number): Promise<void> => {
-  try {
-    await api.post(`/agora/room/${classSessionId}/recording/start`, {}, { headers: getAuthHeaders() });
-  } catch {
-    // ignore — lỗi ghi hình không được chặn buổi học
-  }
-};
 
 /** Thông tin join phòng Agora Interactive Whiteboard (Netless) của một buổi học. */
 export interface WhiteboardRoomInfo {

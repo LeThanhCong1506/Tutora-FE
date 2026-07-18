@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axios from 'axios';
-import { getAgoraRoom, startSessionRecording, type AgoraRoomInfo } from '../../services/agora.service';
+import { getAgoraRoom, type AgoraRoomInfo } from '../../services/agora.service';
 import { checkOutClassSession } from '../../services/classSession.service';
 import { getCurrentUserRole, getUserIdFromToken } from '../../services/auth.service';
 import {
@@ -139,12 +139,8 @@ const LiveSession = () => {
         ])
     : realSendChatMessage;
 
-  // Bắt đầu ghi hình khi TUTOR vào lớp (join call) — thay cho lúc check-in.
-  // Best-effort + idempotent ở BE, nên gọi 1 lần khi joined là đủ.
-  useEffect(() => {
-    if (isMock || !joined || !isTutor || !classSessionId) return;
-    void startSessionRecording(parseInt(classSessionId, 10));
-  }, [joined, isTutor, isMock, classSessionId]);
+  // Ghi hình do BACKEND tự bật đúng lúc buổi vào phòng học chính (cả gia sư + học viên
+  // cùng có mặt → auto check-in trong TryAutoCheckInAsync). FE không còn kích hoạt record.
 
   useEffect(() => {
     if (!joined) return;

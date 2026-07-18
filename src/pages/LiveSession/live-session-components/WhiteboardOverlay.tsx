@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { createFastboard, createUI } from '@netless/fastboard';
 import { X } from 'lucide-react';
+import axios from 'axios';
 import { getWhiteboardRoom } from '../../../services/agora.service';
 import { getUserIdFromToken } from '../../../services/auth.service';
 
@@ -52,9 +53,16 @@ const WhiteboardOverlay = ({ classSessionId, onClose }: WhiteboardOverlayProps) 
         }
         ui = createUI(app, containerRef.current);
         setLoading(false);
-      } catch {
+      } catch (err) {
         if (!cancelled) {
-          setError('Không thể mở bảng vẽ. Vui lòng thử lại.');
+          // Log nguyên nhân thật để chẩn đoán (lỗi BE 4xx hay lỗi SDK Netless khi join).
+          console.error('Mở bảng vẽ thất bại:', err);
+          // Nếu là lỗi từ BE (axios) thì hiển thị luôn message của BE để biết lý do cụ thể
+          // (vd "Buổi học đã kết thúc.", "…chưa thanh toán…"), thay vì thông báo chung chung.
+          const backendMessage = axios.isAxiosError(err)
+            ? (err.response?.data?.message as string | undefined)
+            : undefined;
+          setError(backendMessage || 'Không thể mở bảng vẽ. Vui lòng thử lại.');
           setLoading(false);
         }
       }
