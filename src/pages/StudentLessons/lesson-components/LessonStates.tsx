@@ -27,24 +27,25 @@ export const EmptyState = ({
   filtered,
   period,
   onBooking,
+  ctaLabel = 'Đặt lịch học',
+  description = 'Bạn có thể chuyển sang khoảng thời gian khác hoặc đặt lịch mới.',
 }: {
   filtered: boolean;
   period: string;
   onBooking: () => void;
+  /** Nhãn nút CTA khi trống — trang gia sư đổi thành "Thiết lập lịch rảnh". */
+  ctaLabel?: string;
+  description?: string;
 }) => (
   <div className={styles.stateBox}>
     <span className={`${styles.stateIcon} ${styles.emptyStateIcon}`}>
       <CalendarSearch size={26} strokeWidth={1.9} />
     </span>
     <strong>{filtered ? 'Không có buổi học phù hợp' : `Chưa có buổi học trong ${period}`}</strong>
-    <p>
-      {filtered
-        ? 'Hãy chọn trạng thái khác để xem lịch học.'
-        : 'Bạn có thể chuyển sang khoảng thời gian khác hoặc đặt lịch mới.'}
-    </p>
+    <p>{filtered ? 'Hãy chọn trạng thái khác để xem lịch học.' : description}</p>
     {!filtered && (
       <button type="button" onClick={onBooking}>
-        Đặt lịch học <ArrowUpRight size={15} />
+        {ctaLabel} <ArrowUpRight size={15} />
       </button>
     )}
   </div>

@@ -323,7 +323,7 @@ const StudentDashboard = () => {
                         </div>
                         {canJoin && (
                           <Link
-                            to={`/live-session/${lesson.lessonId}`}
+                            to={`/session-lobby/${lesson.lessonId}`}
                             className={styles.joinBtn}
                             onClick={(e) => e.stopPropagation()}
                           >

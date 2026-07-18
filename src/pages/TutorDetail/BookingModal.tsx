@@ -121,7 +121,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         subjectGradePrices,
         selectedSubjectInfo?.gradeLevels,
     );
-    const gradeMatches = gradeMatchInfo?.matches ?? true;
+    const isStudentGradeMissing = gradeMatchInfo?.missingStudentGrade === true;
     const selectedGradeToken = normalizeGradeToken(selectedStudent?.gradeLevel);
     const selectedSubjectGradePrice = useMemo(() => {
         const activePrices = subjectGradePrices.filter(
@@ -216,9 +216,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
         switch (step) {
             case 0:
                 if (userRole === "Student") {
-                    return formData.subjectId !== 0 && selectedStudent != null && gradeMatches;
+                    return formData.subjectId !== 0 && selectedStudent != null && !isStudentGradeMissing;
                 }
-                return formData.studentId !== "" && formData.subjectId !== 0 && gradeMatches;
+                return formData.studentId !== "" && formData.subjectId !== 0 && !isStudentGradeMissing;
             case 1:
                 return formData.bookingMode === "schedule" || formData.bookingMode === "package";
             case 2:
@@ -247,11 +247,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
                         toast.info("Đang tải thông tin khối lớp của học sinh.");
                     } else if (!selectedStudent) {
                         toast.warning("Không thể xác định hồ sơ học sinh. Vui lòng tải lại trang và thử lại.");
-                    } else if (!gradeMatches) {
+                    } else if (isStudentGradeMissing) {
                         toast.warning(
-                            gradeMatchInfo?.missingStudentGrade
-                                ? "Học sinh chưa cập nhật khối lớp. Vui lòng cập nhật hồ sơ trước khi đặt lịch."
-                                : "Khối lớp của học sinh không phù hợp với môn gia sư đang dạy.",
+                            "Học sinh chưa cập nhật khối lớp. Vui lòng cập nhật hồ sơ trước khi đặt lịch.",
                         );
                     }
                     break;
@@ -446,7 +444,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                     type="button"
                                     className={styles.primaryButton}
                                     onClick={handleNext}
-                                    disabled={submitting || (step === 0 && gradeMatchInfo?.matches === false)}
+                                    disabled={submitting || (step === 0 && isStudentGradeMissing)}
                                 >
                                     Tiếp theo
                                     <ArrowRight size={16} />

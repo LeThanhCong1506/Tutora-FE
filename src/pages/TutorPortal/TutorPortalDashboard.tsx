@@ -280,7 +280,7 @@ const TutorPortalDashboard: React.FC = () => {
 
     // ── "Vào lớp" — phòng mở 24/7; check-in tự động khi cả gia sư và học viên cùng vào ──
     const handleEnterLesson = (lesson: CalendarClassSessionResponse) => {
-        navigate(`/live-session/${lesson.classSessionId}`);
+        navigate(`/session-lobby/${lesson.classSessionId}`);
     };
 
     const formatTime = (dateString: string) => {
@@ -484,7 +484,7 @@ const TutorPortalDashboard: React.FC = () => {
 
             {/* Quick Actions */}
             <div className={styles.quickActions} data-tour="quick-actions">
-                <button className={styles.actionBtn} onClick={() => navigate('/tutor-portal/classes')}>
+                <button className={styles.actionBtn} onClick={() => navigate('/tutor-portal/calendar')}>
                     <CheckInIcon />
                     <span>Bắt đầu điểm danh</span>
                 </button>
@@ -492,7 +492,7 @@ const TutorPortalDashboard: React.FC = () => {
                     <PlusIcon />
                     <span>Thêm lịch rảnh</span>
                 </button>
-                <button className={styles.actionBtn} onClick={() => navigate('/tutor-portal/classes')}>
+                <button className={styles.actionBtn} onClick={() => navigate('/tutor-portal/calendar')}>
                     <BookIcon />
                     <span>Tạo lớp học</span>
                 </button>
@@ -507,7 +507,7 @@ const TutorPortalDashboard: React.FC = () => {
                 <div className={styles.sectionCard} style={{ padding: '20px' }}>
                     <div className={styles.sectionHeader} style={{ marginBottom: '14px' }}>
                         <h2 className={styles.sectionTitle}>Buổi học sắp tới</h2>
-                        <button className={styles.outlineBtn} onClick={() => navigate('/tutor-portal/classes')}>
+                        <button className={styles.outlineBtn} onClick={() => navigate('/tutor-portal/calendar')}>
                             Xem tất cả
                             <ArrowRightIcon />
                         </button>

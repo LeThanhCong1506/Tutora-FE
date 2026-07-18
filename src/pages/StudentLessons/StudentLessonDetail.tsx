@@ -185,7 +185,7 @@ const StudentLessonDetail = () => {
                                     </div>
                                 </div>
                             </div>
-                            <Link to={`/live-session/${lesson.lessonId}`} style={heroJoinBtn}>
+                            <Link to={`/session-lobby/${lesson.lessonId}`} style={heroJoinBtn}>
                                 <Video size={16} /> Tham gia ngay
                             </Link>
                         </div>
