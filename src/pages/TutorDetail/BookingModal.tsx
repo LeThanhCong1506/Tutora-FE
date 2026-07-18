@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, CalendarRange, CheckCircle2, Clock, Wallet, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarRange, CheckCircle2, Clock, ShieldAlert, Wallet, X } from "lucide-react";
 import PaymentModal from "../../components/PaymentModal/PaymentModal";
 import {
     BookingStepper,
@@ -56,6 +56,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         submitError,
         setSubmitError,
         handleSubmit,
+        eligibilityBlock,
         bookingPhase,
         successBookingId,
         handlePaymentSuccess,
@@ -421,6 +422,28 @@ const BookingModal: React.FC<BookingModalProps> = ({
                         </header>
 
                         <BookingStepper step={step} />
+
+                        {eligibilityBlock && (
+                            <div className={styles.eligibilityBanner}>
+                                <ShieldAlert size={18} />
+                                <span>
+                                    {eligibilityBlock.reason}
+                                    {eligibilityBlock.reasonCode !== "STUDENT_MANAGED_BY_PARENT" && (
+                                        <>
+                                            {" "}
+                                            <a
+                                                href="/student-portal/profile"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className={styles.eligibilityLink}
+                                            >
+                                                Xác minh ngay →
+                                            </a>
+                                        </>
+                                    )}
+                                </span>
+                            </div>
+                        )}
 
                         <div className={styles.modalBody}>
                             {step === 0 && <StepStudentSubject {...stepProps} />}

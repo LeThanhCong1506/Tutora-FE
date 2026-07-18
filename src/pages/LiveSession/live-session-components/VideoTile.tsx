@@ -42,10 +42,17 @@ const VideoTile = ({
 
   useEffect(() => {
     const el = containerRef.current;
-    if (!el || !videoTrack) return;
-    videoTrack.play(el, { fit });
+    if (!el) return;
+    if (videoTrack) videoTrack.play(el, { fit });
     return () => {
-      videoTrack.stop();
+      // Luôn dừng track + xoá video còn sót → tránh đóng băng khung hình khi remote
+      // gỡ track (dừng chia sẻ màn hình) hoặc rời phòng.
+      try {
+        videoTrack?.stop();
+      } catch {
+        // ignore
+      }
+      el.innerHTML = '';
     };
   }, [videoTrack, fit]);
 

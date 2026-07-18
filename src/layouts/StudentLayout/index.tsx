@@ -3,7 +3,7 @@ import { PortalLayout } from '../../components/shared/PortalLayout';
 import type { NavItem } from '../../components/shared/PortalLayout';
 import { useUnreadMessageBadge } from '../../hooks/useUnreadMessageBadge';
 import { useUnreadBadgesByTab } from '../../hooks/useUnreadBadgesByTab';
-import { StudentProfileProvider } from '../../contexts/StudentProfileContext';
+import { StudentProfileProvider, useStudentProfile } from '../../contexts/StudentProfileContext';
 
 import {
   DashboardIcon,
@@ -52,29 +52,42 @@ interface StudentLayoutProps {
   children?: React.ReactNode;
 }
 
-const StudentLayout: React.FC<StudentLayoutProps> = ({ children }) => {
+const WALLET_PATH = '/student-portal/wallet';
+
+// Inner: nằm TRONG StudentProfileProvider nên đọc được isParentManaged để lọc menu.
+const StudentLayoutInner: React.FC<StudentLayoutProps> = ({ children }) => {
   const unreadMessageCount = useUnreadMessageBadge(MESSAGES_PATH);
   const badgesByPath = useUnreadBadgesByTab(NOTIFICATION_TYPES_BY_PATH);
+  // Tài khoản do phụ huynh quản lý: chỉ vào học & tương tác → ẩn menu ví (chỉ hiện khi chắc chắn tự đăng ký).
+  const { isParentManaged, loading } = useStudentProfile();
+
+  const showWallet = !loading && !isParentManaged;
 
   const navItems = useMemo<NavItem[]>(
     () =>
-      baseStudentNavItems.map((item) => {
-        if (item.path === MESSAGES_PATH) {
-          return { ...item, badge: unreadMessageCount };
-        }
-        const count = badgesByPath[item.path];
-        return count ? { ...item, badge: count } : item;
-      }),
-    [unreadMessageCount, badgesByPath],
+      baseStudentNavItems
+        .filter((item) => showWallet || item.path !== WALLET_PATH)
+        .map((item) => {
+          if (item.path === MESSAGES_PATH) {
+            return { ...item, badge: unreadMessageCount };
+          }
+          const count = badgesByPath[item.path];
+          return count ? { ...item, badge: count } : item;
+        }),
+    [unreadMessageCount, badgesByPath, showWallet],
   );
 
   return (
-    <StudentProfileProvider>
-      <PortalLayout navItems={navItems} userRole="STUDENT" showSidebarUserCard={false} showAvatarImage={false}>
-        {children}
-      </PortalLayout>
-    </StudentProfileProvider>
+    <PortalLayout navItems={navItems} userRole="STUDENT" showSidebarUserCard={false} showAvatarImage={false}>
+      {children}
+    </PortalLayout>
   );
 };
+
+const StudentLayout: React.FC<StudentLayoutProps> = ({ children }) => (
+    <StudentProfileProvider>
+        <StudentLayoutInner>{children}</StudentLayoutInner>
+    </StudentProfileProvider>
+);
 
 export default StudentLayout;

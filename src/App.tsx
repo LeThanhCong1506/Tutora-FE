@@ -9,7 +9,7 @@ import { DeeplinkHandler } from './components/DeeplinkHandler/DeeplinkHandler';
 import TutorPortalLayout from './layouts/TutorPortalLayout';
 import ParentLayout from './layouts/ParentLayout';
 import StudentLayout from './layouts/StudentLayout';
-import { StudentProfileGate } from './contexts/StudentProfileContext';
+import { StudentProfileGate, StudentSelfRegisteredGate } from './contexts/StudentProfileContext';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import SessionExpiredModal from './components/SessionExpiredModal';
 import PageLoader from './components/PageLoader/PageLoader';
@@ -78,6 +78,7 @@ const ParentAccount = lazy(() => import('./pages/ParentAccount'));
 
 // Student pages
 const StudentDashboard = lazy(() => import('./pages/StudentDashboard'));
+const StudentWallet = lazy(() => import('./pages/StudentWallet'));
 const StudentBooking = lazy(() => import('./pages/StudentBooking'));
 const StudentLessons = lazy(() => import('./pages/StudentLessons'));
 const StudentLessonDetail = lazy(() => import('./pages/StudentLessons/StudentLessonDetail'));
@@ -274,9 +275,13 @@ function App() {
                 <Route path="calendar/:lessonId" element={<StudentLessonDetail />} />
                 <Route path="lessons" element={<LegacyStudentLessonsRedirect />} />
                 <Route path="lessons/:lessonId" element={<LegacyStudentLessonsRedirect />} />
-                <Route path="wallet" element={<ParentWallet />} />
-                <Route path="wallet/transactions" element={<ParentWalletTransactions />} />
-                <Route path="wallet/withdrawals" element={<ParentWalletWithdrawals />} />
+                {/* Ví CHỈ cho học sinh tự đăng ký — tài khoản do phụ huynh quản lý bị chặn (kể cả gõ URL).
+                    Trang ví student riêng (copy UI parent) để tương lai tùy biến UI/UX/tính năng độc lập. */}
+                <Route element={<StudentSelfRegisteredGate />}>
+                  <Route path="wallet" element={<StudentWallet />} />
+                  <Route path="wallet/transactions" element={<ParentWalletTransactions />} />
+                  <Route path="wallet/withdrawals" element={<ParentWalletWithdrawals />} />
+                </Route>
                 <Route path="messages" element={<ParentMessage />} />
                 <Route path="profile" element={<StudentProfile />} />
                 <Route path="account" element={<StudentAccount />} />

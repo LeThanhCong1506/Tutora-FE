@@ -4,7 +4,7 @@ import { getAuthHeaders, type ApiResponse } from './tutorProfile.service';
 import type { StudentType } from '../types/student.type';
 import { setupAuthInterceptor } from './apiClient';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL + '/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -117,6 +117,104 @@ export const updateMyStudentProfile = async (payload: IUpdateParentStudent): Pro
   }
 };
 
+export interface CccdUploadResponse {
+  ocrSuccess: boolean;
+  identityNumber: string | null; // đã mask, vd "012*****8901"
+  fullName: string | null;
+  dateOfBirth: string | null;
+  gender: string | null;
+  address: string | null;
+  message: string;
+}
+
+/** Mã lý do machine-readable khi không đủ điều kiện đặt lịch. */
+export type BookingReasonCode =
+  | 'STUDENT_MANAGED_BY_PARENT'
+  | 'STUDENT_IDENTITY_NOT_VERIFIED'
+  | 'STUDENT_UNDERAGE';
+
+export interface StudentBookingEligibility {
+  canBook: boolean;
+  reasonCode: BookingReasonCode | null;
+  reason: string | null;
+  isParentManaged: boolean;
+  needProfile: boolean;
+  needAgeVerification: boolean;
+  isUnderage: boolean;
+  age: number | null;
+}
+
+export const verifyStudentCccd = async (
+  frontImage: File,
+  backImage: File,
+): Promise<ApiResponse<CccdUploadResponse>> => {
+  const formData = new FormData();
+  formData.append('FrontImage', frontImage);
+  formData.append('BackImage', backImage);
+  const response = await api.post<ApiResponse<CccdUploadResponse>>(
+    `/students/me/verify-cccd`,
+    formData,
+    { headers: { ...getAuthHeaders(), 'Content-Type': 'multipart/form-data' } },
+  );
+  return response.data;
+};
+
+/**
+ * Trạng thái đủ điều kiện đặt lịch của học sinh — dùng để điều hướng / ẩn hiện nút đặt lịch.
+ */
+export const getBookingEligibility = async (): Promise<ApiResponse<StudentBookingEligibility>> => {
+  const response = await api.get<ApiResponse<StudentBookingEligibility>>(
+    `/students/me/booking-eligibility`,
+    { headers: getAuthHeaders() },
+  );
+  return response.data;
+};
+
+/**
+ * Học sinh tự đăng ký nhập/cập nhật SĐT phụ huynh (tùy chọn, để nhận ZNS theo dõi).
+ */
+export const setParentPhone = async (
+  parentPhone: string | null,
+): Promise<ApiResponse<{ parentPhone: string | null }>> => {
+  const response = await api.put<ApiResponse<{ parentPhone: string | null }>>(
+    `/students/me/parent-phone`,
+    { parentPhone },
+    { headers: getAuthHeaders() },
+  );
+  return response.data;
+};
+
+/**
+ * @deprecated Endpoint này đã bị BE gỡ trong luồng student rule mới.
+ * Luồng "liên kết bằng mã" không còn dùng; parent tạo student trực tiếp hoặc student tự đăng ký.
+ */
+export const generateLinkCode = async (studentId: string): Promise<ApiResponse<StudentType>> => {
+  try {
+    const response = await api.post(`/parent/students/${studentId}/generate-link-code`, {}, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ Error generating link code:', error.response?.data);
+    throw error;
+  }
+};
+
+/**
+ * @deprecated Endpoint đã bị BE gỡ — gọi sẽ trả 404. Xem verifyStudentCccd / getBookingEligibility.
+ */
+export const linkWithCode = async (code: string): Promise<ApiResponse<StudentType>> => {
+  try {
+    const response = await api.post(`/parent/students/link`, { code }, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ Error linking with code:', error.response?.data);
+    throw error;
+  }
+};
+
 export const getParentBookings = async (params: IGetBookingParams = { page: 1, pageSize: 10 }) => {
   try {
     const response = await api.get(`/parent/bookings`, {
@@ -164,6 +262,38 @@ export const createParentStudentWithCredentials = async (
       data: error.response?.data,
       message: error.message,
     });
+    throw error;
+  }
+};
+
+/**
+ * @deprecated Endpoint đã bị BE gỡ — gọi sẽ trả 404.
+ * Parent generates an invite code for students to self-link
+ */
+export const generateParentCode = async (): Promise<ApiResponse<{ parentCode: string }>> => {
+  try {
+    const response = await api.post(`/parent/students/generate-parent-code`, {}, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ Error generating parent code:', error.response?.data);
+    throw error;
+  }
+};
+
+/**
+ * @deprecated Endpoint đã bị BE gỡ — gọi sẽ trả 404.
+ * Student uses a parent code to self-link with a parent
+ */
+export const studentSelfLink = async (parentCode: string): Promise<ApiResponse<StudentType>> => {
+  try {
+    const response = await api.post(`/students/self-link`, { parentCode }, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ Error self-linking with parent code:', error.response?.data);
     throw error;
   }
 };

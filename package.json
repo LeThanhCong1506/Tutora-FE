@@ -16,6 +16,7 @@
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
     "@microsoft/signalr": "^10.0.0",
+    "@netless/fastboard": "^1.1.8",
     "@supabase/supabase-js": "^2.90.0",
     "agora-rtc-sdk-ng": "^4.24.5",
     "agora-rtm-sdk": "^2.2.4",
