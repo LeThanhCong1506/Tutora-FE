@@ -2080,3 +2080,55 @@
     text-align: left;
   }
 }
+
+/* Proof image (ảnh biên lai) trong finance detail */
+.finance-proof-image-container {
+  display: block;
+}
+
+.finance-proof-image-container dt {
+  margin-bottom: 10px;
+}
+
+.finance-proof-image-link {
+  display: inline-block;
+  width: 100%;
+  max-width: 280px;
+  border: 1px solid var(--finance-border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.finance-proof-image-link:hover {
+  border-color: var(--finance-gold);
+  box-shadow: 0 6px 16px rgba(212, 180, 131, 0.2);
+}
+
+.finance-proof-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  background: rgba(242, 240, 228, 0.4);
+}
+
+.finance-proof-image-btn {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  background: transparent;
+  border: none;
+  color: var(--finance-navy);
+  font-size: 13px;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.finance-proof-image-btn:hover {
+  color: var(--finance-green);
+  text-decoration: underline;
+}

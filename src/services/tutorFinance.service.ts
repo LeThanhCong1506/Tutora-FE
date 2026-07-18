@@ -124,6 +124,15 @@ export const updateBankInfo = async (request: UpdateBankInfoRequest): Promise<Ba
 };
 
 /**
+ * Delete the tutor's saved bank account. Idempotent on the backend — deleting when
+ * no account exists still succeeds (no 404). Past withdrawals keep their own bank
+ * snapshot, so this never affects withdrawal history.
+ */
+export const deleteBankInfo = async (): Promise<void> => {
+    await api.delete('/tutor/bank');
+};
+
+/**
  * Create a withdrawal request
  */
 export const createWithdrawal = async (request: CreateWithdrawalRequest): Promise<{ success: boolean; message: string }> => {

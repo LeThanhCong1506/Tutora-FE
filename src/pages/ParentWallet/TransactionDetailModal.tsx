@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import {
   formatCurrency,
@@ -7,7 +7,12 @@ import {
   formatTransactionType,
   formatWithdrawalStatusV2,
 } from '../../utils/formatters';
-import { getTransactionDetail, type TransactionDetail } from '../../services/wallet.service';
+import {
+  getTransactionDetail,
+  getWithdrawalDetail,
+  type TransactionDetail,
+  type WithdrawalDetail,
+} from '../../services/wallet.service';
 import styles from './styles.module.css';
 
 interface Props {
@@ -24,7 +29,10 @@ const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
 
 const TransactionDetailModal = ({ transactionId, onClose }: Props) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const portalBase = location.pathname.startsWith('/student-portal') ? '/student-portal' : '/parent-portal';
   const [detail, setDetail] = useState<TransactionDetail | null>(null);
+  const [withdrawalDetail, setWithdrawalDetail] = useState<WithdrawalDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,7 +41,20 @@ const TransactionDetailModal = ({ transactionId, onClose }: Props) => {
       setLoading(true);
       try {
         const res = await getTransactionDetail(transactionId);
-        if (!cancelled) setDetail(res.content);
+        if (cancelled) return;
+        setDetail(res.content);
+
+        // The wallet-transaction endpoint only returns flat ledger fields; for a
+        // withdrawal-referencing transaction, fetch the full withdrawal record
+        // (bank info, status, payout reference, proof) separately.
+        if (res.content.referenceTable === 'withdrawal' && res.content.referenceId) {
+          try {
+            const withdrawalRes = await getWithdrawalDetail(res.content.referenceId);
+            if (!cancelled) setWithdrawalDetail(withdrawalRes.content);
+          } catch (err) {
+            console.error('Failed to load withdrawal detail for transaction:', err);
+          }
+        }
       } catch {
         if (!cancelled) {
           toast.error('Không thể tải chi tiết giao dịch');
@@ -129,7 +150,7 @@ const TransactionDetailModal = ({ transactionId, onClose }: Props) => {
                   <button
                     className={styles.linkBtn}
                     type="button"
-                    onClick={() => navigate(`/parent-portal/booking/${detail.booking!.bookingId}`)}
+                    onClick={() => navigate(`${portalBase}/booking/${detail.booking!.bookingId}`)}
                   >
                     Xem chi tiết đặt lịch →
                   </button>
@@ -159,7 +180,7 @@ const TransactionDetailModal = ({ transactionId, onClose }: Props) => {
                     <button
                       className={styles.linkBtn}
                       type="button"
-                      onClick={() => navigate(`/parent-portal/booking/${detail.dispute!.bookingId}`)}
+                      onClick={() => navigate(`${portalBase}/booking/${detail.dispute!.bookingId}`)}
                     >
                       Xem đặt lịch liên quan →
                     </button>
@@ -168,31 +189,67 @@ const TransactionDetailModal = ({ transactionId, onClose }: Props) => {
               )}
 
               {/* ── Rút tiền ── */}
-              {detail.withdrawal && (
+              {withdrawalDetail && (
                 <div className={styles.invoiceSection}>
                   <div className={styles.invoiceSectionTitle}>Yêu cầu rút tiền</div>
-                  <Row label="Mã yêu cầu" value={`#${detail.withdrawal.withdrawalId}`} />
+                  <Row label="Mã yêu cầu" value={`#${withdrawalDetail.withdrawalId}`} />
                   <Row
                     label="Trạng thái"
-                    value={formatWithdrawalStatusV2(detail.withdrawal.status || '')}
+                    value={formatWithdrawalStatusV2(withdrawalDetail.status || '')}
                   />
-                  {detail.withdrawal.bankName && (
-                    <Row label="Ngân hàng" value={detail.withdrawal.bankName} />
+                  {withdrawalDetail.bankName && (
+                    <Row label="Ngân hàng" value={withdrawalDetail.bankName} />
                   )}
-                  {detail.withdrawal.accountNumber && (
-                    <Row label="Số tài khoản" value={detail.withdrawal.accountNumber} />
+                  {withdrawalDetail.accountNumber && (
+                    <Row label="Số tài khoản" value={withdrawalDetail.accountNumber} />
                   )}
-                  {detail.withdrawal.accountHolderName && (
-                    <Row label="Chủ tài khoản" value={detail.withdrawal.accountHolderName} />
+                  {withdrawalDetail.accountHolderName && (
+                    <Row label="Chủ tài khoản" value={withdrawalDetail.accountHolderName} />
                   )}
-                  {detail.withdrawal.requestedAt && (
-                    <Row label="Yêu cầu lúc" value={formatDateTime(detail.withdrawal.requestedAt)} />
+                  {withdrawalDetail.requestedAt && (
+                    <Row label="Yêu cầu lúc" value={formatDateTime(withdrawalDetail.requestedAt)} />
                   )}
-                  {detail.withdrawal.processedAt && (
-                    <Row label="Xử lý lúc" value={formatDateTime(detail.withdrawal.processedAt)} />
+                  {withdrawalDetail.processedAt && (
+                    <Row label="Xử lý lúc" value={formatDateTime(withdrawalDetail.processedAt)} />
                   )}
-                  {detail.withdrawal.completionNote && (
-                    <Row label="Ghi chú" value={detail.withdrawal.completionNote} />
+                  {withdrawalDetail.transactionId && (
+                    <Row label="Mã tham chiếu thanh toán" value={withdrawalDetail.transactionId} />
+                  )}
+                  {withdrawalDetail.paidAt && (
+                    <Row label="Thời gian chuyển khoản" value={formatDateTime(withdrawalDetail.paidAt)} />
+                  )}
+                  {withdrawalDetail.completionNote && (
+                    <Row label="Ghi chú" value={withdrawalDetail.completionNote} />
+                  )}
+                  {withdrawalDetail.rejectionReason && (
+                    <Row label="Lý do từ chối" value={withdrawalDetail.rejectionReason} />
+                  )}
+                  {withdrawalDetail.proofImageUrl && (
+                    <div className={styles.invoiceRow}>
+                      <span className={styles.invoiceLabel}>Biên lai chuyển khoản</span>
+                      <div className={styles.invoiceValue}>
+                        <a
+                          href={withdrawalDetail.proofImageUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.proofImageLink}
+                        >
+                          <img
+                            src={withdrawalDetail.proofImageUrl}
+                            alt="Biên lai chuyển khoản"
+                            className={styles.proofImage}
+                            loading="lazy"
+                          />
+                        </a>
+                        <button
+                          type="button"
+                          className={styles.viewFullImageBtn}
+                          onClick={() => window.open(withdrawalDetail.proofImageUrl!, '_blank')}
+                        >
+                          Xem ảnh đầy đủ →
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}

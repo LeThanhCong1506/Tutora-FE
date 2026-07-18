@@ -68,6 +68,7 @@ const ParentBooking = lazy(() => import('./pages/ParentBooking'));
 const BookingDetail = lazy(() => import('./pages/ParentBooking/Details'));
 const ParentWallet = lazy(() => import('./pages/ParentWallet'));
 const ParentWalletTransactions = lazy(() => import('./pages/ParentWallet/AllTransactionsPage'));
+const ParentWalletWithdrawals = lazy(() => import('./pages/ParentWallet/WithdrawalRequestsPage'));
 const ParentMessage = lazy(() => import('./pages/ParentMessage'));
 const PaymentPage = lazy(() => import('./pages/ParentBooking/Payment'));
 const ParentStudent = lazy(() => import('./pages/ParentStudent'));
@@ -239,6 +240,7 @@ function App() {
               <Route path="student" element={<ParentStudent />} />
               <Route path="wallet" element={<ParentWallet />} />
               <Route path="wallet/transactions" element={<ParentWalletTransactions />} />
+              <Route path="wallet/withdrawals" element={<ParentWalletWithdrawals />} />
               <Route path="messages" element={<ParentMessage />} />
               <Route path="lessons" element={<ParentLessons />} />
               <Route path="lessons/:lessonId" element={<ParentLessonDetail />} />
@@ -267,6 +269,9 @@ function App() {
                 <Route path="calendar/:lessonId" element={<StudentLessonDetail />} />
                 <Route path="lessons" element={<LegacyStudentLessonsRedirect />} />
                 <Route path="lessons/:lessonId" element={<LegacyStudentLessonsRedirect />} />
+                <Route path="wallet" element={<ParentWallet />} />
+                <Route path="wallet/transactions" element={<ParentWalletTransactions />} />
+                <Route path="wallet/withdrawals" element={<ParentWalletWithdrawals />} />
                 <Route path="messages" element={<ParentMessage />} />
                 <Route path="profile" element={<StudentProfile />} />
                 <Route path="account" element={<StudentAccount />} />

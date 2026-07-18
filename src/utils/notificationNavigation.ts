@@ -23,6 +23,7 @@ const NOTIFICATION_TYPE = {
     BookingCancelled: 'booking_cancelled',
     PaymentSuccess: 'payment_success',
     PaymentRemainingRequired: 'payment_remaining_required',
+    WithdrawalRequest: 'withdrawal_request',
     BookingPaymentDueSoon: 'booking_payment_due_soon',
     Warning: 'warning',
     Message: 'message',
@@ -82,6 +83,10 @@ export function getNotificationTargetPath(notification: NotificationDTO): string
         return `${prefix}/messages`;
     }
 
+    if (type === NOTIFICATION_TYPE.WithdrawalRequest) {
+        if (prefix === '/tutor-portal') return `${prefix}/finance/withdrawals`;
+        if (prefix === '/parent-portal' || prefix === '/student-portal') return `${prefix}/wallet/withdrawals`;
+    }
     // ── Layer 2: Keyword fallback (cho notification cũ chưa có type) ──
 
     // Lesson-specific keywords → ưu tiên nếu match được lessonId trong message hoặc referenceid
@@ -95,6 +100,11 @@ export function getNotificationTargetPath(notification: NotificationDTO): string
         const idMatch = message.match(/#(\d+)/);
         if (idMatch) return lessonDetailPath(idMatch[1]);
         return lessonListPath;
+    }
+
+    if (combined.includes('rút tiền') || combined.includes('withdrawal')) {
+        if (prefix === '/tutor-portal') return `${prefix}/finance/withdrawals`;
+        if (prefix === '/parent-portal' || prefix === '/student-portal') return `${prefix}/wallet/withdrawals`;
     }
 
     if (combined.includes('booking') || combined.includes('request') || combined.includes('đặt lịch') || combined.includes('cọc')) {

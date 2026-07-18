@@ -100,6 +100,12 @@ export interface WithdrawalDetail {
     accountHolderName: string | null;
     requestedAt: string;
     processedAt: string | null;
+    claimedAt: string | null;
+    completionNote: string | null;
+    rejectionReason: string | null;
+    transactionId: string | null;
+    paidAt: string | null;
+    proofImageUrl: string | null;
 }
 
 /**

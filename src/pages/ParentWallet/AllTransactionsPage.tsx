@@ -1,5 +1,5 @@
 import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { getTransactions, type TransactionHistory } from '../../services/wallet.service';
 import TransactionsCard from './TransactionsCard';
@@ -11,6 +11,8 @@ const PAGE_SIZE = 20;
 
 const AllTransactionsPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const portalBase = location.pathname.startsWith('/student-portal') ? '/student-portal' : '/parent-portal';
   const [transactions, setTransactions] = useState<TransactionHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -37,7 +39,7 @@ const AllTransactionsPage = () => {
   return (
     <div className={styles.page}>
       <div className={styles.pageHeader}>
-        <button className={styles.backBtn} type="button" onClick={() => navigate('/parent-portal/wallet')}>
+        <button className={styles.backBtn} type="button" onClick={() => navigate(`${portalBase}/wallet`)}>
           ← Quay lại ví
         </button>
         <h1 className={styles.pageTitle}>Toàn bộ giao dịch</h1>
