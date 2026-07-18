@@ -161,6 +161,9 @@ const TutorPortalCalendar = () => {
             subjectName: session.subjectName,
             status: session.status ?? '',
             meetingLink: session.meetingLink,
+            checkOutTime: session.checkOutTime,
+            // Buổi đã check-out chờ báo cáo: nút "Vào lớp" đổi thành "Gửi báo cáo" mở chi tiết lớp.
+            reportPath: session.bookingId ? `/tutor-portal/classes/${session.bookingId}` : undefined,
             // Gia sư nhìn lịch theo học sinh — card/tooltip hiển thị tên học sinh.
             counterpartLabel: 'Học sinh',
             counterpartName: session.studentName,

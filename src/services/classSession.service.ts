@@ -154,6 +154,8 @@ export interface CalendarClassSessionResponse {
     subjectName?: string;
     status?: ClassSessionStatus;
     meetingLink?: string;
+    /** Đã check-out (phòng đóng vĩnh viễn) — in_progress + checkOutTime = chờ gửi báo cáo. */
+    checkOutTime?: string;
     statusColor: string;
 }
 

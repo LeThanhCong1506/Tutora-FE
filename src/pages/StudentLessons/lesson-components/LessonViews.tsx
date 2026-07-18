@@ -3,7 +3,7 @@ import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { Link } from 'react-router-dom';
 import { Tooltip } from 'antd';
-import { CalendarDays, ChevronRight, Clock3, UserRound, Video } from 'lucide-react';
+import { CalendarDays, ChevronRight, ClipboardList, Clock3, UserRound, Video } from 'lucide-react';
 import { getClassSessionStatusMeta } from '../../../utils/classSessionStatus';
 import styles from '../styles.module.css';
 import type { LessonSummary, LessonViewProps } from './types';
@@ -13,6 +13,7 @@ import {
   getLessonLiveState,
   getLessonTime,
   groupLessonsByDate,
+  isAwaitingReport,
   isCancelledLesson,
 } from './utils';
 
@@ -38,6 +39,10 @@ const getLessonStatusMeta = (status: string) => {
 
 const getLessonDisplayMeta = (lesson: LessonSummary) => {
   const status = getLessonStatusMeta(lesson.status);
+  // Đã check-out nhưng chưa gửi báo cáo: phòng đã đóng — không hiện "Đang diễn ra" nữa.
+  if (isAwaitingReport(lesson)) {
+    return { ...status, label: 'Chờ gửi báo cáo', color: '#a46d18', bg: '#faf3e7' };
+  }
   const liveState = getLessonLiveState(lesson);
   if (liveState === 'due') {
     return { ...status, label: 'Tới giờ học', color: '#c96b08', bg: '#fff3dc' };
@@ -65,6 +70,7 @@ const getCounterpart = (lesson: LessonSummary) => ({
 });
 
 const canShowJoinButton = (lesson: LessonSummary) => {
+  if (isAwaitingReport(lesson)) return false; // phòng đã đóng sau check-out
   const status = lesson.status.trim().toLowerCase();
   return ['scheduled', 'in_progress'].includes(status) && Boolean(lesson.meetingLink?.trim());
 };
@@ -89,6 +95,22 @@ const StatusPill = ({ lesson }: { lesson: LessonSummary }) => {
 // meetingLink là ID channel Agora (= classSessionId), không phải URL. Theo nghiệp vụ
 // của trang danh sách, mọi buổi scheduled đã có channel đều cho phép đi tới phòng học nội bộ.
 const MeetLink = ({ lesson, compact = false }: { lesson: LessonSummary; compact?: boolean }) => {
+  // Buổi đã check-out chờ báo cáo: gia sư (trang có set reportPath) thấy nút "Gửi báo cáo"
+  // thay cho "Vào lớp"; học sinh/phụ huynh chỉ thấy badge, không còn nút vào phòng đã đóng.
+  if (isAwaitingReport(lesson)) {
+    if (!lesson.reportPath) return null;
+    return (
+      <Link
+        className={styles.meetLink}
+        to={lesson.reportPath}
+        aria-label={`Gửi báo cáo buổi học ${getSubject(lesson)}`}
+      >
+        <ClipboardList size={compact ? 12 : 14} strokeWidth={2.1} aria-hidden="true" />
+        <span>Gửi báo cáo</span>
+      </Link>
+    );
+  }
+
   if (!canShowJoinButton(lesson)) return null;
   const isAttentionNeeded = Boolean(getLessonLiveState(lesson));
 
