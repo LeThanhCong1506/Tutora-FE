@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { getAgoraRoom, type AgoraRoomInfo } from '../../services/agora.service';
@@ -29,10 +29,13 @@ const formatElapsed = (seconds: number): string => {
 const LiveSession = () => {
   const { classSessionId } = useParams<{ classSessionId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   // ?mock=1 — dựng UI tại chỗ bằng dữ liệu giả, không gọi API/Agora thật.
   // Dùng để duyệt layout khi chưa có backend chạy hoặc chưa có classSessionId thật.
   const isMock = searchParams.get('mock') === '1';
+  // True khi được lobby chuyển vào (đã đủ 2 người) — deep-link trực tiếp sẽ không có cờ này.
+  const fromLobby = Boolean((location.state as { fromLobby?: boolean } | null)?.fromLobby);
 
   const [room, setRoom] = useState<AgoraRoomInfo | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -53,7 +56,16 @@ const LiveSession = () => {
 
     getAgoraRoom(parseInt(classSessionId, 10))
       .then((response) => {
-        if (!cancelled) setRoom(response.content);
+        if (cancelled) return;
+        // Buổi chưa bắt đầu (scheduled, chưa check-in) mà vào thẳng bằng URL → ép qua
+        // phòng chờ để chờ đủ 2 người. Vào từ lobby (fromLobby) hoặc buổi đang diễn ra
+        // (rớt mạng vào lại) thì join phòng ngay.
+        const { status, checkedIn } = response.content;
+        if (!fromLobby && status === 'scheduled' && !checkedIn) {
+          navigate(`/session-lobby/${classSessionId}`, { replace: true });
+          return;
+        }
+        setRoom(response.content);
       })
       .catch((error: unknown) => {
         if (cancelled) return;
@@ -77,7 +89,7 @@ const LiveSession = () => {
     return () => {
       cancelled = true;
     };
-  }, [isMock, classSessionId]);
+  }, [isMock, classSessionId, fromLobby, navigate]);
 
   // Ở mock mode không join Agora thật — truyền room=null để hook no-op.
   const {
