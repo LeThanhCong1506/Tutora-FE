@@ -8,12 +8,15 @@ import AgoraRTC, {
 } from 'agora-rtc-sdk-ng';
 import AgoraRTM, { type RTMClient, type RTMEvents } from 'agora-rtm-sdk';
 import {
-  getAgoraRoom,
+  getActiveSessionConflict,
+  isSessionLeaseRevokedError,
+  joinAgoraRoom,
   sendRoomHeartbeat,
   leaveRoom,
   type AgoraRoomInfo,
   type SessionPresenceStatus,
 } from '../../../../services/agora.service';
+import type { LiveSessionIdentity } from '../../../../utils/liveSessionIdentity';
 import type { ChatMessage, RemoteParticipant } from '../types';
 
 /** Tin điều khiển gửi qua RTM để đá mọi người khỏi phòng khi gia sư kết thúc buổi học. */
@@ -32,6 +35,8 @@ interface UseAgoraCallResult {
   presenceStatus: SessionPresenceStatus | null;
   /** True khi buổi học đã kết thúc (gia sư check-out hoặc nhận tín hiệu SESSION_ENDED). */
   sessionEnded: boolean;
+  /** True khi lease của thiết bị này đã bị takeover bởi thiết bị khác. */
+  sessionReplaced: boolean;
   sendChatMessage: (text: string) => void;
   /** Gia sư gọi khi kết thúc buổi: phát tín hiệu đá mọi người còn lại khỏi phòng. */
   broadcastSessionEnded: () => Promise<void>;
@@ -49,11 +54,12 @@ interface UseAgoraCallResult {
 export const useAgoraCall = (
   room: AgoraRoomInfo | null,
   participantNames: Record<string, string>,
-  options?: { initialMicOn?: boolean; initialCamOn?: boolean },
+  options?: { initialMicOn?: boolean; initialCamOn?: boolean; identity?: LiveSessionIdentity | null },
 ): UseAgoraCallResult => {
   // Lựa chọn bật/tắt camera/micro người dùng đã chọn ở phòng chờ (mặc định bật khi vào thẳng).
   const initialMicOn = options?.initialMicOn ?? true;
   const initialCamOn = options?.initialCamOn ?? true;
+  const identity = options?.identity;
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const micTrackRef = useRef<IMicrophoneAudioTrack | null>(null);
   const camTrackRef = useRef<ICameraVideoTrack | null>(null);
@@ -77,6 +83,7 @@ export const useAgoraCall = (
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [presenceStatus, setPresenceStatus] = useState<SessionPresenceStatus | null>(null);
   const [sessionEnded, setSessionEnded] = useState(false);
+  const [sessionReplaced, setSessionReplaced] = useState(false);
 
   const nameFor = useCallback(
     (uid: string | number) => participantNames[String(uid)] ?? `Người tham gia ${uid}`,
@@ -120,21 +127,45 @@ export const useAgoraCall = (
     // Token Agora hết hạn theo thời gian (thời hạn cấu hình ở AgoraSettings.TokenExpireSeconds
     // bên backend) — sự kiện này bắn ra ít lâu trước khi hết hạn để client kịp xin token mới và
     // gia hạn phiên mà không phải rời/vào lại channel.
-    const handleTokenWillExpire = async () => {
+    const renewAgoraToken = async (showErrorOnFailure = false) => {
       try {
-        // Channel dùng chung theo booking → không suy ra classSessionId từ channel được nữa;
-        // dùng room.classSessionId. Nếu buổi đã đóng, BE trả lỗi ở đây → phiên sẽ hết hạn tự nhiên.
-        const fresh = await getAgoraRoom(room.classSessionId);
+        // Dùng room.classSessionId làm nguồn chuẩn khi xin token mới. Nếu buổi đã đóng,
+        // backend trả lỗi ở đây và phiên sẽ hết hạn tự nhiên.
+        if (!identity) throw new Error('Missing live session identity');
+        const fresh = await joinAgoraRoom(room.classSessionId, identity);
         await client.renewToken(fresh.content.token);
+        const rtm = rtmClientRef.current;
+        if (rtm) {
+          try {
+            await rtm.renewToken(fresh.content.token);
+          } catch (rtmError) {
+            // RTC remains authoritative for the lesson; a transient chat renewal error must not
+            // turn a healthy media session into a false device-replaced state.
+            console.error('❌ Agora RTM token renewal failed:', rtmError);
+          }
+        }
       } catch (err) {
+        if (isSessionLeaseRevokedError(err) || getActiveSessionConflict(err)) {
+          setSessionReplaced(true);
+          return;
+        }
         console.error('❌ Agora token renewal failed:', err);
+        if (showErrorOnFailure) {
+          setJoinError('Phiên kết nối đã hết hạn. Vui lòng tải lại trang để tiếp tục.');
+        }
       }
+    };
+
+    const handleTokenWillExpire = () => {
+      void renewAgoraToken();
     };
 
     // Nếu renew ở trên thất bại (mất mạng, buổi học đã quá hạn truy cập...), token sẽ thực sự hết
     // hạn và Agora chủ động ngắt kết nối — báo cho user thay vì để màn hình đứng hình im lặng.
     const handleTokenDidExpire = () => {
-      setJoinError('Phiên kết nối đã hết hạn. Vui lòng tải lại trang để tiếp tục.');
+      // Mobile/WebView may resume only after the short token has expired. Renewing still goes
+      // through admission, so an active device recovers while a replaced device is rejected.
+      void renewAgoraToken(true);
     };
 
     client.on('user-published', handleUserPublished);
@@ -167,6 +198,9 @@ export const useAgoraCall = (
         // Đăng nhập RTM và subscribe kênh chat (cùng channel/token với RTC).
         try {
           const rtm = new AgoraRTM.RTM(room.appId, String(room.uid));
+          rtm.addEventListener('tokenPrivilegeWillExpire', () => {
+            void renewAgoraToken();
+          });
           rtm.addEventListener('message', (event: RTMEvents.MessageEvent) => {
             if (event.publisher === String(room.uid)) return; // bỏ echo của chính mình
             const text = typeof event.message === 'string' ? event.message : '';
@@ -221,10 +255,11 @@ export const useAgoraCall = (
       client.off('token-privilege-will-expire', handleTokenWillExpire);
       client.off('token-privilege-did-expire', handleTokenDidExpire);
       if (!leavingRef.current) {
+        // Chỉ dọn tài nguyên local. Không release lease trong cleanup/unmount: khi refresh,
+        // cleanup của page cũ có thể đến sau lúc page mới vừa resume cùng lease và xoá nhầm owner.
         void cleanupTracks();
         void cleanupRtm();
         void client.leave();
-        void leaveRoom(room.classSessionId);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -239,11 +274,17 @@ export const useAgoraCall = (
 
     const ping = async () => {
       try {
-        const res = await sendRoomHeartbeat(classSessionId);
+        const res = await sendRoomHeartbeat(classSessionId, {
+          participationId: room.participationId,
+          leaseId: room.leaseId,
+        });
         if (stopped) return;
         setPresenceStatus(res.content);
         if (res.content?.roomClosed) setSessionEnded(true);
-      } catch {
+      } catch (error) {
+        if (!stopped && isSessionLeaseRevokedError(error)) {
+          setSessionReplaced(true);
+        }
         // bỏ qua lỗi tạm thời — nhịp sau sẽ thử lại
       }
     };
@@ -254,7 +295,6 @@ export const useAgoraCall = (
       stopped = true;
       clearInterval(interval);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [joined, room]);
 
   const cleanupTracks = async () => {
@@ -428,12 +468,21 @@ export const useAgoraCall = (
     if (client) {
       try {
         await client.unpublish();
+      } catch (err) {
+        console.error('❌ Error unpublishing Agora tracks:', err);
+      }
+      try {
         await client.leave();
       } catch (err) {
         console.error('❌ Error leaving Agora channel:', err);
       }
     }
-    if (classSessionId != null) void leaveRoom(classSessionId);
+    if (classSessionId != null && room) {
+      await leaveRoom(classSessionId, {
+        participationId: room.participationId,
+        leaseId: room.leaseId,
+      });
+    }
     setJoined(false);
     setLocalVideoTrack(null);
     setRemoteParticipants([]);
@@ -451,6 +500,7 @@ export const useAgoraCall = (
     chatMessages,
     presenceStatus,
     sessionEnded,
+    sessionReplaced,
     sendChatMessage,
     broadcastSessionEnded,
     toggleMic,
