@@ -117,21 +117,6 @@
   cursor: pointer;
 }
 
-.endBtn {
-  background: #631b1b;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 8px 18px;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.endBtn:hover {
-  background: #7a2222;
-}
-
 /* ── Body layout ── */
 .body {
   flex: 1;
