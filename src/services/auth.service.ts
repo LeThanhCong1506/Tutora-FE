@@ -2,6 +2,7 @@
 /* eslint-disable no-useless-catch */
 import axios from "axios";
 import { storageAdapter } from "./storage.adapter";
+import { runSessionCleanups } from "./sessionLifecycle.service";
 
 const API_BASE_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5166') + '/api';
 const USER_LOCAL_STORAGE_KEY = "TUTORA_user_data";
@@ -67,6 +68,8 @@ export const getUserInfoFromToken = () => {
  * `useFormDraft` hook + các modal: booking, about-me, credential, ...).
  */
 export const clearUserFromStorage = async () => {
+  // Close authenticated realtime connections before removing the token.
+  await runSessionCleanups();
   await storageAdapter.remove(USER_LOCAL_STORAGE_KEY);
   if (typeof window !== 'undefined') {
     try {

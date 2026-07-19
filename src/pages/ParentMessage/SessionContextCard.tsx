@@ -1,47 +1,79 @@
 import styles from './styles.module.css';
 import type { BookingResponseDTO } from '../../services/booking.service';
-
-const timeIcon = 'https://www.figma.com/api/mcp/asset/55b52807-db8b-490b-9245-43136c704fc7';
-const homeworkIcon = 'https://www.figma.com/api/mcp/asset/c7e1d56c-5edc-4f71-8f22-da65659f2a68';
+import { CalendarClock, CircleDot, MonitorSmartphone } from 'lucide-react';
 
 interface SessionContextCardProps {
-    booking: BookingResponseDTO;
+  booking: BookingResponseDTO;
+  isTutor?: boolean;
 }
 
-const SessionContextCard = ({ booking }: SessionContextCardProps) => {
-    const safeDateString = booking.createdAt.includes('Z') || booking.createdAt.includes('+') ? booking.createdAt : `${booking.createdAt}Z`;
-    const formattedDate = new Date(safeDateString).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-    });
+const formatStatus = (status: string) => {
+  const statusLabels: Record<string, string> = {
+    pending_tutor: 'Chờ gia sư xác nhận',
+    accepted: 'Đã chấp nhận',
+    confirmed: 'Đã xác nhận',
+    declined: 'Đã từ chối',
+    cancelled: 'Đã hủy',
+    completed: 'Đã hoàn thành',
+  };
 
-    return (
-        <div className={styles.sessionContextCard}>
-            <span className={styles.sessionContextCaption}>Booking #{booking.bookingId} • {formattedDate}</span>
-            <span className={styles.sessionContextTitle}>
-                {booking.subject?.subjectName || 'N/A'} • {booking.student?.fullName || 'N/A'}
-            </span>
-            <div className={styles.sessionContextMeta}>
-                <span className={styles.sessionContextItem}>
-                    <img alt="" src={timeIcon} />
-                    {booking.sessionCount} Sessions
-                </span>
-                <span className={styles.sessionContextItem}>
-                    <img alt="" src={homeworkIcon} />
-                    Status: {booking.status}
-                </span>
-                <span className={styles.sessionContextItem}>
-                    Mode: {booking.teachingMode || booking.packageType || 'N/A'}
-                </span>
-            </div>
-            {booking.status === 'pending_tutor' && (
-                <div className={styles.bookingActionPrompt}>
-                    <p>Wait for the tutor to accept your request.</p>
-                </div>
-            )}
+  return statusLabels[status] ?? status;
+};
+
+const formatTeachingMode = (mode?: string | number | null) => {
+  const modeLabels: Record<string, string> = {
+    online: 'Học trực tuyến',
+    offline: 'Học trực tiếp',
+    hybrid: 'Linh hoạt',
+    flexible: 'Lịch linh hoạt',
+    fixed: 'Lịch cố định',
+    '1': 'Lịch linh hoạt',
+    '2': 'Lịch cố định',
+  };
+
+  if (!mode) return 'Chưa cập nhật hình thức';
+  const normalizedMode = String(mode);
+  return modeLabels[normalizedMode.toLowerCase()] ?? normalizedMode;
+};
+
+const SessionContextCard = ({ booking, isTutor = false }: SessionContextCardProps) => {
+  const safeDateString =
+    booking.createdAt.includes('Z') || booking.createdAt.includes('+') ? booking.createdAt : `${booking.createdAt}Z`;
+  const formattedDate = new Date(safeDateString).toLocaleDateString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+
+  return (
+    <div className={styles.sessionContextCard}>
+      <span className={styles.sessionContextCaption}>
+        Yêu cầu #{booking.bookingId} · {formattedDate}
+      </span>
+      <span className={styles.sessionContextTitle}>
+        {booking.subject?.subjectName || 'Môn học chưa cập nhật'} · {booking.student?.fullName || 'Học sinh'}
+      </span>
+      <div className={styles.sessionContextMeta}>
+        <span className={styles.sessionContextItem}>
+          <CalendarClock size={15} aria-hidden="true" />
+          {booking.sessionCount} buổi học
+        </span>
+        <span className={styles.sessionContextItem}>
+          <CircleDot size={15} aria-hidden="true" />
+          {formatStatus(booking.status)}
+        </span>
+        <span className={styles.sessionContextItem}>
+          <MonitorSmartphone size={15} aria-hidden="true" />
+          {formatTeachingMode(booking.teachingMode || booking.packageType)}
+        </span>
+      </div>
+      {booking.status === 'pending_tutor' && (
+        <div className={styles.bookingActionPrompt}>
+          <p>{isTutor ? 'Yêu cầu đang chờ bạn xem xét và phản hồi.' : 'Yêu cầu đang chờ gia sư xác nhận.'}</p>
         </div>
-    );
+      )}
+    </div>
+  );
 };
 
 export default SessionContextCard;

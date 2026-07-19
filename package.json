@@ -9,6 +9,7 @@
     "build": "tsc -b && vite build",
     "build:zalo": "tsc -b && vite build --mode zalo && node scripts/zalo-post-build.mjs",
     "lint": "eslint .",
+    "test:presence": "node --experimental-strip-types --test tests/presence.test.ts",
     "preview": "vite preview",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,css,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,css,json}\""

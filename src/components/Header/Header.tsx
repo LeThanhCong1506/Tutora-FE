@@ -48,8 +48,8 @@ const Header = () => {
     }
   }, [location.pathname]); // Re-check on navigation
 
-  const confirmLogout = () => {
-    clearUserFromStorage();
+  const confirmLogout = async () => {
+    await clearUserFromStorage();
     setIsLoggedIn(false);
     setIsLoggedIn(false);
     setIsMenuOpen(false);
