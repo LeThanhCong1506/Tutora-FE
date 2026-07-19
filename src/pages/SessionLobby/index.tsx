@@ -1,5 +1,12 @@
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Wifi, type LucideIcon } from 'lucide-react';
+import { toast } from 'react-toastify';
+import SessionDeviceModal from '../../components/SessionDeviceModal';
+import {
+  stageLiveSessionAdmission,
+  useLiveSessionAdmission,
+  type LiveSessionAdmission,
+} from '../../hooks/useLiveSessionAdmission';
 import { getCurrentUserRole } from '../../services/auth.service';
 import { useSessionLobby, useDevicePreview, DevicePreview, type LobbyPhase } from './lobby-components';
 import styles from './styles.module.css';
@@ -89,17 +96,43 @@ const SessionLobby = () => {
   // Chỉ cho vào lớp khi đã đủ người (hoặc mock để duyệt layout). Không còn auto-nhảy —
   // người dùng tự bấm xác nhận sau khi chỉnh camera/micro.
   const canEnter = phase === 'ready' || isMock;
+  const admission = useLiveSessionAdmission(isMock ? null : sessionIdNum);
 
-  const handleEnter = () => {
+  const navigateToLiveSession = (preparedAdmission?: LiveSessionAdmission) => {
     if (sessionIdNum == null || !canEnter) return;
     // Nhả camera/micro của preview trước, để Agora trong phòng học chiếm lại được thiết bị.
     preview.stop();
     const target = isMock ? `/live-session/${sessionIdNum}?mock=1` : `/live-session/${sessionIdNum}`;
+    const admissionTransferId = preparedAdmission ? stageLiveSessionAdmission(preparedAdmission) : undefined;
     // replace:true để lobby không nằm trong history — back từ phòng học sẽ về trang trước lobby.
     navigate(target, {
       replace: true,
-      state: { fromLobby: true, micOn: preview.micOn, camOn: preview.camOn },
+      state: { fromLobby: true, micOn: preview.micOn, camOn: preview.camOn, admissionTransferId },
     });
+  };
+
+  const handleEnter = async () => {
+    if (sessionIdNum == null || !canEnter || admission.pendingAction) return;
+    if (isMock) {
+      navigateToLiveSession();
+      return;
+    }
+
+    try {
+      const preparedAdmission = await admission.join();
+      if (preparedAdmission) navigateToLiveSession(preparedAdmission);
+    } catch {
+      toast.error('Không thể kết nối tới phòng học. Vui lòng thử lại.');
+    }
+  };
+
+  const handleTakeOver = async () => {
+    try {
+      const preparedAdmission = await admission.takeOver();
+      if (preparedAdmission) navigateToLiveSession(preparedAdmission);
+    } catch {
+      toast.error('Không thể chuyển buổi học sang thiết bị này. Vui lòng thử lại.');
+    }
   };
 
   const handleBack = () => {
@@ -167,8 +200,13 @@ const SessionLobby = () => {
               <button type="button" className={styles.btnSecondary} onClick={handleBack}>
                 Quay lại
               </button>
-              <button type="button" className={styles.btnPrimary} onClick={handleEnter} disabled={!canEnter}>
-                {canEnter ? 'Vào lớp học' : `Đang chờ ${waitingForLabel}…`}
+              <button
+                type="button"
+                className={styles.btnPrimary}
+                onClick={() => void handleEnter()}
+                disabled={!canEnter || admission.pendingAction !== null}
+              >
+                {admission.joining ? 'Đang vào lớp…' : canEnter ? 'Vào lớp học' : `Đang chờ ${waitingForLabel}…`}
               </button>
             </div>
           </>
@@ -243,6 +281,14 @@ const SessionLobby = () => {
   return (
     <div className={styles.page}>
       <div className={styles.card}>{renderBody()}</div>
+      <SessionDeviceModal
+        open={admission.conflict !== null}
+        mode="conflict"
+        activeDeviceLabel={admission.conflict?.activeDeviceLabel}
+        confirmLoading={admission.takingOver}
+        onCancel={admission.clearConflict}
+        onConfirm={() => void handleTakeOver()}
+      />
     </div>
   );
 };
