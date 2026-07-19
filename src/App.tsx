@@ -50,7 +50,7 @@ const TutorPortalProfile = lazy(() => import('./pages/TutorPortal/TutorPortalPro
 const TutorPortalDashboard = lazy(() => import('./pages/TutorPortal/TutorPortalDashboard'));
 const TutorPortalMessages = lazy(() => import('./pages/TutorPortal/TutorPortalMessages'));
 const TutorPortalCalendar = lazy(() => import('./pages/TutorPortal/TutorPortalCalendar'));
-const TutorPortalClassDetail = lazy(() => import('./pages/TutorPortal/TutorPortalClassDetail'));
+const TutorPortalClassSessionDetail = lazy(() => import('./pages/TutorPortal/TutorPortalClassSessionDetail'));
 const TutorPortalStudentProfile = lazy(() => import('./pages/TutorPortal/TutorPortalStudentProfile'));
 const TutorPortalBookings = lazy(() => import('./pages/TutorPortal/TutorPortalBookings'));
 const TutorFinanceDashboardPage = lazy(
@@ -105,6 +105,12 @@ function LegacyStudentLessonsRedirect() {
   const pathname = lessonId ? `/student-portal/calendar/${lessonId}` : '/student-portal/calendar';
 
   return <Navigate to={{ pathname, search: location.search, hash: location.hash }} replace />;
+}
+
+function LegacyTutorClassesRedirect() {
+  const location = useLocation();
+
+  return <Navigate to={{ pathname: '/tutor-portal/calendar', search: location.search, hash: location.hash }} replace />;
 }
 
 function App() {
@@ -214,9 +220,11 @@ function App() {
                   <Route path="messages" element={<TutorPortalMessages />} />
                   {/* Lịch dạy — đồng bộ giao diện với /student-portal/calendar */}
                   <Route path="calendar" element={<TutorPortalCalendar />} />
-                  {/* Legacy: trang "Quản lý lớp học" cũ đã thay bằng lịch dạy */}
-                  <Route path="classes" element={<Navigate to="/tutor-portal/calendar" replace />} />
-                  <Route path="classes/:classId" element={<TutorPortalClassDetail />} />
+                  <Route path="class-sessions" element={<Navigate to="/tutor-portal/calendar" replace />} />
+                  <Route path="class-sessions/:classSessionId" element={<TutorPortalClassSessionDetail />} />
+                  {/* Legacy: URL /classes từng dùng bookingId, nên quay về lịch thay vì hiểu nhầm là classSessionId. */}
+                  <Route path="classes" element={<LegacyTutorClassesRedirect />} />
+                  <Route path="classes/:classId" element={<LegacyTutorClassesRedirect />} />
                   <Route path="students/:studentId" element={<TutorPortalStudentProfile />} />
                   <Route path="bookings" element={<TutorPortalBookings />} />
                   <Route path="finance" element={<TutorFinanceDashboardPage />} />

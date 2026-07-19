@@ -3,15 +3,18 @@ import { Upload, Button } from 'antd';
 import { toast } from 'react-toastify';
 import { UploadOutlined, DeleteOutlined } from '@ant-design/icons';
 import { uploadClassSessionAttachment } from '../../../services/classSession.service';
+import styles from './AttachmentUploader.module.css';
 
 interface AttachmentUploaderProps {
   classSessionId: number;
   onUploadComplete?: (url: string) => void;
+  onRemoveComplete?: (url: string) => void;
 }
 
 const AttachmentUploader: React.FC<AttachmentUploaderProps> = ({
   classSessionId,
   onUploadComplete,
+  onRemoveComplete,
 }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; url: string }[]>([]);
@@ -33,14 +36,20 @@ const AttachmentUploader: React.FC<AttachmentUploaderProps> = ({
   };
 
   const handleRemove = (index: number) => {
+    const removedFile = uploadedFiles[index];
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+    if (removedFile) onRemoveComplete?.(removedFile.url);
   };
 
   return (
-    <div style={{ padding: '16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(26,34,56,0.1)' }}>
-      <h4 style={{ marginBottom: '12px', fontSize: '14px', fontWeight: 600, color: '#1a2238' }}>
-        Tài liệu đính kèm
-      </h4>
+    <div className={styles.card}>
+      <div className={styles.header}>
+        <div>
+          <span>Tệp báo cáo</span>
+          <h4>Tài liệu đính kèm</h4>
+        </div>
+        <small>Ảnh, PDF, Word hoặc PowerPoint</small>
+      </div>
 
       <Upload
         beforeUpload={(file) => {
@@ -51,32 +60,23 @@ const AttachmentUploader: React.FC<AttachmentUploaderProps> = ({
         accept="image/*,.pdf,.doc,.docx,.ppt,.pptx"
         multiple
       >
-        <Button icon={<UploadOutlined />} loading={uploading} style={{ marginBottom: '12px' }}>
+        <Button icon={<UploadOutlined />} loading={uploading} className={styles.uploadButton}>
           Chọn file đính kèm
         </Button>
       </Upload>
 
       {uploadedFiles.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className={styles.fileList}>
           {uploadedFiles.map((file, index) => (
-            <div
-              key={index}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '8px 12px',
-                background: '#f5f5f5',
-                borderRadius: '8px',
-              }}
-            >
-              <span style={{ fontSize: '13px', color: '#333' }}>{file.name}</span>
+            <div key={file.url}>
+              <span>{file.name}</span>
               <Button
                 type="text"
                 size="small"
                 danger
                 icon={<DeleteOutlined />}
                 onClick={() => handleRemove(index)}
+                aria-label={`Xóa tệp ${file.name}`}
               />
             </div>
           ))}
