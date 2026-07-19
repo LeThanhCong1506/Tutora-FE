@@ -10,6 +10,8 @@ type FastboardRegion = Parameters<typeof createFastboard>[0]['sdkConfig']['regio
 
 interface WhiteboardOverlayProps {
   classSessionId: number;
+  participationId: string;
+  leaseId: string;
   onClose: () => void;
 }
 
@@ -18,7 +20,7 @@ interface WhiteboardOverlayProps {
  * Tự lấy room token từ BE, khởi tạo fastboard (kèm toolbar) và dọn dẹp khi đóng.
  * Được lazy-load ở LiveSession để SDK nặng không nằm trong bundle chính.
  */
-const WhiteboardOverlay = ({ classSessionId, onClose }: WhiteboardOverlayProps) => {
+const WhiteboardOverlay = ({ classSessionId, participationId, leaseId, onClose }: WhiteboardOverlayProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,7 +32,7 @@ const WhiteboardOverlay = ({ classSessionId, onClose }: WhiteboardOverlayProps) 
 
     void (async () => {
       try {
-        const res = await getWhiteboardRoom(classSessionId);
+        const res = await getWhiteboardRoom(classSessionId, { participationId, leaseId });
         if (cancelled) return;
         const room = res.content;
         const uid = getUserIdFromToken() ?? `guest-${classSessionId}`;
@@ -73,7 +75,7 @@ const WhiteboardOverlay = ({ classSessionId, onClose }: WhiteboardOverlayProps) 
       ui?.destroy();
       void app?.destroy();
     };
-  }, [classSessionId]);
+  }, [classSessionId, participationId, leaseId]);
 
   return (
     <div style={overlayStyle}>
