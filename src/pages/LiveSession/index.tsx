@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { Modal } from 'antd';
 import axios from 'axios';
 import { getAgoraRoom, type AgoraRoomInfo } from '../../services/agora.service';
 import { checkOutClassSession } from '../../services/classSession.service';
@@ -38,17 +39,23 @@ const LiveSession = () => {
   // Dùng để duyệt layout khi chưa có backend chạy hoặc chưa có classSessionId thật.
   const isMock = searchParams.get('mock') === '1';
   // True khi được lobby chuyển vào (đã đủ 2 người) — deep-link trực tiếp sẽ không có cờ này.
-  const fromLobby = Boolean((location.state as { fromLobby?: boolean } | null)?.fromLobby);
+  // micOn/camOn: lựa chọn bật/tắt người dùng đã chọn ở phòng chờ (mặc định bật nếu vào thẳng).
+  const lobbyNav = location.state as { fromLobby?: boolean; micOn?: boolean; camOn?: boolean } | null;
+  const fromLobby = Boolean(lobbyNav?.fromLobby);
+  const initialMicOn = lobbyNav?.micOn ?? true;
+  const initialCamOn = lobbyNav?.camOn ?? true;
 
   const [room, setRoom] = useState<AgoraRoomInfo | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [mockMicOn, setMockMicOn] = useState(true);
-  const [mockCamOn, setMockCamOn] = useState(true);
+  const [mockMicOn, setMockMicOn] = useState(initialMicOn);
+  const [mockCamOn, setMockCamOn] = useState(initialCamOn);
   const [mockScreenSharing, setMockScreenSharing] = useState(false);
   const [mockMessages, setMockMessages] = useState<ChatMessage[]>([]);
   const [panelOpen, setPanelOpen] = useState(true);
   const [whiteboardOpen, setWhiteboardOpen] = useState(false);
+  const [endModalOpen, setEndModalOpen] = useState(false);
+  const [ending, setEnding] = useState(false);
 
   const role = (getCurrentUserRole() || '').toLowerCase();
   const isTutor = role === 'tutor';
@@ -113,7 +120,7 @@ const LiveSession = () => {
     toggleCam,
     toggleScreenShare,
     leave,
-  } = useAgoraCall(isMock ? null : room, room?.participantNames ?? {});
+  } = useAgoraCall(isMock ? null : room, room?.participantNames ?? {}, { initialMicOn, initialCamOn });
 
   const joined = isMock ? true : realJoined;
   const micOn = isMock ? mockMicOn : realMicOn;
@@ -187,6 +194,18 @@ const LiveSession = () => {
     navigate(-1);
   };
 
+  // Người dùng xác nhận trong modal → thực hiện kết thúc/rời phòng. handleLeave sẽ điều hướng đi;
+  // reset state trong finally chỉ có tác dụng khi điều hướng chưa kịp unmount (vô hại).
+  const confirmEnd = async () => {
+    setEnding(true);
+    try {
+      await handleLeave();
+    } finally {
+      setEnding(false);
+      setEndModalOpen(false);
+    }
+  };
+
   // Bị đá khỏi phòng: gia sư đã kết thúc buổi (nhận tín hiệu SESSION_ENDED hoặc phòng đã đóng).
   useEffect(() => {
     if (isMock || !sessionEnded) return;
@@ -228,8 +247,6 @@ const LiveSession = () => {
       <SessionHeader
         participantLabel={participantLabel}
         elapsedLabel={formatElapsed(elapsedSeconds)}
-        endLabel={isTutor ? 'Kết thúc buổi học' : 'Rời buổi học'}
-        onEnd={handleLeave}
         panelOpen={panelOpen}
         onTogglePanel={() => setPanelOpen((v) => !v)}
       />
@@ -284,7 +301,7 @@ const LiveSession = () => {
               if (isMock) return toast.info('Bảng vẽ không khả dụng ở chế độ demo');
               setWhiteboardOpen((v) => !v);
             }}
-            onLeave={handleLeave}
+            onLeave={() => setEndModalOpen(true)}
             leaveLabel={isTutor ? 'Kết thúc' : 'Rời đi'}
           />
         </VideoStage>
@@ -305,6 +322,24 @@ const LiveSession = () => {
           />
         </Suspense>
       )}
+
+      <Modal
+        open={endModalOpen}
+        onOk={confirmEnd}
+        onCancel={() => setEndModalOpen(false)}
+        confirmLoading={ending}
+        title={isTutor ? 'Kết thúc buổi học?' : 'Rời khỏi buổi học?'}
+        okText={isTutor ? 'Kết thúc buổi học' : 'Rời đi'}
+        cancelText="Ở lại"
+        okButtonProps={{ danger: true }}
+        centered
+      >
+        <p style={{ margin: 0 }}>
+          {isTutor
+            ? 'Buổi học sẽ kết thúc cho tất cả mọi người tham gia và hệ thống sẽ tự động điểm danh cho buổi học này. Hành động này không thể hoàn tác.'
+            : 'Bạn sẽ rời khỏi buổi học này.'}
+        </p>
+      </Modal>
     </div>
   );
 };

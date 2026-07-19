@@ -1,9 +1,11 @@
-import { useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { UsersRound, Wifi, type LucideIcon } from 'lucide-react';
+import { Wifi, type LucideIcon } from 'lucide-react';
 import { getCurrentUserRole } from '../../services/auth.service';
-import { useSessionLobby, type LobbyPhase } from './lobby-components';
+import { useSessionLobby, useDevicePreview, DevicePreview, type LobbyPhase } from './lobby-components';
 import styles from './styles.module.css';
+
+/** "học sinh" → "Học sinh" */
+const capitalize = (s: string): string => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
 /**
  * Format chuỗi ISO của BE thành "dd/MM/yyyy HH:mm" mà KHÔNG qua Date object,
@@ -77,17 +79,33 @@ const SessionLobby = () => {
     ? { classSessionId: 0, tutorWaiting: isTutor, studentWaiting: !isTutor }
     : realWaitingState;
 
-  // Đủ người → chuyển vào phòng học. Giữ một nhịp ngắn để người dùng kịp thấy "Đã đủ người".
-  // replace:true để lobby không nằm trong history — back từ phòng học sẽ về trang trước lobby.
-  useEffect(() => {
-    if (isMock || phase !== 'ready' || sessionIdNum == null) return;
-    const timer = setTimeout(() => {
-      navigate(`/live-session/${sessionIdNum}`, { replace: true, state: { fromLobby: true } });
-    }, 800);
-    return () => clearTimeout(timer);
-  }, [phase, isMock, sessionIdNum, navigate]);
+  // Xem trước camera/micro khi đang ở bước chuẩn bị (chờ / đã đủ người).
+  const preview = useDevicePreview(phase === 'waiting' || phase === 'ready');
 
-  const handleBack = () => navigate(-1);
+  // Tên & chữ cái đầu của chính mình — để hiển thị avatar khi tắt camera.
+  const myName = (isTutor ? info?.tutorName : info?.studentName) || (isTutor ? 'Gia sư' : 'Học sinh');
+  const myInitial = myName.trim().charAt(0).toUpperCase() || '?';
+
+  // Chỉ cho vào lớp khi đã đủ người (hoặc mock để duyệt layout). Không còn auto-nhảy —
+  // người dùng tự bấm xác nhận sau khi chỉnh camera/micro.
+  const canEnter = phase === 'ready' || isMock;
+
+  const handleEnter = () => {
+    if (sessionIdNum == null || !canEnter) return;
+    // Nhả camera/micro của preview trước, để Agora trong phòng học chiếm lại được thiết bị.
+    preview.stop();
+    const target = isMock ? `/live-session/${sessionIdNum}?mock=1` : `/live-session/${sessionIdNum}`;
+    // replace:true để lobby không nằm trong history — back từ phòng học sẽ về trang trước lobby.
+    navigate(target, {
+      replace: true,
+      state: { fromLobby: true, micOn: preview.micOn, camOn: preview.camOn },
+    });
+  };
+
+  const handleBack = () => {
+    preview.stop();
+    navigate(-1);
+  };
 
   const renderBody = () => {
     switch (phase) {
@@ -101,12 +119,26 @@ const SessionLobby = () => {
         );
 
       case 'waiting':
+      case 'ready': {
+        const isReady = phase === 'ready';
         return (
           <>
-            <LobbyLoader icon={UsersRound} />
-            <h1 className={`${styles.title} ${styles.waitingDots}`}>Đang chờ {waitingForLabel} vào lớp</h1>
+            <DevicePreview
+              videoRef={preview.videoRef}
+              camOn={preview.camOn}
+              micOn={preview.micOn}
+              streaming={preview.streaming}
+              error={preview.error}
+              myInitial={myInitial}
+              onToggleCam={preview.toggleCam}
+              onToggleMic={preview.toggleMic}
+            />
+
+            <h1 className={styles.title}>Chuẩn bị vào lớp</h1>
             <p className={styles.subtitle}>
-              Khi cả hai cùng có mặt, hệ thống sẽ tự động đưa bạn vào lớp học. Hãy giữ trang này mở nhé.
+              {isReady
+                ? `${capitalize(waitingForLabel)} đã có mặt. Kiểm tra camera/micro rồi vào lớp nhé.`
+                : `Kiểm tra camera và micro trong lúc chờ ${waitingForLabel} vào lớp.`}
             </p>
 
             {info && (
@@ -135,18 +167,13 @@ const SessionLobby = () => {
               <button type="button" className={styles.btnSecondary} onClick={handleBack}>
                 Quay lại
               </button>
+              <button type="button" className={styles.btnPrimary} onClick={handleEnter} disabled={!canEnter}>
+                {canEnter ? 'Vào lớp học' : `Đang chờ ${waitingForLabel}…`}
+              </button>
             </div>
           </>
         );
-
-      case 'ready':
-        return (
-          <>
-            <div className={styles.readyBadge}>✓</div>
-            <h1 className={styles.title}>Đã đủ người!</h1>
-            <p className={styles.subtitle}>Đang đưa bạn vào lớp học…</p>
-          </>
-        );
+      }
 
       case 'ended':
         return (
