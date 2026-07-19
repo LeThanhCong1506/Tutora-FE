@@ -2,6 +2,16 @@
 import axios from 'axios';
 import { getAuthHeaders, type ApiResponse } from './tutorProfile.service';
 import { setupAuthInterceptor } from './apiClient';
+import {
+  createUnknownPresence,
+  normalizePresenceUserId,
+  parsePresenceListPayload,
+  parsePresencePayload,
+  type ParsedUserPresence,
+  type UserPresence,
+} from '../utils/presence';
+
+export type { PresenceStatus, UserPresence } from '../utils/presence';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -192,6 +202,62 @@ export const createChannel = async (tutorId: string): Promise<ApiResponse<{ chan
       message: error.message,
     });
     throw error;
+  }
+};
+
+/**
+ * GET /api/chat/presence/:userId — Trạng thái hoạt động của một người dùng.
+ * Fail soft: lỗi mạng trả về "unknown", tuyệt đối không suy diễn thành offline.
+ */
+export const getUserPresence = async (userId: string): Promise<UserPresence> => {
+  const normalizedUserId = normalizePresenceUserId(userId);
+  if (!normalizedUserId) return createUnknownPresence();
+
+  try {
+    const response = await api.get(`/chat/presence/${encodeURIComponent(userId.trim())}`, {
+      headers: getAuthHeaders(),
+      timeout: 10_000,
+    });
+    const parsed = parsePresencePayload(response.data, userId);
+    if (parsed.userId && normalizePresenceUserId(parsed.userId) !== normalizedUserId) {
+      return createUnknownPresence();
+    }
+    return parsed;
+  } catch (error: any) {
+    console.error('❌ Error fetching user presence:', error?.message);
+    return createUnknownPresence();
+  }
+};
+
+/**
+ * POST /api/chat/presence/batch — tải presence cho danh sách đối tác bằng một request.
+ * Backend giới hạn tối đa 50 IDs và có thể lọc IDs không thuộc các kênh của người dùng.
+ */
+export const getUsersPresence = async (userIds: string[]): Promise<ParsedUserPresence[]> => {
+  const uniqueUserIds = [
+    ...new Map(
+      userIds
+        .map((userId) => userId.trim())
+        .filter(Boolean)
+        .map((userId) => [normalizePresenceUserId(userId), userId]),
+    ).values(),
+  ];
+
+  if (uniqueUserIds.length === 0) return [];
+
+  try {
+    const response = await api.post(
+      '/chat/presence/batch',
+      { userIds: uniqueUserIds },
+      { headers: getAuthHeaders(), timeout: 10_000 },
+    );
+    return parsePresenceListPayload(response.data);
+  } catch (error: any) {
+    console.error('❌ Error fetching users presence:', error?.message);
+    return uniqueUserIds.map((userId) => ({
+      userId,
+      ...createUnknownPresence(),
+    }));
   }
 };
 
