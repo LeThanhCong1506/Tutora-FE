@@ -428,8 +428,8 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                             <Popconfirm
                                 title="Đăng xuất"
                                 description="Bạn có chắc muốn đăng xuất không?"
-                                onConfirm={() => {
-                                    clearUserFromStorage();
+                                onConfirm={async () => {
+                                    await clearUserFromStorage();
                                     toast.success('Đăng xuất thành công!');
                                     navigate('/login');
                                 }}
