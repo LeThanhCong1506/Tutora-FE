@@ -7,6 +7,7 @@ import {
   type ClassSessionDetailResponse,
 } from '../../../services/classSession.service';
 import { useFormDraft } from '../../../hooks/useFormDraft';
+import styles from './LessonReportForm.module.css';
 
 const { TextArea } = Input;
 
@@ -33,7 +34,9 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
 }) => {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
-  const { saveDraft, loadDraft, clearDraft } = useFormDraft<Partial<ReportFormValues>>(`draft_lesson_report_${classSessionId}`);
+  const { saveDraft, loadDraft, clearDraft } = useFormDraft<Partial<ReportFormValues>>(
+    `draft_lesson_report_${classSessionId}`,
+  );
 
   // Load draft on mount
   useEffect(() => {
@@ -44,9 +47,12 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
   }, [loadDraft, form]);
 
   // Auto-save draft on field changes
-  const handleValuesChange = useCallback((_: Partial<ReportFormValues>, allValues: Partial<ReportFormValues>) => {
-    saveDraft(allValues);
-  }, [saveDraft]);
+  const handleValuesChange = useCallback(
+    (_: Partial<ReportFormValues>, allValues: Partial<ReportFormValues>) => {
+      saveDraft(allValues);
+    },
+    [saveDraft],
+  );
 
   const handleSubmit = async (values: ReportFormValues) => {
     try {
@@ -72,16 +78,19 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
   };
 
   return (
-    <div style={{ padding: '20px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(26,34,56,0.1)' }}>
-      <h3 style={{ marginBottom: '16px', fontSize: '16px', fontWeight: 600, color: '#1a2238' }}>
-        Báo cáo buổi học
-      </h3>
+    <div className={styles.card}>
+      <div className={styles.header}>
+        <span>Nội dung buổi học</span>
+        <h3>Báo cáo buổi học</h3>
+        <p>Báo cáo sẽ được gửi tới học sinh và phụ huynh để xác nhận.</p>
+      </div>
       <Form
         form={form}
         layout="vertical"
         onFinish={handleSubmit}
         onValuesChange={handleValuesChange}
         initialValues={{ isStudentPresent: true }}
+        className={styles.form}
       >
         <Form.Item
           name="lessonContent"
@@ -107,16 +116,13 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
           <Input placeholder="Ghi chú về việc tham gia của học sinh..." />
         </Form.Item>
 
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+        <div className={styles.actions}>
           {onCancel && (
-            <Button onClick={onCancel}>Hủy</Button>
+            <Button onClick={onCancel} className={styles.cancelButton}>
+              Hủy
+            </Button>
           )}
-          <Button
-            type="primary"
-            htmlType="submit"
-            loading={submitting}
-            style={{ background: '#3e2f28', borderColor: '#3e2f28' }}
-          >
+          <Button type="primary" htmlType="submit" loading={submitting} className={styles.submitButton}>
             Nộp báo cáo
           </Button>
         </div>
