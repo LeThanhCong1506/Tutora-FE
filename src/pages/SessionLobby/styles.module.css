@@ -338,6 +338,139 @@
   filter: brightness(1.08);
 }
 
+.btnPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none;
+}
+
+.btnPrimary:disabled:hover {
+  filter: none;
+}
+
+/* ── Xem trước thiết bị (phòng thay đồ) ── */
+.previewWrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.previewBox {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #0f1626;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.previewVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* gương như ảnh selfie */
+  display: block;
+  background: #0f1626;
+}
+
+.previewOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #0f1626;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.previewAvatar {
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(212, 180, 131, 0.18);
+  border: 1px solid rgba(212, 180, 131, 0.35);
+}
+
+.previewOverlayText {
+  font-size: 13px;
+}
+
+.previewMicBadge {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(239, 68, 68, 0.9);
+  color: #fff;
+}
+
+.previewError {
+  width: 100%;
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #fca5a5;
+  text-align: center;
+}
+
+.deviceRow {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.deviceBtn {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.1s ease;
+}
+
+.deviceBtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.deviceBtn:active {
+  transform: scale(0.95);
+}
+
+.deviceBtnOff {
+  background: #ef4444;
+  border-color: transparent;
+  color: #fff;
+}
+
+.deviceBtnOff:hover {
+  background: #dc2626;
+  border-color: transparent;
+}
+
 /* ── Icon trạng thái kết thúc / lỗi ── */
 .stateIcon {
   font-size: 46px;

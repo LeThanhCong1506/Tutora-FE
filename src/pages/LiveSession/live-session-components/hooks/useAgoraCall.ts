@@ -49,11 +49,17 @@ interface UseAgoraCallResult {
 export const useAgoraCall = (
   room: AgoraRoomInfo | null,
   participantNames: Record<string, string>,
+  options?: { initialMicOn?: boolean; initialCamOn?: boolean },
 ): UseAgoraCallResult => {
+  // Lựa chọn bật/tắt camera/micro người dùng đã chọn ở phòng chờ (mặc định bật khi vào thẳng).
+  const initialMicOn = options?.initialMicOn ?? true;
+  const initialCamOn = options?.initialCamOn ?? true;
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const micTrackRef = useRef<IMicrophoneAudioTrack | null>(null);
   const camTrackRef = useRef<ICameraVideoTrack | null>(null);
   const screenTrackRef = useRef<ILocalVideoTrack | null>(null);
+  // Chống gọi chồng toggleScreenShare (double-click, hoặc track-ended đua với cú click).
+  const isTogglingScreenRef = useRef(false);
   const leavingRef = useRef(false);
   // RTM client để nhắn tin trong phiên — chat realtime, không lưu DB.
   const rtmClientRef = useRef<RTMClient | null>(null);
@@ -64,8 +70,8 @@ export const useAgoraCall = (
   const [joined, setJoined] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [localVideoTrack, setLocalVideoTrack] = useState<ICameraVideoTrack | ILocalVideoTrack | null>(null);
-  const [micOn, setMicOn] = useState(true);
-  const [camOn, setCamOn] = useState(true);
+  const [micOn, setMicOn] = useState(initialMicOn);
+  const [camOn, setCamOn] = useState(initialCamOn);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [remoteParticipants, setRemoteParticipants] = useState<RemoteParticipant[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -149,6 +155,10 @@ export const useAgoraCall = (
         micTrackRef.current = micTrack;
         camTrackRef.current = camTrack;
         await client.publish([micTrack, camTrack]);
+        // Áp trạng thái bật/tắt đã chọn ở phòng chờ SAU khi publish. Agora KHÔNG cho publish track đã
+        // setEnabled(false) (ném TRACK_IS_DISABLED), nên phải publish khi còn enabled rồi mới tắt.
+        if (!initialMicOn) await micTrack.setEnabled(false);
+        if (!initialCamOn) await camTrack.setEnabled(false);
         setLocalVideoTrack(camTrack);
 
         localUidRef.current = room.uid;
@@ -285,40 +295,93 @@ export const useAgoraCall = (
     setCamOn(next);
   }, [camOn]);
 
-  const toggleScreenShare = useCallback(async () => {
+  // Dọn dẹp screen track và quay lại camera. Dùng chung cho cả khi người dùng bấm nút tắt share
+  // trong app lẫn khi bấm "Stop sharing" ở thanh điều khiển gốc của trình duyệt (sự kiện track-ended).
+  // Luôn reset trạng thái trong finally để một lần unpublish lỗi không làm kẹt isScreenSharing.
+  const stopScreenShare = useCallback(async () => {
     const client = clientRef.current;
-    if (!client) return;
-
-    if (isScreenSharing) {
-      const screenTrack = screenTrackRef.current;
+    const screenTrack = screenTrackRef.current;
+    // Xoá ref trước để lần gọi chồng (vd track-ended bắn khi đang dừng) không đụng lại track cũ.
+    screenTrackRef.current = null;
+    try {
       if (screenTrack) {
-        await client.unpublish(screenTrack);
+        try {
+          if (client) await client.unpublish(screenTrack);
+        } catch (err) {
+          console.error('❌ Unpublish screen track failed:', err);
+        }
         screenTrack.close();
-        screenTrackRef.current = null;
       }
-      if (camTrackRef.current) {
+      if (client && camTrackRef.current) {
         await client.publish(camTrackRef.current);
         setLocalVideoTrack(camTrackRef.current);
       }
+    } catch (err) {
+      console.error('❌ Stop screen share failed:', err);
+    } finally {
       setIsScreenSharing(false);
-      return;
     }
+  }, []);
 
+  const startScreenShare = useCallback(async () => {
+    const client = clientRef.current;
+    if (!client) return;
+
+    // createScreenVideoTrack mở hộp thoại chọn màn hình — PHẢI được gọi từ user gesture, nếu không
+    // trình duyệt ném NotAllowedError. Lỗi ở đây (kể cả người dùng bấm Huỷ) được ném lên nơi gọi.
+    const screenTrack = await AgoraRTC.createScreenVideoTrack({}, 'disable');
     try {
-      const screenTrack = await AgoraRTC.createScreenVideoTrack({}, 'disable');
       if (camTrackRef.current) await client.unpublish(camTrackRef.current);
       await client.publish(screenTrack);
-      screenTrackRef.current = screenTrack;
-      setLocalVideoTrack(screenTrack);
-      setIsScreenSharing(true);
-
-      screenTrack.on('track-ended', () => {
-        void toggleScreenShare();
-      });
     } catch (err) {
-      console.error('❌ Screen share failed:', err);
+      // Publish lỗi → đóng track vừa tạo và khôi phục camera để không mất hình, rồi ném lại.
+      screenTrack.close();
+      if (camTrackRef.current) {
+        try {
+          await client.publish(camTrackRef.current);
+        } catch {
+          /* bỏ qua — sẽ được dọn khi rời phòng */
+        }
+      }
+      throw err;
     }
-  }, [isScreenSharing]);
+    screenTrackRef.current = screenTrack;
+    setLocalVideoTrack(screenTrack);
+    setIsScreenSharing(true);
+
+    // Người dùng dừng share từ thanh gốc của trình duyệt → gọi THẲNG stopScreenShare (không qua
+    // toggle) để không bao giờ vô tình mở lại hộp thoại chọn màn hình ngoài user gesture.
+    screenTrack.on('track-ended', () => {
+      void stopScreenShare();
+    });
+  }, [stopScreenShare]);
+
+  // Nút bật/tắt share trong app. Quyết định bật hay tắt dựa vào screenTrackRef (ref luôn mới),
+  // KHÔNG dùng state isScreenSharing để tránh stale closure. Có cờ chống gọi chồng.
+  const toggleScreenShare = useCallback(async () => {
+    if (!clientRef.current) return;
+    if (isTogglingScreenRef.current) return;
+    isTogglingScreenRef.current = true;
+    try {
+      if (screenTrackRef.current) {
+        await stopScreenShare();
+      } else {
+        await startScreenShare();
+      }
+    } catch (err) {
+      // Người dùng bấm Huỷ ở hộp thoại chọn màn hình → NotAllowedError/PERMISSION_DENIED, không
+      // phải lỗi thật → im lặng. Các lỗi khác ném lên để nơi gọi hiện toast.
+      const code = (err as { code?: string })?.code;
+      const name = err instanceof Error ? err.name : '';
+      if (name === 'NotAllowedError' || code === 'PERMISSION_DENIED') {
+        console.warn('Screen share cancelled by user');
+        return;
+      }
+      throw err;
+    } finally {
+      isTogglingScreenRef.current = false;
+    }
+  }, [startScreenShare, stopScreenShare]);
 
   const broadcastSessionEnded = useCallback(async () => {
     const rtm = rtmClientRef.current;

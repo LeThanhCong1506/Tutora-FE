@@ -4,20 +4,11 @@ import styles from '../styles.module.css';
 interface SessionHeaderProps {
   participantLabel: string;
   elapsedLabel: string;
-  endLabel: string;
-  onEnd: () => void;
   panelOpen: boolean;
   onTogglePanel: () => void;
 }
 
-const SessionHeader = ({
-  participantLabel,
-  elapsedLabel,
-  endLabel,
-  onEnd,
-  panelOpen,
-  onTogglePanel,
-}: SessionHeaderProps) => {
+const SessionHeader = ({ participantLabel, elapsedLabel, panelOpen, onTogglePanel }: SessionHeaderProps) => {
   return (
     <div className={styles.header}>
       <div className={styles.headerLeft}>
@@ -38,9 +29,6 @@ const SessionHeader = ({
           title={panelOpen ? 'Ẩn bảng bên' : 'Hiện bảng bên'}
         >
           {panelOpen ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}
-        </button>
-        <button className={styles.endBtn} onClick={onEnd}>
-          {endLabel}
         </button>
       </div>
     </div>
