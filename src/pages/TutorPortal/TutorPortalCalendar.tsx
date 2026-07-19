@@ -29,7 +29,7 @@ dayjs.locale('vi');
  * (/student-portal/calendar): cùng bộ view Lịch tuần / Lưới / Danh sách, cùng
  * highlight "Tới giờ học" (15 phút trước giờ bắt đầu) và nút "Vào lớp" đi qua
  * phòng chờ. Khác biệt duy nhất: dữ liệu lấy theo gia sư, card hiển thị tên
- * HỌC SINH, và bấm vào buổi học sẽ mở trang chi tiết lớp (theo booking).
+ * HỌC SINH, và bấm vào buổi học sẽ mở trang chi tiết của chính buổi học đó.
  */
 
 const LESSON_DATE_PICKER_THEME: ThemeConfig = {
@@ -162,8 +162,8 @@ const TutorPortalCalendar = () => {
             status: session.status ?? '',
             meetingLink: session.meetingLink,
             checkOutTime: session.checkOutTime,
-            // Buổi đã check-out chờ báo cáo: nút "Vào lớp" đổi thành "Gửi báo cáo" mở chi tiết lớp.
-            reportPath: session.bookingId ? `/tutor-portal/classes/${session.bookingId}` : undefined,
+            // Buổi đã check-out chờ báo cáo: mở đúng trang chi tiết buổi học.
+            reportPath: `/tutor-portal/class-sessions/${session.classSessionId}`,
             // Gia sư nhìn lịch theo học sinh — card/tooltip hiển thị tên học sinh.
             counterpartLabel: 'Học sinh',
             counterpartName: session.studentName,
@@ -228,11 +228,9 @@ const TutorPortalCalendar = () => {
     updateQuery({ date: nextDate.format('YYYY-MM-DD') });
   };
 
-  // Bấm vào buổi học → mở trang chi tiết LỚP (theo booking) — nơi gia sư báo cáo,
-  // xem tiến độ và quản lý các buổi của lớp đó.
+  // Mỗi card mở đúng chi tiết một buổi học, dùng classSessionId thay vì bookingId.
   const openLesson = (lessonId: number) => {
-    const lesson = lessons.find((item) => item.lessonId === lessonId);
-    if (lesson?.bookingId) navigate(`/tutor-portal/classes/${lesson.bookingId}`);
+    navigate(`/tutor-portal/class-sessions/${lessonId}`);
   };
 
   const isFilteredEmpty = activeStatus !== '' && lessons.length > 0;

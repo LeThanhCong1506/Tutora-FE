@@ -1,0 +1,84 @@
+.card {
+  padding: 17px;
+  border: 1px solid #e3e7ec;
+  border-radius: 14px;
+  background: #fafbfc;
+}
+
+.header {
+  display: flex;
+  margin-bottom: 14px;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.header span {
+  display: block;
+  margin-bottom: 4px;
+  color: #8a92a2;
+  font-size: 9.5px;
+  font-weight: 750;
+  letter-spacing: 0.065em;
+  text-transform: uppercase;
+}
+
+.header h4 {
+  margin: 0;
+  color: #17213a;
+  font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
+  font-size: 15px;
+}
+
+.header small {
+  color: #9299a8;
+  font-size: 10.5px;
+}
+
+.uploadButton {
+  min-height: 38px;
+  margin-bottom: 12px;
+  border-color: #dce2e9 !important;
+  border-radius: 10px !important;
+  color: #17213a !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+.uploadButton:hover {
+  border-color: rgba(23, 33, 58, 0.3) !important;
+  background: #f5f6f8 !important;
+}
+
+.fileList {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.fileList > div {
+  display: flex;
+  min-height: 40px;
+  padding: 5px 7px 5px 12px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid #e8ebef;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.fileList span {
+  overflow: hidden;
+  color: #3d475a;
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

@@ -247,6 +247,7 @@ const TutorPortalLayout: React.FC = () => {
             import('../pages/TutorPortal/TutorPortalDashboard');
             import('../pages/TutorPortal/TutorPortalMessages');
             import('../pages/TutorPortal/TutorPortalCalendar');
+            import('../pages/TutorPortal/TutorPortalClassSessionDetail');
             import('../pages/TutorPortal/TutorPortalBookings');
             import('../pages/TutorFinance/TutorFinanceDashboard/TutorFinanceDashboardPage');
         }, 1500);
@@ -254,9 +255,9 @@ const TutorPortalLayout: React.FC = () => {
     }, []);
 
     const isActive = (path: string, pathname: string) => {
-        // "Lịch dạy" cũng sáng khi đang xem chi tiết lớp (/tutor-portal/classes/:id).
+        // "Lịch dạy" cũng sáng khi đang xem chi tiết một buổi học.
         if (path === '/tutor-portal/calendar') {
-            return pathname === path || pathname.startsWith('/tutor-portal/classes');
+            return pathname === path || pathname.startsWith('/tutor-portal/class-sessions/');
         }
         if (path === '/tutor-portal/finance' || path === '/tutor-portal/sessions') {
             return pathname.startsWith(path);
