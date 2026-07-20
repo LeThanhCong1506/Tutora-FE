@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { isZaloMiniApp } from '../../services/zalo-env';
 
 const inMiniApp = isZaloMiniApp();
-import { ArrowLeft, Video } from 'lucide-react';
+import { ArrowLeft, Video, Paperclip, Download } from 'lucide-react';
 import { getParentLessonDetail } from '../../services/parent-lesson.service';
 import { canJoinLiveSession } from '../../utils/liveSession';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
@@ -16,6 +16,15 @@ import ReportNoShowModal from './components/ReportNoShowModal';
 import NoShowActionModal from './components/NoShowActionModal';
 import CreateFeedbackModal from './components/CreateFeedbackModal';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
+
+const getFileNameFromUrl = (url: string): string => {
+  try {
+    const path = new URL(url).pathname;
+    return decodeURIComponent(path.substring(path.lastIndexOf('/') + 1)) || 'Tệp đính kèm';
+  } catch {
+    return 'Tệp đính kèm';
+  }
+};
 
 const ParentLessonDetail: React.FC = () => {
   const navigate = useNavigate();
@@ -229,7 +238,7 @@ const ParentLessonDetail: React.FC = () => {
       </div>
 
       {/* Tutor Report (if available) */}
-      {(lesson.lessonContent || lesson.homework || lesson.tutorNotes) && (
+      {(lesson.lessonContent || lesson.homework || lesson.tutorNotes || lesson.report?.attachments?.length > 0) && (
         <div style={{
           background: '#fff', borderRadius: '12px', padding: '24px',
           border: '1px solid rgba(26,34,56,0.06)', marginBottom: '20px',
@@ -258,6 +267,47 @@ const ParentLessonDetail: React.FC = () => {
               <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Ghi chú gia sư</div>
               <div style={{ fontSize: '14px', color: '#1a2238', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
                 {lesson.tutorNotes}
+              </div>
+            </div>
+          )}
+          {Array.isArray(lesson.report?.attachments) && lesson.report.attachments.length > 0 && (
+            <div>
+              <div style={{ fontSize: '12px', color: '#999', marginBottom: '8px' }}>Tệp đính kèm</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {lesson.report.attachments.map((url: string, index: number) => (
+                  <a
+                    key={`${url}-${index}`}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '10px 14px',
+                      background: '#fafaf8',
+                      borderRadius: 10,
+                      border: '1px solid rgba(26,34,56,0.06)',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    <Paperclip size={14} style={{ flexShrink: 0, color: '#6366F1' }} />
+                    <span
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        fontSize: '13px',
+                        color: '#1a2238',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {getFileNameFromUrl(url)}
+                    </span>
+                    <Download size={14} style={{ flexShrink: 0, color: '#9ca3af' }} />
+                  </a>
+                ))}
               </div>
             </div>
           )}
