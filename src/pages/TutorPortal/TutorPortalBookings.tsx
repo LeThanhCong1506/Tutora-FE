@@ -17,19 +17,22 @@ import { getBookingResponseDeadlineState } from '../../utils/bookingDeadline';
 
 const STATUS_TABS = [
   { key: 'pending_tutor', label: 'Chờ xác nhận' },
-  { key: 'accepted', label: 'Đã chấp nhận' },
-  { key: 'paid', label: 'Đã thanh toán' },
-  { key: 'cancelled', label: 'Đã hủy' },
+  { key: 'deposit_paid,pending_remaining_payment,paid,ongoing', label: 'Đã thanh toán' },
+  { key: 'completed', label: 'Hoàn thành' },
+  { key: 'cancelled,cancelled_noshow,payment_timeout', label: 'Đã hủy' },
 ];
 
 const STATUS_CONFIG: Record<string, { label: string; tone: string }> = {
   pending_tutor: { label: 'Chờ xác nhận', tone: 'pending' },
+  pending_payment: { label: 'Chờ thanh toán', tone: 'pending' },
   accepted: { label: 'Đã chấp nhận', tone: 'accepted' },
-  paid: { label: 'Đã thanh toán', tone: 'paid' },
   deposit_paid: { label: 'Đã đặt cọc', tone: 'paid' },
-  active: { label: 'Đang học', tone: 'paid' },
+  pending_remaining_payment: { label: 'Chờ TT còn lại', tone: 'paid' },
+  paid: { label: 'Đã thanh toán', tone: 'paid' },
+  ongoing: { label: 'Đang học', tone: 'paid' },
   completed: { label: 'Hoàn thành', tone: 'completed' },
   cancelled: { label: 'Đã hủy', tone: 'cancelled' },
+  cancelled_noshow: { label: 'Hủy do vắng mặt', tone: 'cancelled' },
   declined: { label: 'Đã từ chối', tone: 'cancelled' },
   payment_timeout: { label: 'Hết hạn thanh toán', tone: 'cancelled' },
 };
@@ -39,17 +42,17 @@ const EMPTY_STATE_COPY: Record<string, { title: string; description: string }> =
     title: 'Không có yêu cầu đang chờ',
     description: 'Các yêu cầu đặt lịch mới từ phụ huynh sẽ xuất hiện tại đây.',
   },
-  accepted: {
-    title: 'Chưa có yêu cầu được chấp nhận',
-    description: 'Những yêu cầu bạn đồng ý nhận dạy sẽ được lưu tại đây.',
-  },
-  paid: {
+  'deposit_paid,pending_remaining_payment,paid,ongoing': {
     title: 'Chưa có yêu cầu đã thanh toán',
-    description: 'Booking hoàn tất thanh toán sẽ được cập nhật tại đây.',
+    description: 'Booking đã thanh toán cọc hoặc đầy đủ sẽ được cập nhật tại đây.',
   },
-  cancelled: {
+  completed: {
+    title: 'Chưa có yêu cầu hoàn thành',
+    description: 'Các khóa học đã hoàn tất sẽ được lưu tại đây.',
+  },
+  'cancelled,cancelled_noshow,payment_timeout': {
     title: 'Chưa có yêu cầu đã hủy',
-    description: 'Các yêu cầu bị hủy hoặc từ chối sẽ được lưu tại đây.',
+    description: 'Các yêu cầu bị hủy, từ chối hoặc hết hạn sẽ được lưu tại đây.',
   },
 };
 
