@@ -28,6 +28,7 @@ import BookingMonthCalendar from '../../../components/BookingMonthCalendar/Booki
 import { useCurrentTime } from '../../../hooks/useCurrentTime';
 import {
   cancelBooking,
+  finalizeBookingEarly,
   getBookingById,
   isFirstLessonFinished,
   type BookingResponseDTO,
@@ -360,21 +361,33 @@ const BookingDetailPage = () => {
   const depositPaid =
     Boolean(booking.depositPaidAt) || ['DepositEscrowed', 'Escrowed', 'paid'].includes(booking.paymentStatus);
   const remainingPaid = Boolean(booking.remainingPaidAt) || ['Escrowed', 'paid'].includes(booking.paymentStatus);
-  const canCancel = [
-    'pending_tutor',
-    'accepted',
-    'pending_payment',
-    'deposit_paid',
-    'pending_remaining_payment',
-    'ongoing',
-    'paid',
-  ].includes(booking.status);
+  const hasStartedLesson = lessons.some((lesson) => {
+    const status = lesson.status ?? '';
+    if (['in_progress', 'pending_confirmation', 'completed', 'disputed', 'no_show', 'cancelled_noshow'].includes(status)) {
+      return true;
+    }
+    const scheduledStart = parseDate(lesson.scheduledStart);
+    return ['scheduled', 'reserved'].includes(status) && scheduledStart != null && scheduledStart.getTime() <= currentTime;
+  });
+  const canFinalizeEarly =
+    booking.status === 'pending_remaining_payment' &&
+    !remainingPaid &&
+    completedLessons > 0 &&
+    !lessons.some((lesson) =>
+      ['in_progress', 'pending_confirmation', 'disputed', 'no_show', 'cancelled_noshow'].includes(
+        lesson.status ?? '',
+      ),
+    );
+  const canCancel =
+    ['pending_tutor', 'accepted', 'pending_payment', 'deposit_paid', 'ongoing', 'paid'].includes(booking.status) &&
+    !hasStartedLesson;
   const canPayDeposit = ['accepted', 'pending_payment'].includes(booking.status);
   // Chỉ cho thanh toán đợt 2 khi buổi học đầu tiên đã kết thúc.
   const isRemainingStage = ['deposit_paid', 'pending_remaining_payment'].includes(booking.status);
   const canPayRemaining = isRemainingStage && isFirstLessonFinished(booking);
   const remainingLocked = isRemainingStage && !isFirstLessonFinished(booking);
-  const hasActions = canReview || canCancel || canPayDeposit || canPayRemaining || remainingLocked;
+  const hasActions =
+    canReview || canCancel || canFinalizeEarly || canPayDeposit || canPayRemaining || remainingLocked;
 
   const copyBookingCode = async () => {
     try {
@@ -799,7 +812,7 @@ const BookingDetailPage = () => {
                     <span>Bạn có thể thanh toán các buổi học còn lại sau khi buổi học đầu tiên kết thúc.</span>
                   </div>
                 )}
-                {canCancel && (
+                {(canCancel || canFinalizeEarly) && (
                   <button className={styles.cancelBtn} type="button" onClick={() => setShowCancelModal(true)}>
                     <XCircle size={17} /> Hủy đặt lịch
                   </button>
@@ -825,7 +838,7 @@ const BookingDetailPage = () => {
       />
 
       <Modal
-        title="Hủy đặt lịch"
+        title={canFinalizeEarly ? 'Kết thúc khóa học sớm' : 'Hủy đặt lịch'}
         open={showCancelModal}
         onCancel={() => {
           setShowCancelModal(false);
@@ -834,13 +847,18 @@ const BookingDetailPage = () => {
         confirmLoading={cancelLoading}
         onOk={async () => {
           if (!cancelReason.trim()) {
-            antMessage.warning('Vui lòng nhập lý do hủy đặt lịch');
+            antMessage.warning(canFinalizeEarly ? 'Vui lòng nhập lý do kết thúc khóa học' : 'Vui lòng nhập lý do hủy đặt lịch');
             return;
           }
           setCancelLoading(true);
           try {
-            await cancelBooking(booking.bookingId, cancelReason.trim());
-            antMessage.success('Hủy đặt lịch thành công');
+            if (canFinalizeEarly) {
+              await finalizeBookingEarly(booking.bookingId, cancelReason.trim());
+              antMessage.success('Đã kết thúc khóa học. Các buổi chưa học đã được hủy.');
+            } else {
+              await cancelBooking(booking.bookingId, cancelReason.trim());
+              antMessage.success('Hủy đặt lịch thành công');
+            }
             setShowCancelModal(false);
             const response = await getBookingById(booking.bookingId);
             setBooking(response.content);
@@ -853,24 +871,35 @@ const BookingDetailPage = () => {
             }
           } catch (error) {
             const apiError = error as AxiosError<ApiErrorBody>;
-            antMessage.error(apiError.response?.data?.message || 'Không thể hủy đặt lịch');
+            antMessage.error(
+              apiError.response?.data?.message ||
+                (canFinalizeEarly ? 'Không thể kết thúc khóa học' : 'Không thể hủy đặt lịch'),
+            );
           } finally {
             setCancelLoading(false);
           }
         }}
-        okText="Xác nhận hủy"
+        okText={canFinalizeEarly ? 'Xác nhận kết thúc' : 'Xác nhận hủy'}
         cancelText="Đóng"
         okButtonProps={{ danger: true }}
       >
         <div className={styles.cancelModalCopy}>
           <p>
-            Bạn có chắc chắn muốn hủy lịch đặt <strong>BK-{booking.bookingId}</strong> không?
+            Bạn có chắc chắn muốn {canFinalizeEarly ? 'kết thúc' : 'hủy'} lịch đặt{' '}
+            <strong>BK-{booking.bookingId}</strong> không?
           </p>
-          {(depositPaid || remainingPaid) && (
+          {canFinalizeEarly ? (
             <p>
-              Bạn đã thanh toán cho khóa học này. Toàn bộ số tiền đã thanh toán sẽ được hoàn vào ví của bạn sau khi hủy.
-              Lưu ý: không thể hủy khi khóa học đã có buổi diễn ra.
+              Buổi học đã dạy sẽ được thanh toán đầy đủ cho gia sư. Các buổi chưa học sẽ bị hủy và bạn sẽ{' '}
+              <strong>không bị tính phí</strong> cho phần học phí còn lại chưa thanh toán.
             </p>
+          ) : (
+            (depositPaid || remainingPaid) && (
+              <p>
+                Bạn đã thanh toán cho khóa học này. Toàn bộ số tiền đã thanh toán sẽ được hoàn vào ví của bạn sau khi hủy.
+                Lưu ý: không thể hủy khi khóa học đã có buổi diễn ra.
+              </p>
+            )
           )}
         </div>
         <Input.TextArea
