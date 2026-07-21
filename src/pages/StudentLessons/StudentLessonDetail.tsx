@@ -14,6 +14,8 @@ import type { LessonDetailDto } from '../../services/lesson.service';
 import { message as antMessage, Spin, Modal } from 'antd';
 import CreateFeedbackModal from '../ParentLessons/components/CreateFeedbackModal';
 import CreateDisputeForm from '../ParentLessons/components/CreateDisputeForm';
+import ReportNoShowModal from '../ParentLessons/components/ReportNoShowModal';
+import NoShowActionModal from '../ParentLessons/components/NoShowActionModal';
 import { useStudentProfile } from '../../contexts/StudentProfileContext';
 import s from '../StudentPages.module.css';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
@@ -72,6 +74,8 @@ const StudentLessonDetail = () => {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [showFeedbackModal, setShowFeedbackModal] = useState(false);
     const [showDisputeForm, setShowDisputeForm] = useState(false);
+    const [showNoShowModal, setShowNoShowModal] = useState(false);
+    const [showNoShowActionModal, setShowNoShowActionModal] = useState(false);
     const [dispute, setDispute] = useState<DisputeDetailResponse | null>(null);
 
     const fetchDetail = useCallback(async () => {
@@ -123,8 +127,18 @@ const StudentLessonDetail = () => {
         setShowConfirmModal(false);
         setShowFeedbackModal(false);
         setShowDisputeForm(false);
+        setShowNoShowModal(false);
+        setShowNoShowActionModal(false);
         fetchDetail();
         fetchDispute();
+    };
+
+    // Báo vắng mặt khả dụng khi buổi đã qua 15 phút kể từ giờ bắt đầu và gia sư chưa check-in.
+    const canReportNoShow = (): boolean => {
+        if (!lesson) return false;
+        if (lesson.status !== 'scheduled') return false;
+        const diffMinutes = (Date.now() - new Date(lesson.scheduledStart).getTime()) / (1000 * 60);
+        return diffMinutes >= 15;
     };
 
     // ── Loading ──
@@ -361,6 +375,40 @@ const StudentLessonDetail = () => {
                     </div>
                 )}
 
+                {lesson.status === 'scheduled' && !isParentManaged && canReportNoShow() && (
+                    <div style={actionCardConfirm}>
+                        <div style={actionCardIconWrap}>
+                            <AlertCircle size={20} style={{ color: '#d97706' }} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={actionCardTitle}>Gia sư chưa vào lớp</div>
+                            <div style={actionCardDesc}>
+                                Đã quá 15 phút kể từ giờ bắt đầu mà gia sư chưa check-in.
+                            </div>
+                        </div>
+                        <button style={actionBtnDispute} onClick={() => setShowNoShowModal(true)}>
+                            Báo gia sư vắng mặt
+                        </button>
+                    </div>
+                )}
+
+                {lesson.status === 'no_show' && !isParentManaged && (
+                    <div style={actionCardConfirm}>
+                        <div style={actionCardIconWrap}>
+                            <AlertCircle size={20} style={{ color: '#d97706' }} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={actionCardTitle}>Gia sư đã vắng mặt</div>
+                            <div style={actionCardDesc}>
+                                Chọn hướng xử lý cho buổi học này.
+                            </div>
+                        </div>
+                        <button style={actionBtnDispute} onClick={() => setShowNoShowActionModal(true)}>
+                            Chọn hành động xử lý
+                        </button>
+                    </div>
+                )}
+
                 {lesson.status === 'completed' && (
                     <div style={actionCardFeedback}>
                         <div style={{ ...actionCardIconWrap, background: 'rgba(26,34,56,0.08)' }}>
@@ -500,6 +548,21 @@ const StudentLessonDetail = () => {
                     lessonId={lesson.lessonId}
                     onSuccess={handleActionSuccess}
                     onCancel={() => setShowDisputeForm(false)}
+                />
+
+                <ReportNoShowModal
+                    open={showNoShowModal}
+                    lessonId={lesson.lessonId}
+                    scheduledStart={lesson.scheduledStart}
+                    onSuccess={handleActionSuccess}
+                    onCancel={() => setShowNoShowModal(false)}
+                />
+
+                <NoShowActionModal
+                    open={showNoShowActionModal}
+                    lessonId={lesson.lessonId}
+                    onSuccess={handleActionSuccess}
+                    onCancel={() => setShowNoShowActionModal(false)}
                 />
             </div>
         </div>
