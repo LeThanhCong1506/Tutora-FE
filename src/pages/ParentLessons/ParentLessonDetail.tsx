@@ -330,14 +330,13 @@ const ParentLessonDetail: React.FC = () => {
             >
               Xác nhận buổi học
             </Button>
-            {/* MVP Phase 1: Ẩn nút khiếu nại */}
-            {/* <Button
+            <Button
               size="large"
               danger
               onClick={() => setShowDisputeForm(true)}
             >
               Khiếu nại
-            </Button> */}
+            </Button>
           </>
         )}
 

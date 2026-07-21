@@ -549,3 +549,42 @@ export const confirmStudentClassSession = async (id: number): Promise<ApiRespons
     const response = await api.put(`/student/class-sessions/${id}/confirm`, {}, { headers: getAuthHeaders() });
     return response.data;
 };
+
+export interface DisputeListResponse {
+    disputeId: number;
+    classSessionId: number;
+    bookingId?: number;
+    disputeType?: string;
+    status: string;
+    reason: string;
+    tutorName?: string;
+    classSessionPrice?: number;
+    createdAt?: string;
+}
+
+export const uploadClassSessionDisputeEvidence = async (
+    id: number,
+    file: File,
+): Promise<ApiResponse<string>> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post(`/parent/class-sessions/${id}/dispute/evidence`, formData, {
+        headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return response.data;
+};
+
+export const getParentDisputesList = async (
+    page: number = 1,
+    pageSize: number = 10,
+): Promise<ApiResponse<{ items: DisputeListResponse[]; totalCount: number; page: number; pageSize: number }>> => {
+    const response = await api.get('/parent/disputes', {
+        headers: getAuthHeaders(),
+        params: { page, pageSize },
+    });
+    return response.data;
+};
+

@@ -8,6 +8,8 @@ import {
   reportClassSessionNoShow,
   processClassSessionNoShowAction,
   getParentCalendar as getParentCalendarReal,
+  uploadClassSessionDisputeEvidence,
+  getParentDisputesList,
   type PendingClassSessionResponse,
   type ClassSessionDetailResponse,
   type ClassSessionStudent,
@@ -15,6 +17,7 @@ import {
   type SettlementResultResponse,
   type DisputeDetailResponse,
   type NoShowActionResultResponse,
+  type DisputeListResponse,
 } from './classSession.service';
 
 /**
@@ -257,17 +260,34 @@ export const createDispute = async (
   return { ...response, content: mapDispute(response.content) };
 };
 
-/**
- * TODO: BE hiện không có endpoint list-disputes cho parent (route `/parent/lessons/disputes`
- * đã chết, chưa thấy route thay thế trên `ParentController`). Route `/disputes` phía FE cũng
- * đang bị comment (App.tsx) nên chưa ai gọi hàm này — để nguyên tạm thời, ném lỗi rõ ràng
- * thay vì gọi 404 âm thầm.
- */
+const mapDisputeListResponse = (r: DisputeListResponse): DisputeListDto => ({
+  disputeId: r.disputeId,
+  bookingId: r.bookingId ?? 0,
+  lessonId: r.classSessionId ?? 0,
+  disputeType: r.disputeType ?? '',
+  status: r.status ?? '',
+  reason: r.reason ?? '',
+  createdAt: r.createdAt ?? '',
+  tutorName: r.tutorName,
+  subjectName: undefined,
+});
+
 export const getParentDisputes = async (
   page: number = 1,
   pageSize: number = 10,
 ): Promise<ApiResponse<PagedList<DisputeListDto>>> => {
-  throw new Error(`getParentDisputes(page=${page}, pageSize=${pageSize}): Backend chưa có endpoint list-disputes cho parent.`);
+  const response = await getParentDisputesList(page, pageSize);
+  const { items, totalCount, page: p, pageSize: ps } = response.content;
+  return {
+    ...response,
+    content: {
+      items: items.map(mapDisputeListResponse),
+      totalCount,
+      page: p,
+      pageSize: ps,
+      totalPages: Math.ceil(totalCount / ps),
+    } as unknown as PagedList<DisputeListDto>,
+  };
 };
 
 export const reportNoShow = async (lessonId: number): Promise<ApiResponse<ParentLessonDetailDto>> => {
@@ -283,14 +303,9 @@ export const processNoShowAction = async (
   return { ...response, content: mapNoShowAction(response.content) };
 };
 
-/**
- * TODO: chưa xác định được endpoint upload evidence thật trên BE (không thấy route
- * dạng `/parent/class-sessions/{id}/evidence` hay tương tự trong `ParentController`/
- * `DisputeController`). Tính năng khiếu nại đang bị ẩn ở UI (MVP Phase 1) nên chưa
- * ai gọi hàm này — `CreateDisputeForm.tsx` đã try/catch từng file nên không crash.
- */
 export const uploadDisputeEvidence = async (lessonId: number, file: File): Promise<ApiResponse<string>> => {
-  throw new Error(`uploadDisputeEvidence(lessonId=${lessonId}, file=${file.name}): chưa xác định được endpoint thật trên Backend.`);
+  const response = await uploadClassSessionDisputeEvidence(lessonId, file);
+  return response;
 };
 
 export const getParentCalendar = async (
