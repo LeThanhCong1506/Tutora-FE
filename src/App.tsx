@@ -22,6 +22,7 @@ import { ToastContainer, Slide } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 // TUTORA brand override — phải import SAU default CSS để cascade thắng.
 import './styles/toastify.css';
+import ParentDisputes from './pages/ParentDisputes';
 
 // --- Lazy-loaded pages ---
 // Public

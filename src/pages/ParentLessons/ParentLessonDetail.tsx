@@ -70,8 +70,6 @@ const ParentLessonDetail: React.FC = () => {
   };
 
   // Check if no-show report is available (15 min past scheduledStart, tutor not checked in)
-  // MVP Phase 1: Ẩn
-  /*
   const canReportNoShow = (): boolean => {
     if (!lesson) return false;
     if (lesson.status !== 'scheduled') return false;
@@ -80,7 +78,6 @@ const ParentLessonDetail: React.FC = () => {
     const diffMinutes = (now.getTime() - start.getTime()) / (1000 * 60);
     return diffMinutes >= 15;
   };
-  */
 
   if (loading) {
     return (
@@ -340,8 +337,7 @@ const ParentLessonDetail: React.FC = () => {
           </>
         )}
 
-        {/* MVP Phase 1: Ẩn tính năng báo vắng mặt */}
-        {/* {lesson.status === 'scheduled' && canReportNoShow() && (
+        {lesson.status === 'scheduled' && canReportNoShow() && (
           <Button
             size="large"
             danger
@@ -349,9 +345,9 @@ const ParentLessonDetail: React.FC = () => {
           >
             Báo gia sư vắng mặt
           </Button>
-        )} */}
+        )}
 
-        {/* {lesson.status === 'no_show' && (
+        {lesson.status === 'no_show' && (
           <Button
             type="primary"
             size="large"
@@ -360,7 +356,7 @@ const ParentLessonDetail: React.FC = () => {
           >
             Chọn hành động xử lý
           </Button>
-        )} */}
+        )}
 
         {lesson.status === 'completed' && (
           <Button
