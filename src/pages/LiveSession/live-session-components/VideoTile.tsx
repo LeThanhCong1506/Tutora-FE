@@ -75,6 +75,8 @@ const VideoTile = ({
           className={`${styles.pinBtn} ${isPinned ? styles.pinBtnActive : ''}`}
           onClick={onTogglePin}
           title={isPinned ? 'Bỏ ghim' : 'Ghim để xem full'}
+          aria-label={isPinned ? `Bỏ ghim ${name}` : `Ghim ${name} để xem lớn`}
+          aria-pressed={isPinned}
         >
           {isPinned ? <PinOff size={compact ? 13 : 16} /> : <Pin size={compact ? 13 : 16} />}
         </button>
