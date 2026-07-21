@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
+    "@mediapipe/tasks-vision": "^0.10.35",
     "@microsoft/signalr": "^10.0.0",
     "@netless/fastboard": "^1.1.8",
     "@supabase/supabase-js": "^2.90.0",
@@ -25,6 +26,7 @@
     "axios": "^1.13.2",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.562.0",
+    "onnxruntime-web": "^1.27.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-easy-crop": "^5.5.7",
