@@ -21,7 +21,11 @@ import { toast } from 'react-toastify';
 import {
   checkOutClassSession,
   getTutorClassSessionDetail,
+  getTutorClassSessionDispute,
+  submitTutorDisputeResponse,
+  uploadTutorDisputeEvidence,
   type ClassSessionDetailResponse,
+  type DisputeDetailResponse,
 } from '../../services/classSession.service';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 import { canJoinLiveSession } from '../../utils/liveSession';
@@ -118,6 +122,10 @@ const TutorPortalClassSessionDetail = () => {
   const [checkingOut, setCheckingOut] = useState(false);
   const [showReportForm, setShowReportForm] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<string[]>([]);
+  const [dispute, setDispute] = useState<DisputeDetailResponse | null>(null);
+  const [responseText, setResponseText] = useState('');
+  const [submittingResponse, setSubmittingResponse] = useState(false);
+  const [uploadingEvidence, setUploadingEvidence] = useState(false);
 
   const loadSession = useCallback(async () => {
     if (!classSessionId) {
@@ -143,6 +151,51 @@ const TutorPortalClassSessionDetail = () => {
   useEffect(() => {
     void loadSession();
   }, [loadSession]);
+
+  const loadDispute = useCallback(async () => {
+    if (!classSessionId) return;
+    try {
+      const response = await getTutorClassSessionDispute(classSessionId);
+      setDispute(response.content);
+    } catch (requestError: unknown) {
+      const status = (requestError as { response?: { status?: number } })?.response?.status;
+      if (status !== 404) console.error('Failed to load dispute for classSession', requestError);
+      setDispute(null);
+    }
+  }, [classSessionId]);
+
+  useEffect(() => {
+    void loadDispute();
+  }, [loadDispute]);
+
+  const handleSubmitDisputeResponse = async () => {
+    if (!session || responseText.trim().length < 10) return;
+    setSubmittingResponse(true);
+    try {
+      const response = await submitTutorDisputeResponse(session.classSessionId, responseText.trim());
+      setDispute(response.content);
+      setResponseText('');
+      toast.success('Đã gửi phản hồi tranh chấp.');
+    } catch (requestError: unknown) {
+      toast.error(getErrorMessage(requestError));
+    } finally {
+      setSubmittingResponse(false);
+    }
+  };
+
+  const handleUploadDisputeEvidence = async (file: File) => {
+    if (!session) return;
+    setUploadingEvidence(true);
+    try {
+      await uploadTutorDisputeEvidence(session.classSessionId, file);
+      toast.success('Đã tải lên bằng chứng.');
+      await loadDispute();
+    } catch (requestError: unknown) {
+      toast.error(getErrorMessage(requestError));
+    } finally {
+      setUploadingEvidence(false);
+    }
+  };
 
   const schedule = useMemo(() => {
     if (!session) return null;
@@ -462,6 +515,130 @@ const TutorPortalClassSessionDetail = () => {
                         <span>Hệ thống tự điểm danh khi gia sư và học sinh cùng vào phòng.</span>
                       </div>
                     </div>
+                  )}
+
+                  {dispute && (
+                    <section className={styles.card}>
+                      <div className={styles.cardHeader}>
+                        <div>
+                          <span className={styles.sectionLabel}>Tranh chấp</span>
+                          <h2>Khiếu nại buổi học này</h2>
+                        </div>
+                        <span className={styles.submittedAt}>
+                          {dispute.status === 'resolved'
+                            ? 'Đã giải quyết'
+                            : dispute.status === 'investigating'
+                              ? 'Đang xem xét'
+                              : 'Chờ xử lý'}
+                        </span>
+                      </div>
+
+                      <div className={styles.reportGrid}>
+                        <div className={`${styles.reportField} ${styles.reportFieldWide}`}>
+                          <span>Lý do khiếu nại</span>
+                          <p>{dispute.reason || 'Không có mô tả.'}</p>
+                        </div>
+                        {dispute.evidence && dispute.evidence.length > 0 && (
+                          <div className={`${styles.reportField} ${styles.reportFieldWide}`}>
+                            <span>Bằng chứng từ phụ huynh/học sinh</span>
+                            <div className={styles.attachmentList}>
+                              {dispute.evidence.map((url, index) => (
+                                <a key={url} href={url} target="_blank" rel="noopener noreferrer">
+                                  <Paperclip size={15} />
+                                  Bằng chứng {index + 1}
+                                  <ExternalLink size={13} />
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {dispute.status === 'resolved' ? (
+                        <div className={styles.inlineEmpty}>
+                          <h3>Kết quả xử lý</h3>
+                          <p>{dispute.resolutionNote || 'Không có ghi chú.'}</p>
+                          {typeof dispute.refundPercentage === 'number' && (
+                            <p>Tỷ lệ hoàn tiền: {dispute.refundPercentage}%</p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className={styles.reportGrid}>
+                          {dispute.tutorResponse && (
+                            <div className={`${styles.reportField} ${styles.reportFieldWide}`}>
+                              <span>Phản hồi của bạn</span>
+                              <p>{dispute.tutorResponse}</p>
+                            </div>
+                          )}
+                          {dispute.tutorEvidence && dispute.tutorEvidence.length > 0 && (
+                            <div className={`${styles.reportField} ${styles.reportFieldWide}`}>
+                              <span>Bằng chứng bạn đã nộp</span>
+                              <div className={styles.attachmentList}>
+                                {dispute.tutorEvidence.map((item, index) => (
+                                  <a key={item.disputeEvidenceId} href={item.fileUrl} target="_blank" rel="noopener noreferrer">
+                                    <Paperclip size={15} />
+                                    Bằng chứng {index + 1}
+                                    <ExternalLink size={13} />
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {!dispute.tutorResponse && (
+                            <div className={`${styles.reportField} ${styles.reportFieldWide}`}>
+                              <span>Phản hồi của bạn</span>
+                              <textarea
+                                value={responseText}
+                                onChange={(event) => setResponseText(event.target.value)}
+                                placeholder="Trình bày góc nhìn của bạn về khiếu nại này (tối thiểu 10 ký tự)..."
+                                rows={4}
+                                style={{
+                                  width: '100%',
+                                  padding: '10px 12px',
+                                  borderRadius: 8,
+                                  border: '1px solid #d9dde3',
+                                  fontFamily: 'inherit',
+                                  fontSize: 14,
+                                }}
+                              />
+                            </div>
+                          )}
+                          <div
+                            className={`${styles.reportField} ${styles.reportFieldWide}`}
+                            style={{ display: 'flex', gap: 12, alignItems: 'center' }}
+                          >
+                            {!dispute.tutorResponse && (
+                              <button
+                                type="button"
+                                className={styles.primaryButton}
+                                disabled={submittingResponse || responseText.trim().length < 10}
+                                onClick={() => void handleSubmitDisputeResponse()}
+                              >
+                                {submittingResponse ? 'Đang gửi…' : 'Gửi phản hồi'}
+                              </button>
+                            )}
+                            <label
+                              className={styles.secondaryButton}
+                              style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                            >
+                              <Paperclip size={16} />
+                              {uploadingEvidence ? 'Đang tải lên…' : 'Đính kèm bằng chứng'}
+                              <input
+                                type="file"
+                                accept="image/*,.pdf"
+                                style={{ display: 'none' }}
+                                disabled={uploadingEvidence}
+                                onChange={(event) => {
+                                  const file = event.target.files?.[0];
+                                  if (file) void handleUploadDisputeEvidence(file);
+                                  event.target.value = '';
+                                }}
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      )}
+                    </section>
                   )}
 
                   <section className={styles.card}>

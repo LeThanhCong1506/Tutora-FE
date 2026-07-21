@@ -400,6 +400,14 @@ export interface DisputeClassSessionInfo {
     isStudentPresent?: boolean;
 }
 
+export interface DisputeEvidenceItem {
+    disputeEvidenceId: number;
+    fileUrl?: string;
+    fileType?: string;
+    description?: string;
+    createdAt?: string;
+}
+
 export interface DisputeDetailResponse {
     disputeId: number;
     bookingId?: number;
@@ -413,6 +421,9 @@ export interface DisputeDetailResponse {
     resolutionNote?: string;
     refundAmount?: number;
     refundPercentage?: number;
+    tutorResponse?: string;
+    tutorRespondedAt?: string;
+    tutorEvidence?: DisputeEvidenceItem[];
     createdBy?: DisputeUserInfo;
     resolvedBy?: DisputeUserInfo;
     classSession?: DisputeClassSessionInfo;
@@ -582,6 +593,48 @@ export const getParentDisputesList = async (
     pageSize: number = 10,
 ): Promise<ApiResponse<{ items: DisputeListResponse[]; totalCount: number; page: number; pageSize: number }>> => {
     const response = await api.get('/parent/disputes', {
+        headers: getAuthHeaders(),
+        params: { page, pageSize },
+    });
+    return response.data;
+};
+
+// ── Tutor dispute rebuttal — `TutorClassSessionController`, `api/tutor/class-sessions/*` + `api/tutor/disputes` ──
+
+export const getTutorClassSessionDispute = async (id: number): Promise<ApiResponse<DisputeDetailResponse>> => {
+    const response = await api.get(`/tutor/class-sessions/${id}/dispute`, { headers: getAuthHeaders() });
+    return response.data;
+};
+
+export const submitTutorDisputeResponse = async (
+    id: number,
+    responseText: string,
+): Promise<ApiResponse<DisputeDetailResponse>> => {
+    const result = await api.post(
+        `/tutor/class-sessions/${id}/dispute/response`,
+        { response: responseText },
+        { headers: getAuthHeaders() },
+    );
+    return result.data;
+};
+
+export const uploadTutorDisputeEvidence = async (id: number, file: File): Promise<ApiResponse<string>> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post(`/tutor/class-sessions/${id}/dispute/evidence`, formData, {
+        headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return response.data;
+};
+
+export const getTutorDisputesList = async (
+    page: number = 1,
+    pageSize: number = 10,
+): Promise<ApiResponse<{ items: DisputeListResponse[]; totalCount: number; page: number; pageSize: number }>> => {
+    const response = await api.get('/tutor/disputes', {
         headers: getAuthHeaders(),
         params: { page, pageSize },
     });
