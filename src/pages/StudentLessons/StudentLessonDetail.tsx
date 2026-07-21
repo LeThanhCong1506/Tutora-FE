@@ -12,6 +12,8 @@ import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
 import type { LessonDetailDto } from '../../services/lesson.service';
 import { message as antMessage, Spin, Modal } from 'antd';
 import CreateFeedbackModal from '../ParentLessons/components/CreateFeedbackModal';
+import CreateDisputeForm from '../ParentLessons/components/CreateDisputeForm';
+import { useStudentProfile } from '../../contexts/StudentProfileContext';
 import s from '../StudentPages.module.css';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 import { canJoinLiveSession } from '../../utils/liveSession';
@@ -62,11 +64,13 @@ const getFileNameFromUrl = (url: string): string => {
 const StudentLessonDetail = () => {
     const { lessonId } = useParams<{ lessonId: string }>();
     const navigate = useNavigate();
+    const { isParentManaged } = useStudentProfile();
     const [lesson, setLesson] = useState<LessonDetailDto | null>(null);
     const [loading, setLoading] = useState(true);
     const [confirming, setConfirming] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+    const [showDisputeForm, setShowDisputeForm] = useState(false);
 
     const fetchDetail = useCallback(async () => {
         if (!lessonId) return;
@@ -105,6 +109,7 @@ const StudentLessonDetail = () => {
     const handleActionSuccess = () => {
         setShowConfirmModal(false);
         setShowFeedbackModal(false);
+        setShowDisputeForm(false);
         fetchDetail();
     };
 
@@ -276,12 +281,22 @@ const StudentLessonDetail = () => {
                                 Gia sư đã gửi báo cáo. Hãy xác nhận để hoàn tất thanh toán.
                             </div>
                         </div>
-                        <button
-                            style={actionBtnConfirm}
-                            onClick={() => setShowConfirmModal(true)}
-                        >
-                            <ClipboardCheck size={15} /> Xác nhận
-                        </button>
+                        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                            <button
+                                style={actionBtnConfirm}
+                                onClick={() => setShowConfirmModal(true)}
+                            >
+                                <ClipboardCheck size={15} /> Xác nhận
+                            </button>
+                            {!isParentManaged && (
+                                <button
+                                    style={actionBtnDispute}
+                                    onClick={() => setShowDisputeForm(true)}
+                                >
+                                    Khiếu nại
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
 
@@ -417,6 +432,13 @@ const StudentLessonDetail = () => {
                     tutorId={(lesson as any).tutorId || (lesson as any).tutor?.tutorId}
                     tutorName={tutorName}
                     subjectName={subjectName}
+                />
+
+                <CreateDisputeForm
+                    open={showDisputeForm}
+                    lessonId={lesson.lessonId}
+                    onSuccess={handleActionSuccess}
+                    onCancel={() => setShowDisputeForm(false)}
                 />
             </div>
         </div>
@@ -867,6 +889,12 @@ const actionBtnConfirm: React.CSSProperties = {
     ...actionBtnBase,
     background: 'linear-gradient(135deg, #d97706, #f59e0b)',
     boxShadow: '0 2px 8px rgba(217,119,6,0.25)',
+};
+
+const actionBtnDispute: React.CSSProperties = {
+    ...actionBtnBase,
+    background: 'linear-gradient(135deg, #dc2626, #ef4444)',
+    boxShadow: '0 2px 8px rgba(220,38,38,0.25)',
 };
 
 const actionBtnFeedback: React.CSSProperties = {

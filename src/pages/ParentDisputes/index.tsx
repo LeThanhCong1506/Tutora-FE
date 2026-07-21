@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-// import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getParentDisputes, type DisputeListDto } from '../../services/parent-lesson.service';
-import { Spin, Tag } from 'antd';
-import { toast } from 'react-toastify';
+import { Spin, Tag, Empty } from 'antd';
 
 const DISPUTE_STATUS: Record<string, { label: string; color: string }> = {
-  open: { label: 'Đang mở', color: '#faad14' },
+  pending: { label: 'Chờ xử lý', color: '#faad14' },
   investigating: { label: 'Đang xem xét', color: '#1890ff' },
   resolved: { label: 'Đã giải quyết', color: '#52c41a' },
   closed: { label: 'Đã đóng', color: '#999' },
@@ -37,9 +35,14 @@ const ParentDisputes: React.FC = () => {
       } else if (data?.items) {
         setDisputes(data.items);
         setTotalItems(data.totalCount || data.items.length);
+      } else {
+        setDisputes([]);
+        setTotalItems(0);
       }
-    } catch (error) {
-      toast.error('Không thể tải danh sách khiếu nại.');
+    } catch {
+      // getParentDisputes no longer throws, but handle edge cases
+      setDisputes([]);
+      setTotalItems(0);
     } finally {
       setLoading(false);
     }
@@ -61,6 +64,28 @@ const ParentDisputes: React.FC = () => {
         <p style={{ fontSize: '14px', color: '#666' }}>Theo dõi trạng thái các khiếu nại</p>
       </header>
 
+      {/* Info Banner */}
+      <div style={{
+        background: 'linear-gradient(135deg, #f0f7ff 0%, #e8f4fd 100%)',
+        borderRadius: '12px',
+        padding: '16px 20px',
+        marginBottom: '20px',
+        border: '1px solid rgba(24, 144, 255, 0.15)',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '12px',
+      }}>
+        <span style={{ fontSize: '20px' }}>💡</span>
+        <div>
+          <p style={{ margin: 0, fontSize: '14px', color: '#1a2238', fontWeight: 600 }}>
+            Cách tạo khiếu nại
+          </p>
+          <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#666', lineHeight: 1.5 }}>
+            Bạn có thể tạo khiếu nại trực tiếp từ trang chi tiết buổi học. Vào <strong>Buổi học</strong> → chọn buổi cần khiếu nại → nhấn nút <strong>"Khiếu nại"</strong> hoặc <strong>"Báo vắng"</strong>.
+          </p>
+        </div>
+      </div>
+
       {/* Disputes List */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px' }}>
@@ -71,7 +96,18 @@ const ParentDisputes: React.FC = () => {
           textAlign: 'center', padding: '60px', color: '#999',
           background: '#fff', borderRadius: '12px', border: '1px solid rgba(26,34,56,0.06)',
         }}>
-          Bạn chưa có khiếu nại nào
+          <Empty
+            description={
+              <div>
+                <p style={{ fontSize: '15px', color: '#666', margin: '0 0 4px' }}>
+                  Bạn chưa có khiếu nại nào
+                </p>
+                <p style={{ fontSize: '13px', color: '#999', margin: 0 }}>
+                  Khi bạn tạo khiếu nại từ buổi học, chúng sẽ xuất hiện ở đây.
+                </p>
+              </div>
+            }
+          />
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

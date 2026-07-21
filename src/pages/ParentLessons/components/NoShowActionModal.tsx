@@ -12,19 +12,19 @@ interface NoShowActionModalProps {
 
 const ACTION_OPTIONS = [
   {
-    value: 'reschedule',
-    label: 'Dời lịch',
-    description: 'Chuyển buổi học sang thời gian khác',
+    value: 'free_session',
+    label: 'Hoàn tiền & hủy buổi',
+    description: 'Hoàn 100% tiền buổi học về ví của bạn. Buổi học sẽ bị hủy và gia sư sẽ bị cảnh báo.',
   },
   {
-    value: 'refund',
-    label: 'Hoàn tiền',
-    description: 'Yêu cầu hoàn tiền cho buổi học này',
+    value: 'makeup',
+    label: 'Dời lịch (buổi bù)',
+    description: 'Tạo một buổi bù mới với cùng gia sư. Tiền giữ nguyên cho buổi bù, không cảnh báo gia sư.',
   },
   {
-    value: 'cancel',
-    label: 'Hủy buổi học',
-    description: 'Hủy buổi học và không dời lịch',
+    value: 'change_tutor',
+    label: 'Đổi gia sư',
+    description: 'Hủy toàn bộ booking, hoàn tiền các buổi còn lại. Gia sư sẽ bị cảnh báo.',
   },
 ];
 

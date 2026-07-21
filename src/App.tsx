@@ -264,7 +264,7 @@ function App() {
               <Route path="lessons/:lessonId" element={<ParentLessonDetail />} />
               <Route path="account" element={<ParentAccount />} />
               <Route path="notifications" element={<NotificationsPage />} />
-              {/* <Route path="disputes" element={<ParentDisputes />} /> */}
+              <Route path="disputes" element={<ParentDisputes />} />
             </Route>
 
             {/* Student Layout - PROTECTED */}
