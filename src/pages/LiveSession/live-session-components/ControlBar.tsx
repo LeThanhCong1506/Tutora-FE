@@ -1,4 +1,13 @@
-import { Mic, MicOff, Video, VideoOff, ScreenShare, ScreenShareOff, Presentation, PhoneOff } from 'lucide-react';
+import {
+  Mic,
+  MicOff,
+  Video,
+  VideoOff,
+  ScreenShare,
+  ScreenShareOff,
+  Presentation,
+  PhoneOff,
+} from 'lucide-react';
 import styles from '../styles.module.css';
 
 interface ControlBarProps {
