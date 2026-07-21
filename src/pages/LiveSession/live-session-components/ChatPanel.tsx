@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Send } from 'lucide-react';
+import { MessageCircle, Send } from 'lucide-react';
 import type { ChatMessage } from './types';
 import styles from '../styles.module.css';
 
@@ -33,14 +33,15 @@ const ChatPanel = ({ messages, onSend }: ChatPanelProps) => {
       <div className={styles.chatList} ref={listRef}>
         {messages.length === 0 ? (
           <div className={styles.chatEmpty}>
-            Chưa có tin nhắn nào. Tin nhắn chỉ hiển thị trong buổi học này và không được lưu lại.
+            <span className={styles.chatEmptyIcon} aria-hidden>
+              <MessageCircle size={22} />
+            </span>
+            <strong>Chưa có tin nhắn</strong>
+            <span>Tin nhắn chỉ hiển thị trong buổi học này và không được lưu lại.</span>
           </div>
         ) : (
           messages.map((m) => (
-            <div
-              key={m.id}
-              className={`${styles.chatBubbleRow} ${m.isLocal ? styles.chatBubbleRowLocal : ''}`}
-            >
+            <div key={m.id} className={`${styles.chatBubbleRow} ${m.isLocal ? styles.chatBubbleRowLocal : ''}`}>
               <div className={`${styles.chatBubble} ${m.isLocal ? styles.chatBubbleLocal : ''}`}>
                 {!m.isLocal && <div className={styles.chatSender}>{m.senderName}</div>}
                 <div className={styles.chatText}>{m.text}</div>
@@ -66,10 +67,12 @@ const ChatPanel = ({ messages, onSend }: ChatPanelProps) => {
           maxLength={1000}
         />
         <button
+          type="button"
           className={styles.sidePanelSendBtn}
           onClick={submit}
           disabled={!draft.trim()}
           title="Gửi"
+          aria-label="Gửi tin nhắn"
         >
           <Send size={14} />
         </button>

@@ -265,37 +265,43 @@ export const useAgoraCall = (
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room]);
 
-  // Heartbeat presence: khi đã join, báo BE mỗi 20s để BE auto check-in khi đủ cả 2 người và
+  // Gửi một nhịp heartbeat: báo BE "đang có mặt", nhận lại trạng thái presence/check-in.
+  // Tách khỏi effect để vừa chạy theo interval, vừa gọi được tức thì khi có người mới vào phòng.
+  const sendHeartbeat = useCallback(async () => {
+    if (!room || leavingRef.current) return;
+    try {
+      const res = await sendRoomHeartbeat(room.classSessionId, {
+        participationId: room.participationId,
+        leaseId: room.leaseId,
+      });
+      if (leavingRef.current) return;
+      setPresenceStatus(res.content);
+      if (res.content?.roomClosed) setSessionEnded(true);
+    } catch (error) {
+      if (!leavingRef.current && isSessionLeaseRevokedError(error)) {
+        setSessionReplaced(true);
+      }
+      // bỏ qua lỗi tạm thời — nhịp sau sẽ thử lại
+    }
+  }, [room]);
+
+  // Heartbeat định kỳ: khi đã join, báo BE mỗi 20s để BE auto check-in khi đủ cả 2 người và
   // biết khi nào cần đá mình ra (phòng đã đóng vì gia sư check-out).
   useEffect(() => {
     if (!joined || !room) return;
-    const classSessionId = room.classSessionId;
-    let stopped = false;
+    void sendHeartbeat();
+    const interval = setInterval(() => void sendHeartbeat(), 20_000);
+    return () => clearInterval(interval);
+  }, [joined, room, sendHeartbeat]);
 
-    const ping = async () => {
-      try {
-        const res = await sendRoomHeartbeat(classSessionId, {
-          participationId: room.participationId,
-          leaseId: room.leaseId,
-        });
-        if (stopped) return;
-        setPresenceStatus(res.content);
-        if (res.content?.roomClosed) setSessionEnded(true);
-      } catch (error) {
-        if (!stopped && isSessionLeaseRevokedError(error)) {
-          setSessionReplaced(true);
-        }
-        // bỏ qua lỗi tạm thời — nhịp sau sẽ thử lại
-      }
-    };
-
-    void ping();
-    const interval = setInterval(ping, 20_000);
-    return () => {
-      stopped = true;
-      clearInterval(interval);
-    };
-  }, [joined, room]);
+  // Có người mới xuất hiện trong channel (Agora báo qua user-published) → bắn heartbeat NGAY,
+  // không đợi hết nhịp 20s. Nhờ vậy phía vào trước nhận check-in gần như tức thì và banner
+  // "đang chờ… vào phòng" biến mất ngay khi cả hai đã có mặt.
+  const remoteCount = remoteParticipants.length;
+  useEffect(() => {
+    if (!joined || !room || remoteCount === 0) return;
+    void sendHeartbeat();
+  }, [joined, room, remoteCount, sendHeartbeat]);
 
   const cleanupTracks = async () => {
     micTrackRef.current?.close();

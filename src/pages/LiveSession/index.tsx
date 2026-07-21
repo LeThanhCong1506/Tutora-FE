@@ -365,6 +365,7 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
         elapsedLabel={formatElapsed(elapsedSeconds)}
         panelOpen={panelOpen}
         onTogglePanel={() => setPanelOpen((v) => !v)}
+        isRecording={isMock ? true : Boolean(presenceStatus?.isRecording)}
       />
       {!isMock && joined && presenceStatus && !presenceStatus.isCheckedIn && (
         <div

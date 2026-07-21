@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { MessageCircle, NotebookPen, X } from 'lucide-react';
 import type { ChatMessage } from './types';
 import ChatPanel from './ChatPanel';
 import NotesPanel from './NotesPanel';
@@ -40,23 +40,37 @@ const SidePanel = ({ open, onClose, messages, onSendMessage, notesStorageKey }: 
   if (!open) return null;
 
   return (
-    <aside className={styles.sidePanel}>
-      <button className={styles.sidePanelCloseBtn} onClick={onClose} title="Đóng">
+    <aside className={styles.sidePanel} aria-label="Trò chuyện và ghi chú buổi học">
+      <button
+        type="button"
+        className={styles.sidePanelCloseBtn}
+        onClick={onClose}
+        title="Đóng"
+        aria-label="Đóng bảng bên"
+      >
         <X size={16} />
       </button>
-      <div className={styles.sidePanelTabs}>
+      <div className={styles.sidePanelTabs} role="tablist" aria-label="Nội dung bảng bên">
         <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'chat'}
           className={`${styles.sidePanelTab} ${activeTab === 'chat' ? styles.sidePanelTabActive : ''}`}
           onClick={openChatTab}
         >
-          Trò chuyện
+          <MessageCircle size={14} aria-hidden />
+          <span>Trò chuyện</span>
           {unread > 0 && <span className={styles.sidePanelBadge}>{unread}</span>}
         </button>
         <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'notes'}
           className={`${styles.sidePanelTab} ${activeTab === 'notes' ? styles.sidePanelTabActive : ''}`}
           onClick={openNotesTab}
         >
-          Ghi chú
+          <NotebookPen size={14} aria-hidden />
+          <span>Ghi chú</span>
         </button>
       </div>
 
