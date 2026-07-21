@@ -51,6 +51,7 @@ const TutorPortalDashboard = lazy(() => import('./pages/TutorPortal/TutorPortalD
 const TutorPortalMessages = lazy(() => import('./pages/TutorPortal/TutorPortalMessages'));
 const TutorPortalCalendar = lazy(() => import('./pages/TutorPortal/TutorPortalCalendar'));
 const TutorPortalClassSessionDetail = lazy(() => import('./pages/TutorPortal/TutorPortalClassSessionDetail'));
+const TutorPortalDisputes = lazy(() => import('./pages/TutorPortal/TutorPortalDisputes'));
 const TutorPortalStudentProfile = lazy(() => import('./pages/TutorPortal/TutorPortalStudentProfile'));
 const TutorPortalBookings = lazy(() => import('./pages/TutorPortal/TutorPortalBookings'));
 const TutorFinanceDashboardPage = lazy(
@@ -224,6 +225,7 @@ function App() {
                   <Route path="calendar" element={<TutorPortalCalendar />} />
                   <Route path="class-sessions" element={<Navigate to="/tutor-portal/calendar" replace />} />
                   <Route path="class-sessions/:classSessionId" element={<TutorPortalClassSessionDetail />} />
+                  <Route path="disputes" element={<TutorPortalDisputes />} />
                   {/* Legacy: URL /classes từng dùng bookingId, nên quay về lịch thay vì hiểu nhầm là classSessionId. */}
                   <Route path="classes" element={<LegacyTutorClassesRedirect />} />
                   <Route path="classes/:classId" element={<LegacyTutorClassesRedirect />} />
