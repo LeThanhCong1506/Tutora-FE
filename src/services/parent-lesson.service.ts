@@ -277,15 +277,23 @@ export const getParentDisputes = async (
   pageSize: number = 10,
 ): Promise<ApiResponse<PagedList<DisputeListDto>>> => {
   const response = await getParentDisputesList(page, pageSize);
-  const { items, totalCount, page: p, pageSize: ps } = response.content;
+  // BE's PagedList<T> extends List<T>, so System.Text.Json serializes it as a bare array —
+  // CurrentPage/TotalPages/TotalCount never actually reach the client. Handle both shapes
+  // defensively rather than assume the {items, totalCount} object this was written against.
+  const raw = response.content as unknown;
+  const rawItems: DisputeListResponse[] = Array.isArray(raw)
+    ? raw
+    : (raw as { items?: DisputeListResponse[] })?.items ?? [];
+  const totalCount = Array.isArray(raw) ? raw.length : (raw as { totalCount?: number })?.totalCount ?? rawItems.length;
+
   return {
     ...response,
     content: {
-      items: items.map(mapDisputeListResponse),
+      items: rawItems.map(mapDisputeListResponse),
       totalCount,
-      page: p,
-      pageSize: ps,
-      totalPages: Math.ceil(totalCount / ps),
+      page,
+      pageSize,
+      totalPages: Math.ceil(totalCount / pageSize),
     } as unknown as PagedList<DisputeListDto>,
   };
 };
