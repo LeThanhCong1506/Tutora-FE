@@ -21,6 +21,23 @@ import type { ChatMessage, RemoteParticipant } from '../types';
 
 /** Tin điều khiển gửi qua RTM để đá mọi người khỏi phòng khi gia sư kết thúc buổi học. */
 const SESSION_ENDED_SIGNAL = '__SESSION_ENDED__';
+/** Tín hiệu RTM gia sư bật/tắt theo dõi hành vi trên máy học viên (học viên không được báo). */
+const TRACKING_START_SIGNAL = '__TRACKING_START__';
+const TRACKING_STOP_SIGNAL = '__TRACKING_STOP__';
+/**
+ * Cảnh báo hành vi học viên gửi thẳng cho gia sư qua RTM (kênh sẵn có trong phòng), dạng
+ * "__ALERT__{json}". Đi cùng đường lưu qua backend: RTM lo hiển thị tức thì, backend lo lưu trữ.
+ */
+const ALERT_SIGNAL_PREFIX = '__ALERT__';
+
+/** Cảnh báo hành vi nhận qua RTM (phía gia sư). */
+export interface LiveEmotionAlert {
+  id: string;
+  reason: string;
+  level?: string;
+  message: string;
+  at: number;
+}
 
 interface UseAgoraCallResult {
   joined: boolean;
@@ -37,9 +54,23 @@ interface UseAgoraCallResult {
   sessionEnded: boolean;
   /** True khi lease của thiết bị này đã bị takeover bởi thiết bị khác. */
   sessionReplaced: boolean;
+  /** True khi gia sư đã bật theo dõi hành vi (máy học viên nhận qua RTM). Học viên KHÔNG được báo. */
+  trackingRequested: boolean;
+  /**
+   * LỊCH SỬ toàn bộ cảnh báo trong buổi — chỉ thêm, không bao giờ xoá (tab "Theo dõi" đọc cái này).
+   */
+  emotionAlerts: LiveEmotionAlert[];
+  /** Hàng đợi toast đang hiển thị — tách khỏi lịch sử để toast tắt không làm mất log. */
+  emotionToasts: LiveEmotionAlert[];
+  /** Gỡ một toast khỏi hàng đợi hiển thị (KHÔNG ảnh hưởng lịch sử). */
+  dismissEmotionToast: (id: string) => void;
+  /** Học viên gọi để báo cảnh báo hành vi tới gia sư qua RTM. */
+  sendEmotionAlert: (alert: Omit<LiveEmotionAlert, 'id' | 'at'>) => void;
   sendChatMessage: (text: string) => void;
   /** Gia sư gọi khi kết thúc buổi: phát tín hiệu đá mọi người còn lại khỏi phòng. */
   broadcastSessionEnded: () => Promise<void>;
+  /** Gia sư bật/tắt theo dõi hành vi: phát tín hiệu RTM tới máy học viên. */
+  broadcastTracking: (on: boolean) => Promise<void>;
   toggleMic: () => Promise<void>;
   toggleCam: () => Promise<void>;
   toggleScreenShare: () => Promise<void>;
@@ -84,6 +115,9 @@ export const useAgoraCall = (
   const [presenceStatus, setPresenceStatus] = useState<SessionPresenceStatus | null>(null);
   const [sessionEnded, setSessionEnded] = useState(false);
   const [sessionReplaced, setSessionReplaced] = useState(false);
+  const [trackingRequested, setTrackingRequested] = useState(false);
+  const [emotionAlerts, setEmotionAlerts] = useState<LiveEmotionAlert[]>([]);
+  const [emotionToasts, setEmotionToasts] = useState<LiveEmotionAlert[]>([]);
 
   const nameFor = useCallback(
     (uid: string | number) => participantNames[String(uid)] ?? `Người tham gia ${uid}`,
@@ -208,6 +242,38 @@ export const useAgoraCall = (
             // Tín hiệu điều khiển "kết thúc buổi" → đá mình ra khỏi phòng (không phải tin chat).
             if (text === SESSION_ENDED_SIGNAL) {
               setSessionEnded(true);
+              return;
+            }
+            // Tín hiệu gia sư bật/tắt theo dõi hành vi (điều khiển, không phải tin chat).
+            if (text === TRACKING_START_SIGNAL) {
+              setTrackingRequested(true);
+              return;
+            }
+            if (text === TRACKING_STOP_SIGNAL) {
+              setTrackingRequested(false);
+              return;
+            }
+            // Cảnh báo hành vi từ máy học viên → xếp vào hàng đợi toast của gia sư.
+            if (text.startsWith(ALERT_SIGNAL_PREFIX)) {
+              try {
+                const payload = JSON.parse(text.slice(ALERT_SIGNAL_PREFIX.length)) as {
+                  reason: string;
+                  level?: string;
+                  message: string;
+                };
+                const entry: LiveEmotionAlert = {
+                  id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                  reason: payload.reason,
+                  level: payload.level,
+                  message: payload.message,
+                  at: Date.now(),
+                };
+                // Lịch sử: giữ suốt buổi. Toast: hiển thị tạm rồi tự gỡ.
+                setEmotionAlerts((prev) => [...prev, entry]);
+                setEmotionToasts((prev) => [...prev, entry]);
+              } catch {
+                // payload hỏng — bỏ qua, không để ảnh hưởng chat
+              }
               return;
             }
             setChatMessages((prev) => [
@@ -440,6 +506,34 @@ export const useAgoraCall = (
     }
   }, []);
 
+  const broadcastTracking = useCallback(async (on: boolean) => {
+    // Cập nhật ngay phía gia sư để UI phản hồi tức thì; máy học viên nhận qua RTM.
+    setTrackingRequested(on);
+    const rtm = rtmClientRef.current;
+    const channel = rtmChannelRef.current;
+    if (!rtm || !channel) return;
+    try {
+      await rtm.publish(channel, on ? TRACKING_START_SIGNAL : TRACKING_STOP_SIGNAL);
+    } catch (err) {
+      console.error('❌ Failed to broadcast tracking signal:', err);
+    }
+  }, []);
+
+  /** Học viên: bắn cảnh báo hành vi tới gia sư qua RTM (hiển thị tức thì, không chờ backend). */
+  const sendEmotionAlert = useCallback((alert: Omit<LiveEmotionAlert, 'id' | 'at'>) => {
+    const rtm = rtmClientRef.current;
+    const channel = rtmChannelRef.current;
+    if (!rtm || !channel) return;
+    void rtm
+      .publish(channel, `${ALERT_SIGNAL_PREFIX}${JSON.stringify(alert)}`)
+      .catch((err) => console.error('❌ Failed to send emotion alert via RTM:', err));
+  }, []);
+
+  /** Chỉ gỡ khỏi hàng đợi toast — lịch sử trong tab "Theo dõi" giữ nguyên. */
+  const dismissEmotionToast = useCallback((id: string) => {
+    setEmotionToasts((prev) => prev.filter((a) => a.id !== id));
+  }, []);
+
   const sendChatMessage = useCallback((text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -507,8 +601,14 @@ export const useAgoraCall = (
     presenceStatus,
     sessionEnded,
     sessionReplaced,
+    trackingRequested,
+    emotionAlerts,
+    emotionToasts,
+    dismissEmotionToast,
+    sendEmotionAlert,
     sendChatMessage,
     broadcastSessionEnded,
+    broadcastTracking,
     toggleMic,
     toggleCam,
     toggleScreenShare,

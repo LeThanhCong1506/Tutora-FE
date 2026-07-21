@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { MessageCircle, NotebookPen, X } from 'lucide-react';
 import type { ChatMessage } from './types';
+import type { LiveEmotionAlert } from './hooks/useAgoraCall';
 import ChatPanel from './ChatPanel';
 import NotesPanel from './NotesPanel';
+import BehaviorPanel from './BehaviorPanel';
 import styles from '../styles.module.css';
 
-type SidePanelTab = 'chat' | 'notes';
+type SidePanelTab = 'chat' | 'notes' | 'behavior';
 
 interface SidePanelProps {
   open: boolean;
@@ -13,9 +15,23 @@ interface SidePanelProps {
   messages: ChatMessage[];
   onSendMessage: (text: string) => void;
   notesStorageKey: string;
+  /** Tab "Theo dõi" chỉ dựng cho GIA SƯ — truyền props này thì tab mới xuất hiện. */
+  behavior?: {
+    trackingOn: boolean;
+    onToggleTracking: () => void;
+    alerts: LiveEmotionAlert[];
+    disabled?: boolean;
+  };
 }
 
-const SidePanel = ({ open, onClose, messages, onSendMessage, notesStorageKey }: SidePanelProps) => {
+const SidePanel = ({
+  open,
+  onClose,
+  messages,
+  onSendMessage,
+  notesStorageKey,
+  behavior,
+}: SidePanelProps) => {
   const [activeTab, setActiveTab] = useState<SidePanelTab>('chat');
   // Mốc "đã đọc": số tin đã thấy khi rời tab Chat. Đặt trong event (không phải
   // effect/render) để tránh cascading render và truy cập ref khi render.
@@ -35,6 +51,11 @@ const SidePanel = ({ open, onClose, messages, onSendMessage, notesStorageKey }: 
     // Ghi nhận đã đọc tới đây trước khi rời khỏi Chat.
     setSeenCount(messages.length);
     setActiveTab('notes');
+  };
+
+  const openBehaviorTab = () => {
+    setSeenCount(messages.length);
+    setActiveTab('behavior');
   };
 
   if (!open) return null;
@@ -72,6 +93,28 @@ const SidePanel = ({ open, onClose, messages, onSendMessage, notesStorageKey }: 
           <NotebookPen size={14} aria-hidden />
           <span>Ghi chú</span>
         </button>
+        {behavior && (
+          <button
+            className={`${styles.sidePanelTab} ${activeTab === 'behavior' ? styles.sidePanelTabActive : ''}`}
+            onClick={openBehaviorTab}
+          >
+            Theo dõi
+            {behavior.trackingOn && (
+              <span
+                title="Đang theo dõi"
+                style={{
+                  display: 'inline-block',
+                  width: 7,
+                  height: 7,
+                  borderRadius: '50%',
+                  background: '#ef4444',
+                  marginLeft: 6,
+                  verticalAlign: 'middle',
+                }}
+              />
+            )}
+          </button>
+        )}
       </div>
 
       {/* Cả hai panel luôn được mount để không mất trạng thái (draft chat, con trỏ
@@ -83,6 +126,16 @@ const SidePanel = ({ open, onClose, messages, onSendMessage, notesStorageKey }: 
         <div style={{ display: activeTab === 'notes' ? 'flex' : 'none', flex: 1, minHeight: 0 }}>
           <NotesPanel storageKey={notesStorageKey} />
         </div>
+        {behavior && (
+          <div style={{ display: activeTab === 'behavior' ? 'flex' : 'none', flex: 1, minHeight: 0 }}>
+            <BehaviorPanel
+              trackingOn={behavior.trackingOn}
+              onToggleTracking={behavior.onToggleTracking}
+              alerts={behavior.alerts}
+              disabled={behavior.disabled}
+            />
+          </div>
+        )}
       </div>
     </aside>
   );
