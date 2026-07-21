@@ -145,8 +145,14 @@ const StudentLessons = () => {
         const response = await getStudentCalendar(startDate, endDate);
         if (!active) return;
 
-        const nextLessons = (response.content || [])
+        const nextLessons: LessonSummary[] = (response.content || [])
           .flatMap((day) => day.lessons || [])
+          .map((lesson) => ({
+            ...lesson,
+            // Học sinh nhìn lịch theo gia sư — đồng bộ cách card lịch dạy hiển thị tên học sinh.
+            counterpartLabel: 'Gia sư',
+            counterpartName: lesson.tutorName,
+          }))
           .filter((lesson) => {
             const lessonDay = getLessonDate(lesson).startOf('day');
             return !lessonDay.isBefore(rangeStart, 'day') && !lessonDay.isAfter(rangeEnd, 'day');
