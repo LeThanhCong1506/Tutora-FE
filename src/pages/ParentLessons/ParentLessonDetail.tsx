@@ -5,6 +5,7 @@ import { isZaloMiniApp } from '../../services/zalo-env';
 const inMiniApp = isZaloMiniApp();
 import { ArrowLeft, Video, Paperclip, Download } from 'lucide-react';
 import { getParentLessonDetail } from '../../services/parent-lesson.service';
+import { getClassSessionDispute, type DisputeDetailResponse } from '../../services/classSession.service';
 import { canJoinLiveSession } from '../../utils/liveSession';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
 import { Spin, Tag, Button } from 'antd';
@@ -40,7 +41,7 @@ const ParentLessonDetail: React.FC = () => {
   const [showNoShowModal, setShowNoShowModal] = useState(false);
   const [showNoShowActionModal, setShowNoShowActionModal] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-
+  const [dispute, setDispute] = useState<DisputeDetailResponse | null>(null);
 
   const fetchLesson = async () => {
     try {
@@ -54,8 +55,21 @@ const ParentLessonDetail: React.FC = () => {
     }
   };
 
+  const fetchDispute = async () => {
+    if (!id) return;
+    try {
+      const response = await getClassSessionDispute(id);
+      setDispute(response.content);
+    } catch {
+      setDispute(null);
+    }
+  };
+
   useEffect(() => {
-    if (id) fetchLesson();
+    if (id) {
+      fetchLesson();
+      fetchDispute();
+    }
   }, [id]);
 
   // Tutor check-in → notification "Buổi học đã bắt đầu" → tự refetch để render banner Join
@@ -67,6 +81,7 @@ const ParentLessonDetail: React.FC = () => {
     setShowNoShowModal(false);
     setShowNoShowActionModal(false);
     fetchLesson();
+    fetchDispute();
   };
 
   // Check if no-show report is available (15 min past scheduledStart, tutor not checked in)
@@ -306,6 +321,52 @@ const ParentLessonDetail: React.FC = () => {
                   </a>
                 ))}
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {dispute && (
+        <div style={{
+          background: '#fff', borderRadius: '12px', padding: '20px', marginBottom: '16px',
+          border: '1px solid rgba(26,34,56,0.06)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <span style={{ fontSize: '15px', fontWeight: 700, color: '#1a2238' }}>Khiếu nại của bạn</span>
+            <Tag color={dispute.status === 'resolved' ? '#52c41a' : dispute.status === 'investigating' ? '#1890ff' : '#faad14'}>
+              {dispute.status === 'resolved' ? 'Đã giải quyết' : dispute.status === 'investigating' ? 'Đang xem xét' : 'Chờ xử lý'}
+            </Tag>
+          </div>
+          <div style={{ fontSize: '13px', color: '#666', marginBottom: dispute.evidence?.length ? '12px' : 0 }}>
+            {dispute.reason || 'Không có mô tả.'}
+          </div>
+          {Array.isArray(dispute.evidence) && dispute.evidence.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {dispute.evidence.map((url: string, index: number) => (
+                <a
+                  key={`${url}-${index}`}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '10px 14px', background: '#fafaf8', borderRadius: 10,
+                    border: '1px solid rgba(26,34,56,0.06)', textDecoration: 'none',
+                  }}
+                >
+                  <Paperclip size={14} style={{ flexShrink: 0, color: '#6366F1' }} />
+                  <span style={{ flex: 1, minWidth: 0, fontSize: '13px', color: '#1a2238', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {getFileNameFromUrl(url)}
+                  </span>
+                  <Download size={14} style={{ flexShrink: 0, color: '#9ca3af' }} />
+                </a>
+              ))}
+            </div>
+          )}
+          {dispute.status === 'resolved' && (
+            <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(26,34,56,0.06)' }}>
+              <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Kết quả xử lý</div>
+              <div style={{ fontSize: '14px', color: '#1a2238' }}>{dispute.resolutionNote || 'Không có ghi chú.'}</div>
             </div>
           )}
         </div>

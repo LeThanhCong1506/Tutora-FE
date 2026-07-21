@@ -440,6 +440,12 @@ export const createClassSessionDispute = async (
     return response.data;
 };
 
+/** Xem lại dispute đã tạo cho classSession này (trạng thái, bằng chứng, phản hồi gia sư khi có). */
+export const getClassSessionDispute = async (id: number): Promise<ApiResponse<DisputeDetailResponse>> => {
+    const response = await api.get(`/parent/class-sessions/${id}/dispute`, { headers: getAuthHeaders() });
+    return response.data;
+};
+
 export const getParentCalendar = async (
     startDate?: string,
     endDate?: string,
