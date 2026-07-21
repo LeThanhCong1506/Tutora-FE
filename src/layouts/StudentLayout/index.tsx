@@ -13,6 +13,7 @@ import {
   CalendarIcon,
   ChildrenIcon,
   WalletIcon,
+  DisputeIcon,
 } from '../shared/icons';
 
 const MESSAGES_PATH = '/student-portal/messages';
@@ -38,12 +39,15 @@ const NOTIFICATION_TYPES_BY_PATH: Record<string, string[]> = {
   '/student-portal/wallet': ['withdrawal_request'],
 };
 
+const DISPUTES_PATH = '/student-portal/disputes';
+
 const baseStudentNavItems: NavItem[] = [
   { path: '/student-portal/dashboard', label: 'Tổng quan', icon: DashboardIcon },
   { path: '/student-portal/booking', label: 'Đặt lịch', icon: BookingIcon },
   { path: '/student-portal/calendar', label: 'Thời khóa biểu', icon: CalendarIcon },
   { path: MESSAGES_PATH, label: 'Tin nhắn', icon: MessagesIcon },
   { path: '/student-portal/wallet', label: 'Tài chính', icon: WalletIcon },
+  { path: DISPUTES_PATH, label: 'Khiếu nại', icon: DisputeIcon },
   { path: '/student-portal/profile', label: 'Hồ sơ học sinh', icon: ChildrenIcon },
   { path: '/student-portal/account', label: 'Tài khoản', icon: AccountIcon },
 ];
@@ -62,11 +66,14 @@ const StudentLayoutInner: React.FC<StudentLayoutProps> = ({ children }) => {
   const { isParentManaged, loading } = useStudentProfile();
 
   const showWallet = !loading && !isParentManaged;
+  // Học sinh do phụ huynh quản lý không tự tạo khiếu nại được (xem StudentLessonDetail) → ẩn luôn mục này.
+  const showDisputes = !loading && !isParentManaged;
 
   const navItems = useMemo<NavItem[]>(
     () =>
       baseStudentNavItems
         .filter((item) => showWallet || item.path !== WALLET_PATH)
+        .filter((item) => showDisputes || item.path !== DISPUTES_PATH)
         .map((item) => {
           if (item.path === MESSAGES_PATH) {
             return { ...item, badge: unreadMessageCount };
@@ -74,7 +81,7 @@ const StudentLayoutInner: React.FC<StudentLayoutProps> = ({ children }) => {
           const count = badgesByPath[item.path];
           return count ? { ...item, badge: count } : item;
         }),
-    [unreadMessageCount, badgesByPath, showWallet],
+    [unreadMessageCount, badgesByPath, showWallet, showDisputes],
   );
 
   return (

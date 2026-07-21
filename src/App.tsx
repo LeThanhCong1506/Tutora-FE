@@ -85,6 +85,7 @@ const StudentWallet = lazy(() => import('./pages/StudentWallet'));
 const StudentBooking = lazy(() => import('./pages/StudentBooking'));
 const StudentLessons = lazy(() => import('./pages/StudentLessons'));
 const StudentLessonDetail = lazy(() => import('./pages/StudentLessons/StudentLessonDetail'));
+const StudentDisputes = lazy(() => import('./pages/StudentLessons/StudentDisputes'));
 const StudentAccount = lazy(() => import('./pages/StudentAccount'));
 const StudentProfile = lazy(() => import('./pages/StudentProfile'));
 
@@ -296,6 +297,7 @@ function App() {
                   <Route path="wallet" element={<StudentWallet />} />
                   <Route path="wallet/transactions" element={<ParentWalletTransactions />} />
                   <Route path="wallet/withdrawals" element={<ParentWalletWithdrawals />} />
+                  <Route path="disputes" element={<StudentDisputes />} />
                 </Route>
                 <Route path="messages" element={<ParentMessage />} />
                 <Route path="profile" element={<StudentProfile />} />
