@@ -18,6 +18,7 @@ import {
   type DisputeDetailResponse,
   type NoShowActionResultResponse,
   type DisputeListResponse,
+  type ReportNoShowRequest,
 } from './classSession.service';
 
 /**
@@ -298,8 +299,11 @@ export const getParentDisputes = async (
   };
 };
 
-export const reportNoShow = async (lessonId: number): Promise<ApiResponse<ParentLessonDetailDto>> => {
-  const response = await reportClassSessionNoShow(lessonId);
+export const reportNoShow = async (
+  lessonId: number,
+  request?: ReportNoShowRequest,
+): Promise<ApiResponse<ParentLessonDetailDto>> => {
+  const response = await reportClassSessionNoShow(lessonId, request);
   return { ...response, content: mapDetail(response.content) };
 };
 
