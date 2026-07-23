@@ -22,6 +22,7 @@ const NOTIFICATION_TYPES_BY_PATH: Record<string, string[]> = {
         'payment_remaining_required',
     ],
     '/tutor-portal/finance': ['payment_success'],
+    '/tutor-portal/disputes': ['dispute_message'],
 };
 
 // ─── Tutor-specific SVG Icons ───
