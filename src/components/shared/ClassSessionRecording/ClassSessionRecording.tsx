@@ -53,10 +53,27 @@ const ClassSessionRecording: React.FC<ClassSessionRecordingProps> = ({ classSess
     }
 
     if (state === 'available' && streamUrl) {
-        return <video className={styles.videoPlayer} src={streamUrl} controls preload="metadata" />;
+        return (
+            <video
+                className={styles.videoPlayer}
+                src={streamUrl}
+                controls
+                preload="metadata"
+                // BE báo "available" dựa trên dữ liệu ClassSession, nhưng file thực tế trên Drive
+                // có thể đã bị xoá/hỏng hoặc token stream đã hết hạn — lúc đó request stream sẽ
+                // lỗi/treo mà state vẫn đang là 'available'. Không có onError thì <video> chỉ đứng
+                // yên với spinner mặc định của trình duyệt, không bao giờ chuyển sang UI báo lỗi.
+                onError={() => {
+                    setState('error');
+                    setStreamUrl(null);
+                }}
+            />
+        );
     }
 
-    if (state === 'error') {
+    // BE báo "available" nhưng thiếu streamUrl — trái hợp đồng API, không được âm thầm
+    // rơi xuống "Chưa có bản ghi" (dễ hiểu lầm là chưa từng ghi hình).
+    if (state === 'error' || (state === 'available' && !streamUrl)) {
         return (
             <div className={styles.stateBox}>
                 <span className={`${styles.stateIcon} ${styles.errorIcon}`}>
@@ -79,6 +96,9 @@ const ClassSessionRecording: React.FC<ClassSessionRecordingProps> = ({ classSess
                 </span>
                 <strong>Đang ghi hình</strong>
                 <p>Buổi học đang diễn ra — video sẽ có sau khi kết thúc.</p>
+                <button type="button" onClick={() => void fetchRecording()}>
+                    <RefreshCw size={14} /> Kiểm tra lại
+                </button>
             </div>
         );
     }

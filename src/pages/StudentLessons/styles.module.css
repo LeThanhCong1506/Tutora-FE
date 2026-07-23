@@ -860,6 +860,35 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-color) 22%, transparent);
 }
 
+/* Badge "Có bản ghi" — tím để tách biệt khỏi trạng thái (status pill) và nút vào lớp (teal). */
+.recordingBadge {
+  display: inline-flex;
+  min-height: 25px;
+  padding: 3px 8px;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(124, 58, 237, 0.18);
+  border-radius: 999px;
+  background: #f4eefd;
+  color: #7c3aed;
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.recordingBadge span {
+  line-height: 1.6;
+}
+
+.calendarEvent .recordingBadge,
+.lessonTooltip .recordingBadge {
+  min-height: 24px;
+  padding: 3px 7px;
+  font-size: 9.5px;
+}
+
 .mobileCalendar {
   display: none;
 }

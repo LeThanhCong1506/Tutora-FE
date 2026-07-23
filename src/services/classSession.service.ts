@@ -156,6 +156,8 @@ export interface CalendarClassSessionResponse {
     meetingLink?: string;
     /** Đã check-out (phòng đóng vĩnh viễn) — in_progress + checkOutTime = chờ gửi báo cáo. */
     checkOutTime?: string;
+    /** True nếu buổi học đã có video xem lại (đã upload xong lên Drive). */
+    hasRecording?: boolean;
     statusColor: string;
 }
 
