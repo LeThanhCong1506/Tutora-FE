@@ -567,6 +567,31 @@ const TutorPortalClassSessionDetail = () => {
                         </span>
                       </div>
 
+                      {dispute.status === 'pending' && !dispute.tutorResponse && dispute.tutorResponseDeadline && (
+                        (() => {
+                          const deadline = new Date(dispute.tutorResponseDeadline!);
+                          const msLeft = deadline.getTime() - Date.now();
+                          const hoursLeft = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60)));
+                          return (
+                            <div
+                              style={{
+                                margin: '0 0 16px',
+                                padding: '10px 14px',
+                                borderRadius: 8,
+                                background: msLeft > 0 ? '#fffbeb' : '#fef2f2',
+                                border: `1px solid ${msLeft > 0 ? '#fde68a' : '#fecaca'}`,
+                                fontSize: 13,
+                                color: msLeft > 0 ? '#92400e' : '#991b1b',
+                              }}
+                            >
+                              {msLeft > 0
+                                ? `Bạn còn khoảng ${hoursLeft} giờ để phản hồi trước khi admin có thể bắt đầu điều tra (hạn ${deadline.toLocaleString('vi-VN')}).`
+                                : `Đã quá hạn phản hồi ưu tiên (${deadline.toLocaleString('vi-VN')}) — admin có thể bắt đầu điều tra bất cứ lúc nào, hãy phản hồi sớm.`}
+                            </div>
+                          );
+                        })()
+                      )}
+
                       <div className={styles.reportGrid}>
                         <div className={`${styles.reportField} ${styles.reportFieldWide}`}>
                           <span>Lý do khiếu nại</span>

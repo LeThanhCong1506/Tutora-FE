@@ -429,6 +429,8 @@ export interface DisputeDetailResponse {
     classSession?: DisputeClassSessionInfo;
     tutor?: { tutorId?: string; fullName?: string; email?: string; phone?: string; warningCount: number; averageRating?: number };
     timeSinceCreation?: string;
+    /** Earliest time admin can start investigating (createdAt + 48h) — after this, response/evidence lock. */
+    tutorResponseDeadline?: string;
 }
 
 /** ClassSession phải ở trạng thái `pending_confirmation` hoặc `completed`, và chưa từng bị khiếu nại. */
