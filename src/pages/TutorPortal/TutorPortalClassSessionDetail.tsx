@@ -601,6 +601,16 @@ const TutorPortalClassSessionDetail = () => {
                                   fontSize: 14,
                                 }}
                               />
+                              <span
+                                style={{
+                                  display: 'block',
+                                  marginTop: 4,
+                                  fontSize: 12,
+                                  color: responseText.trim().length < 10 ? '#dc2626' : '#16a34a',
+                                }}
+                              >
+                                {responseText.trim().length}/10 ký tự tối thiểu
+                              </span>
                             </div>
                           )}
                           <div
