@@ -8,7 +8,13 @@ import {
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { getStudentLessonDetail, confirmStudentLesson } from '../../services/student-lesson.service';
-import { getClassSessionDispute, type DisputeDetailResponse } from '../../services/classSession.service';
+import {
+    getClassSessionDispute,
+    getClassSessionDisputeThread,
+    sendClassSessionDisputeThreadMessage,
+    type DisputeDetailResponse,
+    type DisputeMessage,
+} from '../../services/classSession.service';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
 import type { LessonDetailDto } from '../../services/lesson.service';
 import { message as antMessage, Spin, Modal } from 'antd';
@@ -77,6 +83,9 @@ const StudentLessonDetail = () => {
     const [showNoShowModal, setShowNoShowModal] = useState(false);
     const [showNoShowActionModal, setShowNoShowActionModal] = useState(false);
     const [dispute, setDispute] = useState<DisputeDetailResponse | null>(null);
+    const [thread, setThread] = useState<DisputeMessage[]>([]);
+    const [threadInput, setThreadInput] = useState('');
+    const [sendingThreadMessage, setSendingThreadMessage] = useState(false);
 
     const fetchDetail = useCallback(async () => {
         if (!lessonId) return;
@@ -101,10 +110,39 @@ const StudentLessonDetail = () => {
         }
     }, [lessonId]);
 
+    const fetchThread = useCallback(async () => {
+        if (!lessonId) return;
+        try {
+            const response = await getClassSessionDisputeThread(parseInt(lessonId));
+            setThread(response.content);
+        } catch (requestError: unknown) {
+            console.error('Failed to load dispute thread', requestError);
+        }
+    }, [lessonId]);
+
+    const handleSendThreadMessage = async () => {
+        if (!lessonId || threadInput.trim().length === 0) return;
+        setSendingThreadMessage(true);
+        try {
+            await sendClassSessionDisputeThreadMessage(parseInt(lessonId), threadInput.trim());
+            setThreadInput('');
+            await fetchThread();
+        } catch (error: any) {
+            antMessage.error(error.response?.data?.message || 'Không thể gửi tin nhắn');
+        } finally {
+            setSendingThreadMessage(false);
+        }
+    };
+
     useEffect(() => {
         fetchDetail();
         fetchDispute();
     }, [fetchDetail, fetchDispute]);
+
+    useEffect(() => {
+        if (dispute) void fetchThread();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dispute?.disputeId]);
 
     useLessonStartedListener(fetchDetail);
 
@@ -385,6 +423,52 @@ const StudentLessonDetail = () => {
                             <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(26,34,56,0.06)' }}>
                                 <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Kết quả xử lý</div>
                                 <div style={{ fontSize: '14px', color: '#1a2238' }}>{dispute.resolutionNote || 'Không có ghi chú.'}</div>
+                            </div>
+                        )}
+                        {dispute.status !== 'resolved' && (
+                            <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid rgba(26,34,56,0.06)' }}>
+                                <div style={{ fontSize: '13px', fontWeight: 600, color: '#1a2238', marginBottom: 8 }}>Chat riêng với admin</div>
+                                {thread.length > 0 && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10, maxHeight: 220, overflowY: 'auto' }}>
+                                        {thread.map((msg) => (
+                                            <div
+                                                key={msg.disputeMessageId}
+                                                style={{
+                                                    alignSelf: msg.senderRole === 'admin' ? 'flex-start' : 'flex-end',
+                                                    maxWidth: '80%',
+                                                    padding: '8px 12px',
+                                                    borderRadius: 8,
+                                                    background: msg.senderRole === 'admin' ? '#eef2ff' : '#f1f5f9',
+                                                }}
+                                            >
+                                                <p style={{ margin: '0 0 2px', fontSize: 11, fontWeight: 600, color: '#64748b' }}>
+                                                    {msg.senderRole === 'admin' ? 'Admin' : 'Bạn'}
+                                                </p>
+                                                <p style={{ margin: 0, fontSize: 13, whiteSpace: 'pre-wrap' }}>{msg.message}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                    <input
+                                        type="text"
+                                        value={threadInput}
+                                        onChange={(event) => setThreadInput(event.target.value)}
+                                        placeholder="Nhắn cho admin..."
+                                        style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid #d9dde3', fontSize: 13 }}
+                                        onKeyDown={(event) => {
+                                            if (event.key === 'Enter') void handleSendThreadMessage();
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        style={actionBtnConfirm}
+                                        disabled={sendingThreadMessage || threadInput.trim().length === 0}
+                                        onClick={() => void handleSendThreadMessage()}
+                                    >
+                                        Gửi
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>

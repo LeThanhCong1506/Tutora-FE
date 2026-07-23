@@ -655,3 +655,36 @@ export const getTutorDisputesList = async (
     return response.data;
 };
 
+// ── Dispute private chat threads (admin<->tutor, admin<->parent/student) ──
+
+export interface DisputeMessage {
+    disputeMessageId: number;
+    disputeId: number;
+    threadType: 'tutor' | 'parent';
+    senderId?: string;
+    senderName?: string;
+    senderRole?: string;
+    message: string;
+    createdAt?: string;
+}
+
+export const getTutorDisputeThread = async (id: number): Promise<ApiResponse<DisputeMessage[]>> => {
+    const response = await api.get(`/tutor/class-sessions/${id}/dispute/thread`, { headers: getAuthHeaders() });
+    return response.data;
+};
+
+export const sendTutorDisputeThreadMessage = async (id: number, message: string): Promise<ApiResponse<DisputeMessage>> => {
+    const response = await api.post(`/tutor/class-sessions/${id}/dispute/thread/messages`, { message }, { headers: getAuthHeaders() });
+    return response.data;
+};
+
+export const getClassSessionDisputeThread = async (id: number): Promise<ApiResponse<DisputeMessage[]>> => {
+    const response = await api.get(`/parent/class-sessions/${id}/dispute/thread`, { headers: getAuthHeaders() });
+    return response.data;
+};
+
+export const sendClassSessionDisputeThreadMessage = async (id: number, message: string): Promise<ApiResponse<DisputeMessage>> => {
+    const response = await api.post(`/parent/class-sessions/${id}/dispute/thread/messages`, { message }, { headers: getAuthHeaders() });
+    return response.data;
+};
+

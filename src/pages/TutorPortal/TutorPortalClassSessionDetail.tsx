@@ -24,8 +24,11 @@ import {
   getTutorClassSessionDispute,
   submitTutorDisputeResponse,
   uploadTutorDisputeEvidence,
+  getTutorDisputeThread,
+  sendTutorDisputeThreadMessage,
   type ClassSessionDetailResponse,
   type DisputeDetailResponse,
+  type DisputeMessage,
 } from '../../services/classSession.service';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 import { canJoinLiveSession } from '../../utils/liveSession';
@@ -126,6 +129,9 @@ const TutorPortalClassSessionDetail = () => {
   const [responseText, setResponseText] = useState('');
   const [submittingResponse, setSubmittingResponse] = useState(false);
   const [uploadingEvidence, setUploadingEvidence] = useState(false);
+  const [thread, setThread] = useState<DisputeMessage[]>([]);
+  const [threadInput, setThreadInput] = useState('');
+  const [sendingThreadMessage, setSendingThreadMessage] = useState(false);
 
   const loadSession = useCallback(async () => {
     if (!classSessionId) {
@@ -167,6 +173,34 @@ const TutorPortalClassSessionDetail = () => {
   useEffect(() => {
     void loadDispute();
   }, [loadDispute]);
+
+  const loadThread = useCallback(async () => {
+    if (!classSessionId) return;
+    try {
+      const response = await getTutorDisputeThread(classSessionId);
+      setThread(response.content);
+    } catch (requestError: unknown) {
+      console.error('Failed to load dispute thread', requestError);
+    }
+  }, [classSessionId]);
+
+  useEffect(() => {
+    if (dispute) void loadThread();
+  }, [dispute, loadThread]);
+
+  const handleSendThreadMessage = async () => {
+    if (!session || threadInput.trim().length === 0) return;
+    setSendingThreadMessage(true);
+    try {
+      await sendTutorDisputeThreadMessage(session.classSessionId, threadInput.trim());
+      setThreadInput('');
+      await loadThread();
+    } catch (requestError: unknown) {
+      toast.error(getErrorMessage(requestError));
+    } finally {
+      setSendingThreadMessage(false);
+    }
+  };
 
   const handleSubmitDisputeResponse = async () => {
     if (!session || responseText.trim().length < 10) return;
@@ -645,6 +679,55 @@ const TutorPortalClassSessionDetail = () => {
                                 }}
                               />
                             </label>
+                          </div>
+                        </div>
+                      )}
+
+                      {dispute.status !== 'resolved' && (
+                        <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #e5e7eb' }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: '#1a2238', display: 'block', marginBottom: 8 }}>
+                            Chat riêng với admin
+                          </span>
+                          {thread.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10, maxHeight: 220, overflowY: 'auto' }}>
+                              {thread.map((msg) => (
+                                <div
+                                  key={msg.disputeMessageId}
+                                  style={{
+                                    alignSelf: msg.senderRole === 'admin' ? 'flex-start' : 'flex-end',
+                                    maxWidth: '80%',
+                                    padding: '8px 12px',
+                                    borderRadius: 8,
+                                    background: msg.senderRole === 'admin' ? '#eef2ff' : '#f1f5f9',
+                                  }}
+                                >
+                                  <p style={{ margin: '0 0 2px', fontSize: 11, fontWeight: 600, color: '#64748b' }}>
+                                    {msg.senderRole === 'admin' ? 'Admin' : 'Bạn'}
+                                  </p>
+                                  <p style={{ margin: 0, fontSize: 13, whiteSpace: 'pre-wrap' }}>{msg.message}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <input
+                              type="text"
+                              value={threadInput}
+                              onChange={(event) => setThreadInput(event.target.value)}
+                              placeholder="Nhắn cho admin..."
+                              style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid #d9dde3', fontSize: 13 }}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter') void handleSendThreadMessage();
+                              }}
+                            />
+                            <button
+                              type="button"
+                              className={styles.secondaryButton}
+                              disabled={sendingThreadMessage || threadInput.trim().length === 0}
+                              onClick={() => void handleSendThreadMessage()}
+                            >
+                              Gửi
+                            </button>
                           </div>
                         </div>
                       )}
