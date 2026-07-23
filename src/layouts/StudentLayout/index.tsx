@@ -37,6 +37,7 @@ const NOTIFICATION_TYPES_BY_PATH: Record<string, string[]> = {
     'lesson_report',
   ],
   '/student-portal/wallet': ['withdrawal_request'],
+  '/student-portal/disputes': ['dispute_message'],
 };
 
 const DISPUTES_PATH = '/student-portal/disputes';

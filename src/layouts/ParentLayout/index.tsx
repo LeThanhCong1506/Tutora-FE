@@ -25,6 +25,7 @@ const NOTIFICATION_TYPES_BY_PATH: Record<string, string[]> = {
         'booking_payment_due_soon',
     ],
     '/parent-portal/wallet': ['withdrawal_request'],
+    '/parent-portal/disputes': ['dispute_message'],
 };
 
 const baseParentNavItems: NavItem[] = [

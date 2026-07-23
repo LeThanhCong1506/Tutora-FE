@@ -15,6 +15,7 @@ import {
     type DisputeDetailResponse,
     type DisputeMessage,
 } from '../../services/classSession.service';
+import { signalRService } from '../../services/signalr.service';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
 import type { LessonDetailDto } from '../../services/lesson.service';
 import { message as antMessage, Spin, Modal } from 'antd';
@@ -143,6 +144,17 @@ const StudentLessonDetail = () => {
         if (dispute) void fetchThread();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dispute?.disputeId]);
+
+    // Real-time: chèn tin nhắn mới trực tiếp thay vì phải F5/refetch.
+    useEffect(() => {
+        if (!dispute) return;
+        const unsubscribe = signalRService.subscribeToDisputeMessages((message: DisputeMessage) => {
+            if (message.disputeId !== dispute.disputeId) return;
+            setThread((prev) => (prev.some((m) => m.disputeMessageId === message.disputeMessageId) ? prev : [...prev, message]));
+            antMessage.info(`Admin: ${message.message}`);
+        });
+        return unsubscribe;
+    }, [dispute]);
 
     useLessonStartedListener(fetchDetail);
 

@@ -32,6 +32,7 @@ import {
 } from '../../services/classSession.service';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 import { canJoinLiveSession } from '../../utils/liveSession';
+import { signalRService } from '../../services/signalr.service';
 import AttachmentUploader from './components/AttachmentUploader';
 import LessonReportForm from './components/LessonReportForm';
 import MaterialsTab from './components/MaterialsTab';
@@ -187,6 +188,17 @@ const TutorPortalClassSessionDetail = () => {
   useEffect(() => {
     if (dispute) void loadThread();
   }, [dispute, loadThread]);
+
+  // Real-time: chèn tin nhắn mới trực tiếp thay vì phải F5/refetch.
+  useEffect(() => {
+    if (!dispute) return;
+    const unsubscribe = signalRService.subscribeToDisputeMessages((message: DisputeMessage) => {
+      if (message.disputeId !== dispute.disputeId) return;
+      setThread((prev) => (prev.some((m) => m.disputeMessageId === message.disputeMessageId) ? prev : [...prev, message]));
+      toast.info(`Admin: ${message.message}`);
+    });
+    return unsubscribe;
+  }, [dispute]);
 
   const handleSendThreadMessage = async () => {
     if (!session || threadInput.trim().length === 0) return;
