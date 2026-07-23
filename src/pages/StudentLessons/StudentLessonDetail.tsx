@@ -4,7 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
     ArrowLeft, BookOpen, AlertCircle, Video,
     Calendar as CalendarIcon, FileText, ClipboardCheck, Star,
-    User, PlayCircle, StopCircle,
+    User, PlayCircle, StopCircle, Paperclip, Download,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { getStudentLessonDetail, confirmStudentLesson } from '../../services/student-lesson.service';
@@ -48,6 +48,15 @@ const formatLongDate = (iso: string | null | undefined): string => {
 const formatTime = (iso: string | null | undefined): string => {
     if (!iso) return '--:--';
     return dayjs(iso).format('HH:mm');
+};
+
+const getFileNameFromUrl = (url: string): string => {
+    try {
+        const path = new URL(url).pathname;
+        return decodeURIComponent(path.substring(path.lastIndexOf('/') + 1)) || 'Tệp đính kèm';
+    } catch {
+        return 'Tệp đính kèm';
+    }
 };
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -359,6 +368,26 @@ const StudentLessonDetail = () => {
                                         <span style={ratingNumber}>
                                             {report.studentPerformanceRating}/5
                                         </span>
+                                    </div>
+                                </div>
+                            )}
+                            {Array.isArray(report.attachments) && report.attachments.length > 0 && (
+                                <div>
+                                    <span style={reportLabelStyle}>Tệp đính kèm</span>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                                        {report.attachments.map((url: string, index: number) => (
+                                            <a
+                                                key={`${url}-${index}`}
+                                                href={url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={attachmentLinkStyle}
+                                            >
+                                                <Paperclip size={14} style={{ flexShrink: 0, color: '#6366F1' }} />
+                                                <span style={attachmentNameStyle}>{getFileNameFromUrl(url)}</span>
+                                                <Download size={14} style={{ flexShrink: 0, color: '#9ca3af' }} />
+                                            </a>
+                                        ))}
                                     </div>
                                 </div>
                             )}
@@ -958,6 +987,29 @@ const reportValueStyle: React.CSSProperties = {
     lineHeight: 1.6,
     fontFamily: FONT_BODY,
     whiteSpace: 'pre-wrap',
+};
+
+const attachmentLinkStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    padding: '10px 14px',
+    background: '#fafaf8',
+    borderRadius: 10,
+    border: '1px solid #f5f5f5',
+    textDecoration: 'none',
+    transition: 'background 0.15s',
+};
+
+const attachmentNameStyle: React.CSSProperties = {
+    flex: 1,
+    minWidth: 0,
+    fontSize: 13,
+    color: '#1a2238',
+    fontFamily: FONT_BODY,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
 };
 
 const ratingRow: React.CSSProperties = {
