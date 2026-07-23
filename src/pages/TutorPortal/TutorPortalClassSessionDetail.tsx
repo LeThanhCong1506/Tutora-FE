@@ -570,11 +570,11 @@ const TutorPortalClassSessionDetail = () => {
                               <p>{dispute.tutorResponse}</p>
                             </div>
                           )}
-                          {dispute.tutorEvidence && dispute.tutorEvidence.length > 0 && (
+                          {dispute.additionalEvidence && dispute.additionalEvidence.length > 0 && (
                             <div className={`${styles.reportField} ${styles.reportFieldWide}`}>
                               <span>Bằng chứng bạn đã nộp</span>
                               <div className={styles.attachmentList}>
-                                {dispute.tutorEvidence.map((item, index) => (
+                                {dispute.additionalEvidence.map((item, index) => (
                                   <a key={item.disputeEvidenceId} href={item.fileUrl} target="_blank" rel="noopener noreferrer">
                                     <Paperclip size={15} />
                                     Bằng chứng {index + 1}

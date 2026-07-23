@@ -84,16 +84,6 @@ const ParentLessonDetail: React.FC = () => {
     fetchDispute();
   };
 
-  // Check if no-show report is available (15 min past scheduledStart, tutor not checked in)
-  const canReportNoShow = (): boolean => {
-    if (!lesson) return false;
-    if (lesson.status !== 'scheduled') return false;
-    const now = new Date();
-    const start = new Date(lesson.scheduledStart);
-    const diffMinutes = (now.getTime() - start.getTime()) / (1000 * 60);
-    return diffMinutes >= 15;
-  };
-
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '80px' }}>
@@ -363,6 +353,29 @@ const ParentLessonDetail: React.FC = () => {
               ))}
             </div>
           )}
+          {Array.isArray(dispute.additionalEvidence) && dispute.additionalEvidence.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: dispute.evidence?.length ? 8 : 0 }}>
+              {dispute.additionalEvidence.map((item) => (
+                <a
+                  key={item.disputeEvidenceId}
+                  href={item.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '10px 14px', background: '#fafaf8', borderRadius: 10,
+                    border: '1px solid rgba(26,34,56,0.06)', textDecoration: 'none',
+                  }}
+                >
+                  <Paperclip size={14} style={{ flexShrink: 0, color: '#6366F1' }} />
+                  <span style={{ flex: 1, minWidth: 0, fontSize: '13px', color: '#1a2238', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {item.fileUrl ? getFileNameFromUrl(item.fileUrl) : 'Bằng chứng'}
+                  </span>
+                  <Download size={14} style={{ flexShrink: 0, color: '#9ca3af' }} />
+                </a>
+              ))}
+            </div>
+          )}
           {dispute.status === 'resolved' && (
             <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(26,34,56,0.06)' }}>
               <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Kết quả xử lý</div>
@@ -398,7 +411,7 @@ const ParentLessonDetail: React.FC = () => {
           </>
         )}
 
-        {lesson.status === 'scheduled' && canReportNoShow() && (
+        {lesson.status === 'scheduled' && (
           <Button
             size="large"
             danger
@@ -467,7 +480,6 @@ const ParentLessonDetail: React.FC = () => {
       <ReportNoShowModal
         open={showNoShowModal}
         lessonId={id}
-        scheduledStart={lesson.scheduledStart}
         onSuccess={handleActionSuccess}
         onCancel={() => setShowNoShowModal(false)}
       />

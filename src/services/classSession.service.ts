@@ -423,7 +423,7 @@ export interface DisputeDetailResponse {
     refundPercentage?: number;
     tutorResponse?: string;
     tutorRespondedAt?: string;
-    tutorEvidence?: DisputeEvidenceItem[];
+    additionalEvidence?: DisputeEvidenceItem[];
     createdBy?: DisputeUserInfo;
     resolvedBy?: DisputeUserInfo;
     classSession?: DisputeClassSessionInfo;
@@ -459,8 +459,16 @@ export const getParentCalendar = async (
 
 // ── No-show — `ClassSessionController`, parent-only, `api/class-sessions/{id}/*` ──
 
-export const reportClassSessionNoShow = async (id: number): Promise<ApiResponse<ClassSessionDetailResponse>> => {
-    const response = await api.post(`/class-sessions/${id}/report-no-show`, {}, { headers: getAuthHeaders() });
+export interface ReportNoShowRequest {
+    reportedAt?: string;
+    reason?: string;
+}
+
+export const reportClassSessionNoShow = async (
+    id: number,
+    request?: ReportNoShowRequest,
+): Promise<ApiResponse<ClassSessionDetailResponse>> => {
+    const response = await api.post(`/class-sessions/${id}/report-no-show`, request ?? {}, { headers: getAuthHeaders() });
     return response.data;
 };
 
