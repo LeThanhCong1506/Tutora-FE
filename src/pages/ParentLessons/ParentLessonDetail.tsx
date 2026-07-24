@@ -373,8 +373,14 @@ const ParentLessonDetail: React.FC = () => {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
             <span style={{ fontSize: '15px', fontWeight: 700, color: '#1a2238' }}>Khiếu nại của bạn</span>
-            <Tag color={dispute.status === 'resolved' ? '#52c41a' : dispute.status === 'investigating' ? '#1890ff' : '#faad14'}>
-              {dispute.status === 'resolved' ? 'Đã giải quyết' : dispute.status === 'investigating' ? 'Đang xem xét' : 'Chờ xử lý'}
+            <Tag color={dispute.status === 'resolved' || dispute.status === 'confirmed_no_show' ? '#52c41a' : dispute.status === 'investigating' ? '#1890ff' : '#faad14'}>
+              {dispute.status === 'resolved'
+                ? 'Đã giải quyết'
+                : dispute.status === 'confirmed_no_show'
+                  ? 'Đã xác nhận vắng mặt'
+                  : dispute.status === 'investigating'
+                    ? 'Đang xem xét'
+                    : 'Chờ xử lý'}
             </Tag>
           </div>
           <div style={{ fontSize: '13px', color: '#666', marginBottom: dispute.evidence?.length ? '12px' : 0 }}>
@@ -517,7 +523,7 @@ const ParentLessonDetail: React.FC = () => {
           </Button>
         )}
 
-        {lesson.status === 'no_show' && (
+        {lesson.status === 'no_show' && dispute?.status === 'confirmed_no_show' && (
           <Button
             type="primary"
             size="large"
@@ -526,6 +532,12 @@ const ParentLessonDetail: React.FC = () => {
           >
             Chọn hành động xử lý
           </Button>
+        )}
+
+        {lesson.status === 'no_show' && dispute?.status !== 'confirmed_no_show' && (
+          <div style={{ maxWidth: 420, color: '#8a6116', background: '#fff7e6', border: '1px solid #ffd591', borderRadius: 8, padding: '10px 14px' }}>
+            Báo cáo đang chờ quản trị viên xác nhận. Chưa có hoàn tiền hoặc cảnh báo nào được áp dụng.
+          </div>
         )}
 
         {lesson.status === 'completed' && (
