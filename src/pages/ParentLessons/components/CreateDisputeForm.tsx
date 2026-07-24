@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Form, Input, Select, Upload, Button } from 'antd';
+import { Modal, Form, Input, Select, Upload, Button, Tag } from 'antd';
 import { toast } from 'react-toastify';
 import { UploadOutlined } from '@ant-design/icons';
 import { createDispute, uploadDisputeEvidence } from '../../../services/parent-lesson.service';
@@ -20,6 +20,9 @@ const DISPUTE_TYPES = [
   { value: 'other', label: 'Khác' },
 ];
 
+/** Thẻ gợi ý lý do mặc định — tick vào sẽ điền thẳng vào ô "Lý do" bên trên. */
+const DEFAULT_QUICK_REASONS = ['Gia sư vắng mặt', 'Chất lượng buổi học không tốt'];
+
 const CreateDisputeForm: React.FC<CreateDisputeFormProps> = ({
   open,
   lessonId,
@@ -29,6 +32,65 @@ const CreateDisputeForm: React.FC<CreateDisputeFormProps> = ({
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const [evidenceFiles, setEvidenceFiles] = useState<File[]>([]);
+  const [customReasons, setCustomReasons] = useState<string[]>([]);
+  const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
+  const [addingCustom, setAddingCustom] = useState(false);
+  const [customInput, setCustomInput] = useState('');
+
+  const quickReasons = [...DEFAULT_QUICK_REASONS, ...customReasons];
+
+  const resetDisputeState = () => {
+    form.resetFields();
+    setEvidenceFiles([]);
+    setCustomReasons([]);
+    setSelectedReasons([]);
+    setAddingCustom(false);
+    setCustomInput('');
+  };
+
+  const handleCancel = () => {
+    resetDisputeState();
+    onCancel();
+  };
+
+  /** Tick thẻ gợi ý: thêm/xóa đúng dòng đó trong ô "Lý do" — không đụng vào các dòng khác người dùng đã tự gõ. */
+  const applyReasonToggle = (phrase: string, checked: boolean) => {
+    const current = (form.getFieldValue('reason') as string | undefined) || '';
+    const lines = current.split('\n').filter((line) => line.trim() !== '');
+
+    const nextLines = checked
+      ? lines.some((line) => line.trim() === phrase)
+        ? lines
+        : [...lines, phrase]
+      : lines.filter((line) => line.trim() !== phrase);
+
+    form.setFieldValue('reason', nextLines.join('\n'));
+    // setFieldValue doesn't re-run validation on its own, so a "Vui lòng nhập lý do..." error
+    // already showing (e.g. after a failed submit) would otherwise linger even once a tag fills it in.
+    form.validateFields(['reason']).catch(() => {});
+  };
+
+  const handleToggleReason = (phrase: string, checked: boolean) => {
+    setSelectedReasons((prev) =>
+      checked ? (prev.includes(phrase) ? prev : [...prev, phrase]) : prev.filter((p) => p !== phrase),
+    );
+    applyReasonToggle(phrase, checked);
+  };
+
+  const handleAddCustomReason = () => {
+    const label = customInput.trim().slice(0, 60);
+    setAddingCustom(false);
+    setCustomInput('');
+    if (!label) return;
+
+    setCustomReasons((prev) =>
+      prev.some((r) => r.toLowerCase() === label.toLowerCase()) ||
+      DEFAULT_QUICK_REASONS.some((r) => r.toLowerCase() === label.toLowerCase())
+        ? prev
+        : [...prev, label],
+    );
+    handleToggleReason(label, true);
+  };
 
   const handleSubmit = async (values: any) => {
     try {
@@ -52,8 +114,7 @@ const CreateDisputeForm: React.FC<CreateDisputeFormProps> = ({
       });
 
       toast.success('Khiếu nại đã được gửi thành công!');
-      form.resetFields();
-      setEvidenceFiles([]);
+      resetDisputeState();
       onSuccess();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Không thể gửi khiếu nại.');
@@ -66,7 +127,7 @@ const CreateDisputeForm: React.FC<CreateDisputeFormProps> = ({
     <Modal
       title="Tạo khiếu nại"
       open={open}
-      onCancel={onCancel}
+      onCancel={handleCancel}
       footer={null}
       centered
       width={520}
@@ -83,10 +144,42 @@ const CreateDisputeForm: React.FC<CreateDisputeFormProps> = ({
         <Form.Item
           name="reason"
           label="Lý do"
+          style={{ marginBottom: 8 }}
           rules={[{ required: true, message: 'Vui lòng nhập lý do khiếu nại' }]}
         >
           <TextArea rows={4} placeholder="Mô tả chi tiết lý do khiếu nại..." />
         </Form.Item>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+          {quickReasons.map((phrase) => (
+            <Tag.CheckableTag
+              key={phrase}
+              checked={selectedReasons.includes(phrase)}
+              onChange={(checked) => handleToggleReason(phrase, checked)}
+            >
+              {phrase}
+            </Tag.CheckableTag>
+          ))}
+          {addingCustom ? (
+            <Input
+              size="small"
+              autoFocus
+              style={{ width: 180 }}
+              maxLength={60}
+              value={customInput}
+              placeholder="Nhập rồi nhấn Enter..."
+              onChange={(e) => setCustomInput(e.target.value)}
+              onPressEnter={handleAddCustomReason}
+            />
+          ) : (
+            <Tag
+              onClick={() => setAddingCustom(true)}
+              style={{ cursor: 'pointer', borderStyle: 'dashed', background: 'transparent' }}
+            >
+              + Thêm lý do
+            </Tag>
+          )}
+        </div>
 
         <Form.Item label="Bằng chứng (tùy chọn)">
           <Upload
@@ -105,7 +198,7 @@ const CreateDisputeForm: React.FC<CreateDisputeFormProps> = ({
         </Form.Item>
 
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-          <Button onClick={onCancel}>Hủy</Button>
+          <Button onClick={handleCancel}>Hủy</Button>
           <Button
             type="primary"
             htmlType="submit"
