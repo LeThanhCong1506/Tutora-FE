@@ -30,6 +30,8 @@ export interface ScheduleChangeState {
   currentUserConfirmed: boolean;
   admissionAllowed: boolean;
   status: 'pending' | 'approved' | 'applied' | 'rejected' | 'expired' | null;
+  tutorUserId: string | null;
+  learnerApproverUserId: string | null;
   requiredLearnerRole: 'Student' | 'Parent' | null;
   requiredLearnerName: string | null;
   tutorName: string | null;

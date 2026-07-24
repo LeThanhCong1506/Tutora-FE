@@ -6,6 +6,7 @@ interface Props {
   open: boolean;
   state: ScheduleChangeState;
   currentRole: string;
+  currentUserId: string;
   loading: boolean;
   onRespond: (confirmed: boolean) => void;
   onClose: () => void;
@@ -18,14 +19,23 @@ const formatDateTime = (value?: string | null): string => {
   return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short' }).format(date);
 };
 
-const ScheduleChangeModal = ({ open, state, currentRole, loading, onRespond, onClose }: Props) => {
+const ScheduleChangeModal = ({ open, state, currentRole, currentUserId, loading, onRespond, onClose }: Props) => {
   if (!open) return null;
 
   const normalizedRole = currentRole.toLowerCase();
-  const isTutor = normalizedRole === 'tutor';
-  const isLearnerApprover = normalizedRole === state.requiredLearnerRole?.toLowerCase();
-  const currentConfirmed = isTutor ? Boolean(state.tutorConfirmedAt) : Boolean(state.learnerConfirmedAt);
-  const canConfirm = state.status === 'pending' && (isTutor || isLearnerApprover) && !currentConfirmed;
+  const normalizedUserId = currentUserId.trim().toLowerCase();
+  const isTutorApprover = Boolean(
+    normalizedUserId && normalizedUserId === state.tutorUserId?.trim().toLowerCase(),
+  );
+  const isLearnerApprover = Boolean(
+    normalizedUserId && normalizedUserId === state.learnerApproverUserId?.trim().toLowerCase(),
+  );
+  const currentConfirmed = isTutorApprover
+    ? Boolean(state.tutorConfirmedAt)
+    : isLearnerApprover && Boolean(state.learnerConfirmedAt);
+  const canConfirm = state.status === 'pending'
+    && (isTutorApprover || isLearnerApprover)
+    && !currentConfirmed;
   const learnerLabel = state.requiredLearnerRole === 'Parent' ? 'Phụ huynh' : 'Học sinh';
   const approved = state.status === 'approved' || state.status === 'applied';
   const rejected = state.status === 'rejected';

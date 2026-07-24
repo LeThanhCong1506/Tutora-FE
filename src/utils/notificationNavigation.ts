@@ -58,7 +58,9 @@ export function getNotificationTargetPath(notification: NotificationDTO): string
 
     // ── Layer 1: Type + Referenceid (deep-link chính xác) ──
     if (type === NOTIFICATION_TYPE.LessonScheduleChange && refId) {
-        return `/session-lobby/${refId}`;
+        return prefix === '/parent-portal'
+            ? lessonDetailPath(refId)
+            : `/session-lobby/${refId}`;
     }
     if (type === NOTIFICATION_TYPE.LessonCheckin && refId) {
         return lessonDetailPath(refId);

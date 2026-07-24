@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { isZaloMiniApp } from '../../services/zalo-env';
 
 const inMiniApp = isZaloMiniApp();
-import { ArrowLeft, Video, Paperclip, Download } from 'lucide-react';
+import { ArrowLeft, CalendarClock, CheckCircle2, Clock3, XCircle, Paperclip, Download } from 'lucide-react';
 import { getParentLessonDetail } from '../../services/parent-lesson.service';
 import {
   getClassSessionDispute,
@@ -11,9 +11,11 @@ import {
   sendClassSessionDisputeThreadMessage,
   type DisputeDetailResponse,
   type DisputeMessage,
+  getParentScheduleChange,
+  respondParentScheduleChange,
+  type SessionScheduleChangeResponse,
 } from '../../services/classSession.service';
 import { signalRService } from '../../services/signalr.service';
-import { canJoinLiveSession } from '../../utils/liveSession';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
 import { Spin, Tag, Button } from 'antd';
 import { toast } from 'react-toastify';
@@ -41,6 +43,8 @@ const ParentLessonDetail: React.FC = () => {
 
   const [lesson, setLesson] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [scheduleChange, setScheduleChange] = useState<SessionScheduleChangeResponse | null>(null);
+  const [submittingScheduleDecision, setSubmittingScheduleDecision] = useState(false);
 
   // Modal states
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -65,6 +69,16 @@ const ParentLessonDetail: React.FC = () => {
     }
   };
 
+  const fetchScheduleChange = async () => {
+    if (!id) return;
+    try {
+      const response = await getParentScheduleChange(id);
+      setScheduleChange(response.content);
+    } catch (requestError: unknown) {
+      console.error('Failed to load schedule-change state', requestError);
+      setScheduleChange(null);
+    }
+  };
   const fetchDispute = async () => {
     if (!id) return;
     try {
@@ -107,6 +121,13 @@ const ParentLessonDetail: React.FC = () => {
   }, [id]);
 
   useEffect(() => {
+    if (!id) return;
+    void fetchScheduleChange();
+    const timer = window.setInterval(() => void fetchScheduleChange(), 8000);
+    return () => window.clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+  useEffect(() => {
     if (dispute) void fetchThread();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispute?.disputeId]);
@@ -125,6 +146,20 @@ const ParentLessonDetail: React.FC = () => {
   // Tutor check-in → notification "Buổi học đã bắt đầu" → tự refetch để render banner Join
   useLessonStartedListener(() => { if (id) fetchLesson(); });
 
+  const handleScheduleChangeDecision = async (confirmed: boolean) => {
+    if (!id) return;
+    setSubmittingScheduleDecision(true);
+    try {
+      const response = await respondParentScheduleChange(id, confirmed);
+      setScheduleChange(response.content);
+      toast.success(confirmed ? 'Đã xác nhận đổi lịch học.' : 'Đã từ chối đổi lịch học.');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Không thể xử lý yêu cầu đổi lịch.');
+      await fetchScheduleChange();
+    } finally {
+      setSubmittingScheduleDecision(false);
+    }
+  };
   const handleActionSuccess = () => {
     setShowConfirmModal(false);
     setShowDisputeForm(false);
@@ -153,6 +188,18 @@ const ParentLessonDetail: React.FC = () => {
   const status = getClassSessionStatusMeta(lesson.status);
   const startTime = new Date(lesson.scheduledStart);
   const endTime = new Date(lesson.scheduledEnd);
+  const reportContent = lesson.report?.contentCovered || lesson.lessonContent;
+  const reportHomework = lesson.report?.homeworkAssigned || lesson.homework;
+  const reportRating = typeof lesson.report?.studentPerformanceRating === 'number'
+    ? Math.max(0, Math.min(5, Math.round(lesson.report.studentPerformanceRating)))
+    : null;
+  const hasTutorReport = Boolean(
+    lesson.report
+    || reportContent
+    || reportHomework
+    || lesson.tutorNotes
+    || lesson.report?.attachments?.length,
+  );
 
   return (
     <div style={{ padding: inMiniApp ? '12px' : '24px', maxWidth: inMiniApp ? 'none' : '900px', margin: '0 auto' }}>
@@ -195,67 +242,141 @@ const ParentLessonDetail: React.FC = () => {
         </div>
       )}
 
-      {/* Join Banner — phòng Agora mở từ 30ph trước giờ học, không cần tutor check-in trước */}
-      {canJoinLiveSession(lesson) && (
+      {/* Parent confirms an off-schedule request here; parent never enters the lobby/call. */}
+      {scheduleChange?.requiresConfirmation && scheduleChange.requiredLearnerRole === 'Parent' && (
         <div style={{
-          background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
-          color: '#fff',
+          background: '#fff',
+          border: `1px solid ${scheduleChange.status === 'rejected' ? '#ffccc7' : '#ffe58f'}`,
           borderRadius: 12,
-          padding: '20px 24px',
+          padding: inMiniApp ? 16 : 22,
           marginBottom: 20,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 16,
-          flexWrap: 'wrap',
-          boxShadow: '0 6px 20px rgba(22,163,74,0.25)',
+          boxShadow: '0 6px 22px rgba(26,34,56,0.06)',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 18 }}>
             <div style={{
-              width: 44, height: 44, borderRadius: '50%',
-              background: 'rgba(255,255,255,0.2)',
+              width: 42, height: 42, borderRadius: 10, flexShrink: 0,
+              background: '#fff7e6', color: '#d46b08',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
             }}>
-              <Video size={22} color="#fff" />
+              <CalendarClock size={22} />
             </div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 2 }}>
-                {lesson.status === 'in_progress' ? 'Buổi học đã bắt đầu' : 'Phòng học đã mở'}
+            <div>
+              <div style={{ fontSize: 17, fontWeight: 700, color: '#1a2238' }}>
+                Xác nhận thay đổi giờ học
               </div>
-              <div style={{ fontSize: 13, opacity: 0.9, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                <span>
-                  {lesson.status === 'in_progress'
-                    ? 'Gia sư đang chờ trong lớp'
-                    : 'Có thể vào lớp sớm 30 phút trước giờ học'}
-                </span>
+              <div style={{ fontSize: 13, color: '#667085', marginTop: 4, lineHeight: 1.55 }}>
+                Gia sư và học viên đang muốn học ngoài thời gian mặc định. Phụ huynh chỉ xác nhận tại đây;
+                học viên và gia sư là hai người vào phòng học.
               </div>
             </div>
           </div>
-          {/* meetingLink là channel Agora — vào lớp qua trang LiveSession nội bộ */}
-          <button
-            type="button"
-            onClick={() => navigate(`/session-lobby/${id}`)}
-            style={{
-              background: '#fff',
-              color: '#15803d',
-              padding: '10px 22px',
-              borderRadius: 8,
-              fontSize: 14,
-              fontWeight: 700,
-              border: 'none',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            ▶ Tham gia ngay
-          </button>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: inMiniApp ? '1fr' : 'repeat(2, minmax(0, 1fr))',
+            gap: 12,
+            marginBottom: 16,
+          }}>
+            <InfoRow
+              label="Học viên"
+              value={scheduleChange.studentName || lesson.student?.fullName || 'Học sinh'}
+            />
+            <InfoRow
+              label="Gia sư"
+              value={scheduleChange.tutorName || lesson.tutorName || lesson.tutor?.fullName || 'Gia sư'}
+            />
+            <InfoRow
+              label="Lịch học ban đầu"
+              value={`${new Date(scheduleChange.originalScheduledStart).toLocaleDateString('vi-VN')} · ${new Date(scheduleChange.originalScheduledStart).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(scheduleChange.originalScheduledEnd).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`}
+            />
+            <InfoRow label="Thời lượng giữ nguyên" value={`${scheduleChange.durationMinutes} phút`} />
+            {scheduleChange.requestedAt && (
+              <InfoRow
+                label="Yêu cầu được tạo lúc"
+                value={new Date(scheduleChange.requestedAt).toLocaleString('vi-VN')}
+              />
+            )}
+            {scheduleChange.expiresAt && (
+              <InfoRow
+                label="Hạn phản hồi"
+                value={new Date(scheduleChange.expiresAt).toLocaleString('vi-VN')}
+              />
+            )}
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: inMiniApp ? '1fr' : '1fr 1fr',
+            gap: 10,
+            marginBottom: 16,
+          }}>
+            <div style={{
+              border: '1px solid #e8e8e8', borderRadius: 10, padding: '12px 14px',
+              display: 'flex', alignItems: 'center', gap: 10,
+            }}>
+              {scheduleChange.tutorConfirmedAt
+                ? <CheckCircle2 size={19} color="#16a34a" />
+                : <Clock3 size={19} color="#d97706" />}
+              <div>
+                <div style={{ fontSize: 12, color: '#8c8c8c' }}>Gia sư</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#1a2238' }}>
+                  {scheduleChange.tutorConfirmedAt ? 'Đã xác nhận' : 'Đang chờ xác nhận'}
+                </div>
+              </div>
+            </div>
+            <div style={{
+              border: '1px solid #e8e8e8', borderRadius: 10, padding: '12px 14px',
+              display: 'flex', alignItems: 'center', gap: 10,
+            }}>
+              {scheduleChange.learnerConfirmedAt
+                ? <CheckCircle2 size={19} color="#16a34a" />
+                : <Clock3 size={19} color="#d97706" />}
+              <div>
+                <div style={{ fontSize: 12, color: '#8c8c8c' }}>Phụ huynh</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#1a2238' }}>
+                  {scheduleChange.learnerConfirmedAt ? 'Đã xác nhận' : 'Đang chờ xác nhận'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {scheduleChange.status === 'rejected' ? (
+            <div style={{ color: '#cf1322', background: '#fff2f0', borderRadius: 8, padding: '10px 12px', fontSize: 13 }}>
+              Yêu cầu đổi lịch đã bị từ chối. Học viên và gia sư chưa thể vào buổi học ngoài lịch này.
+            </div>
+          ) : scheduleChange.status === 'approved' ? (
+            <div style={{ color: '#15803d', background: '#f0fdf4', borderRadius: 8, padding: '10px 12px', fontSize: 13 }}>
+              Đã đủ xác nhận. Học viên và gia sư có thể vào học; thời gian buổi học sẽ được cập nhật khi họ bắt đầu.
+            </div>
+          ) : scheduleChange.currentUserConfirmed ? (
+            <div style={{ color: '#0958d9', background: '#e6f4ff', borderRadius: 8, padding: '10px 12px', fontSize: 13 }}>
+              Phụ huynh đã xác nhận. Đang chờ gia sư xác nhận.
+            </div>
+          ) : scheduleChange.canCurrentUserConfirm ? (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
+              <Button
+                danger
+                size="large"
+                icon={<XCircle size={17} />}
+                loading={submittingScheduleDecision}
+                onClick={() => void handleScheduleChangeDecision(false)}
+              >
+                Từ chối
+              </Button>
+              <Button
+                type="primary"
+                size="large"
+                icon={<CheckCircle2 size={17} />}
+                loading={submittingScheduleDecision}
+                onClick={() => void handleScheduleChangeDecision(true)}
+                style={{ background: '#3e2f28', borderColor: '#3e2f28' }}
+              >
+                Xác nhận đổi lịch
+              </Button>
+            </div>
+          ) : null}
         </div>
       )}
-
       {/* Lesson Info Card */}
       <div style={{
         background: '#fff', borderRadius: '12px', padding: '24px',
@@ -290,40 +411,61 @@ const ParentLessonDetail: React.FC = () => {
       </div>
 
       {/* Tutor Report (if available) */}
-      {(lesson.lessonContent || lesson.homework || lesson.tutorNotes || lesson.report?.attachments?.length > 0) && (
+      {hasTutorReport && (
         <div style={{
           background: '#fff', borderRadius: '12px', padding: '24px',
           border: '1px solid rgba(26,34,56,0.06)', marginBottom: '20px',
         }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1a2238', marginBottom: '16px' }}>
-            Báo cáo gia sư
-          </h3>
-          {lesson.lessonContent && (
-            <div style={{ marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: '18px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1a2238', margin: 0 }}>
+              Báo cáo gia sư
+            </h3>
+            {lesson.report?.createdAt && (
+              <span style={{ fontSize: '12px', color: '#999', textAlign: 'right' }}>
+                Gửi lúc {new Date(lesson.report.createdAt).toLocaleString('vi-VN')}
+              </span>
+            )}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: inMiniApp ? '1fr' : '1fr 1fr', gap: '18px 24px' }}>
+            <div>
               <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Nội dung đã dạy</div>
               <div style={{ fontSize: '14px', color: '#1a2238', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-                {lesson.lessonContent}
+                {reportContent || 'Không có nội dung.'}
               </div>
             </div>
-          )}
-          {lesson.homework && (
-            <div style={{ marginBottom: '16px' }}>
+            <div>
               <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Bài tập về nhà</div>
               <div style={{ fontSize: '14px', color: '#1a2238', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-                {lesson.homework}
+                {reportHomework || 'Không giao bài tập.'}
               </div>
             </div>
-          )}
-          {lesson.tutorNotes && (
             <div>
               <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Ghi chú gia sư</div>
               <div style={{ fontSize: '14px', color: '#1a2238', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-                {lesson.tutorNotes}
+                {lesson.tutorNotes || 'Không có ghi chú.'}
               </div>
             </div>
-          )}
-          {Array.isArray(lesson.report?.attachments) && lesson.report.attachments.length > 0 && (
             <div>
+              <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>
+                Mức độ tiếp thu của học viên
+              </div>
+              {reportRating != null && reportRating > 0 ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ color: '#faad14', fontSize: '18px', letterSpacing: 2 }}>
+                    {'★'.repeat(reportRating)}
+                    <span style={{ color: '#e8e8e8' }}>{'★'.repeat(5 - reportRating)}</span>
+                  </span>
+                  <span style={{ fontSize: '13px', color: '#666' }}>{reportRating}/5</span>
+                </div>
+              ) : (
+                <div style={{ fontSize: '14px', color: '#999' }}>Chưa đánh giá.</div>
+              )}
+            </div>
+          </div>
+
+          {Array.isArray(lesson.report?.attachments) && lesson.report.attachments.length > 0 && (
+            <div style={{ marginTop: '20px' }}>
               <div style={{ fontSize: '12px', color: '#999', marginBottom: '8px' }}>Tệp đính kèm</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {lesson.report.attachments.map((url: string, index: number) => (
@@ -365,7 +507,6 @@ const ParentLessonDetail: React.FC = () => {
           )}
         </div>
       )}
-
       {dispute && (
         <div style={{
           background: '#fff', borderRadius: '12px', padding: '20px', marginBottom: '16px',
@@ -541,14 +682,25 @@ const ParentLessonDetail: React.FC = () => {
         )}
 
         {lesson.status === 'completed' && (
-          <Button
-            type="primary"
-            size="large"
-            onClick={() => setShowFeedbackModal(true)}
-            style={{ background: '#3e2f28', borderColor: '#3e2f28' }}
-          >
-            Đánh giá buổi học
-          </Button>
+          <>
+            <Button
+              type="primary"
+              size="large"
+              onClick={() => setShowFeedbackModal(true)}
+              style={{ background: '#3e2f28', borderColor: '#3e2f28' }}
+            >
+              Đánh giá buổi học
+            </Button>
+            {!dispute && (
+              <Button
+                size="large"
+                danger
+                onClick={() => setShowDisputeForm(true)}
+              >
+                Báo cáo gia sư
+              </Button>
+            )}
+          </>
         )}
 
         <Button size="large" onClick={() => navigate('/parent-portal/dashboard')}>
