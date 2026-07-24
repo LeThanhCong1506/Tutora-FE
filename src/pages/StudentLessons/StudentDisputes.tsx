@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Spin, Tag, Empty } from 'antd';
 import { getParentDisputes, type DisputeListDto } from '../../services/parent-lesson.service';
+import { formatLocalDate } from '../../utils/datetime';
 
 const DISPUTE_STATUS: Record<string, { label: string; color: string }> = {
   pending: { label: 'Chờ xử lý', color: '#faad14' },
@@ -133,7 +134,7 @@ const StudentDisputes: React.FC = () => {
                 </p>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12px', color: '#999' }}>
-                  {dispute.createdAt && <span>Ngày tạo: {new Date(dispute.createdAt).toLocaleDateString('vi-VN')}</span>}
+                  {dispute.createdAt && <span>Ngày tạo: {formatLocalDate(dispute.createdAt)}</span>}
                   {dispute.bookingId && <span>Booking #{dispute.bookingId}</span>}
                 </div>
               </div>

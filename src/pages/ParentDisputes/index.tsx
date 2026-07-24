@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getParentDisputes, type DisputeListDto } from '../../services/parent-lesson.service';
+import { formatLocalDate } from '../../utils/datetime';
 import { Spin, Tag, Empty } from 'antd';
 
 const DISPUTE_STATUS: Record<string, { label: string; color: string }> = {
@@ -151,7 +152,7 @@ const ParentDisputes: React.FC = () => {
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12px', color: '#999' }}>
                   {dispute.createdAt && (
-                    <span>Ngày tạo: {new Date(dispute.createdAt).toLocaleDateString('vi-VN')}</span>
+                    <span>Ngày tạo: {formatLocalDate(dispute.createdAt)}</span>
                   )}
                   {dispute.bookingId && (
                     <span>Booking #{dispute.bookingId}</span>
