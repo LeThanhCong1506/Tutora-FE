@@ -376,10 +376,16 @@ const StudentLessonDetail = () => {
                             <span style={{ fontSize: '15px', fontWeight: 700, color: '#1a2238' }}>Khiếu nại của bạn</span>
                             <span style={{
                                 fontSize: '12px', fontWeight: 600, padding: '4px 10px', borderRadius: 999,
-                                color: dispute.status === 'resolved' ? '#166534' : dispute.status === 'investigating' ? '#1e40af' : '#92400e',
-                                background: dispute.status === 'resolved' ? '#dcfce7' : dispute.status === 'investigating' ? '#dbeafe' : '#fef3c7',
+                                color: dispute.status === 'resolved' || dispute.status === 'confirmed_no_show' ? '#166534' : dispute.status === 'investigating' ? '#1e40af' : '#92400e',
+                                background: dispute.status === 'resolved' || dispute.status === 'confirmed_no_show' ? '#dcfce7' : dispute.status === 'investigating' ? '#dbeafe' : '#fef3c7',
                             }}>
-                                {dispute.status === 'resolved' ? 'Đã giải quyết' : dispute.status === 'investigating' ? 'Đang xem xét' : 'Chờ xử lý'}
+                                {dispute.status === 'resolved'
+                                    ? 'Đã giải quyết'
+                                    : dispute.status === 'confirmed_no_show'
+                                        ? 'Đã xác nhận vắng mặt'
+                                        : dispute.status === 'investigating'
+                                            ? 'Đang xem xét'
+                                            : 'Chờ xử lý'}
                             </span>
                         </div>
                         <div style={{ fontSize: '13px', color: '#666', marginBottom: dispute.evidence?.length ? '12px' : 0 }}>
@@ -509,14 +515,20 @@ const StudentLessonDetail = () => {
                             <AlertCircle size={20} style={{ color: '#d97706' }} />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={actionCardTitle}>Gia sư đã vắng mặt</div>
+                            <div style={actionCardTitle}>
+                                {dispute?.status === 'confirmed_no_show' ? 'Admin đã xác nhận gia sư vắng mặt' : 'Báo cáo đang chờ xác nhận'}
+                            </div>
                             <div style={actionCardDesc}>
-                                Chọn hướng xử lý cho buổi học này.
+                                {dispute?.status === 'confirmed_no_show'
+                                    ? 'Bạn có thể chọn hướng xử lý cho buổi học này.'
+                                    : 'Chưa có hoàn tiền hoặc cảnh báo nào được áp dụng.'}
                             </div>
                         </div>
-                        <button style={actionBtnDispute} onClick={() => setShowNoShowActionModal(true)}>
-                            Chọn hành động xử lý
-                        </button>
+                        {dispute?.status === 'confirmed_no_show' && (
+                            <button style={actionBtnDispute} onClick={() => setShowNoShowActionModal(true)}>
+                                Chọn hành động xử lý
+                            </button>
+                        )}
                     </div>
                 )}
 

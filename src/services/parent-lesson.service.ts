@@ -75,6 +75,8 @@ export interface DisputeDetailDto {
   resolvedAt?: string;
   resolutionNote?: string;
   refundAmount?: number;
+  noShowConfirmedAt?: string;
+  noShowConfirmedBy?: string;
 }
 
 export interface DisputeListDto {
@@ -107,6 +109,8 @@ export interface NoShowActionResultDto {
   message: string;
   newLessonId?: number;
   refundAmount?: number;
+  noShowConfirmedAt?: string;
+  noShowConfirmedBy?: string;
 }
 
 export interface CalendarLessonDto {
@@ -223,6 +227,8 @@ const mapDispute = (r: DisputeDetailResponse): DisputeDetailDto => ({
   resolvedAt: r.resolvedAt,
   resolutionNote: r.resolutionNote,
   refundAmount: r.refundAmount,
+  noShowConfirmedAt: r.noShowConfirmedAt,
+  noShowConfirmedBy: r.noShowConfirmedBy,
 });
 
 const mapNoShowAction = (r: NoShowActionResultResponse): NoShowActionResultDto => ({

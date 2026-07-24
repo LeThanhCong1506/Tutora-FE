@@ -7,6 +7,7 @@ import { Spin, Tag, Empty } from 'antd';
 const DISPUTE_STATUS: Record<string, { label: string; color: string }> = {
   pending: { label: 'Chờ xử lý', color: '#faad14' },
   investigating: { label: 'Đang xem xét', color: '#1890ff' },
+  confirmed_no_show: { label: 'Đã xác nhận vắng mặt', color: '#52c41a' },
   resolved: { label: 'Đã giải quyết', color: '#52c41a' },
   closed: { label: 'Đã đóng', color: '#999' },
 };

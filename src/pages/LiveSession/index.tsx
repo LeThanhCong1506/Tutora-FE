@@ -10,7 +10,7 @@ import {
   useLiveSessionAdmission,
   type LiveSessionAdmission,
 } from '../../hooks/useLiveSessionAdmission';
-import { leaveRoom } from '../../services/agora.service';
+import { isScheduleChangeConfirmationRequiredError, leaveRoom } from '../../services/agora.service';
 import { checkOutClassSession } from '../../services/classSession.service';
 import { getCurrentUserRole, getUserIdFromToken } from '../../services/auth.service';
 import {
@@ -138,6 +138,10 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
       })
       .catch((error: unknown) => {
         if (cancelled) return;
+        if (isScheduleChangeConfirmationRequiredError(error)) {
+          navigate(`/session-lobby/${sessionIdNum}`, { replace: true });
+          return;
+        }
         const fallback = 'Không thể kết nối tới phòng học. Vui lòng thử lại.';
         if (axios.isAxiosError(error)) {
           const status = error.response?.status;

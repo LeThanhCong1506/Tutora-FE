@@ -431,6 +431,10 @@ export interface DisputeDetailResponse {
     timeSinceCreation?: string;
     /** Earliest time admin can start investigating (createdAt + 48h) — after this, response/evidence lock. */
     tutorResponseDeadline?: string;
+    /** Thời điểm quản trị viên xác nhận báo cáo tutor no-show. */
+    noShowConfirmedAt?: string;
+    /** User id của quản trị viên đã xác nhận tutor no-show. */
+    noShowConfirmedBy?: string;
 }
 
 /** ClassSession phải ở trạng thái `pending_confirmation` hoặc `completed`, và chưa từng bị khiếu nại. */

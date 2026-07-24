@@ -34,6 +34,7 @@ const NOTIFICATION_TYPES_BY_PATH: Record<string, string[]> = {
     'lesson_checkin',
     'lesson_confirmed',
     'lesson_no_show',
+    'lesson_schedule_change',
     'lesson_report',
   ],
   '/student-portal/wallet': ['withdrawal_request'],
