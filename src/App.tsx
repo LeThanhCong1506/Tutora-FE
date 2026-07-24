@@ -312,7 +312,7 @@ function App() {
             <Route
               path="/live-session/:classSessionId"
               element={
-                <ProtectedRoute allowedRoles={['Tutor', 'Parent', 'Student']}>
+                <ProtectedRoute allowedRoles={['Tutor', 'Student']}>
                   <LiveSession />
                 </ProtectedRoute>
               }
@@ -322,7 +322,7 @@ function App() {
             <Route
               path="/session-lobby/:classSessionId"
               element={
-                <ProtectedRoute allowedRoles={['Tutor', 'Parent', 'Student']}>
+                <ProtectedRoute allowedRoles={['Tutor', 'Student']}>
                   <SessionLobby />
                 </ProtectedRoute>
               }

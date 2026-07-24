@@ -354,6 +354,52 @@ export const getParentClassSessionDetail = async (id: number): Promise<ApiRespon
     const response = await api.get(`/parent/class-sessions/${id}`, { headers: getAuthHeaders() });
     return response.data;
 };
+export interface SessionScheduleChangeResponse {
+    classSessionId: number;
+    requiresConfirmation: boolean;
+    canCurrentUserConfirm: boolean;
+    currentUserConfirmed: boolean;
+    admissionAllowed: boolean;
+    status?: string;
+    tutorUserId?: string;
+    learnerApproverUserId?: string;
+    requiredLearnerRole?: 'Student' | 'Parent';
+    requiredLearnerName?: string;
+    tutorName?: string;
+    studentName?: string;
+    originalScheduledStart: string;
+    originalScheduledEnd: string;
+    durationMinutes: number;
+    requestedAt?: string;
+    expiresAt?: string;
+    tutorConfirmedAt?: string;
+    learnerConfirmedAt?: string;
+    approvedAt?: string;
+    appliedAt?: string;
+    adjustedScheduledStart?: string;
+    adjustedScheduledEnd?: string;
+}
+
+export const getParentScheduleChange = async (
+    id: number,
+): Promise<ApiResponse<SessionScheduleChangeResponse>> => {
+    const response = await api.get(`/parent/class-sessions/${id}/schedule-change`, {
+        headers: getAuthHeaders(),
+    });
+    return response.data;
+};
+
+export const respondParentScheduleChange = async (
+    id: number,
+    confirmed: boolean,
+): Promise<ApiResponse<SessionScheduleChangeResponse>> => {
+    const response = await api.post(
+        `/parent/class-sessions/${id}/schedule-change/respond`,
+        { confirmed },
+        { headers: getAuthHeaders() },
+    );
+    return response.data;
+};
 
 export interface SettlementResultResponse {
     classSessionId: number;

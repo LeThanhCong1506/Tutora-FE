@@ -8,7 +8,7 @@ import {
   useLiveSessionAdmission,
   type LiveSessionAdmission,
 } from '../../hooks/useLiveSessionAdmission';
-import { getCurrentUserRole } from '../../services/auth.service';
+import { getCurrentUserRole, getUserIdFromToken } from '../../services/auth.service';
 import {
   useSessionLobby,
   useDevicePreview,
@@ -68,6 +68,7 @@ const SessionLobby = () => {
   const [dismissedScheduleVersion, setDismissedScheduleVersion] = useState<string | null>(null);
 
   const role = (getCurrentUserRole() || '').toLowerCase();
+  const currentUserId = getUserIdFromToken() || '';
   const isTutor = role === 'tutor';
   /** Phía mình chờ ai: gia sư chờ học sinh, học sinh/phụ huynh chờ gia sư. */
   const waitingForLabel = isTutor ? 'học sinh' : 'gia sư';
@@ -149,6 +150,8 @@ const SessionLobby = () => {
   const scheduleVersion = scheduleChangeState
     ? [
         scheduleChangeState.status,
+        scheduleChangeState.requiredLearnerRole,
+        scheduleChangeState.learnerApproverUserId,
         scheduleChangeState.tutorConfirmedAt,
         scheduleChangeState.learnerConfirmedAt,
         scheduleChangeState.appliedAt,
@@ -317,6 +320,7 @@ const SessionLobby = () => {
           open={showScheduleChange}
           state={scheduleChangeState}
           currentRole={role}
+          currentUserId={currentUserId}
           loading={respondingToScheduleChange}
           onRespond={(confirmed) => void handleScheduleResponse(confirmed)}
           onClose={() => setDismissedScheduleVersion(scheduleVersion)}
