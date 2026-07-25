@@ -28,7 +28,16 @@ const DISPUTE_TYPES = [
 ];
 
 /** Thẻ gợi ý lý do mặc định — tick vào sẽ điền thẳng vào ô "Lý do" bên trên. */
-const DEFAULT_QUICK_REASONS = ['Gia sư vắng mặt', 'Chất lượng buổi học không tốt'];
+const DEFAULT_QUICK_REASONS = [
+  'Gia sư vắng mặt',
+  'Gia sư đến trễ',
+  'Chất lượng buổi học không tốt',
+  'Gia sư dạy không đúng nội dung đã thỏa thuận',
+  'Gia sư có thái độ không phù hợp',
+  'Buổi học bị gián đoạn do lỗi kỹ thuật',
+  'Vấn đề về thanh toán',
+  'Bị tính phí sai',
+];
 
 const CreateDisputeForm: React.FC<CreateDisputeFormProps> = ({
   open,
@@ -220,6 +229,10 @@ const CreateDisputeForm: React.FC<CreateDisputeFormProps> = ({
         >
           <TextArea rows={4} placeholder="Mô tả chi tiết lý do khiếu nại..." />
         </Form.Item>
+
+        <p style={{ fontSize: '12px', color: '#999', margin: '-4px 0 12px' }}>
+          Lưu ý: thông tin gửi cho admin sẽ kèm theo thông tin chi tiết buổi học, bạn không cần mô tả lại các thông tin đó.
+        </p>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
           {quickReasons.map((phrase) => (

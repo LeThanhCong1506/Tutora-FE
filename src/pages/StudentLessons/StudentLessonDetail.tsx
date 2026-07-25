@@ -4,10 +4,10 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
     ArrowLeft, BookOpen, AlertCircle, Video,
     Calendar as CalendarIcon, FileText, ClipboardCheck, Star,
-    User, PlayCircle, StopCircle, Paperclip, Download,
+    User, PlayCircle, StopCircle, Paperclip, Download, CalendarClock,
 } from 'lucide-react';
 import dayjs from 'dayjs';
-import { getStudentLessonDetail, confirmStudentLesson } from '../../services/student-lesson.service';
+import { getStudentLessonDetail, confirmStudentLesson, type StudentLessonDetailDto } from '../../services/student-lesson.service';
 import {
     getClassSessionDispute,
     getClassSessionDisputeThread,
@@ -17,7 +17,6 @@ import {
 } from '../../services/classSession.service';
 import { signalRService } from '../../services/signalr.service';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
-import type { LessonDetailDto } from '../../services/lesson.service';
 import { message as antMessage, Spin, Modal } from 'antd';
 import CreateFeedbackModal from '../ParentLessons/components/CreateFeedbackModal';
 import CreateDisputeForm from '../ParentLessons/components/CreateDisputeForm';
@@ -75,7 +74,7 @@ const StudentLessonDetail = () => {
     const { lessonId } = useParams<{ lessonId: string }>();
     const navigate = useNavigate();
     const { isParentManaged } = useStudentProfile();
-    const [lesson, setLesson] = useState<LessonDetailDto | null>(null);
+    const [lesson, setLesson] = useState<StudentLessonDetailDto | null>(null);
     const [loading, setLoading] = useState(true);
     const [confirming, setConfirming] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -552,6 +551,53 @@ const StudentLessonDetail = () => {
                     </div>
                 )}
 
+                {/* ─── Lịch sử dời lịch (nếu có) ─── */}
+                {Array.isArray(lesson.scheduleChanges) && lesson.scheduleChanges.length > 0 && (
+                    <div style={sectionCard}>
+                        <div style={sectionHeaderRow}>
+                            <div style={{ ...sectionIconWrap, background: 'rgba(217,119,6,0.10)' }}>
+                                <CalendarClock size={16} style={{ color: '#d97706' }} />
+                            </div>
+                            <div style={sectionTitleText}>Lịch sử dời lịch</div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            {lesson.scheduleChanges.map((sc: any) => {
+                                const statusLabel: Record<string, string> = {
+                                    applied: 'Đã áp dụng',
+                                    approved: 'Hai bên đã đồng ý',
+                                    rejected: 'Đã từ chối',
+                                    expired: 'Đã hết hạn',
+                                    pending: 'Đang chờ xác nhận',
+                                };
+                                return (
+                                    <div key={sc.scheduleChangeId} style={reportRowBlock}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
+                                            <span style={reportLabelStyle}>{statusLabel[sc.status] || sc.status}</span>
+                                            {sc.appliedAt && (
+                                                <span style={{ fontSize: 12, color: '#9ca3af' }}>
+                                                    Áp dụng lúc {formatLongDate(sc.appliedAt)} {formatTime(sc.appliedAt)}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div style={reportValueStyle}>
+                                            {formatLongDate(sc.originalScheduledStart)}, {formatTime(sc.originalScheduledStart)}–{formatTime(sc.originalScheduledEnd)}
+                                            {sc.adjustedScheduledStart && (
+                                                <> {'→'} {formatLongDate(sc.adjustedScheduledStart)}, {formatTime(sc.adjustedScheduledStart)}–{formatTime(sc.adjustedScheduledEnd)}</>
+                                            )}
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 20, marginTop: 8, fontSize: 12, color: '#666', flexWrap: 'wrap' }}>
+                                            <span>Gia sư: {sc.tutorConfirmedByName ? `${sc.tutorConfirmedByName} đã xác nhận` : 'Chưa xác nhận'}</span>
+                                            <span>
+                                                {sc.learnerApproverRole === 'Student' ? 'Học sinh' : 'Phụ huynh'}: {sc.learnerConfirmedByName ? `${sc.learnerConfirmedByName} đã xác nhận` : 'Chưa xác nhận'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
                 {/* ─── Content + Homework ─── */}
                 {(lesson.lessonContent || lesson.homework) && (
                     <div style={sectionCard}>
@@ -598,9 +644,9 @@ const StudentLessonDetail = () => {
                             {report.homeworkAssigned && (
                                 <ReportRow label="Bài tập giao" value={report.homeworkAssigned} />
                             )}
-                            {report.studentPerformanceRating != null && (
-                                <div style={ratingRow}>
-                                    <span style={reportLabelStyle}>Đánh giá học sinh</span>
+                            <div style={ratingRow}>
+                                <span style={reportLabelStyle}>Đánh giá học sinh</span>
+                                {report.studentPerformanceRating > 0 ? (
                                     <div style={ratingStars}>
                                         {[1, 2, 3, 4, 5].map(i => (
                                             <Star
@@ -615,8 +661,10 @@ const StudentLessonDetail = () => {
                                             {report.studentPerformanceRating}/5
                                         </span>
                                     </div>
-                                </div>
-                            )}
+                                ) : (
+                                    <span style={{ fontSize: 13, color: '#999' }}>Chưa đánh giá</span>
+                                )}
+                            </div>
                             {Array.isArray(report.attachments) && report.attachments.length > 0 && (
                                 <div>
                                     <span style={reportLabelStyle}>Tệp đính kèm</span>

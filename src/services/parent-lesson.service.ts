@@ -19,6 +19,7 @@ import {
   type NoShowActionResultResponse,
   type DisputeListResponse,
   type ReportNoShowRequest,
+  type ScheduleChangeAuditDto,
 } from './classSession.service';
 
 /**
@@ -162,6 +163,7 @@ export interface ParentLessonDetailDto extends Omit<LessonDetailDto, 'lessonId' 
   subjectName?: string;
   tutorName?: string;
   tutorId?: string;
+  scheduleChanges?: ScheduleChangeAuditDto[];
 }
 
 const mapDetail = (d: ClassSessionDetailResponse): ParentLessonDetailDto => ({
@@ -199,6 +201,7 @@ const mapDetail = (d: ClassSessionDetailResponse): ParentLessonDetailDto => ({
   subjectName: d.subject?.subjectName,
   tutorName: d.tutor?.fullName,
   tutorId: d.tutor?.tutorId,
+  scheduleChanges: d.scheduleChanges,
 });
 
 const mapSettlement = (r: SettlementResultResponse): SettlementResultDto => ({

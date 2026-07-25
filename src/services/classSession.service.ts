@@ -88,6 +88,24 @@ export interface ClassSessionReport {
     createdAt?: string;
 }
 
+/** Lịch sử dời lịch của một buổi học — mirror BE `DisputeScheduleChangeAuditResponse`. */
+export interface ScheduleChangeAuditDto {
+    scheduleChangeId: number;
+    status: 'pending' | 'approved' | 'applied' | 'rejected' | 'expired' | string;
+    originalScheduledStart: string;
+    originalScheduledEnd: string;
+    adjustedScheduledStart?: string;
+    adjustedScheduledEnd?: string;
+    learnerApproverRole: 'Parent' | 'Student' | string;
+    tutorConfirmedByName?: string;
+    tutorConfirmedAt?: string;
+    learnerConfirmedByName?: string;
+    learnerConfirmedAt?: string;
+    requestedAt?: string;
+    approvedAt?: string;
+    appliedAt?: string;
+}
+
 export interface ClassSessionDetailResponse {
     classSessionId: number;
     bookingId?: number;
@@ -122,6 +140,7 @@ export interface ClassSessionDetailResponse {
     timeRemainingToConfirm?: string | null;
     canCheckIn: boolean;
     canSubmitReport: boolean;
+    scheduleChanges?: ScheduleChangeAuditDto[];
 }
 
 // ── Request DTOs ──
@@ -575,6 +594,8 @@ export interface StudentClassSessionReport {
     topicsCovered?: string;
     homeworkAssigned?: string;
     tutorNotes?: string;
+    studentPerformanceRating?: number;
+    attachments?: string[];
 }
 
 export interface StudentClassSessionDetailResponse extends StudentClassSessionSummaryResponse {
@@ -583,6 +604,7 @@ export interface StudentClassSessionDetailResponse extends StudentClassSessionSu
     checkoutTime?: string;
     tutorAvatar?: string;
     report?: StudentClassSessionReport;
+    scheduleChanges?: ScheduleChangeAuditDto[];
 }
 
 export const getStudentClassSessions = async (

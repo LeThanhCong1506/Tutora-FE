@@ -410,6 +410,55 @@ const ParentLessonDetail: React.FC = () => {
         </div>
       </div>
 
+      {/* Lịch sử dời lịch (nếu có) — bản tóm tắt cố định, khác với banner "cần xác nhận" ở trên (banner đó tự ẩn sau khi xử lý xong). */}
+      {Array.isArray(lesson.scheduleChanges) && lesson.scheduleChanges.length > 0 && (
+        <div style={{
+          background: '#fff', borderRadius: '12px', padding: '24px',
+          border: '1px solid rgba(26,34,56,0.06)', marginBottom: '20px',
+        }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1a2238', marginBottom: '16px' }}>
+            Lịch sử dời lịch
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {lesson.scheduleChanges.map((sc: any) => {
+              const statusLabel: Record<string, string> = {
+                applied: 'Đã áp dụng',
+                approved: 'Hai bên đã đồng ý',
+                rejected: 'Đã từ chối',
+                expired: 'Đã hết hạn',
+                pending: 'Đang chờ xác nhận',
+              };
+              return (
+                <div key={sc.scheduleChangeId} style={{ background: '#fafaf8', borderRadius: 10, padding: '12px 14px', border: '1px solid rgba(26,34,56,0.06)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#8c8c8c', textTransform: 'uppercase', letterSpacing: 0.4 }}>
+                      {statusLabel[sc.status] || sc.status}
+                    </span>
+                    {sc.appliedAt && (
+                      <span style={{ fontSize: 12, color: '#999' }}>
+                        Áp dụng lúc {new Date(sc.appliedAt).toLocaleString('vi-VN')}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 14, color: '#1a2238' }}>
+                    {new Date(sc.originalScheduledStart).toLocaleDateString('vi-VN')}, {new Date(sc.originalScheduledStart).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}–{new Date(sc.originalScheduledEnd).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                    {sc.adjustedScheduledStart && (
+                      <> {'→'} {new Date(sc.adjustedScheduledStart).toLocaleDateString('vi-VN')}, {new Date(sc.adjustedScheduledStart).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}–{new Date(sc.adjustedScheduledEnd).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: 20, marginTop: 8, fontSize: 12, color: '#666', flexWrap: 'wrap' }}>
+                    <span>Gia sư: {sc.tutorConfirmedByName ? `${sc.tutorConfirmedByName} đã xác nhận` : 'Chưa xác nhận'}</span>
+                    <span>
+                      {sc.learnerApproverRole === 'Student' ? 'Học sinh' : 'Phụ huynh'}: {sc.learnerConfirmedByName ? `${sc.learnerConfirmedByName} đã xác nhận` : 'Chưa xác nhận'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Tutor Report (if available) */}
       {hasTutorReport && (
         <div style={{
