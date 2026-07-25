@@ -97,6 +97,7 @@ const NotificationsPage = lazy(() => import('./pages/Notifications/Notifications
 const LiveSession = lazy(() => import('./pages/LiveSession'));
 // Phòng chờ trước khi vào lớp — chờ đủ cả gia sư và học viên rồi mới vào phòng học
 const SessionLobby = lazy(() => import('./pages/SessionLobby'));
+// const EmotionTest = lazy(() => import('./pages/EmotionTest'));
 
 // ---------------------
 
@@ -199,6 +200,7 @@ function App() {
             <Route path="/demo/parent-booking" element={<ParentBookingDemo />} />
             <Route path="/demo/parent-booking/:tutorId" element={<ParentBookingDemo />} />
             <Route path="/demo/parent-booking/tutor/:tutorId" element={<ParentBookingDemo />} />
+            {/* <Route path="/classroom/:id/test-emotion" element={<EmotionTest />} /> */}
             <Route path="/tutor-detail" element={<Navigate to="/" replace />} />
             <Route path="/tutor-detail/:id" element={<TutorDetailPage />} />
 

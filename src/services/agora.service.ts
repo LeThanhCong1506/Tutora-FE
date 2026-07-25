@@ -45,6 +45,8 @@ export interface SessionPresenceStatus {
   isCheckedIn: boolean;
   roomClosed: boolean;
   blockedByPayment: boolean;
+  /** True khi Cloud Recording đang chạy — FE hiển thị chỉ báo "đang ghi hình". */
+  isRecording: boolean;
 }
 
 export interface ActiveSessionConflict {

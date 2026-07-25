@@ -23,6 +23,10 @@ import {
   useLiveSessionGuard,
 } from './live-session-components';
 import type { ChatMessage } from './live-session-components/types';
+import { useEmotionMonitor } from './emotion/useEmotionMonitor';
+import EmotionAlertToast from './emotion/EmotionAlertToast';
+import { primeAlertSound } from './emotion/alertSound';
+import { postEngagementAlert } from '../../services/emotion.service';
 import styles from './styles.module.css';
 
 // SDK whiteboard nặng → lazy-load để không nằm trong bundle chính (đặc biệt cho bản Zalo).
@@ -93,6 +97,7 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
 
   const role = (getCurrentUserRole() || '').toLowerCase();
   const isTutor = role === 'tutor';
+  const isStudent = role === 'student';
   const currentUserId = getUserIdFromToken();
   const room = liveAdmission?.room ?? null;
   const identity = liveAdmission?.identity ?? null;
@@ -189,8 +194,14 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
     presenceStatus,
     sessionEnded,
     sessionReplaced: heartbeatSessionReplaced,
+    trackingRequested,
+    emotionAlerts,
+    emotionToasts,
+    dismissEmotionToast,
+    sendEmotionAlert,
     sendChatMessage: realSendChatMessage,
     broadcastSessionEnded,
+    broadcastTracking,
     toggleMic,
     toggleCam,
     toggleScreenShare,
@@ -311,6 +322,41 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
     })();
   };
 
+  // GIA SƯ bật/tắt "Theo dõi hành vi" → phát tín hiệu RTM tới máy học viên. Không tracking liên tục.
+  // Trạng thái đã thể hiện ngay trên nút + chấm đỏ ở tab, không cần toast xác nhận.
+  const handleToggleEmotionMonitor = () => {
+    // Mở khoá AudioContext trong chính cú bấm này — trình duyệt chặn phát tiếng nếu chưa có
+    // tương tác người dùng, làm tiếng báo đầu tiên bị nuốt.
+    primeAlertSound();
+    void broadcastTracking(!trackingRequested);
+  };
+
+  // Học viên tắt/bật camera khi đang được theo dõi → báo gia sư (thay vì để engine hiểu nhầm
+  // thành "rời khỏi màn hình"). Tracking tự dừng khi tắt cam và chạy lại khi bật.
+  const handleCameraStateChange = useCallback(
+    (on: boolean) => {
+      const payload = {
+        reason: on ? ('camera_on' as const) : ('camera_off' as const),
+        level: 'MED' as const,
+        message: on ? 'Học viên đã bật lại camera' : 'Học viên đã tắt camera',
+      };
+      sendEmotionAlert(payload); // RTM → toast tức thì bên gia sư
+      if (sessionIdNum) void postEngagementAlert(sessionIdNum, payload);
+    },
+    [sessionIdNum, sendEmotionAlert],
+  );
+
+  // Học viên: chạy phân tích cục bộ + gửi điểm/cảnh báo — chỉ khi GIA SƯ đã bật (qua RTM).
+  // Học viên không có nút, không được thông báo; chạy ngầm.
+  useEmotionMonitor({
+    enabled: !isMock && isStudent && trackingRequested && joined,
+    classSessionId: sessionIdNum,
+    localVideoTrack,
+    camOn,
+    onCameraStateChange: handleCameraStateChange,
+    onAlert: sendEmotionAlert,
+  });
+
   if (!isMock && sessionReplaced) {
     return (
       <div className={styles.page}>
@@ -327,7 +373,6 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
       </div>
     );
   }
-
   if (!isMock && loadError) {
     return (
       <div className={styles.page}>
@@ -369,6 +414,7 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
         elapsedLabel={formatElapsed(elapsedSeconds)}
         panelOpen={panelOpen}
         onTogglePanel={() => setPanelOpen((v) => !v)}
+        isRecording={isMock ? true : Boolean(presenceStatus?.isRecording)}
       />
       {!isMock && joined && presenceStatus && !presenceStatus.isCheckedIn && (
         <div
@@ -431,6 +477,17 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
           messages={chatMessages}
           onSendMessage={sendChatMessage}
           notesStorageKey={classSessionId ?? 'mock'}
+          // Tab "Theo dõi" chỉ dựng cho gia sư — nơi bật/tắt và xem lại lịch sử cảnh báo.
+          behavior={
+            isTutor
+              ? {
+                  trackingOn: trackingRequested,
+                  onToggleTracking: handleToggleEmotionMonitor,
+                  alerts: emotionAlerts,
+                  disabled: isMock,
+                }
+              : undefined
+          }
         />
       </div>
 
@@ -462,6 +519,9 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
             : 'Bạn sẽ rời khỏi buổi học này.'}
         </p>
       </Modal>
+      {/* Cảnh báo hành vi — chỉ gia sư. Đặt ở cấp trang (position: fixed) để luôn neo góc dưới
+          bên phải MÀN HÌNH, không lệch theo khung camera hay khi mở/đóng SidePanel. */}
+      {isTutor && <EmotionAlertToast items={emotionToasts} onDismiss={dismissEmotionToast} />}
     </div>
   );
 };
