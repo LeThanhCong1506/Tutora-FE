@@ -1,17 +1,24 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, Form, Input, Select, Upload, Button, Tag } from 'antd';
 import { toast } from 'react-toastify';
 import { UploadOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import { createDispute, uploadDisputeEvidence } from '../../../services/parent-lesson.service';
+import { getParentCalendar, type CalendarClassSessionResponse } from '../../../services/classSession.service';
+import { getClassSessionStatusMeta } from '../../../utils/classSessionStatus';
 
 const { TextArea } = Input;
 
 interface CreateDisputeFormProps {
   open: boolean;
-  lessonId: number;
+  /** Bỏ qua nếu muốn người dùng tự chọn buổi học ngay trong popup (xem `lessonId`/`ELIGIBLE_STATUSES` bên dưới). */
+  lessonId?: number;
   onSuccess: () => void;
   onCancel: () => void;
 }
+
+/** Chỉ những buổi học ở 2 trạng thái này mới được phép tạo khiếu nại — khớp với BE (ParentService.CreateDisputeAsync). */
+const ELIGIBLE_STATUSES = ['pending_confirmation', 'completed'];
 
 const DISPUTE_TYPES = [
   { value: 'no_show', label: 'Gia sư vắng mặt' },
@@ -36,6 +43,38 @@ const CreateDisputeForm: React.FC<CreateDisputeFormProps> = ({
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
   const [addingCustom, setAddingCustom] = useState(false);
   const [customInput, setCustomInput] = useState('');
+
+  // Chọn buổi học ngay trong popup khi không có sẵn lessonId (vd bấm "+" từ trang "Khiếu nại của tôi").
+  const needsLessonPicker = lessonId == null;
+  const [lessons, setLessons] = useState<CalendarClassSessionResponse[]>([]);
+  const [lessonsLoading, setLessonsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open || !needsLessonPicker) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        setLessonsLoading(true);
+        // 6 tháng gần nhất là đủ để bao các buổi có thể khiếu nại (pending_confirmation/completed
+        // đều là buổi đã diễn ra hoặc sắp tới rất gần).
+        const startDate = dayjs().subtract(6, 'month').format('YYYY-MM-DD');
+        const endDate = dayjs().format('YYYY-MM-DD');
+        const res = await getParentCalendar(startDate, endDate);
+        const eligible = (res.content || [])
+          .flatMap((day) => day.classSessions)
+          .filter((l) => l.status && ELIGIBLE_STATUSES.includes(l.status))
+          .sort((a, b) => dayjs(b.scheduledStart).valueOf() - dayjs(a.scheduledStart).valueOf());
+        if (!cancelled) setLessons(eligible);
+      } catch {
+        if (!cancelled) setLessons([]);
+      } finally {
+        if (!cancelled) setLessonsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, needsLessonPicker]);
 
   const quickReasons = [...DEFAULT_QUICK_REASONS, ...customReasons];
 
@@ -93,6 +132,12 @@ const CreateDisputeForm: React.FC<CreateDisputeFormProps> = ({
   };
 
   const handleSubmit = async (values: any) => {
+    const targetLessonId = lessonId ?? values.lessonId;
+    if (!targetLessonId) {
+      toast.error('Vui lòng chọn buổi học cần khiếu nại.');
+      return;
+    }
+
     try {
       setSubmitting(true);
 
@@ -100,14 +145,14 @@ const CreateDisputeForm: React.FC<CreateDisputeFormProps> = ({
       const evidenceUrls: string[] = [];
       for (const file of evidenceFiles) {
         try {
-          const res = await uploadDisputeEvidence(lessonId, file);
+          const res = await uploadDisputeEvidence(targetLessonId, file);
           if (res.content) evidenceUrls.push(res.content);
         } catch {
           // Continue even if one upload fails
         }
       }
 
-      await createDispute(lessonId, {
+      await createDispute(targetLessonId, {
         disputeType: values.disputeType,
         reason: values.reason,
         evidence: evidenceUrls,
@@ -133,6 +178,32 @@ const CreateDisputeForm: React.FC<CreateDisputeFormProps> = ({
       width={520}
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit} style={{ paddingTop: '8px' }}>
+        {needsLessonPicker && (
+          <Form.Item
+            name="lessonId"
+            label="Buổi học"
+            rules={[{ required: true, message: 'Vui lòng chọn buổi học cần khiếu nại' }]}
+          >
+            <Select
+              showSearch
+              loading={lessonsLoading}
+              placeholder="Tìm theo môn học hoặc tên gia sư..."
+              notFoundContent={lessonsLoading ? 'Đang tải...' : 'Không có buổi học nào có thể khiếu nại'}
+              optionFilterProp="label"
+              filterOption={(input, option) =>
+                (option?.label as string)?.toLowerCase().includes(input.toLowerCase())
+              }
+              options={lessons.map((l) => {
+                const meta = getClassSessionStatusMeta(l.status);
+                return {
+                  value: l.classSessionId,
+                  label: `${dayjs(l.scheduledStart).format('DD/MM/YYYY HH:mm')} · ${l.subjectName || 'N/A'} · GS ${l.tutorName || 'N/A'} · ${meta.label}`,
+                };
+              })}
+            />
+          </Form.Item>
+        )}
+
         <Form.Item
           name="disputeType"
           label="Loại khiếu nại"

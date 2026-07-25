@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Spin, Tag, Empty } from 'antd';
 import { getParentDisputes, type DisputeListDto } from '../../services/parent-lesson.service';
 import { formatLocalDate } from '../../utils/datetime';
+import CreateDisputeForm from '../ParentLessons/components/CreateDisputeForm';
 
 const DISPUTE_STATUS: Record<string, { label: string; color: string }> = {
   pending: { label: 'Chờ xử lý', color: '#faad14' },
@@ -26,33 +27,34 @@ const StudentDisputes: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const pageSize = 10;
 
-  useEffect(() => {
-    const fetchDisputes = async () => {
-      try {
-        setLoading(true);
-        const response = await getParentDisputes(currentPage, pageSize);
-        const data = response.content as unknown;
-        if (Array.isArray(data)) {
-          setDisputes(data);
-          setTotalItems(data.length);
-        } else if (data && typeof data === 'object' && 'items' in data) {
-          const paged = data as { items: DisputeListDto[]; totalCount: number };
-          setDisputes(paged.items);
-          setTotalItems(paged.totalCount || paged.items.length);
-        } else {
-          setDisputes([]);
-          setTotalItems(0);
-        }
-      } catch {
+  const fetchDisputes = async () => {
+    try {
+      setLoading(true);
+      const response = await getParentDisputes(currentPage, pageSize);
+      const data = response.content as unknown;
+      if (Array.isArray(data)) {
+        setDisputes(data);
+        setTotalItems(data.length);
+      } else if (data && typeof data === 'object' && 'items' in data) {
+        const paged = data as { items: DisputeListDto[]; totalCount: number };
+        setDisputes(paged.items);
+        setTotalItems(paged.totalCount || paged.items.length);
+      } else {
         setDisputes([]);
         setTotalItems(0);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch {
+      setDisputes([]);
+      setTotalItems(0);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     void fetchDisputes();
   }, [currentPage]);
 
@@ -60,11 +62,25 @@ const StudentDisputes: React.FC = () => {
 
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-      <header style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#1a2238', marginBottom: '4px' }}>
-          Khiếu nại của tôi
-        </h1>
-        <p style={{ fontSize: '14px', color: '#666' }}>Theo dõi trạng thái các khiếu nại bạn đã gửi</p>
+      <header style={{ marginBottom: '24px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
+        <div>
+          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#1a2238', marginBottom: '4px' }}>
+            Khiếu nại của tôi
+          </h1>
+          <p style={{ fontSize: '14px', color: '#666' }}>Theo dõi trạng thái các khiếu nại bạn đã gửi</p>
+        </div>
+        <button
+          onClick={() => setCreateModalOpen(true)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0,
+            padding: '10px 16px', borderRadius: '10px', border: 'none',
+            background: '#1a2238', color: '#fff', fontSize: '14px', fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          <Plus size={16} />
+          Tạo khiếu nại
+        </button>
       </header>
 
       {loading ? (
@@ -178,6 +194,16 @@ const StudentDisputes: React.FC = () => {
           </button>
         </div>
       )}
+
+      <CreateDisputeForm
+        open={createModalOpen}
+        onCancel={() => setCreateModalOpen(false)}
+        onSuccess={() => {
+          setCreateModalOpen(false);
+          if (currentPage !== 1) setCurrentPage(1);
+          else void fetchDisputes();
+        }}
+      />
     </div>
   );
 };
