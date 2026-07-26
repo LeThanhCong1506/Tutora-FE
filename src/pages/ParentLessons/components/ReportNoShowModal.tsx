@@ -3,7 +3,7 @@ import { Modal, Button, DatePicker, Input, Upload } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import { toast } from 'react-toastify';
 import dayjs, { type Dayjs } from 'dayjs';
-import { reportNoShow, uploadDisputeEvidence } from '../../../services/parent-lesson.service';
+import { reportNoShow } from '../../../services/parent-lesson.service';
 
 const { TextArea } = Input;
 
@@ -42,15 +42,7 @@ const ReportNoShowModal: React.FC<ReportNoShowModalProps> = ({
       await reportNoShow(lessonId, {
         reportedAt: reportedAt.toISOString(),
         reason: reason.trim() || undefined,
-      });
-
-      for (const file of evidenceFiles) {
-        try {
-          await uploadDisputeEvidence(lessonId, file);
-        } catch {
-          // Bằng chứng là tùy chọn — một file lỗi không nên chặn cả báo cáo đã thành công
-        }
-      }
+      }, evidenceFiles);
 
       toast.success('Đã báo cáo gia sư vắng mặt.');
       resetForm();

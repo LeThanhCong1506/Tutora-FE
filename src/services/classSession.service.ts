@@ -119,6 +119,7 @@ export interface ClassSessionDetailResponse {
     isStudentPresent?: boolean;
     attendanceNote?: string;
     status?: ClassSessionStatus;
+    bookingStatus?: string;
     submittedAt?: string;
     confirmDeadline?: string;
     parentAckAt?: string;
@@ -172,6 +173,7 @@ export interface CalendarClassSessionResponse {
     tutorName?: string;
     subjectName?: string;
     status?: ClassSessionStatus;
+    bookingStatus?: string;
     meetingLink?: string;
     /** Đã check-out (phòng đóng vĩnh viễn) — in_progress + checkOutTime = chờ gửi báo cáo. */
     checkOutTime?: string;
@@ -397,6 +399,13 @@ export interface SessionScheduleChangeResponse {
     appliedAt?: string;
     adjustedScheduledStart?: string;
     adjustedScheduledEnd?: string;
+    scheduleConflict?: {
+        classSessionId: number;
+        scheduledStart: string;
+        scheduledEnd: string;
+        conflictingParty: 'tutor' | 'student' | 'tutor_and_student';
+        message: string;
+    };
 }
 
 export const getParentScheduleChange = async (
@@ -442,7 +451,6 @@ export const confirmParentClassSession = async (id: number): Promise<ApiResponse
 export interface CreateDisputeRequest {
     disputeType: 'no_show' | 'quality' | 'payment' | 'other';
     reason: string;
-    evidence?: string[];
 }
 
 export interface DisputeUserInfo {
@@ -506,8 +514,19 @@ export interface DisputeDetailResponse {
 export const createClassSessionDispute = async (
     id: number,
     request: CreateDisputeRequest,
+    files: File[] = [],
 ): Promise<ApiResponse<DisputeDetailResponse>> => {
-    const response = await api.post(`/parent/class-sessions/${id}/dispute`, request, { headers: getAuthHeaders() });
+    const formData = new FormData();
+    formData.append('disputeType', request.disputeType);
+    formData.append('reason', request.reason);
+    files.forEach((file) => formData.append('files', file));
+
+    const response = await api.post(`/parent/class-sessions/${id}/dispute`, formData, {
+        headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'multipart/form-data',
+        },
+    });
     return response.data;
 };
 
@@ -538,8 +557,19 @@ export interface ReportNoShowRequest {
 export const reportClassSessionNoShow = async (
     id: number,
     request?: ReportNoShowRequest,
+    files: File[] = [],
 ): Promise<ApiResponse<ClassSessionDetailResponse>> => {
-    const response = await api.post(`/class-sessions/${id}/report-no-show`, request ?? {}, { headers: getAuthHeaders() });
+    const formData = new FormData();
+    if (request?.reportedAt) formData.append('reportedAt', request.reportedAt);
+    if (request?.reason) formData.append('reason', request.reason);
+    files.forEach((file) => formData.append('files', file));
+
+    const response = await api.post(`/class-sessions/${id}/report-no-show`, formData, {
+        headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'multipart/form-data',
+        },
+    });
     return response.data;
 };
 
@@ -581,6 +611,8 @@ export const getClassSessionById = async (id: number): Promise<ApiResponse<Class
 export interface StudentClassSessionSummaryResponse {
     classSessionId: number;
     status?: ClassSessionStatus;
+    bookingStatus?: string;
+    isSettled?: boolean;
     scheduledStart?: string;
     scheduledEnd?: string;
     confirmDeadline?: string;
@@ -660,21 +692,6 @@ export interface DisputeListResponse {
     classSessionPrice?: number;
     createdAt?: string;
 }
-
-export const uploadClassSessionDisputeEvidence = async (
-    id: number,
-    file: File,
-): Promise<ApiResponse<string>> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await api.post(`/parent/class-sessions/${id}/dispute/evidence`, formData, {
-        headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'multipart/form-data',
-        },
-    });
-    return response.data;
-};
 
 export const getParentDisputesList = async (
     page: number = 1,
@@ -761,4 +778,3 @@ export const sendClassSessionDisputeThreadMessage = async (id: number, message: 
     const response = await api.post(`/parent/class-sessions/${id}/dispute/thread/messages`, { message }, { headers: getAuthHeaders() });
     return response.data;
 };
-

@@ -8,7 +8,6 @@ import {
   reportClassSessionNoShow,
   processClassSessionNoShowAction,
   getParentCalendar as getParentCalendarReal,
-  uploadClassSessionDisputeEvidence,
   getParentDisputesList,
   type PendingClassSessionResponse,
   type ClassSessionDetailResponse,
@@ -95,7 +94,6 @@ export interface DisputeListDto {
 export interface CreateDisputeRequest {
   disputeType: 'no_show' | 'quality' | 'payment' | 'other';
   reason: string;
-  evidence?: string[];
 }
 
 export interface NoShowActionRequest {
@@ -122,6 +120,7 @@ export interface CalendarLessonDto {
   tutorName?: string;
   subjectName?: string;
   status: string;
+  bookingStatus?: string;
   meetingLink?: string;
 }
 
@@ -163,6 +162,8 @@ export interface ParentLessonDetailDto extends Omit<LessonDetailDto, 'lessonId' 
   subjectName?: string;
   tutorName?: string;
   tutorId?: string;
+  isSettled?: boolean;
+  bookingStatus?: string;
   scheduleChanges?: ScheduleChangeAuditDto[];
 }
 
@@ -178,6 +179,8 @@ const mapDetail = (d: ClassSessionDetailResponse): ParentLessonDetailDto => ({
   homework: d.report?.homeworkAssigned ?? d.homework,
   tutorNotes: d.tutorNotes,
   status: d.status,
+  isSettled: d.isSettled,
+  bookingStatus: d.bookingStatus,
   meetingLink: d.meetingLink,
   isTutorPresent: d.isTutorPresent,
   isStudentPresent: d.isStudentPresent,
@@ -265,8 +268,9 @@ export const confirmLesson = async (lessonId: number): Promise<ApiResponse<Settl
 export const createDispute = async (
   lessonId: number,
   request: CreateDisputeRequest,
+  files: File[] = [],
 ): Promise<ApiResponse<DisputeDetailDto>> => {
-  const response = await createClassSessionDispute(lessonId, request);
+  const response = await createClassSessionDispute(lessonId, request, files);
   return { ...response, content: mapDispute(response.content) };
 };
 
@@ -311,8 +315,9 @@ export const getParentDisputes = async (
 export const reportNoShow = async (
   lessonId: number,
   request?: ReportNoShowRequest,
+  files: File[] = [],
 ): Promise<ApiResponse<ParentLessonDetailDto>> => {
-  const response = await reportClassSessionNoShow(lessonId, request);
+  const response = await reportClassSessionNoShow(lessonId, request, files);
   return { ...response, content: mapDetail(response.content) };
 };
 
@@ -322,11 +327,6 @@ export const processNoShowAction = async (
 ): Promise<ApiResponse<NoShowActionResultDto>> => {
   const response = await processClassSessionNoShowAction(lessonId, request);
   return { ...response, content: mapNoShowAction(response.content) };
-};
-
-export const uploadDisputeEvidence = async (lessonId: number, file: File): Promise<ApiResponse<string>> => {
-  const response = await uploadClassSessionDisputeEvidence(lessonId, file);
-  return response;
 };
 
 export const getParentCalendar = async (
@@ -346,6 +346,7 @@ export const getParentCalendar = async (
         tutorName: c.tutorName,
         subjectName: c.subjectName,
         status: c.status ?? '',
+        bookingStatus: c.bookingStatus,
         meetingLink: c.meetingLink,
       })),
     })),
