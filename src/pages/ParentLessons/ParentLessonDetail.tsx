@@ -26,6 +26,7 @@ import ReportNoShowModal from './components/ReportNoShowModal';
 import NoShowActionModal from './components/NoShowActionModal';
 import CreateFeedbackModal from './components/CreateFeedbackModal';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
+import { formatVNDNumber } from '../../utils/formatters';
 
 const getFileNameFromUrl = (url: string): string => {
   try {
@@ -414,7 +415,7 @@ const ParentLessonDetail: React.FC = () => {
           {lesson.lessonPrice != null && (
             <InfoRow
               label="Giá buổi học"
-              value={`${lesson.lessonPrice.toLocaleString('vi-VN')}đ`}
+              value={`${formatVNDNumber(lesson.lessonPrice)}đ`}
               highlight
             />
           )}

@@ -86,7 +86,7 @@ const BankInfoManagementPage: React.FC = () => {
             </li>
             <li>
               <CheckCircleFilled aria-hidden="true" />
-              <span>Số tiền rút tối thiểu là 10.000 VND cho mỗi giao dịch.</span>
+              <span>Số tiền rút tối thiểu là 10,000 VND cho mỗi giao dịch.</span>
             </li>
             <li>
               <CheckCircleFilled aria-hidden="true" />

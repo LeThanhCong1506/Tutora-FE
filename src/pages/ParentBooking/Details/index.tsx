@@ -24,6 +24,7 @@ import {
   WalletCards,
   XCircle,
 } from 'lucide-react';
+import { formatVNDNumber } from '../../../utils/formatters';
 import BookingMonthCalendar from '../../../components/BookingMonthCalendar/BookingMonthCalendar';
 import { useCurrentTime } from '../../../hooks/useCurrentTime';
 import {
@@ -87,8 +88,7 @@ const LESSON_STATUS_CONFIG: Record<string, { label: string; className: string }>
 
 const DAY_NAMES = ['', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
 
-const formatPrice = (amount?: number | null) =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount ?? 0);
+const formatPrice = (amount?: number | null) => `${formatVNDNumber(amount ?? 0)} ₫`;
 
 const parseDate = (value?: string | null) => {
   if (!value) return null;

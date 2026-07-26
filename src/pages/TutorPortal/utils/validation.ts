@@ -1,3 +1,5 @@
+import { formatVNDNumber } from '../../../utils/formatters';
+
 // Validation utilities for Tutor Profile Form
 // All error messages in Vietnamese
 
@@ -350,7 +352,7 @@ export const extractVimeoId = (url: string): string | null => {
 
 // Helper: Format currency (VND)
 export const formatVND = (value: number): string => {
-    return new Intl.NumberFormat('vi-VN').format(value) + ' VND';
+    return `${formatVNDNumber(value)} VND`;
 };
 
 // Helper: Parse VND string to number

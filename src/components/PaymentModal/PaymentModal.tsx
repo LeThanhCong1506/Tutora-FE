@@ -18,6 +18,7 @@ import {
     ShieldCheck,
     RefreshCw,
 } from 'lucide-react';
+import { formatVNDNumber } from '../../utils/formatters';
 import styles from './PaymentModal.module.css';
 import {
     getPaymentSummary,
@@ -300,11 +301,9 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
         );
     }
 
-    const formatCurrency = (amount: number) =>
-        new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    const formatCurrency = (amount: number) => `${formatVNDNumber(amount)} ₫`;
 
-    const formatCurrencyShort = (amount: number) =>
-        new Intl.NumberFormat('vi-VN').format(amount) + ' VND';
+    const formatCurrencyShort = (amount: number) => `${formatVNDNumber(amount)} VND`;
 
     const getPhaseTitle = () => {
         if (!summary) return 'Hoàn tất thanh toán';

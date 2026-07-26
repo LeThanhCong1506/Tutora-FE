@@ -15,6 +15,7 @@ import {
 import { isZaloMiniApp } from '../../../services/zalo-env';
 import { useBookingTopup } from '../../../hooks/useBookingTopup';
 import TopupQRView from '../../../components/TopupQR/TopupQRView';
+import { formatVNDNumber } from '../../../utils/formatters';
 import styles from './styles.module.css';
 import {
   CreditCard,
@@ -199,8 +200,7 @@ const PaymentPage = () => {
   //     }
   // };
 
-  const formatPrice = (amount: number) =>
-    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+  const formatPrice = (amount: number) => `${formatVNDNumber(amount)} ₫`;
 
   const copy = (value: string, label: string) => {
     navigator.clipboard?.writeText(value).then(

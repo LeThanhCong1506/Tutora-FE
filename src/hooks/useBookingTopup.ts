@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { applyBookingShortfallTopup, createTopup, getTopupStatus, type TopupResponse } from '../services/wallet.service';
 
 const POLL_INTERVAL_MS = 5000;
-const MIN_TOPUP_VND = 10000; // PayOS yêu cầu tối thiểu 10.000đ
+const MIN_TOPUP_VND = 10000; // PayOS yêu cầu tối thiểu 10,000đ
 // PayWithWallet trả HTTP 409 cho NHIỀU lý do (đã trả / hết hạn / sai trạng thái). CHỈ 2 mã này nghĩa là
 // "giai đoạn thanh toán đã hoàn tất rồi" → coi như thành công. Các 409 khác (BOOKING_EXPIRED,
 // INVALID_BOOKING_STATUS) là lỗi thật — booking CHƯA trả được, tiền vẫn nằm an toàn trong ví.

@@ -16,6 +16,7 @@ import { toast } from 'react-toastify';
 import { useCurrentTime } from '../../hooks/useCurrentTime';
 import { getParentBookings, isFirstLessonFinished, type BookingResponseDTO } from '../../services/booking.service';
 import { getBookingResponseDeadlineState } from '../../utils/bookingDeadline';
+import { formatVNDNumber } from '../../utils/formatters';
 import styles from './styles.module.css';
 
 const STATUS_TABS = [
@@ -78,12 +79,7 @@ const EMPTY_STATE_COPY: Record<string, { title: string; description: string }> =
   },
 };
 
-const formatPrice = (amount: number) =>
-  new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0,
-  }).format(Math.max(0, amount));
+const formatPrice = (amount: number) => `${formatVNDNumber(Math.max(0, amount))} ₫`;
 
 const formatDate = (value?: string) => {
   if (!value) return '';
