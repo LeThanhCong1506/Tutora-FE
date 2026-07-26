@@ -109,6 +109,8 @@ export interface StudentCalendarLessonDto {
     meetingLink?: string;
     /** Đã check-out (phòng đóng) — in_progress + checkOutTime = chờ gia sư gửi báo cáo. */
     checkOutTime?: string;
+    /** True nếu buổi học đã có video xem lại. */
+    hasRecording?: boolean;
 }
 
 export interface StudentCalendarDayDto {
@@ -165,6 +167,7 @@ export const getStudentCalendar = async (
                 status: c.status ?? '',
                 meetingLink: c.meetingLink,
                 checkOutTime: c.checkOutTime,
+                hasRecording: c.hasRecording,
             })),
         })),
     };

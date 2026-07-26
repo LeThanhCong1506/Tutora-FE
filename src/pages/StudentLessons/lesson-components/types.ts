@@ -29,6 +29,8 @@ export interface LessonSummary {
    */
   counterpartLabel?: string;
   counterpartName?: string;
+  /** True nếu buổi học đã có video xem lại (đã upload xong lên Drive). */
+  hasRecording?: boolean;
 }
 
 export interface LessonGroup {

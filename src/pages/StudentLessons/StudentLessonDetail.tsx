@@ -19,6 +19,7 @@ import { signalRService } from '../../services/signalr.service';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
 import { message as antMessage, Spin, Modal } from 'antd';
 import CreateFeedbackModal from '../ParentLessons/components/CreateFeedbackModal';
+import { ClassSessionRecording } from '../../components/shared';
 import CreateDisputeForm from '../ParentLessons/components/CreateDisputeForm';
 import ReportNoShowModal from '../ParentLessons/components/ReportNoShowModal';
 import NoShowActionModal from '../ParentLessons/components/NoShowActionModal';
@@ -700,6 +701,17 @@ const StudentLessonDetail = () => {
                         </div>
                     </div>
                 )}
+
+                {/* ─── Video buổi học ─── */}
+                <div style={sectionCard}>
+                    <div style={sectionHeaderRow}>
+                        <div style={{ ...sectionIconWrap, background: 'rgba(26,34,56,0.08)' }}>
+                            <Video size={16} style={{ color: '#1a2238' }} />
+                        </div>
+                        <div style={sectionTitleText}>Video buổi học</div>
+                    </div>
+                    <ClassSessionRecording classSessionId={lesson.lessonId} />
+                </div>
 
                 {/* Modals */}
                 <Modal

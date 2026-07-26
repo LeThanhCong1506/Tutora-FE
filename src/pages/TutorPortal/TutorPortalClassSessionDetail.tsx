@@ -37,6 +37,7 @@ import { signalRService } from '../../services/signalr.service';
 import AttachmentUploader from './components/AttachmentUploader';
 import LessonReportForm from './components/LessonReportForm';
 import MaterialsTab from './components/MaterialsTab';
+import { ClassSessionRecording } from '../../components/shared';
 import styles from '../../styles/pages/tutor-portal-class-session-detail.module.css';
 
 type DetailTab = 'overview' | 'materials';
@@ -851,6 +852,16 @@ const TutorPortalClassSessionDetail = () => {
                         )}
                       </div>
                     )}
+                  </section>
+
+                  <section className={styles.card}>
+                    <div className={styles.cardHeaderCompact}>
+                      <div>
+                        <span className={styles.sectionLabel}>Sau buổi học</span>
+                        <h2>Video buổi học</h2>
+                      </div>
+                    </div>
+                    <ClassSessionRecording classSessionId={session.classSessionId} />
                   </section>
                 </div>
 
