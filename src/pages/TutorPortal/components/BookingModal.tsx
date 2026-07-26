@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal } from 'antd';
 import styles from './BookingModal.module.css';
+import { formatVNDNumber } from '../../../utils/formatters';
 
 interface AvailabilitySlot {
     id: number;
@@ -30,7 +31,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
     // Format price
     const formatPrice = (price: number) => {
-        return new Intl.NumberFormat('vi-VN').format(price);
+        return formatVNDNumber(price);
     };
 
     // Group availability by apiDayOfWeek (2-8)
