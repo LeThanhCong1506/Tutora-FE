@@ -24,18 +24,14 @@ const ScheduleChangeModal = ({ open, state, currentRole, currentUserId, loading,
 
   const normalizedRole = currentRole.toLowerCase();
   const normalizedUserId = currentUserId.trim().toLowerCase();
-  const isTutorApprover = Boolean(
-    normalizedUserId && normalizedUserId === state.tutorUserId?.trim().toLowerCase(),
-  );
+  const isTutorApprover = Boolean(normalizedUserId && normalizedUserId === state.tutorUserId?.trim().toLowerCase());
   const isLearnerApprover = Boolean(
     normalizedUserId && normalizedUserId === state.learnerApproverUserId?.trim().toLowerCase(),
   );
   const currentConfirmed = isTutorApprover
     ? Boolean(state.tutorConfirmedAt)
     : isLearnerApprover && Boolean(state.learnerConfirmedAt);
-  const canConfirm = state.status === 'pending'
-    && (isTutorApprover || isLearnerApprover)
-    && !currentConfirmed;
+  const canConfirm = state.status === 'pending' && (isTutorApprover || isLearnerApprover) && !currentConfirmed;
   const learnerLabel = state.requiredLearnerRole === 'Parent' ? 'Phụ huynh' : 'Học sinh';
   const approved = state.status === 'approved' || state.status === 'applied';
   const rejected = state.status === 'rejected';
@@ -51,16 +47,20 @@ const ScheduleChangeModal = ({ open, state, currentRole, currentUserId, loading,
         <div className={styles.scheduleModalIcon}>
           <CalendarClock size={28} />
         </div>
-        <h2 id="schedule-title" className={styles.scheduleModalTitle}>Xác nhận học ngoài lịch dự kiến</h2>
+        <h2 id="schedule-title" className={styles.scheduleModalTitle}>
+          Xác nhận học ngoài lịch dự kiến
+        </h2>
         <p className={styles.scheduleModalDescription}>
-          Buổi học đang được mở ngoài khung giờ đã đặt. Gia sư và {learnerLabel.toLowerCase()} phải đồng thuận trước
-          khi phòng học được mở.
+          Buổi học đang được mở ngoài khung giờ đã đặt. Gia sư và {learnerLabel.toLowerCase()} phải đồng thuận trước khi
+          phòng học được mở.
         </p>
 
         <div className={styles.scheduleSummary}>
           <div>
             <span>Lịch ban đầu</span>
-            <strong>{formatDateTime(state.originalScheduledStart)} – {formatDateTime(state.originalScheduledEnd)}</strong>
+            <strong>
+              {formatDateTime(state.originalScheduledStart)} – {formatDateTime(state.originalScheduledEnd)}
+            </strong>
           </div>
           <div>
             <span>Lịch mới</span>
@@ -79,7 +79,9 @@ const ScheduleChangeModal = ({ open, state, currentRole, currentUserId, loading,
             </span>
             <span>
               <strong>Gia sư · {state.tutorName || 'Gia sư'}</strong>
-              <small>{state.tutorConfirmedAt ? `Đã xác nhận lúc ${formatDateTime(state.tutorConfirmedAt)}` : 'Chưa xác nhận'}</small>
+              <small>
+                {state.tutorConfirmedAt ? `Đã xác nhận lúc ${formatDateTime(state.tutorConfirmedAt)}` : 'Chưa xác nhận'}
+              </small>
             </span>
           </div>
           <div className={state.learnerConfirmedAt ? styles.confirmationDone : styles.confirmationPending}>
@@ -87,8 +89,14 @@ const ScheduleChangeModal = ({ open, state, currentRole, currentUserId, loading,
               {state.learnerConfirmedAt ? <Check size={16} /> : <Clock3 size={16} />}
             </span>
             <span>
-              <strong>{learnerLabel} · {state.requiredLearnerName || state.studentName || learnerLabel}</strong>
-              <small>{state.learnerConfirmedAt ? `Đã xác nhận lúc ${formatDateTime(state.learnerConfirmedAt)}` : 'Chưa xác nhận'}</small>
+              <strong>
+                {learnerLabel} · {state.requiredLearnerName || state.studentName || learnerLabel}
+              </strong>
+              <small>
+                {state.learnerConfirmedAt
+                  ? `Đã xác nhận lúc ${formatDateTime(state.learnerConfirmedAt)}`
+                  : 'Chưa xác nhận'}
+              </small>
             </span>
           </div>
         </div>
@@ -96,15 +104,23 @@ const ScheduleChangeModal = ({ open, state, currentRole, currentUserId, loading,
         <div className={styles.scheduleAuditNote}>
           <ShieldCheck size={18} />
           <span>
-            Xác nhận, lịch cũ, lịch mới và thời điểm đồng thuận sẽ được lưu làm bằng chứng khi quản trị viên xử lý
-            khiếu nại.
+            Xác nhận, lịch cũ, lịch mới và thời điểm đồng thuận sẽ được lưu làm bằng chứng khi quản trị viên xử lý khiếu
+            nại.
           </span>
         </div>
 
         {rejected ? (
-          <p className={styles.scheduleRejected}>Một bên đã từ chối đổi lịch. Phòng học vẫn bị khóa và lịch ban đầu không thay đổi.</p>
+          <p className={styles.scheduleRejected}>
+            Một bên đã từ chối đổi lịch. Phòng học vẫn bị khóa và lịch ban đầu không thay đổi.
+          </p>
+        ) : approved && state.scheduleConflict ? (
+          <p className={styles.scheduleWaiting}>
+            Đã đủ xác nhận nhưng chưa thể bắt đầu: {state.scheduleConflict.message} Hai bên không cần xác nhận lại.
+          </p>
         ) : approved ? (
-          <div className={styles.scheduleApproved}><Check size={18} /> Đã đủ xác nhận. Phòng học sẽ mở khi gia sư và học sinh cùng có mặt.</div>
+          <div className={styles.scheduleApproved}>
+            <Check size={18} /> Đã đủ xác nhận. Phòng học sẽ mở khi gia sư và học sinh cùng có mặt.
+          </div>
         ) : currentConfirmed ? (
           <p className={styles.scheduleWaiting}>Bạn đã xác nhận. Đang chờ phía còn lại đồng ý.</p>
         ) : !canConfirm ? (
@@ -118,15 +134,27 @@ const ScheduleChangeModal = ({ open, state, currentRole, currentUserId, loading,
         <div className={styles.scheduleModalActions}>
           {canConfirm ? (
             <>
-              <button type="button" className={styles.scheduleRejectButton} disabled={loading} onClick={() => onRespond(false)}>
+              <button
+                type="button"
+                className={styles.scheduleRejectButton}
+                disabled={loading}
+                onClick={() => onRespond(false)}
+              >
                 Từ chối
               </button>
-              <button type="button" className={styles.scheduleConfirmButton} disabled={loading} onClick={() => onRespond(true)}>
+              <button
+                type="button"
+                className={styles.scheduleConfirmButton}
+                disabled={loading}
+                onClick={() => onRespond(true)}
+              >
                 {loading ? 'Đang gửi…' : 'Đồng ý đổi lịch'}
               </button>
             </>
           ) : (
-            <button type="button" className={styles.scheduleConfirmButton} onClick={onClose}>Đã hiểu</button>
+            <button type="button" className={styles.scheduleConfirmButton} onClick={onClose}>
+              Đã hiểu
+            </button>
           )}
         </div>
       </div>

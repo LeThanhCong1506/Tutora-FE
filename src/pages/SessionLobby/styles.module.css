@@ -638,3 +638,31 @@
   .scheduleSummary > div { flex-direction: column; gap: 4px; }
   .scheduleSummary strong { text-align: left; }
 }
+.scheduleConflictBanner {
+  display: grid;
+  gap: 5px;
+  width: min(620px, 100%);
+  margin: 16px auto 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(248, 113, 113, 0.38);
+  border-radius: 14px;
+  color: #fecaca;
+  text-align: left;
+  background: rgba(127, 29, 29, 0.22);
+}
+
+.scheduleConflictBanner strong {
+  color: #fca5a5;
+  font-size: 14px;
+}
+
+.scheduleConflictBanner span {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.scheduleConflictBanner small {
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.45;
+}

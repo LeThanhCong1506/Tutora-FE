@@ -51,6 +51,8 @@ export interface StudentLessonDetailDto extends Omit<LessonDetailDto, 'lessonId'
     lessonId: number;
     subjectName?: string;
     tutorName?: string;
+    bookingStatus?: string;
+    isSettled?: boolean;
     scheduleChanges?: ScheduleChangeAuditDto[];
 }
 
@@ -62,6 +64,8 @@ const mapDetail = (d: StudentClassSessionDetailResponse): StudentLessonDetailDto
     confirmDeadline: d.confirmDeadline,
     lessonPrice: d.classSessionPrice,
     status: d.status,
+    bookingStatus: d.bookingStatus,
+    isSettled: d.isSettled,
     meetingLink: d.meetingLink,
     checkInTime: d.checkinTime,
     checkOutTime: d.checkoutTime,

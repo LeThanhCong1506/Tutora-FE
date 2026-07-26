@@ -3,7 +3,7 @@ import { Modal, Form, Input, Select, Upload, Button, Tag } from 'antd';
 import { toast } from 'react-toastify';
 import { UploadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { createDispute, uploadDisputeEvidence } from '../../../services/parent-lesson.service';
+import { createDispute } from '../../../services/parent-lesson.service';
 import { getParentCalendar, type CalendarClassSessionResponse } from '../../../services/classSession.service';
 import { getClassSessionStatusMeta } from '../../../utils/classSessionStatus';
 
@@ -19,6 +19,7 @@ interface CreateDisputeFormProps {
 
 /** Chỉ những buổi học ở 2 trạng thái này mới được phép tạo khiếu nại — khớp với BE (ParentService.CreateDisputeAsync). */
 const ELIGIBLE_STATUSES = ['pending_confirmation', 'completed'];
+const TERMINAL_BOOKING_STATUSES = ['completed', 'cancelled', 'cancelled_noshow'];
 
 const DISPUTE_TYPES = [
   { value: 'no_show', label: 'Gia sư vắng mặt' },
@@ -71,7 +72,11 @@ const CreateDisputeForm: React.FC<CreateDisputeFormProps> = ({
         const res = await getParentCalendar(startDate, endDate);
         const eligible = (res.content || [])
           .flatMap((day) => day.classSessions)
-          .filter((l) => l.status && ELIGIBLE_STATUSES.includes(l.status))
+          .filter((l) =>
+            l.status
+            && ELIGIBLE_STATUSES.includes(l.status)
+            && !TERMINAL_BOOKING_STATUSES.includes((l.bookingStatus || '').toLowerCase()),
+          )
           .sort((a, b) => dayjs(b.scheduledStart).valueOf() - dayjs(a.scheduledStart).valueOf());
         if (!cancelled) setLessons(eligible);
       } catch {
@@ -150,22 +155,10 @@ const CreateDisputeForm: React.FC<CreateDisputeFormProps> = ({
     try {
       setSubmitting(true);
 
-      // Upload evidence files first
-      const evidenceUrls: string[] = [];
-      for (const file of evidenceFiles) {
-        try {
-          const res = await uploadDisputeEvidence(targetLessonId, file);
-          if (res.content) evidenceUrls.push(res.content);
-        } catch {
-          // Continue even if one upload fails
-        }
-      }
-
       await createDispute(targetLessonId, {
         disputeType: values.disputeType,
         reason: values.reason,
-        evidence: evidenceUrls,
-      });
+      }, evidenceFiles);
 
       toast.success('Khiếu nại đã được gửi thành công!');
       resetDisputeState();

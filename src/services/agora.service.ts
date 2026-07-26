@@ -76,6 +76,7 @@ export interface SessionActivityReport {
 export const SESSION_ACTIVE_ON_ANOTHER_DEVICE = 'SESSION_ACTIVE_ON_ANOTHER_DEVICE';
 export const SESSION_LEASE_REVOKED = 'SESSION_LEASE_REVOKED';
 export const SESSION_SCHEDULE_CHANGE_CONFIRMATION_REQUIRED = 'SESSION_SCHEDULE_CHANGE_CONFIRMATION_REQUIRED';
+export const SESSION_SCHEDULE_CONFLICT = 'SESSION_SCHEDULE_CONFLICT';
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -124,6 +125,17 @@ export const isSessionLeaseRevokedError = (error: unknown): boolean =>
 
 export const isScheduleChangeConfirmationRequiredError = (error: unknown): boolean =>
   getAgoraErrorCode(error) === SESSION_SCHEDULE_CHANGE_CONFIRMATION_REQUIRED;
+
+export const isSessionScheduleConflictError = (error: unknown): boolean =>
+  getAgoraErrorCode(error) === SESSION_SCHEDULE_CONFLICT;
+
+export const getAgoraErrorMessage = (error: unknown): string | undefined => {
+  const payload = getErrorPayload(error);
+  if (!payload) return undefined;
+  const errorNode = asRecord(payload.error);
+  const contentNode = asRecord(payload.content);
+  return firstString(payload.message, errorNode?.message, contentNode?.message);
+};
 
 /**
  * Claim (hoặc resume idempotent) lease rồi lấy thông tin join Agora.
