@@ -1,3 +1,5 @@
+import { formatVNDNumber } from '../../../utils/formatters';
+
 // Danh sách môn (trước nằm inline trong ProfileHeroModal). Dùng chung cho B1.
 export const SUBJECTS = [
   { id: 1, name: 'Toán' },
@@ -75,7 +77,7 @@ export const parseTime = (time: string): { hour: number; minute: number } => {
   return { hour: h, minute: m || 0 };
 };
 
-export const formatPrice = (value: number) => new Intl.NumberFormat('vi-VN').format(value);
+export const formatPrice = (value: number) => formatVNDNumber(value);
 
 // Số giờ/buổi → chuỗi hiển thị. Vd 1 → "1 giờ", 1.5 → "1h30", 0.5 → "30 phút".
 export const formatDuration = (hours: number) => {
