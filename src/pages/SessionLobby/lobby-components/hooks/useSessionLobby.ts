@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as signalR from '@microsoft/signalr';
 import { getCurrentUser } from '../../../../services/auth.service';
-import type { LobbyInfo, LobbyPhase, LobbyWaitingState, ScheduleChangeState } from '../types';
+import type { LobbyInfo, LobbyPhase, LobbyWaitingState, ScheduleChangeState, SessionScheduleConflict } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5166';
 const LOBBY_HUB_URL = `${API_BASE_URL}/hubs/session-lobby`;
@@ -24,6 +24,7 @@ interface UseSessionLobbyResult {
   info: LobbyInfo | null;
   waitingState: LobbyWaitingState | null;
   scheduleChangeState: ScheduleChangeState | null;
+  scheduleConflict: SessionScheduleConflict | null;
   respondingToScheduleChange: boolean;
   respondToScheduleChange: (confirmed: boolean) => Promise<void>;
   errorMessage: string | null;
@@ -44,6 +45,7 @@ export const useSessionLobby = (classSessionId: number | null): UseSessionLobbyR
   const [info, setInfo] = useState<LobbyInfo | null>(null);
   const [waitingState, setWaitingState] = useState<LobbyWaitingState | null>(null);
   const [scheduleChangeState, setScheduleChangeState] = useState<ScheduleChangeState | null>(null);
+  const [scheduleConflict, setScheduleConflict] = useState<SessionScheduleConflict | null>(null);
   const [respondingToScheduleChange, setRespondingToScheduleChange] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
@@ -75,7 +77,20 @@ export const useSessionLobby = (classSessionId: number | null): UseSessionLobbyR
     });
 
     connection.on('scheduleChangeState', (payload: ScheduleChangeState) => {
-      if (!disposed) setScheduleChangeState(payload);
+      if (disposed) return;
+      setScheduleChangeState(payload);
+      setScheduleConflict(payload.scheduleConflict ?? null);
+      if (payload.scheduleConflict) setPhase('waiting');
+    });
+
+    connection.on('scheduleConflict', (payload: SessionScheduleConflict) => {
+      if (disposed) return;
+      setScheduleConflict(payload);
+      setPhase('waiting');
+    });
+
+    connection.on('scheduleConflictCleared', () => {
+      if (!disposed) setScheduleConflict(null);
     });
 
     connection.on('sessionReady', () => {
@@ -172,30 +187,35 @@ export const useSessionLobby = (classSessionId: number | null): UseSessionLobbyR
     setInfo(null);
     setWaitingState(null);
     setScheduleChangeState(null);
+    setScheduleConflict(null);
     setErrorMessage(null);
     setRetryKey((k) => k + 1);
   };
 
-  const respondToScheduleChange = useCallback(async (confirmed: boolean) => {
-    const connection = connectionRef.current;
-    if (classSessionId == null || connection?.state !== signalR.HubConnectionState.Connected) {
-      throw new Error('Phòng chờ chưa kết nối.');
-    }
-    setRespondingToScheduleChange(true);
-    try {
-      await connection.invoke('RespondToScheduleChange', classSessionId, confirmed);
-    } catch (err) {
-      throw new Error(extractHubError(err) || 'Không thể gửi xác nhận đổi lịch.');
-    } finally {
-      setRespondingToScheduleChange(false);
-    }
-  }, [classSessionId]);
+  const respondToScheduleChange = useCallback(
+    async (confirmed: boolean) => {
+      const connection = connectionRef.current;
+      if (classSessionId == null || connection?.state !== signalR.HubConnectionState.Connected) {
+        throw new Error('Phòng chờ chưa kết nối.');
+      }
+      setRespondingToScheduleChange(true);
+      try {
+        await connection.invoke('RespondToScheduleChange', classSessionId, confirmed);
+      } catch (err) {
+        throw new Error(extractHubError(err) || 'Không thể gửi xác nhận đổi lịch.');
+      } finally {
+        setRespondingToScheduleChange(false);
+      }
+    },
+    [classSessionId],
+  );
 
   return {
     phase,
     info,
     waitingState,
     scheduleChangeState,
+    scheduleConflict,
     respondingToScheduleChange,
     respondToScheduleChange,
     errorMessage,

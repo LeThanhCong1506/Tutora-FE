@@ -69,6 +69,8 @@ const getFileNameFromUrl = (url: string): string => {
     }
 };
 
+const TERMINAL_BOOKING_STATUSES = ['completed', 'cancelled', 'cancelled_noshow'];
+
 // ─────────────────────────────────────────────────────────────────────────
 const StudentLessonDetail = () => {
     const { lessonId } = useParams<{ lessonId: string }>();
@@ -225,6 +227,8 @@ const StudentLessonDetail = () => {
     const tutorName = (lesson as any).tutorName ?? (lesson as any).tutor?.fullName ?? 'Gia sư';
     const subjectName = (lesson as any).subjectName ?? (lesson as any).subject?.subjectName ?? 'Buổi học';
     const report = (lesson as any).report;
+    const canCreateDispute = !isParentManaged
+        && !TERMINAL_BOOKING_STATUSES.includes(String(lesson.bookingStatus || '').toLowerCase());
 
     return (
         <div className={s.page}>
@@ -357,7 +361,7 @@ const StudentLessonDetail = () => {
                             >
                                 <ClipboardCheck size={15} /> Xác nhận
                             </button>
-                            {!isParentManaged && (
+                            {canCreateDispute && (
                                 <button
                                     style={actionBtnDispute}
                                     onClick={() => setShowDisputeForm(true)}
@@ -548,6 +552,14 @@ const StudentLessonDetail = () => {
                         >
                             <Star size={15} /> Đánh giá
                         </button>
+                        {!dispute && canCreateDispute && (
+                            <button
+                                style={actionBtnDispute}
+                                onClick={() => setShowDisputeForm(true)}
+                            >
+                                Báo cáo gia sư
+                            </button>
+                        )}
                     </div>
                 )}
 

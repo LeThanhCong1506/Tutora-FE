@@ -23,6 +23,14 @@ export interface LobbyWaitingState {
   tutorWaiting: boolean;
   studentWaiting: boolean;
 }
+export interface SessionScheduleConflict {
+  classSessionId: number;
+  scheduledStart: string;
+  scheduledEnd: string;
+  conflictingParty: 'tutor' | 'student' | 'tutor_and_student';
+  message: string;
+}
+
 export interface ScheduleChangeState {
   classSessionId: number;
   requiresConfirmation: boolean;
@@ -47,4 +55,5 @@ export interface ScheduleChangeState {
   appliedAt: string | null;
   adjustedScheduledStart: string | null;
   adjustedScheduledEnd: string | null;
+  scheduleConflict?: SessionScheduleConflict | null;
 }

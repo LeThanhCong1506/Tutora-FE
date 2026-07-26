@@ -36,6 +36,8 @@ const getFileNameFromUrl = (url: string): string => {
   }
 };
 
+const TERMINAL_BOOKING_STATUSES = ['completed', 'cancelled', 'cancelled_noshow'];
+
 const ParentLessonDetail: React.FC = () => {
   const navigate = useNavigate();
   const { lessonId } = useParams();
@@ -152,7 +154,11 @@ const ParentLessonDetail: React.FC = () => {
     try {
       const response = await respondParentScheduleChange(id, confirmed);
       setScheduleChange(response.content);
-      toast.success(confirmed ? 'Đã xác nhận đổi lịch học.' : 'Đã từ chối đổi lịch học.');
+      if (confirmed && response.content.scheduleConflict) {
+        toast.warning(`Đã lưu xác nhận. ${response.content.scheduleConflict.message}`);
+      } else {
+        toast.success(confirmed ? 'Đã xác nhận đổi lịch học.' : 'Đã từ chối đổi lịch học.');
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Không thể xử lý yêu cầu đổi lịch.');
       await fetchScheduleChange();
@@ -199,6 +205,9 @@ const ParentLessonDetail: React.FC = () => {
     || reportHomework
     || lesson.tutorNotes
     || lesson.report?.attachments?.length,
+  );
+  const canCreateDispute = !TERMINAL_BOOKING_STATUSES.includes(
+    String(lesson.bookingStatus || '').toLowerCase(),
   );
 
   return (
@@ -343,6 +352,11 @@ const ParentLessonDetail: React.FC = () => {
           {scheduleChange.status === 'rejected' ? (
             <div style={{ color: '#cf1322', background: '#fff2f0', borderRadius: 8, padding: '10px 12px', fontSize: 13 }}>
               Yêu cầu đổi lịch đã bị từ chối. Học viên và gia sư chưa thể vào buổi học ngoài lịch này.
+            </div>
+          ) : scheduleChange.status === 'approved' && scheduleChange.scheduleConflict ? (
+            <div style={{ color: '#b45309', background: '#fffbeb', borderRadius: 8, padding: '10px 12px', fontSize: 13, lineHeight: 1.55 }}>
+              <strong>Đã đủ xác nhận nhưng chưa thể bắt đầu:</strong> {scheduleChange.scheduleConflict.message}
+              {' '}Hệ thống sẽ tự kiểm tra lại, phụ huynh không cần xác nhận lần nữa.
             </div>
           ) : scheduleChange.status === 'approved' ? (
             <div style={{ color: '#15803d', background: '#f0fdf4', borderRadius: 8, padding: '10px 12px', fontSize: 13 }}>
@@ -693,13 +707,15 @@ const ParentLessonDetail: React.FC = () => {
             >
               Xác nhận buổi học
             </Button>
-            <Button
-              size="large"
-              danger
-              onClick={() => setShowDisputeForm(true)}
-            >
-              Khiếu nại
-            </Button>
+            {canCreateDispute && (
+              <Button
+                size="large"
+                danger
+                onClick={() => setShowDisputeForm(true)}
+              >
+                Khiếu nại
+              </Button>
+            )}
           </>
         )}
 
@@ -740,7 +756,7 @@ const ParentLessonDetail: React.FC = () => {
             >
               Đánh giá buổi học
             </Button>
-            {!dispute && (
+            {!dispute && canCreateDispute && (
               <Button
                 size="large"
                 danger
