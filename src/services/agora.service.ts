@@ -59,6 +59,20 @@ export interface SessionLeaseCredentials {
   leaseId: string;
 }
 
+/**
+ * Trạng thái lớp học tại nhịp heartbeat, gửi kèm để nhật ký buổi học phân biệt được
+ * "đang dạy thật" với "mở phòng rồi bỏ đó". Client tự khai nên BE coi đây là bằng chứng
+ * yếu hơn sự kiện Agora, và luôn hiển thị kèm nhãn "client tự báo".
+ */
+export interface SessionActivityReport {
+  /** Micro đang bật và đang publish. */
+  micOn: boolean;
+  /** Camera đang bật và đang publish. */
+  cameraOn: boolean;
+  /** Tab bị ẩn hoặc không có thao tác nào trong một lúc. */
+  idle: boolean;
+}
+
 export const SESSION_ACTIVE_ON_ANOTHER_DEVICE = 'SESSION_ACTIVE_ON_ANOTHER_DEVICE';
 export const SESSION_LEASE_REVOKED = 'SESSION_LEASE_REVOKED';
 export const SESSION_SCHEDULE_CHANGE_CONFIRMATION_REQUIRED = 'SESSION_SCHEDULE_CHANGE_CONFIRMATION_REQUIRED';
@@ -147,10 +161,13 @@ export const takeOverAgoraRoom = async (
 export const sendRoomHeartbeat = async (
   classSessionId: number,
   lease: SessionLeaseCredentials,
+  activity?: SessionActivityReport,
 ): Promise<ApiResponse<SessionPresenceStatus>> => {
-  const response = await api.post(`/agora/room/${classSessionId}/heartbeat`, lease, {
-    headers: getAuthHeaders(),
-  });
+  const response = await api.post(
+    `/agora/room/${classSessionId}/heartbeat`,
+    activity ? { ...lease, activity } : lease,
+    { headers: getAuthHeaders() },
+  );
   return response.data;
 };
 
