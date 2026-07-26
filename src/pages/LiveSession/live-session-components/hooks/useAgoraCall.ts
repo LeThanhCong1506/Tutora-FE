@@ -117,6 +117,8 @@ export const useAgoraCall = (
   const screenSharingRef = useRef(false);
   /** Mốc thao tác gần nhất của người dùng trong tab lớp học. */
   const lastInteractionRef = useRef(Date.now());
+  /** Đang có một nhịp heartbeat trên đường đi — nhịp mới phát sinh trong lúc đó sẽ bị bỏ qua. */
+  const heartbeatInFlightRef = useRef(false);
 
   const [joined, setJoined] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -377,6 +379,11 @@ export const useAgoraCall = (
   // Tách khỏi effect để vừa chạy theo interval, vừa gọi được tức thì khi có người mới vào phòng.
   const sendHeartbeat = useCallback(async () => {
     if (!room || leavingRef.current) return;
+    // Lúc vừa join, effect interval và effect "có người mới" cùng bắn một nhịp gần như đồng thời.
+    // Hai request song song khiến BE (đọc-rồi-ghi) tạo ra HAI đoạn heartbeat trùng nhau trong
+    // nhật ký bằng chứng. Một nhịp đang bay là đủ — nhịp thứ hai không mang thêm thông tin gì.
+    if (heartbeatInFlightRef.current) return;
+    heartbeatInFlightRef.current = true;
     try {
       const res = await sendRoomHeartbeat(
         room.classSessionId,
@@ -403,6 +410,8 @@ export const useAgoraCall = (
         setSessionReplaced(true);
       }
       // bỏ qua lỗi tạm thời — nhịp sau sẽ thử lại
+    } finally {
+      heartbeatInFlightRef.current = false;
     }
   }, [room]);
 
