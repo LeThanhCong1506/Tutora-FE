@@ -14,6 +14,7 @@ import { StatCard } from '../../components/shared';
 import ReplyFeedbackModal from './components/ReplyFeedbackModal';
 import { useTutorProfileForm } from './hooks/useTutorProfileForm';
 import { getProfileCompletionItems } from './profileCompletion';
+import { formatVNDNumber } from '../../utils/formatters';
 
 // Icons
 const ClockIcon = () => (
@@ -458,7 +459,7 @@ const TutorPortalDashboard: React.FC = () => {
                     />
                     <StatCard
                         icon={<WalletIcon />}
-                        value={`${new Intl.NumberFormat('vi-VN').format(stats.walletBalance)}đ`}
+                        value={`${formatVNDNumber(stats.walletBalance)}đ`}
                         label="Số dư ví"
                         badge={stats.pendingConfirmation > 0 ? `${stats.pendingConfirmation} chờ xác nhận` : undefined}
                         badgeVariant="orange"
@@ -466,7 +467,7 @@ const TutorPortalDashboard: React.FC = () => {
                     />
                     <StatCard
                         icon={<FrozenIcon />}
-                        value={`${new Intl.NumberFormat('vi-VN').format(stats.frozenBalance)}đ`}
+                        value={`${formatVNDNumber(stats.frozenBalance)}đ`}
                         label="Số dư đóng băng"
                         badge={stats.activeDisputes > 0 ? `${stats.activeDisputes} khiếu nại` : undefined}
                         badgeVariant="red"
@@ -474,9 +475,9 @@ const TutorPortalDashboard: React.FC = () => {
                     />
                     <StatCard
                         icon={<DollarIcon />}
-                        value={`${new Intl.NumberFormat('vi-VN').format(stats.earningsThisMonth)}đ`}
+                        value={`${formatVNDNumber(stats.earningsThisMonth)}đ`}
                         label="Doanh thu tháng"
-                        subLabel={`/ ${new Intl.NumberFormat('vi-VN').format(stats.totalEarnings)}đ tổng`}
+                        subLabel={`/ ${formatVNDNumber(stats.totalEarnings)}đ tổng`}
                         className={styles.statCard}
                     />
                 </div>

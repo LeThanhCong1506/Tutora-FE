@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import { Spin } from 'antd';
 import { getStudentBookings } from '../../services/student-lesson.service';
 import { getPaymentBadge, type PaymentBadgeTone } from '../../utils/paymentBadge';
+import { formatVNDNumber } from '../../utils/formatters';
 import s from '../StudentPages.module.css';
 
 // Map shared badge tone → local color values. Keeps the visual decisions
@@ -40,7 +41,7 @@ const STATUS_MAP: Record<string, { label: string; cls: string }> = {
     payment_timeout: { label: 'Hết hạn', cls: s.cancelled },
 };
 
-const formatPrice = (n: number) => n?.toLocaleString('vi-VN') + 'đ';
+const formatPrice = (n: number) => `${formatVNDNumber(n)}đ`;
 
 const StudentBooking = () => {
     const navigate = useNavigate();

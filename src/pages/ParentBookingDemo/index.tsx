@@ -26,6 +26,7 @@ import {
   UsersRound,
   X,
 } from 'lucide-react';
+import { formatVNDNumber } from '../../utils/formatters';
 import Header from '../../components/Header';
 import {
   CHILDREN,
@@ -100,12 +101,7 @@ const formatShortDate = (date: Date) =>
     month: '2-digit',
   });
 
-const formatPrice = (amount: number) =>
-  new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0,
-  }).format(amount);
+const formatPrice = (amount: number) => `${formatVNDNumber(amount)} ₫`;
 
 const formatSubjectGrade = (grade: number) => `Lớp ${grade}`;
 

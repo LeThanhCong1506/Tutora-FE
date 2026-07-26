@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Modal, Button } from 'antd';
 import { toast } from 'react-toastify';
 import { confirmLesson } from '../../../services/parent-lesson.service';
+import { formatVNDNumber } from '../../../utils/formatters';
 
 interface ConfirmLessonModalProps {
   open: boolean;
@@ -70,7 +71,7 @@ const ConfirmLessonModal: React.FC<ConfirmLessonModalProps> = ({
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#999', fontSize: '13px' }}>Giá buổi học</span>
               <span style={{ fontWeight: 600, fontSize: '13px', color: '#52c41a' }}>
-                {lessonPrice.toLocaleString('vi-VN')}đ
+                {formatVNDNumber(lessonPrice)}đ
               </span>
             </div>
           )}

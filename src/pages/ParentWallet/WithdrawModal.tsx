@@ -88,14 +88,14 @@ const WithdrawModal = ({ availableBalance, onClose, onSuccess }: Props) => {
               type="number"
               inputMode="numeric"
               min={MIN_WITHDRAWAL}
-              placeholder="Tối thiểu 10.000₫"
+              placeholder="Tối thiểu 10,000₫"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
             />
             {amount !== '' && !amountValid && (
               <span className={styles.fieldError}>
                 {amountNumber < MIN_WITHDRAWAL
-                  ? 'Số tiền rút tối thiểu là 10.000₫.'
+                  ? 'Số tiền rút tối thiểu là 10,000₫.'
                   : 'Số tiền vượt quá số dư khả dụng.'}
               </span>
             )}

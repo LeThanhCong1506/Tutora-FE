@@ -18,6 +18,7 @@ import {
   WalletCards,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { formatVNDNumber } from '../../utils/formatters';
 import {
   checkOutClassSession,
   getTutorClassSessionDetail,
@@ -82,7 +83,7 @@ const formatDateTime = (value?: string) =>
 
 const formatCurrency = (value?: number) =>
   typeof value === 'number'
-    ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)
+    ? `${formatVNDNumber(value)} ₫`
     : 'Chưa cập nhật';
 
 const getNameInitial = (name?: string) => {
