@@ -23,3 +23,28 @@ export interface LobbyWaitingState {
   tutorWaiting: boolean;
   studentWaiting: boolean;
 }
+export interface ScheduleChangeState {
+  classSessionId: number;
+  requiresConfirmation: boolean;
+  canCurrentUserConfirm: boolean;
+  currentUserConfirmed: boolean;
+  admissionAllowed: boolean;
+  status: 'pending' | 'approved' | 'applied' | 'rejected' | 'expired' | null;
+  tutorUserId: string | null;
+  learnerApproverUserId: string | null;
+  requiredLearnerRole: 'Student' | 'Parent' | null;
+  requiredLearnerName: string | null;
+  tutorName: string | null;
+  studentName: string | null;
+  originalScheduledStart: string;
+  originalScheduledEnd: string;
+  durationMinutes: number;
+  requestedAt: string | null;
+  expiresAt: string | null;
+  tutorConfirmedAt: string | null;
+  learnerConfirmedAt: string | null;
+  approvedAt: string | null;
+  appliedAt: string | null;
+  adjustedScheduledStart: string | null;
+  adjustedScheduledEnd: string | null;
+}

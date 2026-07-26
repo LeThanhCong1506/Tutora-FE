@@ -61,6 +61,7 @@ export interface SessionLeaseCredentials {
 
 export const SESSION_ACTIVE_ON_ANOTHER_DEVICE = 'SESSION_ACTIVE_ON_ANOTHER_DEVICE';
 export const SESSION_LEASE_REVOKED = 'SESSION_LEASE_REVOKED';
+export const SESSION_SCHEDULE_CHANGE_CONFIRMATION_REQUIRED = 'SESSION_SCHEDULE_CHANGE_CONFIRMATION_REQUIRED';
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -106,6 +107,9 @@ export const getActiveSessionConflict = (error: unknown): ActiveSessionConflict 
 
 export const isSessionLeaseRevokedError = (error: unknown): boolean =>
   getAgoraErrorCode(error) === SESSION_LEASE_REVOKED;
+
+export const isScheduleChangeConfirmationRequiredError = (error: unknown): boolean =>
+  getAgoraErrorCode(error) === SESSION_SCHEDULE_CHANGE_CONFIRMATION_REQUIRED;
 
 /**
  * Claim (hoặc resume idempotent) lease rồi lấy thông tin join Agora.

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Wifi, type LucideIcon } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -7,8 +8,14 @@ import {
   useLiveSessionAdmission,
   type LiveSessionAdmission,
 } from '../../hooks/useLiveSessionAdmission';
-import { getCurrentUserRole } from '../../services/auth.service';
-import { useSessionLobby, useDevicePreview, DevicePreview, type LobbyPhase } from './lobby-components';
+import { getCurrentUserRole, getUserIdFromToken } from '../../services/auth.service';
+import {
+  useSessionLobby,
+  useDevicePreview,
+  DevicePreview,
+  ScheduleChangeModal,
+  type LobbyPhase,
+} from './lobby-components';
 import styles from './styles.module.css';
 
 /** "học sinh" → "Học sinh" */
@@ -58,8 +65,10 @@ const SessionLobby = () => {
   const isMock = searchParams.get('mock') === '1';
 
   const sessionIdNum = classSessionId ? parseInt(classSessionId, 10) : null;
+  const [dismissedScheduleVersion, setDismissedScheduleVersion] = useState<string | null>(null);
 
   const role = (getCurrentUserRole() || '').toLowerCase();
+  const currentUserId = getUserIdFromToken() || '';
   const isTutor = role === 'tutor';
   /** Phía mình chờ ai: gia sư chờ học sinh, học sinh/phụ huynh chờ gia sư. */
   const waitingForLabel = isTutor ? 'học sinh' : 'gia sư';
@@ -68,6 +77,9 @@ const SessionLobby = () => {
     phase: realPhase,
     info: realInfo,
     waitingState: realWaitingState,
+    scheduleChangeState,
+    respondingToScheduleChange,
+    respondToScheduleChange,
     errorMessage,
     retry,
   } = useSessionLobby(isMock ? null : sessionIdNum);
@@ -95,7 +107,7 @@ const SessionLobby = () => {
 
   // Chỉ cho vào lớp khi đã đủ người (hoặc mock để duyệt layout). Không còn auto-nhảy —
   // người dùng tự bấm xác nhận sau khi chỉnh camera/micro.
-  const canEnter = phase === 'ready' || isMock;
+  const canEnter = (phase === 'ready' && (!scheduleChangeState?.requiresConfirmation || scheduleChangeState.admissionAllowed)) || isMock;
   const admission = useLiveSessionAdmission(isMock ? null : sessionIdNum);
 
   const navigateToLiveSession = (preparedAdmission?: LiveSessionAdmission) => {
@@ -132,6 +144,28 @@ const SessionLobby = () => {
       if (preparedAdmission) navigateToLiveSession(preparedAdmission);
     } catch {
       toast.error('Không thể chuyển buổi học sang thiết bị này. Vui lòng thử lại.');
+    }
+  };
+
+  const scheduleVersion = scheduleChangeState
+    ? [
+        scheduleChangeState.status,
+        scheduleChangeState.requiredLearnerRole,
+        scheduleChangeState.learnerApproverUserId,
+        scheduleChangeState.tutorConfirmedAt,
+        scheduleChangeState.learnerConfirmedAt,
+        scheduleChangeState.appliedAt,
+      ].join('|')
+    : null;
+  const showScheduleChange = Boolean(
+    scheduleChangeState?.requiresConfirmation && scheduleVersion !== dismissedScheduleVersion,
+  );
+
+  const handleScheduleResponse = async (confirmed: boolean) => {
+    try {
+      await respondToScheduleChange(confirmed);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Không thể gửi xác nhận đổi lịch.');
     }
   };
 
@@ -281,6 +315,17 @@ const SessionLobby = () => {
   return (
     <div className={styles.page}>
       <div className={styles.card}>{renderBody()}</div>
+      {scheduleChangeState && (
+        <ScheduleChangeModal
+          open={showScheduleChange}
+          state={scheduleChangeState}
+          currentRole={role}
+          currentUserId={currentUserId}
+          loading={respondingToScheduleChange}
+          onRespond={(confirmed) => void handleScheduleResponse(confirmed)}
+          onClose={() => setDismissedScheduleVersion(scheduleVersion)}
+        />
+      )}
       <SessionDeviceModal
         open={admission.conflict !== null}
         mode="conflict"
