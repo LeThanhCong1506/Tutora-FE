@@ -1,4 +1,5 @@
 import type { MiniAppTutorResult } from "../../services/miniAppSearch.service";
+import { formatVNDNumber } from "../../utils/formatters";
 import { tr, type Lang } from "./i18n";
 import "../../styles/pages/mini-app-search-results.css";
 
@@ -96,7 +97,7 @@ const TutorResultsList = ({
                                     </span>
                                 </span>
                                 <span className="mini-app-tutor-row__price">
-                                    {t.hourlyRate.toLocaleString("vi-VN")}đ{lang === "en" ? "/hr" : "/giờ"}
+                                    {formatVNDNumber(t.hourlyRate)}đ{lang === "en" ? "/hr" : "/giờ"}
                                 </span>
                             </div>
                         </div>

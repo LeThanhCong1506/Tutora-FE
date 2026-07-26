@@ -2,9 +2,9 @@ import type { ScheduleSlot, WeeklySlot, BookingSlot, WeeklyPatternSlot } from ".
 import type { AvailabilitySlot, TutorSubjectGradePrice } from "../../../services/tutorDetail.service";
 import type { FixedCombo } from "../../../types/combo.types";
 import type { StudentType } from "../../../types/student.type";
+import { formatVNDNumber } from "../../../utils/formatters";
 
-export const formatPrice = (amount: number) =>
-    new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
+export const formatPrice = (amount: number) => `${formatVNDNumber(amount)} ₫`;
 
 export const addHoursToTime = (time: string, hours: number): string => {
     const [h, m] = time.split(":").map(Number);
