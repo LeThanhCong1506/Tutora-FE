@@ -43,27 +43,34 @@ export function useOnboardingState() {
   }, []);
 
   // ── B1: subject records ──
-  // Thêm 1 record (môn, khối, giá). Trả false nếu đã tồn tại (môn, khối).
+  // Thêm 1 cấu hình (môn, nhiều khối, giá). Trả false nếu có khối bị trùng
+  // với một cấu hình khác của cùng môn.
   const addSubjectRecord = useCallback(
     (input: {
       id?: string;
       subjectId: number;
       subjectName: string;
-      gradeLevel: string;
+      gradeLevels: string[];
       hourlyRate: number;
       hoursPerSession: number;
       sessionsPerWeek: number;
     }): boolean => {
       let added = false;
       setState((prev) => {
+        const normalizedGradeLevels = Array.from(new Set(input.gradeLevels));
         const dup = prev.subjectRecords.some(
-          (r) => r.subjectId === input.subjectId && r.gradeLevel === input.gradeLevel,
+          (r) =>
+            r.subjectId === input.subjectId &&
+            r.gradeLevels.some((gradeLevel) => normalizedGradeLevels.includes(gradeLevel)),
         );
         if (dup) return prev;
         added = true;
         return {
           ...prev,
-          subjectRecords: [...prev.subjectRecords, { ...input, id: input.id ?? newId() }],
+          subjectRecords: [
+            ...prev.subjectRecords,
+            { ...input, gradeLevels: normalizedGradeLevels, id: input.id ?? newId() },
+          ],
         };
       });
       return added;

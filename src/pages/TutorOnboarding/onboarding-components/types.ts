@@ -7,13 +7,13 @@ import type { FixedCombo } from '../../../types/combo.types';
 
 export type OnboardingStep = 1 | 2 | 3;
 
-// B1: 1 record = (môn, khối lớp, giá). Tutor có thể thêm nhiều record;
-// vd Toán-L10-200k, Toán-L11-250k, Tiếng Anh-L12-300k.
+// B1: 1 cấu hình = (môn, nhiều khối lớp, giá).
+// Khi lưu, mỗi khối lớp được tách thành 1 dòng subject-grade theo contract hiện tại của BE.
 export interface SubjectRecord {
   id: string; // local id (uuid-ish)
   subjectId: number; // từ SUBJECTS catalog
   subjectName: string;
-  gradeLevel: string; // 'grade_10' v.v.
+  gradeLevels: string[]; // ['grade_10', 'grade_11', ...]
   hourlyRate: number; // VND/giờ
   hoursPerSession: number; // số giờ mỗi buổi (gia sư đặt theo môn) — booking dùng để bôi đủ thời lượng
   sessionsPerWeek: number; // số buổi/tuần đề xuất cho cấu hình này

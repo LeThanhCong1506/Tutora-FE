@@ -18,6 +18,7 @@ import {
   WalletCards,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { formatVNDNumber } from '../../utils/formatters';
 import {
   checkOutClassSession,
   getTutorClassSessionDetail,
@@ -36,6 +37,7 @@ import { signalRService } from '../../services/signalr.service';
 import AttachmentUploader from './components/AttachmentUploader';
 import LessonReportForm from './components/LessonReportForm';
 import MaterialsTab from './components/MaterialsTab';
+import { ClassSessionRecording } from '../../components/shared';
 import styles from '../../styles/pages/tutor-portal-class-session-detail.module.css';
 
 type DetailTab = 'overview' | 'materials';
@@ -81,7 +83,7 @@ const formatDateTime = (value?: string) =>
 
 const formatCurrency = (value?: number) =>
   typeof value === 'number'
-    ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)
+    ? `${formatVNDNumber(value)} ₫`
     : 'Chưa cập nhật';
 
 const getNameInitial = (name?: string) => {
@@ -850,6 +852,16 @@ const TutorPortalClassSessionDetail = () => {
                         )}
                       </div>
                     )}
+                  </section>
+
+                  <section className={styles.card}>
+                    <div className={styles.cardHeaderCompact}>
+                      <div>
+                        <span className={styles.sectionLabel}>Sau buổi học</span>
+                        <h2>Video buổi học</h2>
+                      </div>
+                    </div>
+                    <ClassSessionRecording classSessionId={session.classSessionId} />
                   </section>
                 </div>
 

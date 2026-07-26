@@ -8,6 +8,7 @@ import { formatGradeLevelRanges } from './utils';
 import { useWishlist } from './useWishlist';
 import { createChannel } from '../../../services/chat.service';
 import { getCurrentUser, getCurrentUserRole } from '../../../services/auth.service';
+import { formatVNDNumber } from '../../../utils/formatters';
 
 const MAX_VISIBLE_SUBJECT_GRADES = 3;
 
@@ -15,8 +16,8 @@ const MAX_VISIBLE_SUBJECT_GRADES = 3;
 const DEFAULT_MEDIA_IMAGE =
   'https://api.dicebear.com/7.x/notionists/svg?seed=tutora&backgroundColor=b6e3f4';
 
-// Giá thấp nhất hiển thị trên thẻ — định dạng theo vi-VN, ví dụ "Từ 150.000đ/giờ".
-const formatFromPrice = (rate: number): string => `Từ ${rate.toLocaleString('vi-VN')}đ/giờ`;
+// Giá thấp nhất hiển thị trên thẻ, ví dụ "Từ 150,000đ/giờ".
+const formatFromPrice = (rate: number): string => `Từ ${formatVNDNumber(rate)}đ/giờ`;
 
 // Lấy id video YouTube nếu videoUrl là link YouTube (để dùng thumbnail thay vì nhúng <video>).
 const getYoutubeId = (url: string): string | null => {

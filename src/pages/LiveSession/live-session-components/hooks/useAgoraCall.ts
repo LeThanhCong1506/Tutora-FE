@@ -9,7 +9,9 @@ import AgoraRTC, {
 import AgoraRTM, { type RTMClient, type RTMEvents } from 'agora-rtm-sdk';
 import {
   getActiveSessionConflict,
+  getAgoraErrorMessage,
   isSessionLeaseRevokedError,
+  isSessionScheduleConflictError,
   joinAgoraRoom,
   sendRoomHeartbeat,
   leaveRoom,
@@ -61,6 +63,7 @@ interface UseAgoraCallResult {
   sessionEnded: boolean;
   /** True khi lease của thiết bị này đã bị takeover bởi thiết bị khác. */
   sessionReplaced: boolean;
+  scheduleConflictMessage: string | null;
   /** True khi gia sư đã bật theo dõi hành vi (máy học viên nhận qua RTM). Học viên KHÔNG được báo. */
   trackingRequested: boolean;
   /**
@@ -117,6 +120,8 @@ export const useAgoraCall = (
   const screenSharingRef = useRef(false);
   /** Mốc thao tác gần nhất của người dùng trong tab lớp học. */
   const lastInteractionRef = useRef(Date.now());
+  /** Đang có một nhịp heartbeat trên đường đi — nhịp mới phát sinh trong lúc đó sẽ bị bỏ qua. */
+  const heartbeatInFlightRef = useRef(false);
 
   const [joined, setJoined] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -128,6 +133,7 @@ export const useAgoraCall = (
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [presenceStatus, setPresenceStatus] = useState<SessionPresenceStatus | null>(null);
   const [sessionEnded, setSessionEnded] = useState(false);
+  const [scheduleConflictMessage, setScheduleConflictMessage] = useState<string | null>(null);
   const [sessionReplaced, setSessionReplaced] = useState(false);
   const [trackingRequested, setTrackingRequested] = useState(false);
   const [emotionAlerts, setEmotionAlerts] = useState<LiveEmotionAlert[]>([]);
@@ -377,6 +383,11 @@ export const useAgoraCall = (
   // Tách khỏi effect để vừa chạy theo interval, vừa gọi được tức thì khi có người mới vào phòng.
   const sendHeartbeat = useCallback(async () => {
     if (!room || leavingRef.current) return;
+    // Lúc vừa join, effect interval và effect "có người mới" cùng bắn một nhịp gần như đồng thời.
+    // Hai request song song khiến BE (đọc-rồi-ghi) tạo ra HAI đoạn heartbeat trùng nhau trong
+    // nhật ký bằng chứng. Một nhịp đang bay là đủ — nhịp thứ hai không mang thêm thông tin gì.
+    if (heartbeatInFlightRef.current) return;
+    heartbeatInFlightRef.current = true;
     try {
       const res = await sendRoomHeartbeat(
         room.classSessionId,
@@ -401,8 +412,12 @@ export const useAgoraCall = (
     } catch (error) {
       if (!leavingRef.current && isSessionLeaseRevokedError(error)) {
         setSessionReplaced(true);
+      } else if (!leavingRef.current && isSessionScheduleConflictError(error)) {
+        setScheduleConflictMessage(getAgoraErrorMessage(error) || 'Buổi học hiện bị trùng với lịch khác.');
       }
-      // bỏ qua lỗi tạm thời — nhịp sau sẽ thử lại
+      // bỏ qua lỗi mạng tạm thời — nhịp sau sẽ thử lại
+    } finally {
+      heartbeatInFlightRef.current = false;
     }
   }, [room]);
 
@@ -656,6 +671,7 @@ export const useAgoraCall = (
     presenceStatus,
     sessionEnded,
     sessionReplaced,
+    scheduleConflictMessage,
     trackingRequested,
     emotionAlerts,
     emotionToasts,

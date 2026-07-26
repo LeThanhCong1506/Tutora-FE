@@ -88,6 +88,24 @@ export interface ClassSessionReport {
     createdAt?: string;
 }
 
+/** Lịch sử dời lịch của một buổi học — mirror BE `DisputeScheduleChangeAuditResponse`. */
+export interface ScheduleChangeAuditDto {
+    scheduleChangeId: number;
+    status: 'pending' | 'approved' | 'applied' | 'rejected' | 'expired' | string;
+    originalScheduledStart: string;
+    originalScheduledEnd: string;
+    adjustedScheduledStart?: string;
+    adjustedScheduledEnd?: string;
+    learnerApproverRole: 'Parent' | 'Student' | string;
+    tutorConfirmedByName?: string;
+    tutorConfirmedAt?: string;
+    learnerConfirmedByName?: string;
+    learnerConfirmedAt?: string;
+    requestedAt?: string;
+    approvedAt?: string;
+    appliedAt?: string;
+}
+
 export interface ClassSessionDetailResponse {
     classSessionId: number;
     bookingId?: number;
@@ -101,6 +119,7 @@ export interface ClassSessionDetailResponse {
     isStudentPresent?: boolean;
     attendanceNote?: string;
     status?: ClassSessionStatus;
+    bookingStatus?: string;
     submittedAt?: string;
     confirmDeadline?: string;
     parentAckAt?: string;
@@ -122,6 +141,7 @@ export interface ClassSessionDetailResponse {
     timeRemainingToConfirm?: string | null;
     canCheckIn: boolean;
     canSubmitReport: boolean;
+    scheduleChanges?: ScheduleChangeAuditDto[];
 }
 
 // ── Request DTOs ──
@@ -153,9 +173,12 @@ export interface CalendarClassSessionResponse {
     tutorName?: string;
     subjectName?: string;
     status?: ClassSessionStatus;
+    bookingStatus?: string;
     meetingLink?: string;
     /** Đã check-out (phòng đóng vĩnh viễn) — in_progress + checkOutTime = chờ gửi báo cáo. */
     checkOutTime?: string;
+    /** True nếu buổi học đã có video xem lại (đã upload xong lên Drive). */
+    hasRecording?: boolean;
     statusColor: string;
 }
 
@@ -378,6 +401,13 @@ export interface SessionScheduleChangeResponse {
     appliedAt?: string;
     adjustedScheduledStart?: string;
     adjustedScheduledEnd?: string;
+    scheduleConflict?: {
+        classSessionId: number;
+        scheduledStart: string;
+        scheduledEnd: string;
+        conflictingParty: 'tutor' | 'student' | 'tutor_and_student';
+        message: string;
+    };
 }
 
 export const getParentScheduleChange = async (
@@ -423,7 +453,6 @@ export const confirmParentClassSession = async (id: number): Promise<ApiResponse
 export interface CreateDisputeRequest {
     disputeType: 'no_show' | 'quality' | 'payment' | 'other';
     reason: string;
-    evidence?: string[];
 }
 
 export interface DisputeUserInfo {
@@ -487,8 +516,19 @@ export interface DisputeDetailResponse {
 export const createClassSessionDispute = async (
     id: number,
     request: CreateDisputeRequest,
+    files: File[] = [],
 ): Promise<ApiResponse<DisputeDetailResponse>> => {
-    const response = await api.post(`/parent/class-sessions/${id}/dispute`, request, { headers: getAuthHeaders() });
+    const formData = new FormData();
+    formData.append('disputeType', request.disputeType);
+    formData.append('reason', request.reason);
+    files.forEach((file) => formData.append('files', file));
+
+    const response = await api.post(`/parent/class-sessions/${id}/dispute`, formData, {
+        headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'multipart/form-data',
+        },
+    });
     return response.data;
 };
 
@@ -519,8 +559,19 @@ export interface ReportNoShowRequest {
 export const reportClassSessionNoShow = async (
     id: number,
     request?: ReportNoShowRequest,
+    files: File[] = [],
 ): Promise<ApiResponse<ClassSessionDetailResponse>> => {
-    const response = await api.post(`/class-sessions/${id}/report-no-show`, request ?? {}, { headers: getAuthHeaders() });
+    const formData = new FormData();
+    if (request?.reportedAt) formData.append('reportedAt', request.reportedAt);
+    if (request?.reason) formData.append('reason', request.reason);
+    files.forEach((file) => formData.append('files', file));
+
+    const response = await api.post(`/class-sessions/${id}/report-no-show`, formData, {
+        headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'multipart/form-data',
+        },
+    });
     return response.data;
 };
 
@@ -555,6 +606,39 @@ export const getClassSessionById = async (id: number): Promise<ApiResponse<Class
     return response.data;
 };
 
+/** available (đã ghi xong, xem được) | processing (đang đẩy lên lưu trữ) | recording (đang ghi) | none. */
+export type RecordingStatus = 'available' | 'processing' | 'recording' | 'none';
+
+export interface ClassSessionRecordingResponse {
+    classSessionId: number;
+    status: RecordingStatus;
+    /**
+     * Đường dẫn tương đối tới endpoint proxy (vd `/api/class-sessions/1/recording/stream?token=...`).
+     * KHÔNG phải link Drive trực tiếp — chỉ có khi `status === 'available'`. Token hết hạn sau ít
+     * phút, nên gọi lại `getClassSessionRecording` mỗi lần vào lại trang thay vì lưu cache.
+     */
+    streamUrl?: string;
+    available: boolean;
+}
+
+/** `GET /class-sessions/{id}/recording` — dùng chung cho Tutor/Student/Parent, quyền xem được BE tự kiểm tra. */
+export const getClassSessionRecording = async (
+    id: number,
+): Promise<ApiResponse<ClassSessionRecordingResponse>> => {
+    const response = await api.get(`/class-sessions/${id}/recording`, { headers: getAuthHeaders() });
+    return response.data;
+};
+
+/**
+ * `streamUrl` từ BE là đường dẫn tương đối (dùng chung được cả dev-proxy lẫn production đa origin).
+ * Ghép với gốc backend thật trước khi gán vào `<video src>` — thẻ video không đi qua Vite/axios proxy.
+ */
+export const resolveRecordingStreamUrl = (streamUrl: string): string => {
+    if (/^https?:\/\//i.test(streamUrl)) return streamUrl;
+    const backendUrl = (import.meta.env.VITE_BACKEND_URL as string | undefined) || 'http://localhost:5166';
+    return `${backendUrl.replace(/\/$/, '')}${streamUrl}`;
+};
+
 // ── Student endpoints — `api/student/class-sessions` ──
 // NOTE: these 3 diverge from the generic envelope — BE wraps ad-hoc shapes in `APIResponse<object>`
 // rather than the typed `ClassSessionResponse`/`PagedList` used by tutor/parent routes.
@@ -562,6 +646,8 @@ export const getClassSessionById = async (id: number): Promise<ApiResponse<Class
 export interface StudentClassSessionSummaryResponse {
     classSessionId: number;
     status?: ClassSessionStatus;
+    bookingStatus?: string;
+    isSettled?: boolean;
     scheduledStart?: string;
     scheduledEnd?: string;
     confirmDeadline?: string;
@@ -575,6 +661,8 @@ export interface StudentClassSessionReport {
     topicsCovered?: string;
     homeworkAssigned?: string;
     tutorNotes?: string;
+    studentPerformanceRating?: number;
+    attachments?: string[];
 }
 
 export interface StudentClassSessionDetailResponse extends StudentClassSessionSummaryResponse {
@@ -583,6 +671,7 @@ export interface StudentClassSessionDetailResponse extends StudentClassSessionSu
     checkoutTime?: string;
     tutorAvatar?: string;
     report?: StudentClassSessionReport;
+    scheduleChanges?: ScheduleChangeAuditDto[];
 }
 
 export const getStudentClassSessions = async (
@@ -638,21 +727,6 @@ export interface DisputeListResponse {
     classSessionPrice?: number;
     createdAt?: string;
 }
-
-export const uploadClassSessionDisputeEvidence = async (
-    id: number,
-    file: File,
-): Promise<ApiResponse<string>> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await api.post(`/parent/class-sessions/${id}/dispute/evidence`, formData, {
-        headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'multipart/form-data',
-        },
-    });
-    return response.data;
-};
 
 export const getParentDisputesList = async (
     page: number = 1,
@@ -739,4 +813,3 @@ export const sendClassSessionDisputeThreadMessage = async (id: number, message: 
     const response = await api.post(`/parent/class-sessions/${id}/dispute/thread/messages`, { message }, { headers: getAuthHeaders() });
     return response.data;
 };
-

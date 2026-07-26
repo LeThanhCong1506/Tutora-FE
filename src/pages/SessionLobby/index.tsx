@@ -9,6 +9,7 @@ import {
   type LiveSessionAdmission,
 } from '../../hooks/useLiveSessionAdmission';
 import { getCurrentUserRole, getUserIdFromToken } from '../../services/auth.service';
+import { getAgoraErrorMessage } from '../../services/agora.service';
 import {
   useSessionLobby,
   useDevicePreview,
@@ -78,6 +79,7 @@ const SessionLobby = () => {
     info: realInfo,
     waitingState: realWaitingState,
     scheduleChangeState,
+    scheduleConflict,
     respondingToScheduleChange,
     respondToScheduleChange,
     errorMessage,
@@ -107,7 +109,11 @@ const SessionLobby = () => {
 
   // Chỉ cho vào lớp khi đã đủ người (hoặc mock để duyệt layout). Không còn auto-nhảy —
   // người dùng tự bấm xác nhận sau khi chỉnh camera/micro.
-  const canEnter = (phase === 'ready' && (!scheduleChangeState?.requiresConfirmation || scheduleChangeState.admissionAllowed)) || isMock;
+  const canEnter =
+    (phase === 'ready' &&
+      !scheduleConflict &&
+      (!scheduleChangeState?.requiresConfirmation || scheduleChangeState.admissionAllowed)) ||
+    isMock;
   const admission = useLiveSessionAdmission(isMock ? null : sessionIdNum);
 
   const navigateToLiveSession = (preparedAdmission?: LiveSessionAdmission) => {
@@ -133,8 +139,8 @@ const SessionLobby = () => {
     try {
       const preparedAdmission = await admission.join();
       if (preparedAdmission) navigateToLiveSession(preparedAdmission);
-    } catch {
-      toast.error('Không thể kết nối tới phòng học. Vui lòng thử lại.');
+    } catch (error) {
+      toast.error(getAgoraErrorMessage(error) || 'Không thể kết nối tới phòng học. Vui lòng thử lại.');
     }
   };
 
@@ -142,8 +148,8 @@ const SessionLobby = () => {
     try {
       const preparedAdmission = await admission.takeOver();
       if (preparedAdmission) navigateToLiveSession(preparedAdmission);
-    } catch {
-      toast.error('Không thể chuyển buổi học sang thiết bị này. Vui lòng thử lại.');
+    } catch (error) {
+      toast.error(getAgoraErrorMessage(error) || 'Không thể chuyển buổi học sang thiết bị này. Vui lòng thử lại.');
     }
   };
 
@@ -214,6 +220,14 @@ const SessionLobby = () => {
                   <span className={styles.metaLabel}>Thời gian</span>
                   <span className={styles.metaValue}>{formatSchedule(info.scheduledStart, info.scheduledEnd)}</span>
                 </div>
+              </div>
+            )}
+
+            {scheduleConflict && (
+              <div className={styles.scheduleConflictBanner} role="alert">
+                <strong>Chưa thể bắt đầu vì trùng lịch</strong>
+                <span>{scheduleConflict.message}</span>
+                <small>Hệ thống sẽ tự kiểm tra lại. Hai bên không cần xác nhận đổi lịch lại.</small>
               </div>
             )}
 

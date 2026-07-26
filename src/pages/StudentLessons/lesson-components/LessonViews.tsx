@@ -3,7 +3,7 @@ import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { Link } from 'react-router-dom';
 import { Tooltip } from 'antd';
-import { CalendarDays, ChevronRight, ClipboardList, Clock3, UserRound, Video } from 'lucide-react';
+import { CalendarDays, ChevronRight, Clapperboard, ClipboardList, Clock3, UserRound, Video } from 'lucide-react';
 import { getClassSessionStatusMeta } from '../../../utils/classSessionStatus';
 import styles from '../styles.module.css';
 import type { LessonSummary, LessonViewProps } from './types';
@@ -126,6 +126,14 @@ const MeetLink = ({ lesson, compact = false }: { lesson: LessonSummary; compact?
   );
 };
 
+/** Badge nhỏ báo buổi học đã có video xem lại — chỉ hiện khi thật sự đã có (không nêu trạng thái "chưa có"). */
+const RecordingBadge = ({ compact = false }: { compact?: boolean }) => (
+  <span className={styles.recordingBadge}>
+    <Clapperboard size={compact ? 11 : 12} strokeWidth={2.3} aria-hidden="true" />
+    <span>Có bản ghi</span>
+  </span>
+);
+
 const LessonHoverDetails = ({ lesson }: { lesson: LessonSummary }) => {
   const status = getLessonDisplayMeta(lesson);
   const canJoin = canShowJoinButton(lesson);
@@ -154,6 +162,7 @@ const LessonHoverDetails = ({ lesson }: { lesson: LessonSummary }) => {
           <Video size={12} aria-hidden="true" />
           {canJoin ? 'Có thể vào lớp' : 'Không thể vào lớp'}
         </span>
+        {lesson.hasRecording && <RecordingBadge />}
       </div>
     </div>
   );
@@ -191,6 +200,7 @@ const CalendarEvent = ({ lesson, onOpen }: { lesson: LessonSummary; onOpen: () =
       </button>
       <div className={styles.calendarEventFooter}>
         <StatusPill lesson={lesson} />
+        {lesson.hasRecording && <RecordingBadge compact />}
         <MeetLink lesson={lesson} compact />
       </div>
     </article>
@@ -220,6 +230,7 @@ const ListLessonRow = ({ lesson, onOpen }: { lesson: LessonSummary; onOpen: () =
       </button>
       <div className={styles.listActions}>
         <MeetLink lesson={lesson} />
+        {lesson.hasRecording && <RecordingBadge compact />}
         <StatusPill lesson={lesson} />
         <button type="button" className={styles.detailIconButton} onClick={onOpen} aria-label="Xem chi tiết buổi học">
           <ChevronRight size={18} className={styles.rowChevron} aria-hidden="true" />
@@ -365,6 +376,7 @@ export const GridLessonView = ({ lessons, onOpenLesson }: LessonViewProps) => (
             </button>
             <div className={styles.gridCardFooter}>
               <MeetLink lesson={lesson} />
+              {lesson.hasRecording && <RecordingBadge compact />}
               <button type="button" className={styles.openCard} style={{ color: status.color }} onClick={openLesson}>
                 Chi tiết <ChevronRight size={16} />
               </button>

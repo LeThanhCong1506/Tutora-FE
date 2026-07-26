@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Card, Form, InputNumber } from 'antd';
 import { ArrowRightOutlined, BankOutlined, WalletOutlined } from '@ant-design/icons';
-import { formatCurrency, maskBankAccount } from '../../../../utils/formatters';
+import { formatCurrency, formatVNDNumber, maskBankAccount } from '../../../../utils/formatters';
 import type { BankInfo } from '../../../../types/finance.types';
 
 interface Props {
@@ -57,8 +57,8 @@ const WithdrawForm: React.FC<Props> = ({ balance, bankInfo, onSubmit, loading })
             size="large"
             min={0}
             controls={false}
-            formatter={(value) => `${value ?? ''}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
-            parser={(value) => Number(value?.replace(/\./g, '') || 0)}
+            formatter={(value) => `${value ?? ''}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+            parser={(value) => Number(value?.replace(/,/g, '') || 0)}
             placeholder="0"
             onChange={(value) => setAmount(Number(value) || 0)}
             suffix="VND"
@@ -73,7 +73,7 @@ const WithdrawForm: React.FC<Props> = ({ balance, bankInfo, onSubmit, loading })
               className={amount === value ? 'finance-quick-amount--active' : ''}
               onClick={() => chooseAmount(value)}
             >
-              {new Intl.NumberFormat('vi-VN', { notation: 'compact' }).format(value)}
+              {formatVNDNumber(value)}
             </Button>
           ))}
           <Button

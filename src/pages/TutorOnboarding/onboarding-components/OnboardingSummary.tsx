@@ -32,6 +32,7 @@ type View = 'schedule' | 'subjects' | 'combos';
 
 const dayLabel = (dow: number) => DAY_COLUMNS.find((c) => c.dayOfWeek === dow)?.full ?? `Ngày ${dow}`;
 const gradeLabel = (g: string) => GRADE_LEVELS.find((x) => x.value === g)?.label ?? g;
+const gradeLabels = (grades: string[]) => grades.map(gradeLabel);
 const formatHourAmount = (hours: number) => (Number.isInteger(hours) ? `${hours}` : hours.toFixed(1).replace('.', ','));
 
 // Palette để phân biệt gói trên lưới (rotate theo index).
@@ -422,7 +423,13 @@ const OnboardingSummary: React.FC<OnboardingSummaryProps> = ({
                     {subjectRecords.map((r) => (
                       <div key={r.id} className={styles.recordsRow}>
                         <span className={styles.recordSubject}>{r.subjectName}</span>
-                        <span>{gradeLabel(r.gradeLevel)}</span>
+                        <span className={styles.recordGradeList}>
+                          {gradeLabels(r.gradeLevels).map((grade) => (
+                            <span key={grade} className={styles.recordGradeChip}>
+                              {grade}
+                            </span>
+                          ))}
+                        </span>
                         <span>{formatDuration(r.hoursPerSession)}</span>
                         <span>{r.sessionsPerWeek} buổi</span>
                         <span className={styles.recordRate}>{formatPrice(r.hourlyRate)}đ</span>

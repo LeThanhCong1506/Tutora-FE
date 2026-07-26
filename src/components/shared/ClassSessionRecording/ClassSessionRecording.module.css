@@ -1,0 +1,81 @@
+.loadingCenter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 160px;
+}
+
+.stateBox {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 32px 20px;
+}
+
+.stateIcon {
+    display: grid;
+    place-items: center;
+    width: 54px;
+    height: 54px;
+    margin-bottom: 14px;
+    border-radius: 17px;
+}
+
+.emptyIcon {
+    background: #f2f0e4;
+    color: #8a8370;
+}
+
+.pendingIcon {
+    background: #fff5e8;
+    color: #c67a3d;
+}
+
+.errorIcon {
+    background: #fff1ef;
+    color: #c64c3f;
+}
+
+.stateBox strong {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 16px;
+    color: #1a2238;
+}
+
+.stateBox p {
+    max-width: 340px;
+    margin: 6px 0 0;
+    color: #737373;
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.stateBox button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 38px;
+    margin-top: 14px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 10px;
+    background: #1a2238;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.stateBox button:hover {
+    opacity: 0.9;
+}
+
+.videoPlayer {
+    width: 100%;
+    max-height: 480px;
+    border-radius: 12px;
+    background: #111827;
+    display: block;
+}

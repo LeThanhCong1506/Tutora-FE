@@ -26,6 +26,8 @@ import ReportNoShowModal from './components/ReportNoShowModal';
 import NoShowActionModal from './components/NoShowActionModal';
 import CreateFeedbackModal from './components/CreateFeedbackModal';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
+import { ClassSessionRecording } from '../../components/shared';
+import { formatVNDNumber } from '../../utils/formatters';
 
 const getFileNameFromUrl = (url: string): string => {
   try {
@@ -35,6 +37,8 @@ const getFileNameFromUrl = (url: string): string => {
     return 'Tệp đính kèm';
   }
 };
+
+const TERMINAL_BOOKING_STATUSES = ['completed', 'cancelled', 'cancelled_noshow'];
 
 const ParentLessonDetail: React.FC = () => {
   const navigate = useNavigate();
@@ -152,7 +156,11 @@ const ParentLessonDetail: React.FC = () => {
     try {
       const response = await respondParentScheduleChange(id, confirmed);
       setScheduleChange(response.content);
-      toast.success(confirmed ? 'Đã xác nhận đổi lịch học.' : 'Đã từ chối đổi lịch học.');
+      if (confirmed && response.content.scheduleConflict) {
+        toast.warning(`Đã lưu xác nhận. ${response.content.scheduleConflict.message}`);
+      } else {
+        toast.success(confirmed ? 'Đã xác nhận đổi lịch học.' : 'Đã từ chối đổi lịch học.');
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Không thể xử lý yêu cầu đổi lịch.');
       await fetchScheduleChange();
@@ -199,6 +207,9 @@ const ParentLessonDetail: React.FC = () => {
     || reportHomework
     || lesson.tutorNotes
     || lesson.report?.attachments?.length,
+  );
+  const canCreateDispute = !TERMINAL_BOOKING_STATUSES.includes(
+    String(lesson.bookingStatus || '').toLowerCase(),
   );
 
   return (
@@ -344,6 +355,11 @@ const ParentLessonDetail: React.FC = () => {
             <div style={{ color: '#cf1322', background: '#fff2f0', borderRadius: 8, padding: '10px 12px', fontSize: 13 }}>
               Yêu cầu đổi lịch đã bị từ chối. Học viên và gia sư chưa thể vào buổi học ngoài lịch này.
             </div>
+          ) : scheduleChange.status === 'approved' && scheduleChange.scheduleConflict ? (
+            <div style={{ color: '#b45309', background: '#fffbeb', borderRadius: 8, padding: '10px 12px', fontSize: 13, lineHeight: 1.55 }}>
+              <strong>Đã đủ xác nhận nhưng chưa thể bắt đầu:</strong> {scheduleChange.scheduleConflict.message}
+              {' '}Hệ thống sẽ tự kiểm tra lại, phụ huynh không cần xác nhận lần nữa.
+            </div>
           ) : scheduleChange.status === 'approved' ? (
             <div style={{ color: '#15803d', background: '#f0fdf4', borderRadius: 8, padding: '10px 12px', fontSize: 13 }}>
               Đã đủ xác nhận. Học viên và gia sư có thể vào học; thời gian buổi học sẽ được cập nhật khi họ bắt đầu.
@@ -400,7 +416,7 @@ const ParentLessonDetail: React.FC = () => {
           {lesson.lessonPrice != null && (
             <InfoRow
               label="Giá buổi học"
-              value={`${lesson.lessonPrice.toLocaleString('vi-VN')}đ`}
+              value={`${formatVNDNumber(lesson.lessonPrice)}đ`}
               highlight
             />
           )}
@@ -409,6 +425,55 @@ const ParentLessonDetail: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Lịch sử dời lịch (nếu có) — bản tóm tắt cố định, khác với banner "cần xác nhận" ở trên (banner đó tự ẩn sau khi xử lý xong). */}
+      {Array.isArray(lesson.scheduleChanges) && lesson.scheduleChanges.length > 0 && (
+        <div style={{
+          background: '#fff', borderRadius: '12px', padding: '24px',
+          border: '1px solid rgba(26,34,56,0.06)', marginBottom: '20px',
+        }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1a2238', marginBottom: '16px' }}>
+            Lịch sử dời lịch
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {lesson.scheduleChanges.map((sc: any) => {
+              const statusLabel: Record<string, string> = {
+                applied: 'Đã áp dụng',
+                approved: 'Hai bên đã đồng ý',
+                rejected: 'Đã từ chối',
+                expired: 'Đã hết hạn',
+                pending: 'Đang chờ xác nhận',
+              };
+              return (
+                <div key={sc.scheduleChangeId} style={{ background: '#fafaf8', borderRadius: 10, padding: '12px 14px', border: '1px solid rgba(26,34,56,0.06)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#8c8c8c', textTransform: 'uppercase', letterSpacing: 0.4 }}>
+                      {statusLabel[sc.status] || sc.status}
+                    </span>
+                    {sc.appliedAt && (
+                      <span style={{ fontSize: 12, color: '#999' }}>
+                        Áp dụng lúc {new Date(sc.appliedAt).toLocaleString('vi-VN')}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 14, color: '#1a2238' }}>
+                    {new Date(sc.originalScheduledStart).toLocaleDateString('vi-VN')}, {new Date(sc.originalScheduledStart).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}–{new Date(sc.originalScheduledEnd).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                    {sc.adjustedScheduledStart && (
+                      <> {'→'} {new Date(sc.adjustedScheduledStart).toLocaleDateString('vi-VN')}, {new Date(sc.adjustedScheduledStart).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}–{new Date(sc.adjustedScheduledEnd).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: 20, marginTop: 8, fontSize: 12, color: '#666', flexWrap: 'wrap' }}>
+                    <span>Gia sư: {sc.tutorConfirmedByName ? `${sc.tutorConfirmedByName} đã xác nhận` : 'Chưa xác nhận'}</span>
+                    <span>
+                      {sc.learnerApproverRole === 'Student' ? 'Học sinh' : 'Phụ huynh'}: {sc.learnerConfirmedByName ? `${sc.learnerConfirmedByName} đã xác nhận` : 'Chưa xác nhận'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Tutor Report (if available) */}
       {hasTutorReport && (
@@ -628,6 +693,17 @@ const ParentLessonDetail: React.FC = () => {
         </div>
       )}
 
+      {/* Video buổi học */}
+      <div style={{
+        background: '#fff', borderRadius: '12px', padding: '24px',
+        border: '1px solid rgba(26,34,56,0.06)', marginBottom: '20px',
+      }}>
+        <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1a2238', marginBottom: '16px' }}>
+          Video buổi học
+        </h3>
+        <ClassSessionRecording classSessionId={id} />
+      </div>
+
       {/* Action Buttons */}
       <div style={{
         background: '#fff', borderRadius: '12px', padding: '20px',
@@ -644,13 +720,15 @@ const ParentLessonDetail: React.FC = () => {
             >
               Xác nhận buổi học
             </Button>
-            <Button
-              size="large"
-              danger
-              onClick={() => setShowDisputeForm(true)}
-            >
-              Khiếu nại
-            </Button>
+            {canCreateDispute && (
+              <Button
+                size="large"
+                danger
+                onClick={() => setShowDisputeForm(true)}
+              >
+                Khiếu nại
+              </Button>
+            )}
           </>
         )}
 
@@ -691,7 +769,7 @@ const ParentLessonDetail: React.FC = () => {
             >
               Đánh giá buổi học
             </Button>
-            {!dispute && (
+            {!dispute && canCreateDispute && (
               <Button
                 size="large"
                 danger
