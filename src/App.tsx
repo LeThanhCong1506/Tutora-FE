@@ -12,6 +12,7 @@ import StudentLayout from './layouts/StudentLayout';
 import { StudentProfileGate, StudentSelfRegisteredGate } from './contexts/StudentProfileContext';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import SessionExpiredModal from './components/SessionExpiredModal';
+import ChatAssistant from './components/ChatAssistant/ChatAssistant';
 import PageLoader from './components/PageLoader/PageLoader';
 import { ErrorBoundary } from './components/shared';
 import axios from 'axios';
@@ -352,6 +353,9 @@ function App() {
           </Routes>
         </Suspense>
       </ErrorBoundary>
+
+      {/* Trợ lý AI nổi — chỉ trên web (Zalo Mini App có UX riêng, không hiện chatbot). */}
+      {!inMiniApp && <ChatAssistant />}
     </div>
   );
 }
