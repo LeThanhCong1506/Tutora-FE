@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, Radio, Button } from 'antd';
 import { toast } from 'react-toastify';
 import { processNoShowAction, type NoShowActionRequest } from '../../../services/parent-lesson.service';
@@ -12,19 +12,19 @@ interface NoShowActionModalProps {
 
 const ACTION_OPTIONS = [
   {
-    value: 'reschedule',
-    label: 'Dời lịch',
-    description: 'Chuyển buổi học sang thời gian khác',
+    value: 'free_session',
+    label: 'Hoàn tiền & hủy buổi',
+    description: 'Hoàn 100% tiền buổi học về ví của bạn. Buổi học sẽ bị hủy và gia sư sẽ bị cảnh báo.',
   },
   {
-    value: 'refund',
-    label: 'Hoàn tiền',
-    description: 'Yêu cầu hoàn tiền cho buổi học này',
+    value: 'makeup',
+    label: 'Dời lịch (buổi bù)',
+    description: 'Tạo một buổi bù mới với cùng gia sư. Tiền giữ nguyên cho buổi bù, không cảnh báo gia sư.',
   },
   {
-    value: 'cancel',
-    label: 'Hủy buổi học',
-    description: 'Hủy buổi học và không dời lịch',
+    value: 'change_tutor',
+    label: 'Hủy khóa học và hoàn tiền',
+    description: 'Hủy toàn bộ booking hiện tại và hoàn tiền các buổi chưa học. Gia sư sẽ bị cảnh báo.',
   },
 ];
 
@@ -35,7 +35,15 @@ const NoShowActionModal: React.FC<NoShowActionModalProps> = ({
   onCancel,
 }) => {
   const [selectedAction, setSelectedAction] = useState<string>('');
+  const [makeupScheduledStart, setMakeupScheduledStart] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setSelectedAction('');
+      setMakeupScheduledStart('');
+    }
+  }, [open]);
 
   const handleSubmit = async () => {
     if (!selectedAction) {
@@ -43,9 +51,26 @@ const NoShowActionModal: React.FC<NoShowActionModalProps> = ({
       return;
     }
 
+    let newScheduledStart: string | undefined;
+    if (selectedAction === 'makeup') {
+      const scheduledDate = new Date(makeupScheduledStart);
+      if (!makeupScheduledStart || Number.isNaN(scheduledDate.getTime())) {
+        toast.warn('Vui lòng chọn thời gian cho buổi bù.');
+        return;
+      }
+      if (scheduledDate.getTime() <= Date.now()) {
+        toast.warn('Thời gian buổi bù phải ở trong tương lai.');
+        return;
+      }
+      newScheduledStart = scheduledDate.toISOString();
+    }
+
     try {
       setSubmitting(true);
-      await processNoShowAction(lessonId, { actionType: selectedAction as NoShowActionRequest["actionType"] });
+      await processNoShowAction(lessonId, {
+        actionType: selectedAction as NoShowActionRequest['actionType'],
+        newScheduledStart,
+      });
       toast.success('Đã xử lý thành công!');
       onSuccess();
     } catch (error: any) {
@@ -96,6 +121,25 @@ const NoShowActionModal: React.FC<NoShowActionModalProps> = ({
             ))}
           </div>
         </Radio.Group>
+
+        {selectedAction === 'makeup' && (
+          <div style={{ marginTop: '16px' }}>
+            <label htmlFor="makeup-scheduled-start" style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+              Thời gian bắt đầu buổi bù
+            </label>
+            <input
+              id="makeup-scheduled-start"
+              type="datetime-local"
+              value={makeupScheduledStart}
+              min={new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 16)}
+              onChange={(event) => setMakeupScheduledStart(event.target.value)}
+              style={{ width: '100%', padding: '10px 12px', border: '1px solid #d9d9d9', borderRadius: '6px' }}
+            />
+            <p style={{ marginTop: '6px', marginBottom: 0, color: '#888', fontSize: '12px' }}>
+              Hệ thống sẽ kiểm tra trùng lịch của gia sư trước khi tạo buổi bù.
+            </p>
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '20px' }}>
           <Button onClick={onCancel}>Hủy</Button>

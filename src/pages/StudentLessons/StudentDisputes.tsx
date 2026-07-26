@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { Spin, Tag, Empty } from 'antd';
 import { getParentDisputes, type DisputeListDto } from '../../services/parent-lesson.service';
 import { formatLocalDate } from '../../utils/datetime';
-import { Spin, Tag, Empty } from 'antd';
 import CreateDisputeForm from '../ParentLessons/components/CreateDisputeForm';
 
 const DISPUTE_STATUS: Record<string, { label: string; color: string }> = {
@@ -21,7 +21,7 @@ const DISPUTE_TYPE: Record<string, string> = {
   other: 'Khác',
 };
 
-const ParentDisputes: React.FC = () => {
+const StudentDisputes: React.FC = () => {
   const navigate = useNavigate();
   const [disputes, setDisputes] = useState<DisputeListDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,19 +34,19 @@ const ParentDisputes: React.FC = () => {
     try {
       setLoading(true);
       const response = await getParentDisputes(currentPage, pageSize);
-      const data = response.content;
+      const data = response.content as unknown;
       if (Array.isArray(data)) {
         setDisputes(data);
         setTotalItems(data.length);
-      } else if (data?.items) {
-        setDisputes(data.items);
-        setTotalItems(data.totalCount || data.items.length);
+      } else if (data && typeof data === 'object' && 'items' in data) {
+        const paged = data as { items: DisputeListDto[]; totalCount: number };
+        setDisputes(paged.items);
+        setTotalItems(paged.totalCount || paged.items.length);
       } else {
         setDisputes([]);
         setTotalItems(0);
       }
     } catch {
-      // getParentDisputes no longer throws, but handle edge cases
       setDisputes([]);
       setTotalItems(0);
     } finally {
@@ -55,20 +55,19 @@ const ParentDisputes: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchDisputes();
+    void fetchDisputes();
   }, [currentPage]);
 
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-      {/* Header */}
       <header style={{ marginBottom: '24px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#1a2238', marginBottom: '4px' }}>
             Khiếu nại của tôi
           </h1>
-          <p style={{ fontSize: '14px', color: '#666' }}>Theo dõi trạng thái các khiếu nại</p>
+          <p style={{ fontSize: '14px', color: '#666' }}>Theo dõi trạng thái các khiếu nại bạn đã gửi</p>
         </div>
         <button
           onClick={() => setCreateModalOpen(true)}
@@ -84,46 +83,27 @@ const ParentDisputes: React.FC = () => {
         </button>
       </header>
 
-      {/* Info Banner */}
-      <div style={{
-        background: 'linear-gradient(135deg, #f0f7ff 0%, #e8f4fd 100%)',
-        borderRadius: '12px',
-        padding: '16px 20px',
-        marginBottom: '20px',
-        border: '1px solid rgba(24, 144, 255, 0.15)',
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: '12px',
-      }}>
-        <span style={{ fontSize: '20px' }}>💡</span>
-        <div>
-          <p style={{ margin: 0, fontSize: '14px', color: '#1a2238', fontWeight: 600 }}>
-            Cách tạo khiếu nại
-          </p>
-          <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#666', lineHeight: 1.5 }}>
-            Bạn có thể tạo khiếu nại trực tiếp từ trang chi tiết buổi học. Vào <strong>Buổi học</strong> → chọn buổi cần khiếu nại → nhấn nút <strong>"Khiếu nại"</strong> hoặc <strong>"Báo vắng"</strong>.
-          </p>
-        </div>
-      </div>
-
-      {/* Disputes List */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px' }}>
           <Spin size="large" />
         </div>
       ) : disputes.length === 0 ? (
-        <div style={{
-          textAlign: 'center', padding: '60px', color: '#999',
-          background: '#fff', borderRadius: '12px', border: '1px solid rgba(26,34,56,0.06)',
-        }}>
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '60px',
+            color: '#999',
+            background: '#fff',
+            borderRadius: '12px',
+            border: '1px solid rgba(26,34,56,0.06)',
+          }}
+        >
           <Empty
             description={
               <div>
-                <p style={{ fontSize: '15px', color: '#666', margin: '0 0 4px' }}>
-                  Bạn chưa có khiếu nại nào
-                </p>
+                <p style={{ fontSize: '15px', color: '#666', margin: '0 0 4px' }}>Bạn chưa có khiếu nại nào</p>
                 <p style={{ fontSize: '13px', color: '#999', margin: 0 }}>
-                  Khi bạn tạo khiếu nại từ buổi học, chúng sẽ xuất hiện ở đây.
+                  Bạn có thể tạo khiếu nại trực tiếp từ trang chi tiết buổi học.
                 </p>
               </div>
             }
@@ -139,14 +119,17 @@ const ParentDisputes: React.FC = () => {
                 key={dispute.disputeId}
                 role="button"
                 tabIndex={0}
-                onClick={() => navigate(`/parent-portal/lessons/${dispute.lessonId}`)}
+                onClick={() => navigate(`/student-portal/calendar/${dispute.lessonId}`)}
                 style={{
-                  background: '#fff', borderRadius: '12px', padding: '16px 20px',
-                  border: '1px solid rgba(26,34,56,0.06)', cursor: 'pointer',
+                  background: '#fff',
+                  borderRadius: '12px',
+                  padding: '16px 20px',
+                  border: '1px solid rgba(26,34,56,0.06)',
+                  cursor: 'pointer',
                   transition: 'box-shadow 0.2s',
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'}
-                onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
+                onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)')}
+                onMouseLeave={(e) => (e.currentTarget.style.boxShadow = 'none')}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -167,12 +150,8 @@ const ParentDisputes: React.FC = () => {
                 </p>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12px', color: '#999' }}>
-                  {dispute.createdAt && (
-                    <span>Ngày tạo: {formatLocalDate(dispute.createdAt)}</span>
-                  )}
-                  {dispute.bookingId && (
-                    <span>Booking #{dispute.bookingId}</span>
-                  )}
+                  {dispute.createdAt && <span>Ngày tạo: {formatLocalDate(dispute.createdAt)}</span>}
+                  {dispute.bookingId && <span>Booking #{dispute.bookingId}</span>}
                 </div>
               </div>
             );
@@ -180,18 +159,17 @@ const ParentDisputes: React.FC = () => {
         </div>
       )}
 
-      {/* Pagination */}
       {totalPages > 1 && (
-        <div style={{
-          display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px',
-          marginTop: '24px',
-        }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '24px' }}>
           <button
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
             style={{
-              padding: '6px 12px', borderRadius: '8px', border: '1px solid #e8e8e8',
-              background: '#fff', cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              border: '1px solid #e8e8e8',
+              background: '#fff',
+              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
               opacity: currentPage === 1 ? 0.5 : 1,
             }}
           >
@@ -201,11 +179,14 @@ const ParentDisputes: React.FC = () => {
             Trang {currentPage} / {totalPages}
           </span>
           <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
             style={{
-              padding: '6px 12px', borderRadius: '8px', border: '1px solid #e8e8e8',
-              background: '#fff', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              border: '1px solid #e8e8e8',
+              background: '#fff',
+              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
               opacity: currentPage === totalPages ? 0.5 : 1,
             }}
           >
@@ -220,11 +201,11 @@ const ParentDisputes: React.FC = () => {
         onSuccess={() => {
           setCreateModalOpen(false);
           if (currentPage !== 1) setCurrentPage(1);
-          else fetchDisputes();
+          else void fetchDisputes();
         }}
       />
     </div>
   );
 };
 
-export default ParentDisputes;
+export default StudentDisputes;

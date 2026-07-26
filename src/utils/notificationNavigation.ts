@@ -16,6 +16,7 @@ const NOTIFICATION_TYPE = {
     LessonCheckin: 'lesson_checkin',
     LessonReport: 'lesson_report',
     LessonNoShow: 'lesson_no_show',
+    LessonScheduleChange: 'lesson_schedule_change',
     LessonConfirmed: 'lesson_confirmed',
     BookingNew: 'booking_new',
     BookingAccepted: 'booking_accepted',
@@ -56,6 +57,11 @@ export function getNotificationTargetPath(notification: NotificationDTO): string
                 : `${prefix}/lessons`;
 
     // ── Layer 1: Type + Referenceid (deep-link chính xác) ──
+    if (type === NOTIFICATION_TYPE.LessonScheduleChange && refId) {
+        return prefix === '/parent-portal'
+            ? lessonDetailPath(refId)
+            : `/session-lobby/${refId}`;
+    }
     if (type === NOTIFICATION_TYPE.LessonCheckin && refId) {
         return lessonDetailPath(refId);
     }

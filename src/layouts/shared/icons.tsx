@@ -106,6 +106,14 @@ export const CalendarIcon = () => (
     </svg>
 );
 
+export const DisputeIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M9 1.5L16.5 15H1.5L9 1.5Z" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M9 7V10" strokeLinecap="round" />
+        <circle cx="9" cy="12.5" r="0.75" fill="currentColor" stroke="none" />
+    </svg>
+);
+
 export const LinkIcon = () => (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M7.5 10.5L10.5 7.5" strokeLinecap="round" />

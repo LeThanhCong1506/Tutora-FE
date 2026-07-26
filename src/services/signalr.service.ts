@@ -40,6 +40,7 @@ class SignalRService {
   private chatMessageSubscribers: Set<(message: any) => void> = new Set();
   private notificationSubscribers: Set<(notification: any) => void> = new Set();
   private presenceSubscribers: Set<(presence: unknown) => void> = new Set();
+  private disputeMessageSubscribers: Set<(message: any) => void> = new Set();
   private chatLifecycleSubscribers: Set<(state: ChatConnectionLifecycle) => void> = new Set();
   private notificationLifecycleSubscribers: Set<(state: NotificationConnectionLifecycle) => void> = new Set();
 
@@ -342,6 +343,18 @@ class SignalRService {
     };
   }
 
+  /**
+   * Multi-subscriber cho tin nhắn dispute-thread mới ("disputeMessageReceived") — dùng ở
+   * trang chi tiết dispute (CMS/Tutor/Parent/Student) để chèn tin nhắn trực tiếp vào state
+   * thay vì phải refetch. Payload: DisputeMessageResponse. Trả về cleanup function.
+   */
+  subscribeToDisputeMessages(handler: (message: any) => void): () => void {
+    this.disputeMessageSubscribers.add(handler);
+    return () => {
+      this.disputeMessageSubscribers.delete(handler);
+    };
+  }
+
   subscribeToChatLifecycle(handler: (state: ChatConnectionLifecycle) => void): () => void {
     this.chatLifecycleSubscribers.add(handler);
     return () => {
@@ -558,6 +571,18 @@ class SignalRService {
           fn(presence);
         } catch (err) {
           console.error('presence subscriber failed:', err);
+        }
+      });
+    });
+
+    connection.on('disputeMessageReceived', (message: any) => {
+      if (this.notificationConnection !== connection) return;
+      console.log('💬 Dispute message received:', message);
+      this.disputeMessageSubscribers.forEach((fn) => {
+        try {
+          fn(message);
+        } catch (err) {
+          console.error('dispute message subscriber failed:', err);
         }
       });
     });
