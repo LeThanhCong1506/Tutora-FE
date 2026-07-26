@@ -20,6 +20,7 @@ import { deleteCertificate } from '../../services/certificate.service';
 import { getUserIdFromToken } from '../../services/auth.service';
 import { validateAvatar } from './utils/validation';
 import { getCertificateImageUrl, isPdfUrl } from '../../utils/certificateImage';
+import { formatGradeLevelRanges } from '../TutorSearch/components/utils';
 import styles from '../../styles/pages/tutor-portal-profile.module.css';
 
 // Icon Components
@@ -693,7 +694,12 @@ const TutorPortalProfile: React.FC = () => {
                             .filter((subject) => subject.subjectName && subject.subjectName.trim())
                             .map((subject) => (
                               <span key={subject.subjectId} className={styles.subjectTag}>
-                                {subject.subjectName}
+                                <span>{subject.subjectName}</span>
+                                {subject.gradeLevels.length > 0 && (
+                                  <span className={styles.subjectTagGrades}>
+                                    {formatGradeLevelRanges(subject.gradeLevels)}
+                                  </span>
+                                )}
                               </span>
                             ))}
                           {/* Display subject-specific tags */}
