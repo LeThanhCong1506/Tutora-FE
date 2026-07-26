@@ -8,6 +8,7 @@ import {
   reportClassSessionNoShow,
   processClassSessionNoShowAction,
   getParentCalendar as getParentCalendarReal,
+  getParentDisputesList,
   type PendingClassSessionResponse,
   type ClassSessionDetailResponse,
   type ClassSessionStudent,
@@ -15,6 +16,9 @@ import {
   type SettlementResultResponse,
   type DisputeDetailResponse,
   type NoShowActionResultResponse,
+  type DisputeListResponse,
+  type ReportNoShowRequest,
+  type ScheduleChangeAuditDto,
 } from './classSession.service';
 
 /**
@@ -71,6 +75,8 @@ export interface DisputeDetailDto {
   resolvedAt?: string;
   resolutionNote?: string;
   refundAmount?: number;
+  noShowConfirmedAt?: string;
+  noShowConfirmedBy?: string;
 }
 
 export interface DisputeListDto {
@@ -88,7 +94,6 @@ export interface DisputeListDto {
 export interface CreateDisputeRequest {
   disputeType: 'no_show' | 'quality' | 'payment' | 'other';
   reason: string;
-  evidence?: string[];
 }
 
 export interface NoShowActionRequest {
@@ -103,6 +108,8 @@ export interface NoShowActionResultDto {
   message: string;
   newLessonId?: number;
   refundAmount?: number;
+  noShowConfirmedAt?: string;
+  noShowConfirmedBy?: string;
 }
 
 export interface CalendarLessonDto {
@@ -113,6 +120,7 @@ export interface CalendarLessonDto {
   tutorName?: string;
   subjectName?: string;
   status: string;
+  bookingStatus?: string;
   meetingLink?: string;
 }
 
@@ -154,6 +162,9 @@ export interface ParentLessonDetailDto extends Omit<LessonDetailDto, 'lessonId' 
   subjectName?: string;
   tutorName?: string;
   tutorId?: string;
+  isSettled?: boolean;
+  bookingStatus?: string;
+  scheduleChanges?: ScheduleChangeAuditDto[];
 }
 
 const mapDetail = (d: ClassSessionDetailResponse): ParentLessonDetailDto => ({
@@ -164,10 +175,12 @@ const mapDetail = (d: ClassSessionDetailResponse): ParentLessonDetailDto => ({
   submittedAt: d.submittedAt,
   confirmDeadline: d.confirmDeadline,
   lessonPrice: d.classSessionPrice,
-  lessonContent: d.classSessionContent,
-  homework: d.homework,
+  lessonContent: d.report?.contentCovered ?? d.classSessionContent,
+  homework: d.report?.homeworkAssigned ?? d.homework,
   tutorNotes: d.tutorNotes,
   status: d.status,
+  isSettled: d.isSettled,
+  bookingStatus: d.bookingStatus,
   meetingLink: d.meetingLink,
   isTutorPresent: d.isTutorPresent,
   isStudentPresent: d.isStudentPresent,
@@ -191,6 +204,7 @@ const mapDetail = (d: ClassSessionDetailResponse): ParentLessonDetailDto => ({
   subjectName: d.subject?.subjectName,
   tutorName: d.tutor?.fullName,
   tutorId: d.tutor?.tutorId,
+  scheduleChanges: d.scheduleChanges,
 });
 
 const mapSettlement = (r: SettlementResultResponse): SettlementResultDto => ({
@@ -219,6 +233,8 @@ const mapDispute = (r: DisputeDetailResponse): DisputeDetailDto => ({
   resolvedAt: r.resolvedAt,
   resolutionNote: r.resolutionNote,
   refundAmount: r.refundAmount,
+  noShowConfirmedAt: r.noShowConfirmedAt,
+  noShowConfirmedBy: r.noShowConfirmedBy,
 });
 
 const mapNoShowAction = (r: NoShowActionResultResponse): NoShowActionResultDto => ({
@@ -252,26 +268,56 @@ export const confirmLesson = async (lessonId: number): Promise<ApiResponse<Settl
 export const createDispute = async (
   lessonId: number,
   request: CreateDisputeRequest,
+  files: File[] = [],
 ): Promise<ApiResponse<DisputeDetailDto>> => {
-  const response = await createClassSessionDispute(lessonId, request);
+  const response = await createClassSessionDispute(lessonId, request, files);
   return { ...response, content: mapDispute(response.content) };
 };
 
-/**
- * TODO: BE hiện không có endpoint list-disputes cho parent (route `/parent/lessons/disputes`
- * đã chết, chưa thấy route thay thế trên `ParentController`). Route `/disputes` phía FE cũng
- * đang bị comment (App.tsx) nên chưa ai gọi hàm này — để nguyên tạm thời, ném lỗi rõ ràng
- * thay vì gọi 404 âm thầm.
- */
+const mapDisputeListResponse = (r: DisputeListResponse): DisputeListDto => ({
+  disputeId: r.disputeId,
+  bookingId: r.bookingId ?? 0,
+  lessonId: r.classSessionId ?? 0,
+  disputeType: r.disputeType ?? '',
+  status: r.status ?? '',
+  reason: r.reason ?? '',
+  createdAt: r.createdAt ?? '',
+  tutorName: r.tutorName,
+  subjectName: undefined,
+});
+
 export const getParentDisputes = async (
   page: number = 1,
   pageSize: number = 10,
 ): Promise<ApiResponse<PagedList<DisputeListDto>>> => {
-  throw new Error(`getParentDisputes(page=${page}, pageSize=${pageSize}): Backend chưa có endpoint list-disputes cho parent.`);
+  const response = await getParentDisputesList(page, pageSize);
+  // BE's PagedList<T> extends List<T>, so System.Text.Json serializes it as a bare array —
+  // CurrentPage/TotalPages/TotalCount never actually reach the client. Handle both shapes
+  // defensively rather than assume the {items, totalCount} object this was written against.
+  const raw = response.content as unknown;
+  const rawItems: DisputeListResponse[] = Array.isArray(raw)
+    ? raw
+    : (raw as { items?: DisputeListResponse[] })?.items ?? [];
+  const totalCount = Array.isArray(raw) ? raw.length : (raw as { totalCount?: number })?.totalCount ?? rawItems.length;
+
+  return {
+    ...response,
+    content: {
+      items: rawItems.map(mapDisputeListResponse),
+      totalCount,
+      page,
+      pageSize,
+      totalPages: Math.ceil(totalCount / pageSize),
+    } as unknown as PagedList<DisputeListDto>,
+  };
 };
 
-export const reportNoShow = async (lessonId: number): Promise<ApiResponse<ParentLessonDetailDto>> => {
-  const response = await reportClassSessionNoShow(lessonId);
+export const reportNoShow = async (
+  lessonId: number,
+  request?: ReportNoShowRequest,
+  files: File[] = [],
+): Promise<ApiResponse<ParentLessonDetailDto>> => {
+  const response = await reportClassSessionNoShow(lessonId, request, files);
   return { ...response, content: mapDetail(response.content) };
 };
 
@@ -281,16 +327,6 @@ export const processNoShowAction = async (
 ): Promise<ApiResponse<NoShowActionResultDto>> => {
   const response = await processClassSessionNoShowAction(lessonId, request);
   return { ...response, content: mapNoShowAction(response.content) };
-};
-
-/**
- * TODO: chưa xác định được endpoint upload evidence thật trên BE (không thấy route
- * dạng `/parent/class-sessions/{id}/evidence` hay tương tự trong `ParentController`/
- * `DisputeController`). Tính năng khiếu nại đang bị ẩn ở UI (MVP Phase 1) nên chưa
- * ai gọi hàm này — `CreateDisputeForm.tsx` đã try/catch từng file nên không crash.
- */
-export const uploadDisputeEvidence = async (lessonId: number, file: File): Promise<ApiResponse<string>> => {
-  throw new Error(`uploadDisputeEvidence(lessonId=${lessonId}, file=${file.name}): chưa xác định được endpoint thật trên Backend.`);
 };
 
 export const getParentCalendar = async (
@@ -310,6 +346,7 @@ export const getParentCalendar = async (
         tutorName: c.tutorName,
         subjectName: c.subjectName,
         status: c.status ?? '',
+        bookingStatus: c.bookingStatus,
         meetingLink: c.meetingLink,
       })),
     })),

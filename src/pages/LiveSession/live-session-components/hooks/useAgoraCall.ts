@@ -9,7 +9,9 @@ import AgoraRTC, {
 import AgoraRTM, { type RTMClient, type RTMEvents } from 'agora-rtm-sdk';
 import {
   getActiveSessionConflict,
+  getAgoraErrorMessage,
   isSessionLeaseRevokedError,
+  isSessionScheduleConflictError,
   joinAgoraRoom,
   sendRoomHeartbeat,
   leaveRoom,
@@ -18,6 +20,13 @@ import {
 } from '../../../../services/agora.service';
 import type { LiveSessionIdentity } from '../../../../utils/liveSessionIdentity';
 import type { ChatMessage, RemoteParticipant } from '../types';
+
+/**
+ * Không có thao tác nào lâu hơn mốc này thì nhịp heartbeat tự khai là "idle". Đủ dài để một
+ * người đang nghe giảng chăm chú không bị coi là bỏ đi, đủ ngắn để phòng bỏ trống lộ ra
+ * trong vòng vài nhịp.
+ */
+const IDLE_AFTER_MS = 3 * 60_000;
 
 /** Tin điều khiển gửi qua RTM để đá mọi người khỏi phòng khi gia sư kết thúc buổi học. */
 const SESSION_ENDED_SIGNAL = '__SESSION_ENDED__';
@@ -54,6 +63,7 @@ interface UseAgoraCallResult {
   sessionEnded: boolean;
   /** True khi lease của thiết bị này đã bị takeover bởi thiết bị khác. */
   sessionReplaced: boolean;
+  scheduleConflictMessage: string | null;
   /** True khi gia sư đã bật theo dõi hành vi (máy học viên nhận qua RTM). Học viên KHÔNG được báo. */
   trackingRequested: boolean;
   /**
@@ -103,6 +113,15 @@ export const useAgoraCall = (
   const rtmChannelRef = useRef<string | null>(null);
   const localUidRef = useRef<string | number | null>(null);
   const localNameRef = useRef<string>('Bạn');
+  // Trạng thái mic/cam mới nhất cho heartbeat. Dùng ref chứ không đọc state trực tiếp để
+  // sendHeartbeat giữ nguyên identity — nếu không, mỗi lần bật/tắt mic sẽ reset nhịp 20s.
+  const micOnRef = useRef(initialMicOn);
+  const camOnRef = useRef(initialCamOn);
+  const screenSharingRef = useRef(false);
+  /** Mốc thao tác gần nhất của người dùng trong tab lớp học. */
+  const lastInteractionRef = useRef(Date.now());
+  /** Đang có một nhịp heartbeat trên đường đi — nhịp mới phát sinh trong lúc đó sẽ bị bỏ qua. */
+  const heartbeatInFlightRef = useRef(false);
 
   const [joined, setJoined] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -114,6 +133,7 @@ export const useAgoraCall = (
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [presenceStatus, setPresenceStatus] = useState<SessionPresenceStatus | null>(null);
   const [sessionEnded, setSessionEnded] = useState(false);
+  const [scheduleConflictMessage, setScheduleConflictMessage] = useState<string | null>(null);
   const [sessionReplaced, setSessionReplaced] = useState(false);
   const [trackingRequested, setTrackingRequested] = useState(false);
   const [emotionAlerts, setEmotionAlerts] = useState<LiveEmotionAlert[]>([]);
@@ -123,6 +143,34 @@ export const useAgoraCall = (
     (uid: string | number) => participantNames[String(uid)] ?? `Người tham gia ${uid}`,
     [participantNames],
   );
+
+  // Bản sao ref của trạng thái thiết bị, chỉ để heartbeat đọc mà không phải phụ thuộc state.
+  useEffect(() => {
+    micOnRef.current = micOn;
+  }, [micOn]);
+  useEffect(() => {
+    camOnRef.current = camOn;
+  }, [camOn]);
+  useEffect(() => {
+    screenSharingRef.current = isScreenSharing;
+  }, [isScreenSharing]);
+
+  // Theo dõi thao tác để nhịp heartbeat biết người dùng còn ngồi trước máy hay không.
+  // Chỉ ghi mốc thời gian, không lưu nội dung thao tác.
+  useEffect(() => {
+    const markInteraction = () => {
+      lastInteractionRef.current = Date.now();
+    };
+    const events: (keyof WindowEventMap)[] = ['pointerdown', 'keydown', 'wheel', 'focus'];
+    events.forEach((event) => window.addEventListener(event, markInteraction, { passive: true }));
+    // Quay lại tab cũng là một dấu hiệu có mặt, không cần đợi thao tác tiếp theo.
+    document.addEventListener('visibilitychange', markInteraction);
+
+    return () => {
+      events.forEach((event) => window.removeEventListener(event, markInteraction));
+      document.removeEventListener('visibilitychange', markInteraction);
+    };
+  }, []);
 
   useEffect(() => {
     if (!room) return;
@@ -335,19 +383,41 @@ export const useAgoraCall = (
   // Tách khỏi effect để vừa chạy theo interval, vừa gọi được tức thì khi có người mới vào phòng.
   const sendHeartbeat = useCallback(async () => {
     if (!room || leavingRef.current) return;
+    // Lúc vừa join, effect interval và effect "có người mới" cùng bắn một nhịp gần như đồng thời.
+    // Hai request song song khiến BE (đọc-rồi-ghi) tạo ra HAI đoạn heartbeat trùng nhau trong
+    // nhật ký bằng chứng. Một nhịp đang bay là đủ — nhịp thứ hai không mang thêm thông tin gì.
+    if (heartbeatInFlightRef.current) return;
+    heartbeatInFlightRef.current = true;
     try {
-      const res = await sendRoomHeartbeat(room.classSessionId, {
-        participationId: room.participationId,
-        leaseId: room.leaseId,
-      });
+      const res = await sendRoomHeartbeat(
+        room.classSessionId,
+        {
+          participationId: room.participationId,
+          leaseId: room.leaseId,
+        },
+        {
+          micOn: micOnRef.current,
+          // Chia sẻ màn hình cũng là đang publish hình — im lặng demo bài không phải bỏ lớp.
+          cameraOn: camOnRef.current || screenSharingRef.current,
+          // Tab bị ẩn, hoặc không có thao tác nào suốt IDLE_AFTER_MS. Chỉ khi cả mic lẫn cam
+          // đều tắt thì BE mới tính là "phòng bỏ không" — dạy bằng tiếng nói không bị coi là bỏ lớp.
+          idle:
+            document.visibilityState === 'hidden' ||
+            Date.now() - lastInteractionRef.current > IDLE_AFTER_MS,
+        },
+      );
       if (leavingRef.current) return;
       setPresenceStatus(res.content);
       if (res.content?.roomClosed) setSessionEnded(true);
     } catch (error) {
       if (!leavingRef.current && isSessionLeaseRevokedError(error)) {
         setSessionReplaced(true);
+      } else if (!leavingRef.current && isSessionScheduleConflictError(error)) {
+        setScheduleConflictMessage(getAgoraErrorMessage(error) || 'Buổi học hiện bị trùng với lịch khác.');
       }
-      // bỏ qua lỗi tạm thời — nhịp sau sẽ thử lại
+      // bỏ qua lỗi mạng tạm thời — nhịp sau sẽ thử lại
+    } finally {
+      heartbeatInFlightRef.current = false;
     }
   }, [room]);
 
@@ -601,6 +671,7 @@ export const useAgoraCall = (
     presenceStatus,
     sessionEnded,
     sessionReplaced,
+    scheduleConflictMessage,
     trackingRequested,
     emotionAlerts,
     emotionToasts,

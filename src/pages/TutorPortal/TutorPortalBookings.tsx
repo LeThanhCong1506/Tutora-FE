@@ -14,6 +14,7 @@ import {
 } from '../../services/booking.service';
 import { getChats, getOrCreateBookingChannel, type ChatChannel } from '../../services/chat.service';
 import { getBookingResponseDeadlineState } from '../../utils/bookingDeadline';
+import { formatVNDNumber } from '../../utils/formatters';
 
 const STATUS_TABS = [
   { key: 'pending_tutor', label: 'Chờ xác nhận' },
@@ -66,12 +67,7 @@ const formatGrade = (grade?: string): string => {
   return grade.toLowerCase().includes('lớp') ? grade : `Lớp ${grade}`;
 };
 
-const formatPrice = (amount: number) =>
-  new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0,
-  }).format(Math.max(0, amount));
+const formatPrice = (amount: number) => `${formatVNDNumber(Math.max(0, amount))} ₫`;
 
 const formatRequestDate = (value?: string) => {
   if (!value) return '';

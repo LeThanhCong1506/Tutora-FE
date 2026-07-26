@@ -4,6 +4,7 @@ import styles from './BookingRequestCard.module.css';
 import { acceptBooking, declineBooking, getBookingById, isFirstLessonFinished } from '../../services/booking.service';
 import { toast } from 'react-toastify';
 import { Modal, Input } from 'antd';
+import { formatVNDNumber } from '../../utils/formatters';
 
 interface BookingRequestData {
     bookingId: number;
@@ -143,8 +144,7 @@ const BookingRequestCard = ({ message, isTutor = false, onProceedToPayment }: Bo
         }
     };
 
-    const formatPrice = (amount: number) =>
-        new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    const formatPrice = (amount: number) => `${formatVNDNumber(amount)} ₫`;
 
     const getStatusLabel = (s: string) => {
         switch (s) {

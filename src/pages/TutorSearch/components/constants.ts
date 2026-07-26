@@ -18,11 +18,11 @@ export const trendingTags = ['Toán', 'Vật Lý', 'Hóa Học', 'Tiếng Anh'];
 
 export const budgetRangeOptions = [
   { value: 'all', label: 'MỌI GIÁ' },
-  { value: 'under_50', label: 'Dưới 50.000đ/h' },
-  { value: '50_100', label: '50.000đ - 100.000đ/h' },
-  { value: '100_200', label: '100.000đ - 200.000đ/h' },
-  { value: '200_500', label: '200.000đ - 500.000đ/h' },
-  { value: 'over_500', label: 'Trên 500.000đ/h' },
+  { value: 'under_50', label: 'Dưới 50,000đ/h' },
+  { value: '50_100', label: '50,000đ - 100,000đ/h' },
+  { value: '100_200', label: '100,000đ - 200,000đ/h' },
+  { value: '200_500', label: '200,000đ - 500,000đ/h' },
+  { value: 'over_500', label: 'Trên 500,000đ/h' },
 ];
 
 export const teachingModeOptions = [

@@ -1264,6 +1264,15 @@
   font-weight: 700;
 }
 
+.recordGradeSelect :global(.ant-select-selector) {
+  min-height: 42px !important;
+  padding-block: 4px !important;
+}
+
+.recordGradeSelect :global(.ant-select-selection-overflow) {
+  gap: 3px;
+}
+
 .recordSetupGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1440,6 +1449,27 @@
 
 .recordGrade {
   color: rgba(62, 47, 40, 0.72);
+}
+
+.recordGradeList {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.recordGradeChip {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(26, 34, 56, 0.065);
+  color: rgba(26, 34, 56, 0.76);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .recordRate {
@@ -3060,6 +3090,26 @@
   color: rgba(62, 47, 40, 0.62);
   font-size: 10.5px;
   font-weight: 700;
+}
+
+.recordsAsideGradeList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.recordsAsideGradeChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 9px;
+  border: 1px solid rgba(61, 74, 62, 0.1);
+  border-radius: 999px;
+  background: rgba(61, 74, 62, 0.08);
+  color: #3d4a3e;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .recordsAsideMetaGrid {

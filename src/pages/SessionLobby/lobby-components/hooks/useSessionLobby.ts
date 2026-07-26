@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import * as signalR from '@microsoft/signalr';
 import { getCurrentUser } from '../../../../services/auth.service';
-import type { LobbyInfo, LobbyPhase, LobbyWaitingState } from '../types';
+import type { LobbyInfo, LobbyPhase, LobbyWaitingState, ScheduleChangeState, SessionScheduleConflict } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5166';
 const LOBBY_HUB_URL = `${API_BASE_URL}/hubs/session-lobby`;
@@ -23,6 +23,10 @@ interface UseSessionLobbyResult {
   phase: LobbyPhase;
   info: LobbyInfo | null;
   waitingState: LobbyWaitingState | null;
+  scheduleChangeState: ScheduleChangeState | null;
+  scheduleConflict: SessionScheduleConflict | null;
+  respondingToScheduleChange: boolean;
+  respondToScheduleChange: (confirmed: boolean) => Promise<void>;
   errorMessage: string | null;
   /** Kết nối lại từ đầu sau khi lỗi. */
   retry: () => void;
@@ -40,6 +44,9 @@ export const useSessionLobby = (classSessionId: number | null): UseSessionLobbyR
   const [phase, setPhase] = useState<LobbyPhase>('connecting');
   const [info, setInfo] = useState<LobbyInfo | null>(null);
   const [waitingState, setWaitingState] = useState<LobbyWaitingState | null>(null);
+  const [scheduleChangeState, setScheduleChangeState] = useState<ScheduleChangeState | null>(null);
+  const [scheduleConflict, setScheduleConflict] = useState<SessionScheduleConflict | null>(null);
+  const [respondingToScheduleChange, setRespondingToScheduleChange] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
 
@@ -67,6 +74,23 @@ export const useSessionLobby = (classSessionId: number | null): UseSessionLobbyR
       setWaitingState(payload);
       // lobbyState chỉ đến khi mình đã ở trong lobby → từ connecting chuyển sang waiting.
       setPhase((prev) => (prev === 'connecting' ? 'waiting' : prev));
+    });
+
+    connection.on('scheduleChangeState', (payload: ScheduleChangeState) => {
+      if (disposed) return;
+      setScheduleChangeState(payload);
+      setScheduleConflict(payload.scheduleConflict ?? null);
+      if (payload.scheduleConflict) setPhase('waiting');
+    });
+
+    connection.on('scheduleConflict', (payload: SessionScheduleConflict) => {
+      if (disposed) return;
+      setScheduleConflict(payload);
+      setPhase('waiting');
+    });
+
+    connection.on('scheduleConflictCleared', () => {
+      if (!disposed) setScheduleConflict(null);
     });
 
     connection.on('sessionReady', () => {
@@ -162,9 +186,39 @@ export const useSessionLobby = (classSessionId: number | null): UseSessionLobbyR
     setPhase('connecting');
     setInfo(null);
     setWaitingState(null);
+    setScheduleChangeState(null);
+    setScheduleConflict(null);
     setErrorMessage(null);
     setRetryKey((k) => k + 1);
   };
 
-  return { phase, info, waitingState, errorMessage, retry };
+  const respondToScheduleChange = useCallback(
+    async (confirmed: boolean) => {
+      const connection = connectionRef.current;
+      if (classSessionId == null || connection?.state !== signalR.HubConnectionState.Connected) {
+        throw new Error('Phòng chờ chưa kết nối.');
+      }
+      setRespondingToScheduleChange(true);
+      try {
+        await connection.invoke('RespondToScheduleChange', classSessionId, confirmed);
+      } catch (err) {
+        throw new Error(extractHubError(err) || 'Không thể gửi xác nhận đổi lịch.');
+      } finally {
+        setRespondingToScheduleChange(false);
+      }
+    },
+    [classSessionId],
+  );
+
+  return {
+    phase,
+    info,
+    waitingState,
+    scheduleChangeState,
+    scheduleConflict,
+    respondingToScheduleChange,
+    respondToScheduleChange,
+    errorMessage,
+    retry,
+  };
 };

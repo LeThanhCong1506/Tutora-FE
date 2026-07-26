@@ -22,6 +22,7 @@ import { ToastContainer, Slide } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 // TUTORA brand override — phải import SAU default CSS để cascade thắng.
 import './styles/toastify.css';
+import ParentDisputes from './pages/ParentDisputes';
 
 // --- Lazy-loaded pages ---
 // Public
@@ -51,6 +52,7 @@ const TutorPortalDashboard = lazy(() => import('./pages/TutorPortal/TutorPortalD
 const TutorPortalMessages = lazy(() => import('./pages/TutorPortal/TutorPortalMessages'));
 const TutorPortalCalendar = lazy(() => import('./pages/TutorPortal/TutorPortalCalendar'));
 const TutorPortalClassSessionDetail = lazy(() => import('./pages/TutorPortal/TutorPortalClassSessionDetail'));
+const TutorPortalDisputes = lazy(() => import('./pages/TutorPortal/TutorPortalDisputes'));
 const TutorPortalStudentProfile = lazy(() => import('./pages/TutorPortal/TutorPortalStudentProfile'));
 const TutorPortalBookings = lazy(() => import('./pages/TutorPortal/TutorPortalBookings'));
 const TutorFinanceDashboardPage = lazy(
@@ -83,6 +85,7 @@ const StudentWallet = lazy(() => import('./pages/StudentWallet'));
 const StudentBooking = lazy(() => import('./pages/StudentBooking'));
 const StudentLessons = lazy(() => import('./pages/StudentLessons'));
 const StudentLessonDetail = lazy(() => import('./pages/StudentLessons/StudentLessonDetail'));
+const StudentDisputes = lazy(() => import('./pages/StudentLessons/StudentDisputes'));
 const StudentAccount = lazy(() => import('./pages/StudentAccount'));
 const StudentProfile = lazy(() => import('./pages/StudentProfile'));
 
@@ -224,6 +227,7 @@ function App() {
                   <Route path="calendar" element={<TutorPortalCalendar />} />
                   <Route path="class-sessions" element={<Navigate to="/tutor-portal/calendar" replace />} />
                   <Route path="class-sessions/:classSessionId" element={<TutorPortalClassSessionDetail />} />
+                  <Route path="disputes" element={<TutorPortalDisputes />} />
                   {/* Legacy: URL /classes từng dùng bookingId, nên quay về lịch thay vì hiểu nhầm là classSessionId. */}
                   <Route path="classes" element={<LegacyTutorClassesRedirect />} />
                   <Route path="classes/:classId" element={<LegacyTutorClassesRedirect />} />
@@ -264,7 +268,7 @@ function App() {
               <Route path="lessons/:lessonId" element={<ParentLessonDetail />} />
               <Route path="account" element={<ParentAccount />} />
               <Route path="notifications" element={<NotificationsPage />} />
-              {/* <Route path="disputes" element={<ParentDisputes />} /> */}
+              <Route path="disputes" element={<ParentDisputes />} />
             </Route>
 
             {/* Student Layout - PROTECTED */}
@@ -293,6 +297,7 @@ function App() {
                   <Route path="wallet" element={<StudentWallet />} />
                   <Route path="wallet/transactions" element={<ParentWalletTransactions />} />
                   <Route path="wallet/withdrawals" element={<ParentWalletWithdrawals />} />
+                  <Route path="disputes" element={<StudentDisputes />} />
                 </Route>
                 <Route path="messages" element={<ParentMessage />} />
                 <Route path="profile" element={<StudentProfile />} />
@@ -309,7 +314,7 @@ function App() {
             <Route
               path="/live-session/:classSessionId"
               element={
-                <ProtectedRoute allowedRoles={['Tutor', 'Parent', 'Student']}>
+                <ProtectedRoute allowedRoles={['Tutor', 'Student']}>
                   <LiveSession />
                 </ProtectedRoute>
               }
@@ -319,7 +324,7 @@ function App() {
             <Route
               path="/session-lobby/:classSessionId"
               element={
-                <ProtectedRoute allowedRoles={['Tutor', 'Parent', 'Student']}>
+                <ProtectedRoute allowedRoles={['Tutor', 'Student']}>
                   <SessionLobby />
                 </ProtectedRoute>
               }

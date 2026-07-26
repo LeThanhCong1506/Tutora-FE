@@ -4,14 +4,25 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
     ArrowLeft, BookOpen, AlertCircle, Video,
     Calendar as CalendarIcon, FileText, ClipboardCheck, Star,
-    User, PlayCircle, StopCircle, Paperclip, Download,
+    User, PlayCircle, StopCircle, Paperclip, Download, CalendarClock,
 } from 'lucide-react';
 import dayjs from 'dayjs';
-import { getStudentLessonDetail, confirmStudentLesson } from '../../services/student-lesson.service';
+import { getStudentLessonDetail, confirmStudentLesson, type StudentLessonDetailDto } from '../../services/student-lesson.service';
+import {
+    getClassSessionDispute,
+    getClassSessionDisputeThread,
+    sendClassSessionDisputeThreadMessage,
+    type DisputeDetailResponse,
+    type DisputeMessage,
+} from '../../services/classSession.service';
+import { signalRService } from '../../services/signalr.service';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
-import type { LessonDetailDto } from '../../services/lesson.service';
 import { message as antMessage, Spin, Modal } from 'antd';
 import CreateFeedbackModal from '../ParentLessons/components/CreateFeedbackModal';
+import CreateDisputeForm from '../ParentLessons/components/CreateDisputeForm';
+import ReportNoShowModal from '../ParentLessons/components/ReportNoShowModal';
+import NoShowActionModal from '../ParentLessons/components/NoShowActionModal';
+import { useStudentProfile } from '../../contexts/StudentProfileContext';
 import s from '../StudentPages.module.css';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 import { canJoinLiveSession } from '../../utils/liveSession';
@@ -58,15 +69,25 @@ const getFileNameFromUrl = (url: string): string => {
     }
 };
 
+const TERMINAL_BOOKING_STATUSES = ['completed', 'cancelled', 'cancelled_noshow'];
+
 // ─────────────────────────────────────────────────────────────────────────
 const StudentLessonDetail = () => {
     const { lessonId } = useParams<{ lessonId: string }>();
     const navigate = useNavigate();
-    const [lesson, setLesson] = useState<LessonDetailDto | null>(null);
+    const { isParentManaged } = useStudentProfile();
+    const [lesson, setLesson] = useState<StudentLessonDetailDto | null>(null);
     const [loading, setLoading] = useState(true);
     const [confirming, setConfirming] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+    const [showDisputeForm, setShowDisputeForm] = useState(false);
+    const [showNoShowModal, setShowNoShowModal] = useState(false);
+    const [showNoShowActionModal, setShowNoShowActionModal] = useState(false);
+    const [dispute, setDispute] = useState<DisputeDetailResponse | null>(null);
+    const [thread, setThread] = useState<DisputeMessage[]>([]);
+    const [threadInput, setThreadInput] = useState('');
+    const [sendingThreadMessage, setSendingThreadMessage] = useState(false);
 
     const fetchDetail = useCallback(async () => {
         if (!lessonId) return;
@@ -81,9 +102,60 @@ const StudentLessonDetail = () => {
         }
     }, [lessonId]);
 
+    const fetchDispute = useCallback(async () => {
+        if (!lessonId) return;
+        try {
+            const response = await getClassSessionDispute(parseInt(lessonId));
+            setDispute(response.content);
+        } catch {
+            setDispute(null);
+        }
+    }, [lessonId]);
+
+    const fetchThread = useCallback(async () => {
+        if (!lessonId) return;
+        try {
+            const response = await getClassSessionDisputeThread(parseInt(lessonId));
+            setThread(response.content);
+        } catch (requestError: unknown) {
+            console.error('Failed to load dispute thread', requestError);
+        }
+    }, [lessonId]);
+
+    const handleSendThreadMessage = async () => {
+        if (!lessonId || threadInput.trim().length === 0) return;
+        setSendingThreadMessage(true);
+        try {
+            await sendClassSessionDisputeThreadMessage(parseInt(lessonId), threadInput.trim());
+            setThreadInput('');
+            await fetchThread();
+        } catch (error: any) {
+            antMessage.error(error.response?.data?.message || 'Không thể gửi tin nhắn');
+        } finally {
+            setSendingThreadMessage(false);
+        }
+    };
+
     useEffect(() => {
         fetchDetail();
-    }, [fetchDetail]);
+        fetchDispute();
+    }, [fetchDetail, fetchDispute]);
+
+    useEffect(() => {
+        if (dispute) void fetchThread();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dispute?.disputeId]);
+
+    // Real-time: chèn tin nhắn mới trực tiếp thay vì phải F5/refetch.
+    useEffect(() => {
+        if (!dispute) return;
+        const unsubscribe = signalRService.subscribeToDisputeMessages((message: DisputeMessage) => {
+            if (message.disputeId !== dispute.disputeId) return;
+            setThread((prev) => (prev.some((m) => m.disputeMessageId === message.disputeMessageId) ? prev : [...prev, message]));
+            antMessage.info(`Admin: ${message.message}`);
+        });
+        return unsubscribe;
+    }, [dispute]);
 
     useLessonStartedListener(fetchDetail);
 
@@ -105,7 +177,11 @@ const StudentLessonDetail = () => {
     const handleActionSuccess = () => {
         setShowConfirmModal(false);
         setShowFeedbackModal(false);
+        setShowDisputeForm(false);
+        setShowNoShowModal(false);
+        setShowNoShowActionModal(false);
         fetchDetail();
+        fetchDispute();
     };
 
     // ── Loading ──
@@ -151,6 +227,8 @@ const StudentLessonDetail = () => {
     const tutorName = (lesson as any).tutorName ?? (lesson as any).tutor?.fullName ?? 'Gia sư';
     const subjectName = (lesson as any).subjectName ?? (lesson as any).subject?.subjectName ?? 'Buổi học';
     const report = (lesson as any).report;
+    const canCreateDispute = !isParentManaged
+        && !TERMINAL_BOOKING_STATUSES.includes(String(lesson.bookingStatus || '').toLowerCase());
 
     return (
         <div className={s.page}>
@@ -276,12 +354,184 @@ const StudentLessonDetail = () => {
                                 Gia sư đã gửi báo cáo. Hãy xác nhận để hoàn tất thanh toán.
                             </div>
                         </div>
-                        <button
-                            style={actionBtnConfirm}
-                            onClick={() => setShowConfirmModal(true)}
-                        >
-                            <ClipboardCheck size={15} /> Xác nhận
+                        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                            <button
+                                style={actionBtnConfirm}
+                                onClick={() => setShowConfirmModal(true)}
+                            >
+                                <ClipboardCheck size={15} /> Xác nhận
+                            </button>
+                            {canCreateDispute && (
+                                <button
+                                    style={actionBtnDispute}
+                                    onClick={() => setShowDisputeForm(true)}
+                                >
+                                    Khiếu nại
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {dispute && (
+                    <div style={{ background: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid rgba(26,34,56,0.06)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                            <span style={{ fontSize: '15px', fontWeight: 700, color: '#1a2238' }}>Khiếu nại của bạn</span>
+                            <span style={{
+                                fontSize: '12px', fontWeight: 600, padding: '4px 10px', borderRadius: 999,
+                                color: dispute.status === 'resolved' || dispute.status === 'confirmed_no_show' ? '#166534' : dispute.status === 'investigating' ? '#1e40af' : '#92400e',
+                                background: dispute.status === 'resolved' || dispute.status === 'confirmed_no_show' ? '#dcfce7' : dispute.status === 'investigating' ? '#dbeafe' : '#fef3c7',
+                            }}>
+                                {dispute.status === 'resolved'
+                                    ? 'Đã giải quyết'
+                                    : dispute.status === 'confirmed_no_show'
+                                        ? 'Đã xác nhận vắng mặt'
+                                        : dispute.status === 'investigating'
+                                            ? 'Đang xem xét'
+                                            : 'Chờ xử lý'}
+                            </span>
+                        </div>
+                        <div style={{ fontSize: '13px', color: '#666', marginBottom: dispute.evidence?.length ? '12px' : 0 }}>
+                            {dispute.reason || 'Không có mô tả.'}
+                        </div>
+                        {Array.isArray(dispute.evidence) && dispute.evidence.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                {dispute.evidence.map((url: string, index: number) => (
+                                    <a
+                                        key={`${url}-${index}`}
+                                        href={url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: 10,
+                                            padding: '10px 14px', background: '#fafaf8', borderRadius: 10,
+                                            border: '1px solid rgba(26,34,56,0.06)', textDecoration: 'none',
+                                        }}
+                                    >
+                                        <Paperclip size={14} style={{ flexShrink: 0, color: '#6366F1' }} />
+                                        <span style={{ flex: 1, minWidth: 0, fontSize: '13px', color: '#1a2238', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {getFileNameFromUrl(url)}
+                                        </span>
+                                        <Download size={14} style={{ flexShrink: 0, color: '#9ca3af' }} />
+                                    </a>
+                                ))}
+                            </div>
+                        )}
+                        {Array.isArray(dispute.additionalEvidence) && dispute.additionalEvidence.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: dispute.evidence?.length ? 8 : 0 }}>
+                                {dispute.additionalEvidence.map((item) => (
+                                    <a
+                                        key={item.disputeEvidenceId}
+                                        href={item.fileUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: 10,
+                                            padding: '10px 14px', background: '#fafaf8', borderRadius: 10,
+                                            border: '1px solid rgba(26,34,56,0.06)', textDecoration: 'none',
+                                        }}
+                                    >
+                                        <Paperclip size={14} style={{ flexShrink: 0, color: '#6366F1' }} />
+                                        <span style={{ flex: 1, minWidth: 0, fontSize: '13px', color: '#1a2238', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {item.fileUrl ? getFileNameFromUrl(item.fileUrl) : 'Bằng chứng'}
+                                        </span>
+                                        <Download size={14} style={{ flexShrink: 0, color: '#9ca3af' }} />
+                                    </a>
+                                ))}
+                            </div>
+                        )}
+                        {dispute.status === 'resolved' && (
+                            <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(26,34,56,0.06)' }}>
+                                <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Kết quả xử lý</div>
+                                <div style={{ fontSize: '14px', color: '#1a2238' }}>{dispute.resolutionNote || 'Không có ghi chú.'}</div>
+                            </div>
+                        )}
+                        {dispute.status !== 'resolved' && (
+                            <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid rgba(26,34,56,0.06)' }}>
+                                <div style={{ fontSize: '13px', fontWeight: 600, color: '#1a2238', marginBottom: 8 }}>Chat riêng với admin</div>
+                                {thread.length > 0 && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10, maxHeight: 220, overflowY: 'auto' }}>
+                                        {thread.map((msg) => (
+                                            <div
+                                                key={msg.disputeMessageId}
+                                                style={{
+                                                    alignSelf: msg.senderRole === 'admin' ? 'flex-start' : 'flex-end',
+                                                    maxWidth: '80%',
+                                                    padding: '8px 12px',
+                                                    borderRadius: 8,
+                                                    background: msg.senderRole === 'admin' ? '#eef2ff' : '#f1f5f9',
+                                                }}
+                                            >
+                                                <p style={{ margin: '0 0 2px', fontSize: 11, fontWeight: 600, color: '#64748b' }}>
+                                                    {msg.senderRole === 'admin' ? 'Admin' : 'Bạn'}
+                                                </p>
+                                                <p style={{ margin: 0, fontSize: 13, whiteSpace: 'pre-wrap' }}>{msg.message}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                    <input
+                                        type="text"
+                                        value={threadInput}
+                                        onChange={(event) => setThreadInput(event.target.value)}
+                                        placeholder="Nhắn cho admin..."
+                                        style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid #d9dde3', fontSize: 13 }}
+                                        onKeyDown={(event) => {
+                                            if (event.key === 'Enter') void handleSendThreadMessage();
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        style={actionBtnConfirm}
+                                        disabled={sendingThreadMessage || threadInput.trim().length === 0}
+                                        onClick={() => void handleSendThreadMessage()}
+                                    >
+                                        Gửi
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {lesson.status === 'scheduled' && !isParentManaged && (
+                    <div style={actionCardConfirm}>
+                        <div style={actionCardIconWrap}>
+                            <AlertCircle size={20} style={{ color: '#d97706' }} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={actionCardTitle}>Gia sư chưa vào lớp</div>
+                            <div style={actionCardDesc}>
+                                Nếu gia sư không có mặt, bạn có thể báo cáo vắng mặt ngay.
+                            </div>
+                        </div>
+                        <button style={actionBtnDispute} onClick={() => setShowNoShowModal(true)}>
+                            Báo gia sư vắng mặt
                         </button>
+                    </div>
+                )}
+
+                {lesson.status === 'no_show' && !isParentManaged && (
+                    <div style={actionCardConfirm}>
+                        <div style={actionCardIconWrap}>
+                            <AlertCircle size={20} style={{ color: '#d97706' }} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={actionCardTitle}>
+                                {dispute?.status === 'confirmed_no_show' ? 'Admin đã xác nhận gia sư vắng mặt' : 'Báo cáo đang chờ xác nhận'}
+                            </div>
+                            <div style={actionCardDesc}>
+                                {dispute?.status === 'confirmed_no_show'
+                                    ? 'Bạn có thể chọn hướng xử lý cho buổi học này.'
+                                    : 'Chưa có hoàn tiền hoặc cảnh báo nào được áp dụng.'}
+                            </div>
+                        </div>
+                        {dispute?.status === 'confirmed_no_show' && (
+                            <button style={actionBtnDispute} onClick={() => setShowNoShowActionModal(true)}>
+                                Chọn hành động xử lý
+                            </button>
+                        )}
                     </div>
                 )}
 
@@ -302,6 +552,61 @@ const StudentLessonDetail = () => {
                         >
                             <Star size={15} /> Đánh giá
                         </button>
+                        {!dispute && canCreateDispute && (
+                            <button
+                                style={actionBtnDispute}
+                                onClick={() => setShowDisputeForm(true)}
+                            >
+                                Báo cáo gia sư
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {/* ─── Lịch sử dời lịch (nếu có) ─── */}
+                {Array.isArray(lesson.scheduleChanges) && lesson.scheduleChanges.length > 0 && (
+                    <div style={sectionCard}>
+                        <div style={sectionHeaderRow}>
+                            <div style={{ ...sectionIconWrap, background: 'rgba(217,119,6,0.10)' }}>
+                                <CalendarClock size={16} style={{ color: '#d97706' }} />
+                            </div>
+                            <div style={sectionTitleText}>Lịch sử dời lịch</div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            {lesson.scheduleChanges.map((sc: any) => {
+                                const statusLabel: Record<string, string> = {
+                                    applied: 'Đã áp dụng',
+                                    approved: 'Hai bên đã đồng ý',
+                                    rejected: 'Đã từ chối',
+                                    expired: 'Đã hết hạn',
+                                    pending: 'Đang chờ xác nhận',
+                                };
+                                return (
+                                    <div key={sc.scheduleChangeId} style={reportRowBlock}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
+                                            <span style={reportLabelStyle}>{statusLabel[sc.status] || sc.status}</span>
+                                            {sc.appliedAt && (
+                                                <span style={{ fontSize: 12, color: '#9ca3af' }}>
+                                                    Áp dụng lúc {formatLongDate(sc.appliedAt)} {formatTime(sc.appliedAt)}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div style={reportValueStyle}>
+                                            {formatLongDate(sc.originalScheduledStart)}, {formatTime(sc.originalScheduledStart)}–{formatTime(sc.originalScheduledEnd)}
+                                            {sc.adjustedScheduledStart && (
+                                                <> {'→'} {formatLongDate(sc.adjustedScheduledStart)}, {formatTime(sc.adjustedScheduledStart)}–{formatTime(sc.adjustedScheduledEnd)}</>
+                                            )}
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 20, marginTop: 8, fontSize: 12, color: '#666', flexWrap: 'wrap' }}>
+                                            <span>Gia sư: {sc.tutorConfirmedByName ? `${sc.tutorConfirmedByName} đã xác nhận` : 'Chưa xác nhận'}</span>
+                                            <span>
+                                                {sc.learnerApproverRole === 'Student' ? 'Học sinh' : 'Phụ huynh'}: {sc.learnerConfirmedByName ? `${sc.learnerConfirmedByName} đã xác nhận` : 'Chưa xác nhận'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 )}
 
@@ -351,9 +656,9 @@ const StudentLessonDetail = () => {
                             {report.homeworkAssigned && (
                                 <ReportRow label="Bài tập giao" value={report.homeworkAssigned} />
                             )}
-                            {report.studentPerformanceRating != null && (
-                                <div style={ratingRow}>
-                                    <span style={reportLabelStyle}>Đánh giá học sinh</span>
+                            <div style={ratingRow}>
+                                <span style={reportLabelStyle}>Đánh giá học sinh</span>
+                                {report.studentPerformanceRating > 0 ? (
                                     <div style={ratingStars}>
                                         {[1, 2, 3, 4, 5].map(i => (
                                             <Star
@@ -368,8 +673,10 @@ const StudentLessonDetail = () => {
                                             {report.studentPerformanceRating}/5
                                         </span>
                                     </div>
-                                </div>
-                            )}
+                                ) : (
+                                    <span style={{ fontSize: 13, color: '#999' }}>Chưa đánh giá</span>
+                                )}
+                            </div>
                             {Array.isArray(report.attachments) && report.attachments.length > 0 && (
                                 <div>
                                     <span style={reportLabelStyle}>Tệp đính kèm</span>
@@ -417,6 +724,27 @@ const StudentLessonDetail = () => {
                     tutorId={(lesson as any).tutorId || (lesson as any).tutor?.tutorId}
                     tutorName={tutorName}
                     subjectName={subjectName}
+                />
+
+                <CreateDisputeForm
+                    open={showDisputeForm}
+                    lessonId={lesson.lessonId}
+                    onSuccess={handleActionSuccess}
+                    onCancel={() => setShowDisputeForm(false)}
+                />
+
+                <ReportNoShowModal
+                    open={showNoShowModal}
+                    lessonId={lesson.lessonId}
+                    onSuccess={handleActionSuccess}
+                    onCancel={() => setShowNoShowModal(false)}
+                />
+
+                <NoShowActionModal
+                    open={showNoShowActionModal}
+                    lessonId={lesson.lessonId}
+                    onSuccess={handleActionSuccess}
+                    onCancel={() => setShowNoShowActionModal(false)}
                 />
             </div>
         </div>
@@ -867,6 +1195,12 @@ const actionBtnConfirm: React.CSSProperties = {
     ...actionBtnBase,
     background: 'linear-gradient(135deg, #d97706, #f59e0b)',
     boxShadow: '0 2px 8px rgba(217,119,6,0.25)',
+};
+
+const actionBtnDispute: React.CSSProperties = {
+    ...actionBtnBase,
+    background: 'linear-gradient(135deg, #dc2626, #ef4444)',
+    boxShadow: '0 2px 8px rgba(220,38,38,0.25)',
 };
 
 const actionBtnFeedback: React.CSSProperties = {

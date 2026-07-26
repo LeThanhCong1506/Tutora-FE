@@ -88,6 +88,24 @@ export interface ClassSessionReport {
     createdAt?: string;
 }
 
+/** Lịch sử dời lịch của một buổi học — mirror BE `DisputeScheduleChangeAuditResponse`. */
+export interface ScheduleChangeAuditDto {
+    scheduleChangeId: number;
+    status: 'pending' | 'approved' | 'applied' | 'rejected' | 'expired' | string;
+    originalScheduledStart: string;
+    originalScheduledEnd: string;
+    adjustedScheduledStart?: string;
+    adjustedScheduledEnd?: string;
+    learnerApproverRole: 'Parent' | 'Student' | string;
+    tutorConfirmedByName?: string;
+    tutorConfirmedAt?: string;
+    learnerConfirmedByName?: string;
+    learnerConfirmedAt?: string;
+    requestedAt?: string;
+    approvedAt?: string;
+    appliedAt?: string;
+}
+
 export interface ClassSessionDetailResponse {
     classSessionId: number;
     bookingId?: number;
@@ -101,6 +119,7 @@ export interface ClassSessionDetailResponse {
     isStudentPresent?: boolean;
     attendanceNote?: string;
     status?: ClassSessionStatus;
+    bookingStatus?: string;
     submittedAt?: string;
     confirmDeadline?: string;
     parentAckAt?: string;
@@ -122,6 +141,7 @@ export interface ClassSessionDetailResponse {
     timeRemainingToConfirm?: string | null;
     canCheckIn: boolean;
     canSubmitReport: boolean;
+    scheduleChanges?: ScheduleChangeAuditDto[];
 }
 
 // ── Request DTOs ──
@@ -153,6 +173,7 @@ export interface CalendarClassSessionResponse {
     tutorName?: string;
     subjectName?: string;
     status?: ClassSessionStatus;
+    bookingStatus?: string;
     meetingLink?: string;
     /** Đã check-out (phòng đóng vĩnh viễn) — in_progress + checkOutTime = chờ gửi báo cáo. */
     checkOutTime?: string;
@@ -354,6 +375,59 @@ export const getParentClassSessionDetail = async (id: number): Promise<ApiRespon
     const response = await api.get(`/parent/class-sessions/${id}`, { headers: getAuthHeaders() });
     return response.data;
 };
+export interface SessionScheduleChangeResponse {
+    classSessionId: number;
+    requiresConfirmation: boolean;
+    canCurrentUserConfirm: boolean;
+    currentUserConfirmed: boolean;
+    admissionAllowed: boolean;
+    status?: string;
+    tutorUserId?: string;
+    learnerApproverUserId?: string;
+    requiredLearnerRole?: 'Student' | 'Parent';
+    requiredLearnerName?: string;
+    tutorName?: string;
+    studentName?: string;
+    originalScheduledStart: string;
+    originalScheduledEnd: string;
+    durationMinutes: number;
+    requestedAt?: string;
+    expiresAt?: string;
+    tutorConfirmedAt?: string;
+    learnerConfirmedAt?: string;
+    approvedAt?: string;
+    appliedAt?: string;
+    adjustedScheduledStart?: string;
+    adjustedScheduledEnd?: string;
+    scheduleConflict?: {
+        classSessionId: number;
+        scheduledStart: string;
+        scheduledEnd: string;
+        conflictingParty: 'tutor' | 'student' | 'tutor_and_student';
+        message: string;
+    };
+}
+
+export const getParentScheduleChange = async (
+    id: number,
+): Promise<ApiResponse<SessionScheduleChangeResponse>> => {
+    const response = await api.get(`/parent/class-sessions/${id}/schedule-change`, {
+        headers: getAuthHeaders(),
+    });
+    return response.data;
+};
+
+export const respondParentScheduleChange = async (
+    id: number,
+    confirmed: boolean,
+): Promise<ApiResponse<SessionScheduleChangeResponse>> => {
+    const response = await api.post(
+        `/parent/class-sessions/${id}/schedule-change/respond`,
+        { confirmed },
+        { headers: getAuthHeaders() },
+    );
+    return response.data;
+};
 
 export interface SettlementResultResponse {
     classSessionId: number;
@@ -377,7 +451,6 @@ export const confirmParentClassSession = async (id: number): Promise<ApiResponse
 export interface CreateDisputeRequest {
     disputeType: 'no_show' | 'quality' | 'payment' | 'other';
     reason: string;
-    evidence?: string[];
 }
 
 export interface DisputeUserInfo {
@@ -400,6 +473,14 @@ export interface DisputeClassSessionInfo {
     isStudentPresent?: boolean;
 }
 
+export interface DisputeEvidenceItem {
+    disputeEvidenceId: number;
+    fileUrl?: string;
+    fileType?: string;
+    description?: string;
+    createdAt?: string;
+}
+
 export interface DisputeDetailResponse {
     disputeId: number;
     bookingId?: number;
@@ -413,19 +494,45 @@ export interface DisputeDetailResponse {
     resolutionNote?: string;
     refundAmount?: number;
     refundPercentage?: number;
+    tutorResponse?: string;
+    tutorRespondedAt?: string;
+    additionalEvidence?: DisputeEvidenceItem[];
     createdBy?: DisputeUserInfo;
     resolvedBy?: DisputeUserInfo;
     classSession?: DisputeClassSessionInfo;
     tutor?: { tutorId?: string; fullName?: string; email?: string; phone?: string; warningCount: number; averageRating?: number };
     timeSinceCreation?: string;
+    /** Earliest time admin can start investigating (createdAt + 48h) — after this, response/evidence lock. */
+    tutorResponseDeadline?: string;
+    /** Thời điểm quản trị viên xác nhận báo cáo tutor no-show. */
+    noShowConfirmedAt?: string;
+    /** User id của quản trị viên đã xác nhận tutor no-show. */
+    noShowConfirmedBy?: string;
 }
 
 /** ClassSession phải ở trạng thái `pending_confirmation` hoặc `completed`, và chưa từng bị khiếu nại. */
 export const createClassSessionDispute = async (
     id: number,
     request: CreateDisputeRequest,
+    files: File[] = [],
 ): Promise<ApiResponse<DisputeDetailResponse>> => {
-    const response = await api.post(`/parent/class-sessions/${id}/dispute`, request, { headers: getAuthHeaders() });
+    const formData = new FormData();
+    formData.append('disputeType', request.disputeType);
+    formData.append('reason', request.reason);
+    files.forEach((file) => formData.append('files', file));
+
+    const response = await api.post(`/parent/class-sessions/${id}/dispute`, formData, {
+        headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return response.data;
+};
+
+/** Xem lại dispute đã tạo cho classSession này (trạng thái, bằng chứng, phản hồi gia sư khi có). */
+export const getClassSessionDispute = async (id: number): Promise<ApiResponse<DisputeDetailResponse>> => {
+    const response = await api.get(`/parent/class-sessions/${id}/dispute`, { headers: getAuthHeaders() });
     return response.data;
 };
 
@@ -442,8 +549,27 @@ export const getParentCalendar = async (
 
 // ── No-show — `ClassSessionController`, parent-only, `api/class-sessions/{id}/*` ──
 
-export const reportClassSessionNoShow = async (id: number): Promise<ApiResponse<ClassSessionDetailResponse>> => {
-    const response = await api.post(`/class-sessions/${id}/report-no-show`, {}, { headers: getAuthHeaders() });
+export interface ReportNoShowRequest {
+    reportedAt?: string;
+    reason?: string;
+}
+
+export const reportClassSessionNoShow = async (
+    id: number,
+    request?: ReportNoShowRequest,
+    files: File[] = [],
+): Promise<ApiResponse<ClassSessionDetailResponse>> => {
+    const formData = new FormData();
+    if (request?.reportedAt) formData.append('reportedAt', request.reportedAt);
+    if (request?.reason) formData.append('reason', request.reason);
+    files.forEach((file) => formData.append('files', file));
+
+    const response = await api.post(`/class-sessions/${id}/report-no-show`, formData, {
+        headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'multipart/form-data',
+        },
+    });
     return response.data;
 };
 
@@ -485,6 +611,8 @@ export const getClassSessionById = async (id: number): Promise<ApiResponse<Class
 export interface StudentClassSessionSummaryResponse {
     classSessionId: number;
     status?: ClassSessionStatus;
+    bookingStatus?: string;
+    isSettled?: boolean;
     scheduledStart?: string;
     scheduledEnd?: string;
     confirmDeadline?: string;
@@ -498,6 +626,8 @@ export interface StudentClassSessionReport {
     topicsCovered?: string;
     homeworkAssigned?: string;
     tutorNotes?: string;
+    studentPerformanceRating?: number;
+    attachments?: string[];
 }
 
 export interface StudentClassSessionDetailResponse extends StudentClassSessionSummaryResponse {
@@ -506,6 +636,7 @@ export interface StudentClassSessionDetailResponse extends StudentClassSessionSu
     checkoutTime?: string;
     tutorAvatar?: string;
     report?: StudentClassSessionReport;
+    scheduleChanges?: ScheduleChangeAuditDto[];
 }
 
 export const getStudentClassSessions = async (
@@ -547,5 +678,103 @@ export const getStudentCalendar = async (
 
 export const confirmStudentClassSession = async (id: number): Promise<ApiResponse<string>> => {
     const response = await api.put(`/student/class-sessions/${id}/confirm`, {}, { headers: getAuthHeaders() });
+    return response.data;
+};
+
+export interface DisputeListResponse {
+    disputeId: number;
+    classSessionId: number;
+    bookingId?: number;
+    disputeType?: string;
+    status: string;
+    reason: string;
+    tutorName?: string;
+    classSessionPrice?: number;
+    createdAt?: string;
+}
+
+export const getParentDisputesList = async (
+    page: number = 1,
+    pageSize: number = 10,
+): Promise<ApiResponse<{ items: DisputeListResponse[]; totalCount: number; page: number; pageSize: number }>> => {
+    const response = await api.get('/parent/disputes', {
+        headers: getAuthHeaders(),
+        params: { page, pageSize },
+    });
+    return response.data;
+};
+
+// ── Tutor dispute rebuttal — `TutorClassSessionController`, `api/tutor/class-sessions/*` + `api/tutor/disputes` ──
+
+export const getTutorClassSessionDispute = async (id: number): Promise<ApiResponse<DisputeDetailResponse>> => {
+    const response = await api.get(`/tutor/class-sessions/${id}/dispute`, { headers: getAuthHeaders() });
+    return response.data;
+};
+
+export const submitTutorDisputeResponse = async (
+    id: number,
+    responseText: string,
+): Promise<ApiResponse<DisputeDetailResponse>> => {
+    const result = await api.post(
+        `/tutor/class-sessions/${id}/dispute/response`,
+        { response: responseText },
+        { headers: getAuthHeaders() },
+    );
+    return result.data;
+};
+
+export const uploadTutorDisputeEvidence = async (id: number, file: File): Promise<ApiResponse<string>> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post(`/tutor/class-sessions/${id}/dispute/evidence`, formData, {
+        headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return response.data;
+};
+
+export const getTutorDisputesList = async (
+    page: number = 1,
+    pageSize: number = 10,
+): Promise<ApiResponse<{ items: DisputeListResponse[]; totalCount: number; page: number; pageSize: number }>> => {
+    const response = await api.get('/tutor/disputes', {
+        headers: getAuthHeaders(),
+        params: { page, pageSize },
+    });
+    return response.data;
+};
+
+// ── Dispute private chat threads (admin<->tutor, admin<->parent/student) ──
+
+export interface DisputeMessage {
+    disputeMessageId: number;
+    disputeId: number;
+    threadType: 'tutor' | 'parent';
+    senderId?: string;
+    senderName?: string;
+    senderRole?: string;
+    message: string;
+    createdAt?: string;
+}
+
+export const getTutorDisputeThread = async (id: number): Promise<ApiResponse<DisputeMessage[]>> => {
+    const response = await api.get(`/tutor/class-sessions/${id}/dispute/thread`, { headers: getAuthHeaders() });
+    return response.data;
+};
+
+export const sendTutorDisputeThreadMessage = async (id: number, message: string): Promise<ApiResponse<DisputeMessage>> => {
+    const response = await api.post(`/tutor/class-sessions/${id}/dispute/thread/messages`, { message }, { headers: getAuthHeaders() });
+    return response.data;
+};
+
+export const getClassSessionDisputeThread = async (id: number): Promise<ApiResponse<DisputeMessage[]>> => {
+    const response = await api.get(`/parent/class-sessions/${id}/dispute/thread`, { headers: getAuthHeaders() });
+    return response.data;
+};
+
+export const sendClassSessionDisputeThreadMessage = async (id: number, message: string): Promise<ApiResponse<DisputeMessage>> => {
+    const response = await api.post(`/parent/class-sessions/${id}/dispute/thread/messages`, { message }, { headers: getAuthHeaders() });
     return response.data;
 };

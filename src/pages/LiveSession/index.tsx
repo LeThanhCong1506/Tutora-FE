@@ -10,7 +10,12 @@ import {
   useLiveSessionAdmission,
   type LiveSessionAdmission,
 } from '../../hooks/useLiveSessionAdmission';
-import { leaveRoom } from '../../services/agora.service';
+import {
+  getAgoraErrorMessage,
+  isScheduleChangeConfirmationRequiredError,
+  isSessionScheduleConflictError,
+  leaveRoom,
+} from '../../services/agora.service';
 import { checkOutClassSession } from '../../services/classSession.service';
 import { getCurrentUserRole, getUserIdFromToken } from '../../services/auth.service';
 import {
@@ -143,6 +148,10 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
       })
       .catch((error: unknown) => {
         if (cancelled) return;
+        if (isScheduleChangeConfirmationRequiredError(error) || isSessionScheduleConflictError(error)) {
+          navigate(`/session-lobby/${sessionIdNum}`, { replace: true });
+          return;
+        }
         const fallback = 'Không thể kết nối tới phòng học. Vui lòng thử lại.';
         if (axios.isAxiosError(error)) {
           const status = error.response?.status;
@@ -169,8 +178,15 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
     try {
       const preparedAdmission = await admission.takeOver();
       if (preparedAdmission) await acceptAdmission(preparedAdmission);
-    } catch {
-      toast.error('Không thể chuyển buổi học sang thiết bị này. Vui lòng thử lại.');
+    } catch (error) {
+      if (
+        sessionIdNum != null &&
+        (isScheduleChangeConfirmationRequiredError(error) || isSessionScheduleConflictError(error))
+      ) {
+        navigate('/session-lobby/' + sessionIdNum, { replace: true });
+        return;
+      }
+      toast.error(getAgoraErrorMessage(error) || 'Không thể chuyển buổi học sang thiết bị này. Vui lòng thử lại.');
     }
   };
 
@@ -190,6 +206,7 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
     presenceStatus,
     sessionEnded,
     sessionReplaced: heartbeatSessionReplaced,
+    scheduleConflictMessage,
     trackingRequested,
     emotionAlerts,
     emotionToasts,
@@ -208,6 +225,14 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
     identity,
   });
   const sessionReplaced = guardSessionReplaced || heartbeatSessionReplaced;
+
+  useEffect(() => {
+    if (!scheduleConflictMessage || sessionIdNum == null) return;
+    toast.error(scheduleConflictMessage);
+    void leave().finally(() => {
+      navigate(`/session-lobby/${sessionIdNum}`, { replace: true });
+    });
+  }, [leave, navigate, scheduleConflictMessage, sessionIdNum]);
 
   const joined = isMock ? true : realJoined;
   const micOn = isMock ? mockMicOn : realMicOn;

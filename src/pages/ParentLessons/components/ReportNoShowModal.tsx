@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { Modal, Button } from 'antd';
+import { Modal, Button, DatePicker, Input, Upload } from 'antd';
+import { UploadOutlined } from '@ant-design/icons';
 import { toast } from 'react-toastify';
+import dayjs, { type Dayjs } from 'dayjs';
 import { reportNoShow } from '../../../services/parent-lesson.service';
+
+const { TextArea } = Input;
 
 interface ReportNoShowModalProps {
   open: boolean;
   lessonId: number;
-  scheduledStart: string;
   onSuccess: () => void;
   onCancel: () => void;
 }
@@ -14,17 +17,35 @@ interface ReportNoShowModalProps {
 const ReportNoShowModal: React.FC<ReportNoShowModalProps> = ({
   open,
   lessonId,
-  scheduledStart,
   onSuccess,
   onCancel,
 }) => {
   const [submitting, setSubmitting] = useState(false);
+  const [reportedAt, setReportedAt] = useState<Dayjs>(() => dayjs());
+  const [reason, setReason] = useState('');
+  const [evidenceFiles, setEvidenceFiles] = useState<File[]>([]);
+
+  const resetForm = () => {
+    setReportedAt(dayjs());
+    setReason('');
+    setEvidenceFiles([]);
+  };
+
+  const handleCancel = () => {
+    resetForm();
+    onCancel();
+  };
 
   const handleReport = async () => {
     try {
       setSubmitting(true);
-      await reportNoShow(lessonId);
+      await reportNoShow(lessonId, {
+        reportedAt: reportedAt.toISOString(),
+        reason: reason.trim() || undefined,
+      }, evidenceFiles);
+
       toast.success('Đã báo cáo gia sư vắng mặt.');
+      resetForm();
       onSuccess();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Không thể báo cáo. Vui lòng thử lại.');
@@ -33,29 +54,66 @@ const ReportNoShowModal: React.FC<ReportNoShowModalProps> = ({
     }
   };
 
-  const startTime = new Date(scheduledStart);
-
   return (
     <Modal
       title="Báo cáo vắng mặt"
       open={open}
-      onCancel={onCancel}
+      onCancel={handleCancel}
       footer={null}
       centered
     >
       <div style={{ padding: '16px 0' }}>
-        <p style={{ marginBottom: '8px', color: '#666' }}>
-          Gia sư không có mặt cho buổi học lúc{' '}
-          <strong>{startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</strong>
-          {' ngày '}
-          <strong>{startTime.toLocaleDateString('vi-VN')}</strong>?
-        </p>
-        <p style={{ marginBottom: '20px', color: '#999', fontSize: '13px' }}>
-          Chức năng này chỉ khả dụng khi đã qua 15 phút sau giờ bắt đầu buổi học và gia sư chưa check-in.
+        <p style={{ marginBottom: '16px', color: '#666' }}>
+          Xác nhận gia sư không có mặt cho buổi học này?
         </p>
 
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: 500 }}>
+            Thời điểm gia sư vắng mặt
+          </label>
+          <DatePicker
+            showTime
+            format="HH:mm DD/MM/YYYY"
+            value={reportedAt}
+            onChange={(value) => value && setReportedAt(value)}
+            style={{ width: '100%' }}
+            allowClear={false}
+          />
+        </div>
+
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: 500 }}>
+            Lý do (tùy chọn)
+          </label>
+          <TextArea
+            rows={3}
+            placeholder="Mô tả thêm về việc gia sư vắng mặt..."
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </div>
+
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: 500 }}>
+            Bằng chứng (tùy chọn)
+          </label>
+          <Upload
+            beforeUpload={(file) => {
+              setEvidenceFiles((prev) => [...prev, file]);
+              return false;
+            }}
+            onRemove={(file) => {
+              setEvidenceFiles((prev) => prev.filter((f) => f.name !== file.name));
+            }}
+            accept="image/*,.pdf"
+            multiple
+          >
+            <Button icon={<UploadOutlined />}>Tải lên bằng chứng</Button>
+          </Upload>
+        </div>
+
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-          <Button onClick={onCancel}>Hủy</Button>
+          <Button onClick={handleCancel}>Hủy</Button>
           <Button type="primary" danger loading={submitting} onClick={handleReport}>
             Xác nhận báo vắng
           </Button>

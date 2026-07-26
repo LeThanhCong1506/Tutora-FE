@@ -1,11 +1,11 @@
-// Mốc GIÁ TRỊ THẬT (đơn vị VND), không phải nghìn — "50_100" nghĩa là 50.000đ-100.000đ/h.
+// Mốc GIÁ TRỊ THẬT (đơn vị VND), không phải nghìn — "50_100" nghĩa là 50,000đ-100,000đ/h.
 export const BUDGET_RANGE_OPTIONS = [
   { value: "all", label: "Mọi giá" },
-  { value: "under_50", label: "Dưới 50.000đ/giờ" },
-  { value: "50_100", label: "50.000đ - 100.000đ/giờ" },
-  { value: "100_200", label: "100.000đ - 200.000đ/giờ" },
-  { value: "200_500", label: "200.000đ - 500.000đ/giờ" },
-  { value: "over_500", label: "Trên 500.000đ/giờ" },
+  { value: "under_50", label: "Dưới 50,000đ/giờ" },
+  { value: "50_100", label: "50,000đ - 100,000đ/giờ" },
+  { value: "100_200", label: "100,000đ - 200,000đ/giờ" },
+  { value: "200_500", label: "200,000đ - 500,000đ/giờ" },
+  { value: "over_500", label: "Trên 500,000đ/giờ" },
 ] as const;
 
 export function budgetRangeToMinMax(budgetRange: string): { minRate?: number; maxRate?: number } {

@@ -22,6 +22,7 @@ const NOTIFICATION_TYPES_BY_PATH: Record<string, string[]> = {
         'payment_remaining_required',
     ],
     '/tutor-portal/finance': ['payment_success'],
+    '/tutor-portal/disputes': ['dispute_message'],
 };
 
 // ─── Tutor-specific SVG Icons ───
@@ -82,6 +83,14 @@ const TeachingSetupIcon = () => (
     </svg>
 );
 
+const DisputeIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M9 1.5L16.5 15H1.5L9 1.5Z" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M9 7V10" strokeLinecap="round" />
+        <circle cx="9" cy="12.5" r="0.75" fill="currentColor" stroke="none" />
+    </svg>
+);
+
 const AccountIcon = () => (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
         <circle cx="9" cy="5.5" r="3" />
@@ -100,6 +109,7 @@ const baseNavItems: NavItem[] = [
     { path: MESSAGES_PATH, label: 'Tin nhắn', icon: MessagesIcon, dataTour: 'nav-messages' },
     { path: '/tutor-portal/bookings', label: 'Yêu cầu đặt lịch', icon: BookingIcon, dataTour: 'nav-bookings' },
     { path: '/tutor-portal/calendar', label: 'Lịch dạy', icon: ClassIcon, dataTour: 'nav-classes' },
+    { path: '/tutor-portal/disputes', label: 'Khiếu nại', icon: DisputeIcon, dataTour: 'nav-disputes' },
     { path: '/tutor-portal/finance', label: 'Tài chính', icon: FinanceIcon, dataTour: 'nav-finance' },
     { path: '/tutor-portal/account', label: 'Tài khoản', icon: AccountIcon, dataTour: 'nav-account' },
 ];
