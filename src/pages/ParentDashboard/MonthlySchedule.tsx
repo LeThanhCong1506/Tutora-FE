@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { getParentCalendar, getParentLessonDetail, type CalendarLessonDto, type ParentLessonDetailDto } from '../../services/parent-lesson.service';
 import { createChannel } from '../../services/chat.service';
+import { formatVNDNumber } from '../../utils/formatters';
 import styles from './MonthlySchedule.module.css';
 
 const WEEK_DAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
@@ -123,7 +124,7 @@ const PersonAvatar = ({ name, avatarUrl }: { name: string; avatarUrl?: string })
 };
 
 const formatCurrency = (value?: number) =>
-  typeof value === 'number' ? `${value.toLocaleString('vi-VN')} đ` : 'Chưa cập nhật';
+  typeof value === 'number' ? `${formatVNDNumber(value)} đ` : 'Chưa cập nhật';
 
 const MonthlySchedule = () => {
   const navigate = useNavigate();
