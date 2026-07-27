@@ -19,6 +19,40 @@ const sanitizePhone = (raw: string) => raw.replace(/[^\d+]/g, '').replace(/(?!^)
 const looksLikeEmail = (raw: string) => raw.includes('@');
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/**
+ * Các origin được phép quay lại sau khi đăng nhập (AI Homework Helper...).
+ * Allowlist chứ KHÔNG nhận mọi URL: nếu không sẽ thành lỗ hổng open redirect,
+ * kẻ xấu gửi link ?returnUrl=<trang giả> để lừa người dùng ngay sau khi login.
+ */
+const ALLOWED_RETURN_ORIGINS = Array.from(
+  new Set(
+    (import.meta.env.VITE_ALLOWED_RETURN_ORIGINS || '')
+      .split(',')
+      .map((o: string) => o.trim())
+      .filter(Boolean),
+  ),
+);
+
+const getSafeReturnUrl = (): string | null => {
+  const raw = new URLSearchParams(window.location.search).get('returnUrl');
+  if (!raw) return null;
+  try {
+    const url = new URL(raw, window.location.origin);
+    if (url.origin === window.location.origin) return null;
+    return ALLOWED_RETURN_ORIGINS.includes(url.origin) ? url.href : null;
+  } catch {
+    return null;
+  }
+};
+
+// Tạm thời cho tới khi BE set cookie HttpOnly Domain=.tutora.vn — lúc đó bỏ hàm này.
+const appendSessionToReturnUrl = (returnUrl: string, accessToken: string, refreshToken: string) => {
+  const url = new URL(returnUrl);
+  const fragment = new URLSearchParams({ accessToken, refreshToken });
+  url.hash = fragment.toString();
+  return url.href;
+};
+
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
 
@@ -114,7 +148,12 @@ const LoginForm: React.FC = () => {
 
     saveUserToStorage({ accessToken: token, refreshToken });
     toast.success("Đăng nhập thành công!");
-    setTimeout(() => navigate(getPortalPathFromRole(role)), 800);
+
+    const returnUrl = getSafeReturnUrl();
+    setTimeout(() => {
+      if (returnUrl) window.location.href = appendSessionToReturnUrl(returnUrl, token, refreshToken);
+      else navigate(getPortalPathFromRole(role));
+    }, 800);
     return true;
   };
 
