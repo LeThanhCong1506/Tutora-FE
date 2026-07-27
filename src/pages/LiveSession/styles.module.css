@@ -253,32 +253,18 @@
   align-content: center;
 }
 
-/* ── Layout spotlight (có người chia sẻ màn hình) ── */
-.spotlightLayout {
+/* ── Layout spotlight (ghim 1 tile xem full, còn lại xếp thành dải bên phải) ──
+   Mọi tile luôn là con trực tiếp của .spotlightFlat (không có wrapper .spotlightMain/
+   .spotlightStrip riêng) để VideoTile không bị remount khi ghim/bỏ ghim — chỉ đổi vị
+   trí/kích thước qua absolute positioning. Xem VideoStage.tsx. */
+.spotlightFlat {
+  position: relative;
   flex: 1;
   min-height: 0;
-  display: flex;
-  gap: 12px;
-}
-
-.spotlightMain {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-}
-
-.spotlightMain > * {
-  flex: 1;
-  aspect-ratio: auto;
-}
-
-.spotlightStrip {
-  width: clamp(180px, 17vw, 220px);
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  overflow-y: auto;
+  overflow: auto;
+  --strip-w: clamp(180px, 17vw, 220px);
+  --strip-h: calc(var(--strip-w) * 10 / 16);
+  --gap: 12px;
 }
 
 /* ── Video tile ── */
@@ -299,6 +285,25 @@
   aspect-ratio: 16 / 10;
   height: auto;
   border-radius: 12px;
+}
+
+/* Đè lên kích thước mặc định của .videoTile/.videoTileCompact — phải đứng sau 2 rule
+   đó trong file để thắng specificity ngang nhau. */
+.spotlightMainAbs {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: calc(100% - var(--strip-w) - var(--gap));
+  height: auto;
+}
+
+.spotlightStripAbs {
+  position: absolute;
+  right: 0;
+  width: var(--strip-w);
+  height: var(--strip-h);
+  top: calc(var(--strip-index, 0) * (var(--strip-h) + var(--gap)));
 }
 
 .videoTileMedia {
@@ -841,7 +846,7 @@
 }
 
 .chatList,
-.spotlightStrip {
+.spotlightFlat {
   scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
   scrollbar-width: thin;
 }
@@ -977,21 +982,26 @@
     aspect-ratio: auto;
   }
 
-  .spotlightLayout {
-    flex-direction: column;
+  /* Spotlight trên mobile: main ở trên, dải thumbnail thành hàng ngang cuộn dưới cùng. */
+  .spotlightFlat {
+    --strip-w: 184px;
+    --strip-h: 118px;
+    --gap: 8px;
   }
 
-  .spotlightStrip {
-    width: 100%;
-    height: 118px;
-    flex-direction: row;
-    overflow-x: auto;
-    overflow-y: hidden;
+  .spotlightMainAbs {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--strip-h) + var(--gap));
+    width: auto;
   }
 
-  .spotlightStrip .videoTileCompact {
-    width: 184px;
-    flex-shrink: 0;
+  .spotlightStripAbs {
+    top: auto;
+    bottom: 0;
+    right: auto;
+    left: calc(var(--strip-index, 0) * (var(--strip-w) + var(--gap)));
   }
 
   .controlBar {

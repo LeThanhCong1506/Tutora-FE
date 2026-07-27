@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import type { ICameraVideoTrack, ILocalVideoTrack } from 'agora-rtc-sdk-ng';
 import type { RemoteParticipant } from './types';
 import VideoTile from './VideoTile';
@@ -67,8 +67,13 @@ const VideoStage = ({
 
   // Nếu tile đã ghim biến mất (người kia rời phòng) thì tự bỏ ghim.
   const pinned = pinnedId ? tiles.find((t) => t.id === pinnedId) ?? null : null;
+  // Thứ tự cố định cho dải thumbnail — dùng để tính --strip-index, không phụ thuộc pin.
+  const others = pinned ? tiles.filter((t) => t.id !== pinned.id) : [];
 
-  const renderTile = (tile: StageTile, opts?: { compact?: boolean; contain?: boolean }) => (
+  const renderTile = (
+    tile: StageTile,
+    opts?: { compact?: boolean; contain?: boolean; layoutClassName?: string; style?: CSSProperties },
+  ) => (
     <VideoTile
       key={tile.id}
       name={tile.name}
@@ -79,28 +84,14 @@ const VideoStage = ({
       compact={opts?.compact}
       isPinned={pinnedId === tile.id}
       onTogglePin={() => setPinnedId((cur) => (cur === tile.id ? null : tile.id))}
+      layoutClassName={opts?.layoutClassName}
+      style={opts?.style}
     />
   );
 
-  // ── Chế độ ghim (spotlight): tile được chọn chiếm phần lớn, còn lại thành strip ──
-  if (pinned) {
-    const others = tiles.filter((t) => t.id !== pinned.id);
-    return (
-      <div className={styles.stage}>
-        <div className={styles.spotlightLayout}>
-          <div className={styles.spotlightMain}>{renderTile(pinned, { contain: true })}</div>
-          {others.length > 0 && (
-            <div className={styles.spotlightStrip}>
-              {others.map((t) => renderTile(t, { compact: true }))}
-            </div>
-          )}
-        </div>
-        {children}
-      </div>
-    );
-  }
-
-  // ── Chế độ lưới cân đối (mỗi ô một người) — lớp 1-1 chia đôi màn hình ──
+  // Mỗi tile luôn là con trực tiếp của CÙNG MỘT parent, ở CÙNG vị trí trong cây JSX,
+  // dù đang ghim hay không — tránh remount VideoTile (mất track Agora đang play) khi
+  // chuyển layout. Ghim/bỏ ghim chỉ đổi class/style định vị (CSS), không đổi cấu trúc.
   const gridClass =
     tiles.length <= 1
       ? styles.tilesGridSingle
@@ -108,9 +99,26 @@ const VideoStage = ({
         ? styles.tilesGridTwo
         : styles.tilesGridMany;
 
+  const containerClassName = pinned ? styles.spotlightFlat : `${styles.tilesGrid} ${gridClass}`;
+
   return (
     <div className={styles.stage}>
-      <div className={`${styles.tilesGrid} ${gridClass}`}>{tiles.map((t) => renderTile(t))}</div>
+      <div className={containerClassName}>
+        {tiles.map((tile) => {
+          if (!pinned) return renderTile(tile);
+
+          const isMain = tile.id === pinned.id;
+          if (isMain) {
+            return renderTile(tile, { contain: true, layoutClassName: styles.spotlightMainAbs });
+          }
+          const stripIndex = others.findIndex((o) => o.id === tile.id);
+          return renderTile(tile, {
+            compact: true,
+            layoutClassName: styles.spotlightStripAbs,
+            style: { '--strip-index': stripIndex } as CSSProperties,
+          });
+        })}
+      </div>
       {children}
     </div>
   );

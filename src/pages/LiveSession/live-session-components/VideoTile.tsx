@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type CSSProperties } from 'react';
 import { Mic, MicOff, Pin, PinOff } from 'lucide-react';
 import type { ICameraVideoTrack, ILocalVideoTrack, IRemoteVideoTrack } from 'agora-rtc-sdk-ng';
 import styles from '../styles.module.css';
@@ -18,6 +18,10 @@ interface VideoTileProps {
   isPinned?: boolean;
   /** Ghim/bỏ ghim ô để xem full. */
   onTogglePin?: () => void;
+  /** Class định vị trí (main/strip) khi đang ở chế độ spotlight — xem VideoStage. */
+  layoutClassName?: string;
+  /** Style định vị trí (vd. --strip-index) khi đang ở chế độ spotlight. */
+  style?: CSSProperties;
 }
 
 const initialsOf = (name: string): string => {
@@ -37,6 +41,8 @@ const VideoTile = ({
   compact = false,
   isPinned = false,
   onTogglePin,
+  layoutClassName,
+  style,
 }: VideoTileProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -57,9 +63,12 @@ const VideoTile = ({
   }, [videoTrack, fit]);
 
   const hasVideo = !!videoTrack;
+  const rootClassName = [styles.videoTile, compact ? styles.videoTileCompact : '', layoutClassName ?? '']
+    .filter(Boolean)
+    .join(' ');
 
   return (
-    <div className={compact ? `${styles.videoTile} ${styles.videoTileCompact}` : styles.videoTile}>
+    <div className={rootClassName} style={style}>
       <div ref={containerRef} className={styles.videoTileMedia} />
       {!hasVideo && (
         <div className={styles.videoTilePlaceholder}>
