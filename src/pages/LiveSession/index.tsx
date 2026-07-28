@@ -37,6 +37,9 @@ import styles from './styles.module.css';
 // SDK whiteboard nặng → lazy-load để không nằm trong bundle chính (đặc biệt cho bản Zalo).
 const WhiteboardOverlay = lazy(() => import('./live-session-components/WhiteboardOverlay'));
 
+/** Bắt đầu hiện cảnh báo đếm ngược khi còn ít hơn mốc này tới lúc hệ thống tự đóng phòng. */
+const AUTO_END_WARNING_SEC = 5 * 60;
+
 const formatElapsed = (seconds: number): string => {
   const m = Math.floor(seconds / 60)
     .toString()
@@ -80,6 +83,9 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
   const [liveAdmission, setLiveAdmission] = useState<LiveSessionAdmission | null>(routeAdmission);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  // Số giây còn lại tới lúc hệ thống tự đóng phòng — null khi còn ngoài cửa sổ cảnh báo
+  // (> AUTO_END_WARNING_SEC) hoặc chưa có mốc autoEndAt từ backend.
+  const [autoEndCountdownSec, setAutoEndCountdownSec] = useState<number | null>(null);
   const [mockMicOn, setMockMicOn] = useState(initialMicOn);
   const [mockCamOn, setMockCamOn] = useState(initialCamOn);
   const [mockScreenSharing, setMockScreenSharing] = useState(false);
@@ -276,6 +282,25 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
     return () => clearInterval(interval);
   }, [joined, isMock, room?.startedAt]);
 
+  // Cảnh báo đếm ngược trước khi hệ thống tự đóng phòng (AutoEndLiveSessionJob ở backend).
+  // autoEndAt chỉ có giá trị khi buổi đang in_progress và chưa đóng — hết cửa sổ cảnh báo
+  // hoặc buổi đã kết thúc thì tự ẩn.
+  useEffect(() => {
+    const autoEndAt = isMock ? undefined : presenceStatus?.autoEndAt;
+    if (!autoEndAt || sessionEnded) {
+      setAutoEndCountdownSec(null);
+      return;
+    }
+    const endMs = new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(autoEndAt) ? autoEndAt : `${autoEndAt}Z`).getTime();
+    const tick = () => {
+      const remaining = Math.round((endMs - Date.now()) / 1000);
+      setAutoEndCountdownSec(remaining > 0 && remaining <= AUTO_END_WARNING_SEC ? remaining : null);
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [isMock, presenceStatus?.autoEndAt, sessionEnded]);
+
   const participantLabel = useMemo(() => {
     if (isMock) return 'Học sinh Demo';
     if (!room) return '';
@@ -437,6 +462,13 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
         onTogglePanel={() => setPanelOpen((v) => !v)}
         isRecording={isMock ? true : Boolean(presenceStatus?.isRecording)}
       />
+      {autoEndCountdownSec !== null && (
+        <div className={styles.autoEndWarning} role="status">
+          <span className={styles.autoEndWarningDot} />
+          Buổi học sẽ tự động kết thúc sau{' '}
+          <span className={styles.autoEndWarningTime}>{formatElapsed(autoEndCountdownSec)}</span>
+        </div>
+      )}
       {!isMock && joined && presenceStatus && !presenceStatus.isCheckedIn && (
         <div
           style={{
