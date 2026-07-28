@@ -31,6 +31,8 @@ export interface LessonSummary {
   counterpartName?: string;
   /** True nếu buổi học đã có video xem lại (đã upload xong lên Drive). */
   hasRecording?: boolean;
+  /** Yêu cầu dời lịch đang hiệu lực cho buổi này — "pending"/"approved", null nếu không có. */
+  scheduleChangeStatus?: 'pending' | 'approved' | null;
 }
 
 export interface LessonGroup {

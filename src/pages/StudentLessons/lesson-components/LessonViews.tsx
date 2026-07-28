@@ -3,7 +3,7 @@ import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { Link } from 'react-router-dom';
 import { Tooltip } from 'antd';
-import { CalendarDays, ChevronRight, Clapperboard, ClipboardList, Clock3, UserRound, Video } from 'lucide-react';
+import { CalendarClock, CalendarDays, ChevronRight, Clapperboard, ClipboardList, Clock3, UserRound, Video } from 'lucide-react';
 import { getClassSessionStatusMeta } from '../../../utils/classSessionStatus';
 import styles from '../styles.module.css';
 import type { LessonSummary, LessonViewProps } from './types';
@@ -134,6 +134,21 @@ const RecordingBadge = ({ compact = false }: { compact?: boolean }) => (
   </span>
 );
 
+/**
+ * Badge riêng cho yêu cầu dời lịch (đổi giờ ngoài lịch đã đặt) đang chờ/đã xác nhận — KHÔNG phải
+ * trạng thái "Chờ xác nhận" báo cáo buổi học (status pending_confirmation), 2 khái niệm khác nhau.
+ */
+const ScheduleChangeBadge = ({ lesson, compact = false }: { lesson: LessonSummary; compact?: boolean }) => {
+  if (!lesson.scheduleChangeStatus) return null;
+  const isApproved = lesson.scheduleChangeStatus === 'approved';
+  return (
+    <span className={`${styles.scheduleChangeBadge} ${isApproved ? styles.scheduleChangeBadgeApproved : ''}`}>
+      <CalendarClock size={compact ? 11 : 12} strokeWidth={2.3} aria-hidden="true" />
+      <span>{isApproved ? 'Đã xác nhận dời lịch' : 'Chờ xác nhận dời lịch'}</span>
+    </span>
+  );
+};
+
 const LessonHoverDetails = ({ lesson }: { lesson: LessonSummary }) => {
   const status = getLessonDisplayMeta(lesson);
   const canJoin = canShowJoinButton(lesson);
@@ -163,6 +178,7 @@ const LessonHoverDetails = ({ lesson }: { lesson: LessonSummary }) => {
           {canJoin ? 'Có thể vào lớp' : 'Không thể vào lớp'}
         </span>
         {lesson.hasRecording && <RecordingBadge />}
+        <ScheduleChangeBadge lesson={lesson} />
       </div>
     </div>
   );
@@ -201,6 +217,7 @@ const CalendarEvent = ({ lesson, onOpen }: { lesson: LessonSummary; onOpen: () =
       <div className={styles.calendarEventFooter}>
         <StatusPill lesson={lesson} />
         {lesson.hasRecording && <RecordingBadge compact />}
+        <ScheduleChangeBadge lesson={lesson} compact />
         <MeetLink lesson={lesson} compact />
       </div>
     </article>
@@ -231,6 +248,7 @@ const ListLessonRow = ({ lesson, onOpen }: { lesson: LessonSummary; onOpen: () =
       <div className={styles.listActions}>
         <MeetLink lesson={lesson} />
         {lesson.hasRecording && <RecordingBadge compact />}
+        <ScheduleChangeBadge lesson={lesson} compact />
         <StatusPill lesson={lesson} />
         <button type="button" className={styles.detailIconButton} onClick={onOpen} aria-label="Xem chi tiết buổi học">
           <ChevronRight size={18} className={styles.rowChevron} aria-hidden="true" />
@@ -377,6 +395,7 @@ export const GridLessonView = ({ lessons, onOpenLesson }: LessonViewProps) => (
             <div className={styles.gridCardFooter}>
               <MeetLink lesson={lesson} />
               {lesson.hasRecording && <RecordingBadge compact />}
+              <ScheduleChangeBadge lesson={lesson} compact />
               <button type="button" className={styles.openCard} style={{ color: status.color }} onClick={openLesson}>
                 Chi tiết <ChevronRight size={16} />
               </button>

@@ -5,6 +5,7 @@ import {
     ArrowLeft, BookOpen, AlertCircle, Video,
     Calendar as CalendarIcon, FileText, ClipboardCheck, Star,
     User, PlayCircle, StopCircle, Paperclip, Download, CalendarClock,
+    CheckCircle2, Clock3, XCircle,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { getStudentLessonDetail, confirmStudentLesson, type StudentLessonDetailDto } from '../../services/student-lesson.service';
@@ -12,8 +13,11 @@ import {
     getClassSessionDispute,
     getClassSessionDisputeThread,
     sendClassSessionDisputeThreadMessage,
+    getStudentScheduleChange,
+    respondStudentScheduleChange,
     type DisputeDetailResponse,
     type DisputeMessage,
+    type SessionScheduleChangeResponse,
 } from '../../services/classSession.service';
 import { signalRService } from '../../services/signalr.service';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
@@ -89,6 +93,8 @@ const StudentLessonDetail = () => {
     const [thread, setThread] = useState<DisputeMessage[]>([]);
     const [threadInput, setThreadInput] = useState('');
     const [sendingThreadMessage, setSendingThreadMessage] = useState(false);
+    const [scheduleChange, setScheduleChange] = useState<SessionScheduleChangeResponse | null>(null);
+    const [submittingScheduleDecision, setSubmittingScheduleDecision] = useState(false);
 
     const fetchDetail = useCallback(async () => {
         if (!lessonId) return;
@@ -110,6 +116,17 @@ const StudentLessonDetail = () => {
             setDispute(response.content);
         } catch {
             setDispute(null);
+        }
+    }, [lessonId]);
+
+    const fetchScheduleChange = useCallback(async () => {
+        if (!lessonId) return;
+        try {
+            const response = await getStudentScheduleChange(parseInt(lessonId));
+            setScheduleChange(response.content);
+        } catch (requestError: unknown) {
+            console.error('Failed to load schedule-change state', requestError);
+            setScheduleChange(null);
         }
     }, [lessonId]);
 
@@ -141,6 +158,13 @@ const StudentLessonDetail = () => {
         fetchDetail();
         fetchDispute();
     }, [fetchDetail, fetchDispute]);
+
+    useEffect(() => {
+        if (!lessonId) return;
+        void fetchScheduleChange();
+        const timer = window.setInterval(() => void fetchScheduleChange(), 8000);
+        return () => window.clearInterval(timer);
+    }, [lessonId, fetchScheduleChange]);
 
     useEffect(() => {
         if (dispute) void fetchThread();
@@ -183,6 +207,25 @@ const StudentLessonDetail = () => {
         setShowNoShowActionModal(false);
         fetchDetail();
         fetchDispute();
+    };
+
+    const handleScheduleChangeDecision = async (confirmed: boolean) => {
+        if (!lessonId) return;
+        setSubmittingScheduleDecision(true);
+        try {
+            const response = await respondStudentScheduleChange(parseInt(lessonId), confirmed);
+            setScheduleChange(response.content);
+            if (confirmed && response.content.scheduleConflict) {
+                antMessage.warning(`Đã lưu xác nhận. ${response.content.scheduleConflict.message}`);
+            } else {
+                antMessage.success(confirmed ? 'Đã xác nhận đổi lịch học.' : 'Đã từ chối đổi lịch học.');
+            }
+        } catch (error: any) {
+            antMessage.error(error.response?.data?.message || 'Không thể xử lý yêu cầu đổi lịch.');
+            await fetchScheduleChange();
+        } finally {
+            setSubmittingScheduleDecision(false);
+        }
     };
 
     // ── Loading ──
@@ -277,6 +320,89 @@ const StudentLessonDetail = () => {
                                 <Video size={16} /> Tham gia ngay
                             </Link>
                         </div>
+                    </div>
+                )}
+
+                {/* Học sinh tự quản lý xác nhận yêu cầu đổi lịch tại đây — không cần đang ở trong
+                    phòng chờ. requiredLearnerRole chỉ là 'Student' khi buổi không có phụ huynh quản lý. */}
+                {scheduleChange?.requiresConfirmation && scheduleChange.requiredLearnerRole === 'Student' && (
+                    <div style={sectionCard}>
+                        <div style={sectionHeaderRow}>
+                            <div style={{ ...sectionIconWrap, background: 'rgba(217,119,6,0.10)' }}>
+                                <CalendarClock size={16} style={{ color: '#d97706' }} />
+                            </div>
+                            <div style={sectionTitleText}>Xác nhận thay đổi giờ học</div>
+                        </div>
+                        <div style={{ fontSize: 13, color: '#667085', marginBottom: 16, lineHeight: 1.55 }}>
+                            Gia sư muốn học ngoài thời gian mặc định. Vui lòng xác nhận để buổi học được bắt đầu.
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+                            <div style={reportRowBlock}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    {scheduleChange.tutorConfirmedAt
+                                        ? <CheckCircle2 size={18} color="#16a34a" />
+                                        : <Clock3 size={18} color="#d97706" />}
+                                    <div>
+                                        <div style={reportLabelStyle}>Gia sư</div>
+                                        <div style={{ fontSize: 14, fontWeight: 600, color: '#1a2238' }}>
+                                            {scheduleChange.tutorConfirmedAt ? 'Đã xác nhận' : 'Đang chờ xác nhận'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style={reportRowBlock}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    {scheduleChange.learnerConfirmedAt
+                                        ? <CheckCircle2 size={18} color="#16a34a" />
+                                        : <Clock3 size={18} color="#d97706" />}
+                                    <div>
+                                        <div style={reportLabelStyle}>Bạn</div>
+                                        <div style={{ fontSize: 14, fontWeight: 600, color: '#1a2238' }}>
+                                            {scheduleChange.learnerConfirmedAt ? 'Đã xác nhận' : 'Đang chờ xác nhận'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style={reportValueStyle}>
+                            Lịch ban đầu: {formatLongDate(scheduleChange.originalScheduledStart)}, {formatTime(scheduleChange.originalScheduledStart)}–{formatTime(scheduleChange.originalScheduledEnd)}
+                        </div>
+
+                        {scheduleChange.status === 'rejected' ? (
+                            <div style={{ marginTop: 14, color: '#cf1322', background: '#fff2f0', borderRadius: 8, padding: '10px 12px', fontSize: 13 }}>
+                                Yêu cầu đổi lịch đã bị từ chối. Bạn và gia sư chưa thể vào buổi học ngoài lịch này.
+                            </div>
+                        ) : scheduleChange.status === 'approved' && scheduleChange.scheduleConflict ? (
+                            <div style={{ marginTop: 14, color: '#b45309', background: '#fffbeb', borderRadius: 8, padding: '10px 12px', fontSize: 13, lineHeight: 1.55 }}>
+                                <strong>Đã đủ xác nhận nhưng chưa thể bắt đầu:</strong> {scheduleChange.scheduleConflict.message}{' '}
+                                Hệ thống sẽ tự kiểm tra lại, bạn không cần xác nhận lần nữa.
+                            </div>
+                        ) : scheduleChange.status === 'approved' ? (
+                            <div style={{ marginTop: 14, color: '#15803d', background: '#f0fdf4', borderRadius: 8, padding: '10px 12px', fontSize: 13 }}>
+                                Đã đủ xác nhận. Bạn và gia sư có thể vào học; thời gian buổi học sẽ được cập nhật khi bắt đầu.
+                            </div>
+                        ) : scheduleChange.currentUserConfirmed ? (
+                            <div style={{ marginTop: 14, color: '#0958d9', background: '#e6f4ff', borderRadius: 8, padding: '10px 12px', fontSize: 13 }}>
+                                Bạn đã xác nhận. Đang chờ gia sư xác nhận.
+                            </div>
+                        ) : scheduleChange.canCurrentUserConfirm ? (
+                            <div style={{ marginTop: 14, display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
+                                <button
+                                    style={{ ...actionBtnBase, background: '#fff', color: '#cf1322', border: '1px solid #ffccc7', boxShadow: 'none' }}
+                                    disabled={submittingScheduleDecision}
+                                    onClick={() => void handleScheduleChangeDecision(false)}
+                                >
+                                    <XCircle size={16} /> Từ chối
+                                </button>
+                                <button
+                                    style={{ ...actionBtnBase, background: '#3e2f28' }}
+                                    disabled={submittingScheduleDecision}
+                                    onClick={() => void handleScheduleChangeDecision(true)}
+                                >
+                                    <CheckCircle2 size={16} /> Xác nhận đổi lịch
+                                </button>
+                            </div>
+                        ) : null}
                     </div>
                 )}
 
