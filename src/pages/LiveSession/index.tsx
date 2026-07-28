@@ -329,7 +329,7 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
   // Bị đá khỏi phòng: gia sư đã kết thúc buổi (nhận tín hiệu SESSION_ENDED hoặc phòng đã đóng).
   useEffect(() => {
     if (isMock || !sessionEnded || sessionReplaced) return;
-    toast.info('Gia sư đã kết thúc buổi học.');
+    toast.info('Buổi học đã kết thúc.');
     void (async () => {
       await leave();
       navigate(-1);
