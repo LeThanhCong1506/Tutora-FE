@@ -55,6 +55,8 @@ export interface ClassSessionResponse {
     student?: StudentMini;
     subject?: SubjectInfo;
     tutor?: TutorMini;
+    /** Yêu cầu dời lịch đang hiệu lực cho buổi này — "pending"/"approved", null nếu không có. */
+    scheduleChangeStatus?: 'pending' | 'approved' | null;
 }
 
 // ── ClassSessionDetailResponse (rich detail — tutor actions, check-in/out/report) ──
@@ -180,6 +182,8 @@ export interface CalendarClassSessionResponse {
     /** True nếu buổi học đã có video xem lại (đã upload xong lên Drive). */
     hasRecording?: boolean;
     statusColor: string;
+    /** Yêu cầu dời lịch đang hiệu lực cho buổi này — "pending"/"approved", null nếu không có. */
+    scheduleChangeStatus?: 'pending' | 'approved' | null;
 }
 
 export interface CalendarDayResponse {
@@ -425,6 +429,28 @@ export const respondParentScheduleChange = async (
 ): Promise<ApiResponse<SessionScheduleChangeResponse>> => {
     const response = await api.post(
         `/parent/class-sessions/${id}/schedule-change/respond`,
+        { confirmed },
+        { headers: getAuthHeaders() },
+    );
+    return response.data;
+};
+
+/** Học sinh tự quản lý (>16, không có phụ huynh) — cùng luồng xác nhận dời lịch, khác route. */
+export const getStudentScheduleChange = async (
+    id: number,
+): Promise<ApiResponse<SessionScheduleChangeResponse>> => {
+    const response = await api.get(`/student/class-sessions/${id}/schedule-change`, {
+        headers: getAuthHeaders(),
+    });
+    return response.data;
+};
+
+export const respondStudentScheduleChange = async (
+    id: number,
+    confirmed: boolean,
+): Promise<ApiResponse<SessionScheduleChangeResponse>> => {
+    const response = await api.post(
+        `/student/class-sessions/${id}/schedule-change/respond`,
         { confirmed },
         { headers: getAuthHeaders() },
     );

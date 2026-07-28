@@ -95,6 +95,17 @@ const ParentLessons: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className={styles.lessonCardRight}>
+                                    {session.scheduleChangeStatus && (
+                                        <span
+                                            className={`${styles.scheduleChangeBadge} ${
+                                                session.scheduleChangeStatus === 'approved' ? styles.scheduleChangeBadgeApproved : ''
+                                            }`}
+                                        >
+                                            {session.scheduleChangeStatus === 'approved'
+                                                ? 'Đã xác nhận dời lịch'
+                                                : 'Chờ xác nhận dời lịch'}
+                                        </span>
+                                    )}
                                     <span className={styles.statusBadge} style={{ background: meta.bg, color: meta.color }}>
                                         <span className={styles.statusDot} />
                                         {meta.label}

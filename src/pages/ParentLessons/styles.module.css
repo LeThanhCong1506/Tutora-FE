@@ -252,6 +252,27 @@
   color: #2563eb;
 }
 
+/* Yêu cầu dời lịch đang chờ/đã xác nhận — badge riêng, KHÔNG phải statusBadge (trạng thái buổi
+   học). Amber khi chờ, chuyển xanh khi tutor đã xác nhận. */
+.scheduleChangeBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+  background: rgba(217, 119, 6, 0.1);
+  color: #a46d18;
+}
+
+.scheduleChangeBadgeApproved {
+  background: rgba(16, 150, 122, 0.1);
+  color: #0b796a;
+}
+
 .statusCheckedIn {
   background: rgba(22, 163, 74, 0.08);
   color: #16a34a;
