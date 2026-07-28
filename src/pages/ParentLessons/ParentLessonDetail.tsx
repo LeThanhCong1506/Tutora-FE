@@ -26,6 +26,7 @@ import ReportNoShowModal from './components/ReportNoShowModal';
 import NoShowActionModal from './components/NoShowActionModal';
 import CreateFeedbackModal from './components/CreateFeedbackModal';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
+import { ClassSessionRecording } from '../../components/shared';
 import { formatVNDNumber } from '../../utils/formatters';
 
 const getFileNameFromUrl = (url: string): string => {
@@ -691,6 +692,17 @@ const ParentLessonDetail: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* Video buổi học */}
+      <div style={{
+        background: '#fff', borderRadius: '12px', padding: '24px',
+        border: '1px solid rgba(26,34,56,0.06)', marginBottom: '20px',
+      }}>
+        <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1a2238', marginBottom: '16px' }}>
+          Video buổi học
+        </h3>
+        <ClassSessionRecording classSessionId={id} />
+      </div>
 
       {/* Action Buttons */}
       <div style={{

@@ -55,6 +55,8 @@ export interface ClassSessionResponse {
     student?: StudentMini;
     subject?: SubjectInfo;
     tutor?: TutorMini;
+    /** Yêu cầu dời lịch đang hiệu lực cho buổi này — "pending"/"approved", null nếu không có. */
+    scheduleChangeStatus?: 'pending' | 'approved' | null;
 }
 
 // ── ClassSessionDetailResponse (rich detail — tutor actions, check-in/out/report) ──
@@ -177,7 +179,11 @@ export interface CalendarClassSessionResponse {
     meetingLink?: string;
     /** Đã check-out (phòng đóng vĩnh viễn) — in_progress + checkOutTime = chờ gửi báo cáo. */
     checkOutTime?: string;
+    /** True nếu buổi học đã có video xem lại (đã upload xong lên Drive). */
+    hasRecording?: boolean;
     statusColor: string;
+    /** Yêu cầu dời lịch đang hiệu lực cho buổi này — "pending"/"approved", null nếu không có. */
+    scheduleChangeStatus?: 'pending' | 'approved' | null;
 }
 
 export interface CalendarDayResponse {
@@ -429,6 +435,28 @@ export const respondParentScheduleChange = async (
     return response.data;
 };
 
+/** Học sinh tự quản lý (>16, không có phụ huynh) — cùng luồng xác nhận dời lịch, khác route. */
+export const getStudentScheduleChange = async (
+    id: number,
+): Promise<ApiResponse<SessionScheduleChangeResponse>> => {
+    const response = await api.get(`/student/class-sessions/${id}/schedule-change`, {
+        headers: getAuthHeaders(),
+    });
+    return response.data;
+};
+
+export const respondStudentScheduleChange = async (
+    id: number,
+    confirmed: boolean,
+): Promise<ApiResponse<SessionScheduleChangeResponse>> => {
+    const response = await api.post(
+        `/student/class-sessions/${id}/schedule-change/respond`,
+        { confirmed },
+        { headers: getAuthHeaders() },
+    );
+    return response.data;
+};
+
 export interface SettlementResultResponse {
     classSessionId: number;
     bookingId?: number;
@@ -602,6 +630,39 @@ export const processClassSessionNoShowAction = async (
 export const getClassSessionById = async (id: number): Promise<ApiResponse<ClassSessionResponse>> => {
     const response = await api.get(`/class-sessions/${id}`, { headers: getAuthHeaders() });
     return response.data;
+};
+
+/** available (đã ghi xong, xem được) | processing (đang đẩy lên lưu trữ) | recording (đang ghi) | none. */
+export type RecordingStatus = 'available' | 'processing' | 'recording' | 'none';
+
+export interface ClassSessionRecordingResponse {
+    classSessionId: number;
+    status: RecordingStatus;
+    /**
+     * Đường dẫn tương đối tới endpoint proxy (vd `/api/class-sessions/1/recording/stream?token=...`).
+     * KHÔNG phải link Drive trực tiếp — chỉ có khi `status === 'available'`. Token hết hạn sau ít
+     * phút, nên gọi lại `getClassSessionRecording` mỗi lần vào lại trang thay vì lưu cache.
+     */
+    streamUrl?: string;
+    available: boolean;
+}
+
+/** `GET /class-sessions/{id}/recording` — dùng chung cho Tutor/Student/Parent, quyền xem được BE tự kiểm tra. */
+export const getClassSessionRecording = async (
+    id: number,
+): Promise<ApiResponse<ClassSessionRecordingResponse>> => {
+    const response = await api.get(`/class-sessions/${id}/recording`, { headers: getAuthHeaders() });
+    return response.data;
+};
+
+/**
+ * `streamUrl` từ BE là đường dẫn tương đối (dùng chung được cả dev-proxy lẫn production đa origin).
+ * Ghép với gốc backend thật trước khi gán vào `<video src>` — thẻ video không đi qua Vite/axios proxy.
+ */
+export const resolveRecordingStreamUrl = (streamUrl: string): string => {
+    if (/^https?:\/\//i.test(streamUrl)) return streamUrl;
+    const backendUrl = (import.meta.env.VITE_BACKEND_URL as string | undefined) || 'http://localhost:5166';
+    return `${backendUrl.replace(/\/$/, '')}${streamUrl}`;
 };
 
 // ── Student endpoints — `api/student/class-sessions` ──
