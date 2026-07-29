@@ -203,18 +203,24 @@ const LoginForm: React.FC = () => {
       return;
     }
 
-    // Chấp nhận email HOẶC số điện thoại — khớp với /auth/login của backend.
+    // Chấp nhận email / số điện thoại / username — khớp đúng 3 nhánh phân loại
+    // của /auth/login (SimpleAuthService.SimpleLoginAsync): chứa '@' → email;
+    // toàn số hoặc bắt đầu bằng '+' → số điện thoại; còn lại → username (tài
+    // khoản con do phụ huynh tạo dùng username, không có số điện thoại).
     if (looksLikeEmail(identifier)) {
       if (!EMAIL_RE.test(identifier)) {
         toast.warning("Email không hợp lệ!");
         return;
       }
-    } else {
+    } else if (identifier.startsWith("+") || /^\d+$/.test(identifier)) {
       const phoneDigits = identifier.replace(/\D/g, "");
       if (phoneDigits.length < 9 || phoneDigits.length > 11) {
         toast.warning("Số điện thoại không hợp lệ!");
         return;
       }
+    } else if (identifier.length < 3) {
+      toast.warning("Tên đăng nhập không hợp lệ!");
+      return;
     }
 
     try {
@@ -290,8 +296,8 @@ const LoginForm: React.FC = () => {
               id="phone"
               name="phone"
               type="text"
-              label="Số điện thoại hoặc email"
-              placeholder="090... hoặc email@example.com"
+              label="Số điện thoại, email hoặc tên đăng nhập"
+              placeholder="090..., email@example.com hoặc tên đăng nhập"
               icon="phone"
               value={formData.phone}
               onChange={handleChange}
