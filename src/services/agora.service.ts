@@ -47,6 +47,9 @@ export interface SessionPresenceStatus {
   blockedByPayment: boolean;
   /** True khi Cloud Recording đang chạy — FE hiển thị chỉ báo "đang ghi hình". */
   isRecording: boolean;
+  /** Mốc UTC (chưa kèm 'Z') hệ thống sẽ tự đóng phòng nếu chưa ai kết thúc — null nếu
+   * buổi chưa in_progress hoặc đã đóng. Dùng để hiện đếm ngược cảnh báo trước khi bị đá ra. */
+  autoEndAt?: string | null;
 }
 
 export interface ActiveSessionConflict {

@@ -162,6 +162,7 @@ const TutorPortalCalendar = () => {
             status: session.status ?? '',
             meetingLink: session.meetingLink,
             checkOutTime: session.checkOutTime,
+            hasRecording: session.hasRecording,
             // Buổi đã check-out chờ báo cáo: mở đúng trang chi tiết buổi học.
             reportPath: `/tutor-portal/class-sessions/${session.classSessionId}`,
             // Gia sư nhìn lịch theo học sinh — card/tooltip hiển thị tên học sinh.
