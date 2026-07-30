@@ -14,7 +14,6 @@ import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import SessionExpiredModal from './components/SessionExpiredModal';
 import ChatAssistant from './components/ChatAssistant/ChatAssistant';
 import PageLoader from './components/PageLoader/PageLoader';
-import ChatAssistant from './components/ChatAssistant/ChatAssistant';
 import { ErrorBoundary } from './components/shared';
 import axios from 'axios';
 import { getCurrentUser, isTokenExpired, updateTokens, clearUserFromStorage } from './services/auth.service';
@@ -365,9 +364,6 @@ function App() {
         </Suspense>
         {showChatAssistant && <ChatAssistant />}
       </ErrorBoundary>
-
-      {/* Trợ lý AI nổi — chỉ trên web (Zalo Mini App có UX riêng, không hiện chatbot). */}
-      {!inMiniApp && <ChatAssistant />}
     </div>
   );
 }
