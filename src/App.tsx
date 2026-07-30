@@ -14,6 +14,7 @@ import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import SessionExpiredModal from './components/SessionExpiredModal';
 import ChatAssistant from './components/ChatAssistant/ChatAssistant';
 import PageLoader from './components/PageLoader/PageLoader';
+import ChatAssistant from './components/ChatAssistant/ChatAssistant';
 import { ErrorBoundary } from './components/shared';
 import axios from 'axios';
 import { getCurrentUser, isTokenExpired, updateTokens, clearUserFromStorage } from './services/auth.service';
@@ -104,6 +105,14 @@ const SessionLobby = lazy(() => import('./pages/SessionLobby'));
 
 const inMiniApp = isZaloMiniApp();
 
+const ASSISTANT_HIDDEN_PREFIXES = [
+  '/tutor-portal',
+  '/parent-portal',
+  '/student-portal',
+  '/live-session',
+  '/session-lobby',
+];
+
 function LegacyStudentLessonsRedirect() {
   const { lessonId } = useParams();
   const location = useLocation();
@@ -122,6 +131,8 @@ function App() {
   const location = useLocation();
   const [showSessionExpired, setShowSessionExpired] = useState(false);
   const isDemoRoute = location.pathname.startsWith('/demo/');
+  const showChatAssistant =
+    !inMiniApp && !ASSISTANT_HIDDEN_PREFIXES.some((prefix) => location.pathname.startsWith(prefix));
 
   // Detect Supabase recovery hash and redirect to /reset-password
   useEffect(() => {
@@ -352,6 +363,7 @@ function App() {
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>
+        {showChatAssistant && <ChatAssistant />}
       </ErrorBoundary>
 
       {/* Trợ lý AI nổi — chỉ trên web (Zalo Mini App có UX riêng, không hiện chatbot). */}
