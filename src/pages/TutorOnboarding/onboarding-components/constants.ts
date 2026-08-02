@@ -1,33 +1,40 @@
 import { formatVNDNumber } from '../../../utils/formatters';
 
 // Danh sách môn (trước nằm inline trong ProfileHeroModal). Dùng chung cho B1.
-export const SUBJECTS = [
-  { id: 1, name: 'Toán' },
-  { id: 2, name: 'Tiếng Anh' },
-  { id: 3, name: 'Vật Lý' },
-  { id: 4, name: 'Hóa Học' },
-  { id: 5, name: 'Ngữ Văn' },
-  { id: 6, name: 'Sinh Học' },
-  { id: 7, name: 'Lịch Sử' },
-  { id: 8, name: 'Địa Lý' },
-  { id: 9, name: 'Tin Học' },
-  { id: 10, name: 'IELTS' },
+// minGradeLevelOrder/maxGradeLevelOrder chỉ dùng khi gọi BE lỗi (fallback) — khớp phạm vi
+// mặc định đã seed ở BE (xem migrations/managed/V20260802__subject_grade_range.sql).
+export const SUBJECTS: Array<{
+  id: number;
+  name: string;
+  minGradeLevelOrder: number | null;
+  maxGradeLevelOrder: number | null;
+}> = [
+  { id: 1, name: 'Toán', minGradeLevelOrder: null, maxGradeLevelOrder: null },
+  { id: 2, name: 'Tiếng Anh', minGradeLevelOrder: null, maxGradeLevelOrder: null },
+  { id: 3, name: 'Vật Lý', minGradeLevelOrder: 6, maxGradeLevelOrder: 12 },
+  { id: 4, name: 'Hóa Học', minGradeLevelOrder: 6, maxGradeLevelOrder: 12 },
+  { id: 5, name: 'Ngữ Văn', minGradeLevelOrder: null, maxGradeLevelOrder: null },
+  { id: 6, name: 'Sinh Học', minGradeLevelOrder: 6, maxGradeLevelOrder: 12 },
+  { id: 7, name: 'Lịch Sử', minGradeLevelOrder: 6, maxGradeLevelOrder: 12 },
+  { id: 8, name: 'Địa Lý', minGradeLevelOrder: 6, maxGradeLevelOrder: 12 },
+  { id: 9, name: 'Tin Học', minGradeLevelOrder: 3, maxGradeLevelOrder: 12 },
+  { id: 10, name: 'IELTS', minGradeLevelOrder: 6, maxGradeLevelOrder: 12 },
 ];
 
 // Khối lớp — dùng ở B1 để gán mỗi record (môn × khối × giá).
 export const GRADE_LEVELS = [
-  { value: 'grade_1', label: 'Lớp 1' },
-  { value: 'grade_2', label: 'Lớp 2' },
-  { value: 'grade_3', label: 'Lớp 3' },
-  { value: 'grade_4', label: 'Lớp 4' },
-  { value: 'grade_5', label: 'Lớp 5' },
-  { value: 'grade_6', label: 'Lớp 6' },
-  { value: 'grade_7', label: 'Lớp 7' },
-  { value: 'grade_8', label: 'Lớp 8' },
-  { value: 'grade_9', label: 'Lớp 9' },
-  { value: 'grade_10', label: 'Lớp 10' },
-  { value: 'grade_11', label: 'Lớp 11' },
-  { value: 'grade_12', label: 'Lớp 12' },
+  { value: 'grade_1', label: 'Lớp 1', levelOrder: 1 },
+  { value: 'grade_2', label: 'Lớp 2', levelOrder: 2 },
+  { value: 'grade_3', label: 'Lớp 3', levelOrder: 3 },
+  { value: 'grade_4', label: 'Lớp 4', levelOrder: 4 },
+  { value: 'grade_5', label: 'Lớp 5', levelOrder: 5 },
+  { value: 'grade_6', label: 'Lớp 6', levelOrder: 6 },
+  { value: 'grade_7', label: 'Lớp 7', levelOrder: 7 },
+  { value: 'grade_8', label: 'Lớp 8', levelOrder: 8 },
+  { value: 'grade_9', label: 'Lớp 9', levelOrder: 9 },
+  { value: 'grade_10', label: 'Lớp 10', levelOrder: 10 },
+  { value: 'grade_11', label: 'Lớp 11', levelOrder: 11 },
+  { value: 'grade_12', label: 'Lớp 12', levelOrder: 12 },
 ];
 
 // Cột ngày trong lưới. dayOfWeek theo format BE (0=CN..6=T7), hiển thị T2 trước.
