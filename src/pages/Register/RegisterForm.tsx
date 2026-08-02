@@ -10,11 +10,13 @@ import axios from "axios";
 import { saveUserToStorage, getRoleFromToken, googleAuth } from "../../services/auth.service";
 
 const API_BASE_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5166') + '/api';
-const ADMIN_PORTAL_URL = import.meta.env.VITE_ADMIN_PORTAL_URL || 'https://admin.tutora.vn';
+const ADMIN_PORTAL_URL = import.meta.env.VITE_ADMIN_PORTAL_URL || 'https://cms.tutora.vn';
 
+// Admin có cổng riêng (repo tutora-admin-frontend, deploy ở ADMIN_PORTAL_URL) —
+// 3 portal còn lại nằm trong repo này. Role 'admin' được chặn riêng ở nhánh Google
+// bên dưới, còn form đăng ký chỉ cho chọn Student/Parent/Tutor nên không tới đây.
 const getPortalPathFromRole = (role: string): string => {
     switch (role.toLowerCase()) {
-        case 'admin': return '/admin-portal/dashboard';
         case 'tutor': return '/tutor-portal/dashboard';
         case 'parent': return '/parent-portal/dashboard';
         case 'student': return '/student-portal/dashboard';
