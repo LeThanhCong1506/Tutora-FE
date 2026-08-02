@@ -19,7 +19,7 @@ import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import styles from "../../styles/pages/reset-password.module.css";
 
-const ADMIN_PORTAL_URL = import.meta.env.VITE_ADMIN_PORTAL_URL || "https://admin.tutora.vn";
+const ADMIN_PORTAL_URL = import.meta.env.VITE_ADMIN_PORTAL_URL || "https://cms.tutora.vn";
 
 // Admin có cổng riêng (repo tutora-admin-frontend) — 3 portal còn lại nằm trong repo này.
 const portalPathFromRole = (role: string): string => {

@@ -113,7 +113,7 @@ const LoginForm: React.FC = () => {
     }
   };
 
-  const ADMIN_PORTAL_URL = import.meta.env.VITE_ADMIN_PORTAL_URL || 'https://admin.tutora.vn';
+  const ADMIN_PORTAL_URL = import.meta.env.VITE_ADMIN_PORTAL_URL || 'https://cms.tutora.vn';
 
   /**
    * Hoàn tất đăng nhập sau khi đã có JWT (dùng chung cho password & Google).
