@@ -1,15 +1,3 @@
-// src/services/assistant.service.ts
-// Trợ lý AI trên web (modal chatbot). 3 mục đích: gợi ý gia sư / hỏi hệ thống Tutora /
-// từ chối câu lạc đề. Gọi .NET (apiClient) POST /ai-chat/assistant/respond — .NET forward
-// sang AI service FastAPI /api/v1/assistant/respond, tự lo casing + lưu lịch sử.
-//
-// PUBLIC: anonymous chat được (không token). Khi CÓ token:
-//   • .NET lưu lịch sử theo userId, trả sessionId → gửi lại lượt sau để nối đúng phiên.
-// Khi KHÔNG token: FE tự giữ history (localStorage), gửi kèm mỗi lượt.
-//
-// .NET là biên giới camelCase chuẩn — request & response đều camelCase, không cần map
-// snake_case (đó là việc .NET ↔ FastAPI, ẩn với FE).
-
 import { apiClient } from './apiClient';
 
 export interface AssistantContext {
