@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { PortalLayout } from '../../components/shared/PortalLayout';
 import type { NavItem } from '../../components/shared/PortalLayout';
+import { parentProfileMenuItems } from '../shared/profileMenus';
 import { getUserInfoFromToken } from '../../services/auth.service';
 import { StudentProvider, useStudentContext } from '../../contexts/StudentContext';
 import { useNextLesson } from '../shared/useLayoutData';
@@ -103,6 +104,7 @@ const ParentLayoutInner: React.FC<ParentLayoutProps> = ({ children }) => {
             headerLeft={<NextLessonIndicator />}
             showSidebarUserCard={false}
             showAvatarImage={true}
+            profileMenuItems={parentProfileMenuItems}
         >
             {children}
         </PortalLayout>

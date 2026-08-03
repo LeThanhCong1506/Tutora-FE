@@ -1,0 +1,251 @@
+.container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.trigger {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 8px 4px 12px;
+    border-radius: 9999px;
+    background: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.trigger:hover {
+    background-color: rgba(62, 47, 40, 0.05);
+    border-color: rgba(62, 47, 40, 0.1);
+}
+
+.triggerOpen {
+    background-color: rgba(62, 47, 40, 0.07);
+    border-color: rgba(62, 47, 40, 0.14);
+}
+
+.triggerInfo {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1;
+}
+
+.triggerName {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: 600;
+    color: #1a2238;
+    white-space: nowrap;
+}
+
+.triggerRole {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 10px;
+    line-height: 14px;
+    font-weight: 600;
+    color: rgba(62, 47, 40, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.triggerAvatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 9999px;
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #3d4a3e;
+}
+
+.triggerAvatarImg {
+    width: 35px;
+    height: 35px;
+    border-radius: 9999px;
+    object-fit: cover;
+    display: block;
+}
+
+.triggerInitials {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #f2f0e4;
+}
+
+.chevron {
+    font-size: 18px;
+    color: rgba(62, 47, 40, 0.45);
+    transition: transform 0.2s ease;
+}
+
+.chevronOpen {
+    transform: rotate(180deg);
+}
+
+.menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 268px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.12);
+    border-radius: 14px;
+    padding: 6px;
+    z-index: 120;
+    overflow: hidden;
+}
+
+.menuHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 10px 12px;
+    border-bottom: 1px solid rgba(62, 47, 40, 0.1);
+    margin-bottom: 6px;
+}
+
+.menuAvatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 9999px;
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #3d4a3e;
+}
+
+.menuAvatarImg {
+    width: 38px;
+    height: 38px;
+    border-radius: 9999px;
+    object-fit: cover;
+    display: block;
+}
+
+.menuInitials {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #f2f0e4;
+}
+
+.menuIdentity {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.menuName {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    line-height: 19px;
+    font-weight: 600;
+    color: #1a2238;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.menuSubtitle {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    line-height: 16px;
+    color: rgba(62, 47, 40, 0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.menuList {
+    display: flex;
+    flex-direction: column;
+}
+
+.menuDivider {
+    height: 1px;
+    background-color: rgba(62, 47, 40, 0.1);
+    margin: 6px 4px;
+}
+
+.menuItem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 10px;
+    border: none;
+    border-radius: 9px;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+    color: #1a2238;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.menuItem:hover {
+    background-color: rgba(62, 47, 40, 0.06);
+}
+
+.menuItemDanger {
+    color: #631b1b;
+}
+
+.menuItemDanger:hover {
+    background-color: rgba(99, 27, 27, 0.08);
+}
+
+.menuIcon {
+    font-size: 19px;
+    width: 19px;
+    flex-shrink: 0;
+    color: inherit;
+}
+
+.menuLabel {
+    flex: 1;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13.5px;
+    line-height: 19px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.menuHint {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(62, 47, 40, 0.4);
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .trigger {
+        padding: 3px 4px 3px 6px;
+        gap: 6px;
+    }
+
+    .triggerInfo {
+        display: none;
+    }
+
+    .triggerAvatar,
+    .triggerAvatarImg {
+        width: 32px;
+        height: 32px;
+    }
+
+    .menu {
+        width: 250px;
+    }
+}

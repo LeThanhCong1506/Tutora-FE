@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
-import { Popconfirm } from 'antd';
 import { toast } from 'react-toastify';
 import styles from './PortalLayout.module.css';
 
+import ProfileDropdown from './ProfileDropdown';
+import type { ProfileMenuItem } from './ProfileDropdown';
+import { ConfirmDialog } from '../ConfirmDialog';
 import NotificationDropdown from '../../NotificationDropdown/NotificationDropdown';
 import { clearUserFromStorage, getUserInfoFromToken, getUserProfile } from '../../../services/auth.service';
 import { getUnreadCount } from '../../../services/notification.service';
@@ -32,14 +34,6 @@ const MenuIcon = () => (
 const CloseIcon = () => (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M5 5L15 15M15 5L5 15" strokeLinecap="round" />
-    </svg>
-);
-
-const LogoutIcon = () => (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M6 16H3C2.44772 16 2 15.5523 2 15V3C2 2.44772 2.44772 2 3 2H6" strokeLinecap="round" />
-        <path d="M12 12L16 9L12 6" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M16 9H7" strokeLinecap="round" />
     </svg>
 );
 
@@ -75,6 +69,8 @@ export interface PortalLayoutProps {
     showAvatarImage?: boolean;
     /** Whether to show notification dropdown (with SignalR). Default: true */
     showNotificationDropdown?: boolean;
+    /** Quick actions listed in the header profile dropdown. */
+    profileMenuItems?: ProfileMenuItem[];
     /** Additional content rendered after the layout (e.g., tour modal) */
     extras?: React.ReactNode;
     /** data-tour attribute on the sidebar element */
@@ -112,6 +108,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
     showSidebarUserCard = true,
     showAvatarImage = true,
     showNotificationDropdown: showNotifDropdownProp = true,
+    profileMenuItems,
     extras,
     sidebarDataTour,
     onSidebarOpen,
@@ -145,11 +142,11 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
     }, [sidebarOpen]);
 
     // ── User data ──
-    const [viewingAvatar, setViewingAvatar] = useState(false);
     const [userData, setUserData] = useState({
         name: 'User',
         initials: 'U',
         role: userRole || 'USER',
+        email: '',
         avatar: generateAvatarUrl('User'),
     });
 
@@ -167,6 +164,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
             name: displayName,
             initials,
             role: userRole || user.role || 'USER',
+            email: user.email || '',
             avatar: generateAvatarUrl(displayName),
         });
 
@@ -230,6 +228,29 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
             setNotificationCount(count);
         } catch { /* ignore */ }
     };
+
+    // Profile dropdown
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+    const handleConfirmLogout = async () => {
+        setShowLogoutConfirm(false);
+        await clearUserFromStorage();
+        toast.success('Đăng xuất thành công!');
+        navigate('/login');
+    };
+
+    // Portal shortcuts first, then the always-present account actions.
+    const dropdownItems = useMemo<ProfileMenuItem[]>(() => [
+        ...(profileMenuItems ?? []),
+        {
+            key: 'logout',
+            label: 'Đăng xuất',
+            materialIcon: 'logout',
+            danger: true,
+            startsGroup: true,
+            onSelect: () => setShowLogoutConfirm(true),
+        },
+    ], [profileMenuItems]);
 
     // ── Active path check ──
     const checkActive = (path: string) => {
@@ -393,54 +414,17 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                                 )}
                             </div>
 
-                            {/* User Info */}
-                            <div className={styles.headerUser}>
-                                <div className={styles.headerUserInfo}>
-                                    <span className={styles.headerUserName}>{userData.name}</span>
-                                    <span className={styles.headerUserRole}>{userData.role}</span>
-                                </div>
-                                {showAvatarImage ? (
-                                    <div
-                                        className={styles.headerAvatarWrap}
-                                        onClick={() => setViewingAvatar(true)}
-                                        title="Nhấn để xem ảnh"
-                                    >
-                                        <img
-                                            className={styles.headerAvatarImg}
-                                            src={userData.avatar}
-                                            alt="User avatar"
-                                        />
-                                        <div className={styles.headerAvatarHover}>
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                                <circle cx="12" cy="12" r="3" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className={styles.headerAvatar}>
-                                        <span>{userData.initials}</span>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Logout */}
-                            <Popconfirm
-                                title="Đăng xuất"
-                                description="Bạn có chắc muốn đăng xuất không?"
-                                onConfirm={async () => {
-                                    await clearUserFromStorage();
-                                    toast.success('Đăng xuất thành công!');
-                                    navigate('/login');
-                                }}
-                                okText="Đăng xuất"
-                                cancelText="Hủy"
-                                okButtonProps={{ danger: true }}
-                            >
-                                <button className={styles.logoutBtn} title="Đăng xuất">
-                                    <LogoutIcon />
-                                </button>
-                            </Popconfirm>
+                            {/* User Info + quick actions */}
+                            <ProfileDropdown
+                                name={userData.name}
+                                role={userData.role}
+                                initials={userData.initials}
+                                avatarUrl={userData.avatar}
+                                subtitle={userData.email}
+                                showAvatarImage={showAvatarImage}
+                                items={dropdownItems}
+                                onNavigate={(path) => navigate(path)}
+                            />
                         </div>
                     </div>
                 </header>}
@@ -501,23 +485,15 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                 </nav>
             )}
 
-            {/* Avatar Lightbox */}
-            {viewingAvatar && showAvatarImage && (
-                <div className={styles.lightboxOverlay} onClick={() => setViewingAvatar(false)}>
-                    <div className={styles.lightboxContent} onClick={e => e.stopPropagation()}>
-                        <button className={styles.lightboxClose} onClick={() => setViewingAvatar(false)} aria-label="Đóng">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                            </svg>
-                        </button>
-                        <img src={userData.avatar} alt={userData.name} className={styles.lightboxImg} />
-                        <div className={styles.lightboxInfo}>
-                            <p className={styles.lightboxName}>{userData.name}</p>
-                            <span className={styles.lightboxRole}>{userData.role}</span>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ConfirmDialog
+                open={showLogoutConfirm}
+                type="warning"
+                title="Đăng xuất"
+                message="Bạn có chắc muốn kết thúc phiên làm việc hiện tại không?"
+                confirmText="Đăng xuất"
+                onConfirm={handleConfirmLogout}
+                onCancel={() => setShowLogoutConfirm(false)}
+            />
         </div>
     );
 };
