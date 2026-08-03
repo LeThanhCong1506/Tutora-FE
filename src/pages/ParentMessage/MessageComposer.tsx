@@ -20,6 +20,15 @@ const MessageComposer = ({ onSend, onSendImage, disabled = false, channelId }: M
   const isTypingRef = useRef(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const hintId = 'message-composer-hint';
+
+  const resizeTextarea = useCallback((element: HTMLTextAreaElement | null) => {
+    if (!element) return;
+    element.style.height = 'auto';
+    const nextHeight = Math.min(element.scrollHeight, 128);
+    element.style.height = `${Math.max(nextHeight, 48)}px`;
+    element.style.overflowY = element.scrollHeight > 128 ? 'auto' : 'hidden';
+  }, []);
 
   // Cleanup object URL khi unmount hoặc đổi ảnh
   useEffect(() => {
@@ -81,6 +90,7 @@ const MessageComposer = ({ onSend, onSendImage, disabled = false, channelId }: M
       if (hasText) {
         await onSend(message);
         setMessage('');
+        requestAnimationFrame(() => resizeTextarea(textareaRef.current));
       }
     } catch {
       toast.error('Không thể gửi. Vui lòng thử lại.');
@@ -89,7 +99,7 @@ const MessageComposer = ({ onSend, onSendImage, disabled = false, channelId }: M
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -98,6 +108,7 @@ const MessageComposer = ({ onSend, onSendImage, disabled = false, channelId }: M
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessage(e.target.value);
+    resizeTextarea(e.target);
     if (e.target.value.trim()) {
       emitTyping();
     } else {
@@ -146,12 +157,7 @@ const MessageComposer = ({ onSend, onSendImage, disabled = false, channelId }: M
       {previewUrl && (
         <div className={styles.imagePreviewWrapper}>
           <img src={previewUrl} alt="Xem trước" className={styles.imagePreview} />
-          <button
-            type="button"
-            className={styles.imagePreviewRemove}
-            onClick={handleRemoveImage}
-            title="Xóa ảnh"
-          >
+          <button type="button" className={styles.imagePreviewRemove} onClick={handleRemoveImage} title="Xóa ảnh">
             <X size={14} />
           </button>
         </div>
@@ -166,37 +172,45 @@ const MessageComposer = ({ onSend, onSendImage, disabled = false, channelId }: M
           onChange={handleFileSelect}
         />
         <button
-          className={styles.iconButton}
+          className={`${styles.iconButton} ${styles.attachmentButton}`}
           type="button"
-          title="Đính kèm hình ảnh"
+          aria-label="Đính kèm hình ảnh"
           disabled={disabled || sending}
           onClick={() => fileInputRef.current?.click()}
         >
-          <Paperclip size={18} />
+          <Paperclip size={19} aria-hidden="true" />
         </button>
         <textarea
           ref={textareaRef}
           className={styles.composerInput}
-          placeholder={pendingImage ? 'Thêm chú thích (tùy chọn)...' : 'Nhập tin nhắn...'}
+          placeholder={
+            disabled ? 'Đang kết nối...' : pendingImage ? 'Thêm chú thích (tùy chọn)...' : 'Nhập tin nhắn...'
+          }
+          aria-label="Nội dung tin nhắn"
+          aria-describedby={hintId}
           rows={1}
           value={message}
+          disabled={disabled || sending}
           onChange={handleChange}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyDown}
         />
         <button
           className={styles.sendButton}
           type="button"
           onClick={handleSend}
           disabled={!canSend}
-          title="Gửi tin nhắn"
+          aria-label="Gửi tin nhắn"
         >
           {sending ? (
-            <Loader2 size={20} className={styles.sendingSpinner} color="#ffffff" />
+            <Loader2 size={20} className={styles.sendingSpinner} aria-hidden="true" />
           ) : (
-            <SendHorizontal size={20} color="#ffffff" />
+            <SendHorizontal size={20} aria-hidden="true" />
           )}
         </button>
       </div>
+      <span className={styles.composerHint} id={hintId}>
+        Enter để gửi · Shift + Enter để xuống dòng
+      </span>
     </div>
   );
 };

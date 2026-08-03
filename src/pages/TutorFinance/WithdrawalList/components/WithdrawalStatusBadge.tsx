@@ -1,41 +1,59 @@
 import React from 'react';
 import { Tag } from 'antd';
 import {
-    ClockCircleOutlined,
-    CheckCircleOutlined,
-    CloseCircleOutlined,
-    SyncOutlined,
-    StopOutlined
+  ClockCircleOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  SyncOutlined,
+  StopOutlined,
 } from '@ant-design/icons';
 import { formatWithdrawalStatusV2 } from '../../../../utils/formatters';
 
 interface Props {
-    status: string;
+  status: string;
 }
 
 const WithdrawalStatusBadge: React.FC<Props> = ({ status }) => {
-    const label = formatWithdrawalStatusV2(status);
+  const label = formatWithdrawalStatusV2(status);
+  const lowerStatus = status.toLowerCase();
 
-    const lowerStatus = status.toLowerCase();
+  let tone = 'default';
+  let icon = <ClockCircleOutlined />;
 
-    switch (lowerStatus) {
-        case 'pending':
-        case 'pending_review':
-            return <Tag icon={<ClockCircleOutlined />} color="warning">{label}</Tag>;
-        case 'approved':
-        case 'processing':
-            return <Tag icon={<SyncOutlined spin />} color="processing">{label}</Tag>;
-        case 'completed':
-            return <Tag icon={<CheckCircleOutlined />} color="success">{label}</Tag>;
-        case 'rejected':
-            return <Tag icon={<CloseCircleOutlined />} color="error">{label}</Tag>;
-        case 'cancelled':
-            return <Tag icon={<StopOutlined />} color="default">{label}</Tag>;
-        case 'delayed':
-            return <Tag icon={<ClockCircleOutlined />} color="orange">{label}</Tag>;
-        default:
-            return <Tag>{label}</Tag>;
-    }
+  switch (lowerStatus) {
+    case 'pending':
+    case 'pending_review':
+      tone = 'pending';
+      break;
+    case 'approved':
+    case 'processing':
+      tone = 'processing';
+      icon = <SyncOutlined spin />;
+      break;
+    case 'completed':
+      tone = 'completed';
+      icon = <CheckCircleOutlined />;
+      break;
+    case 'rejected':
+      tone = 'rejected';
+      icon = <CloseCircleOutlined />;
+      break;
+    case 'cancelled':
+      tone = 'cancelled';
+      icon = <StopOutlined />;
+      break;
+    case 'delayed':
+      tone = 'delayed';
+      break;
+    default:
+      break;
+  }
+
+  return (
+    <Tag className={`finance-status-tag finance-status-tag--${tone}`} icon={icon}>
+      {label}
+    </Tag>
+  );
 };
 
 export default WithdrawalStatusBadge;

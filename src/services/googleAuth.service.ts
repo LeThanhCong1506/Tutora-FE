@@ -134,11 +134,3 @@ export const getGoogleAuthErrorMessage = (errorCode: string | null, fallback?: s
     }
 };
 
-/**
- * Detect xem một meetingLink có phải là Jitsi fallback hay không.
- * Jitsi link có dạng: https://meet.jit.si/tutora-lesson-{id}
- */
-export const isJitsiFallbackLink = (meetingLink: string | null | undefined): boolean => {
-    if (!meetingLink) return false;
-    return meetingLink.includes('meet.jit.si/tutora-lesson-');
-};

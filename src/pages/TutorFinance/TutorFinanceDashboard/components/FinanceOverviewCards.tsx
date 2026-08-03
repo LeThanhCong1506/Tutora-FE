@@ -1,79 +1,115 @@
 import React from 'react';
 import { Card, Tooltip } from 'antd';
-import { InfoCircleOutlined, WalletOutlined, LockOutlined, RiseOutlined, HistoryOutlined } from '@ant-design/icons';
-import { formatCurrency, formatDate } from '../../../../utils/formatters';
+import {
+  CalendarOutlined,
+  DollarCircleOutlined,
+  InfoCircleOutlined,
+  LockOutlined,
+  RiseOutlined,
+  WalletOutlined,
+} from '@ant-design/icons';
+import { formatCurrency, formatDate, formatDateTime } from '../../../../utils/formatters';
 import type { FinanceSummary } from '../../../../types/finance.types';
 
 interface Props {
-    summary: FinanceSummary | null;
-    loading: boolean;
+  summary: FinanceSummary | null;
+  loading: boolean;
 }
 
 const FinanceOverviewCards: React.FC<Props> = ({ summary, loading }) => {
-    return (
-        <div className="overview-cards-row">
-            <Card className="finance-card" loading={loading}>
-                <div className="card-label">
-                    <WalletOutlined style={{ color: '#52c41a' }} />
-                    <span>Số dư khả dụng</span>
-                    <Tooltip title="Số tiền bạn có thể rút ngay lập tức">
-                        <InfoCircleOutlined style={{ fontSize: '12px', cursor: 'help' }} />
-                    </Tooltip>
-                </div>
-                <div className="card-value" style={{ color: '#52c41a' }}>
-                    {formatCurrency(summary?.balance || 0)}
-                </div>
-                <div className="card-footer">
-                    Cập nhật lúc: {formatDate(new Date().toISOString())}
-                </div>
-            </Card>
+  const metrics = [
+    {
+      key: 'total',
+      label: 'Tổng số dư',
+      value: formatCurrency(summary?.totalBalance ?? 0),
+      note: 'Bao gồm số dư khả dụng và đang tạm giữ',
+      tooltip: 'Tổng giá trị hiện có trong ví, gồm số tiền có thể rút và số tiền đang tạm giữ',
+      icon: <DollarCircleOutlined />,
+      tone: 'navy',
+    },
+    {
+      key: 'frozen',
+      label: 'Tiền học được bảo đảm',
+      value: formatCurrency(summary?.frozenBalance ?? 0),
+      note: '',
+      tooltip: 'Tổng tiền phụ huynh đã thanh toán và hệ thống đang giữ để bảo đảm cho các buổi học',
+      icon: <LockOutlined />,
+      tone: 'burgundy',
+      detail: {
+        label: 'Trong đó chờ vào số dư',
+        value: formatCurrency(summary?.pendingSettlement ?? 0),
+      },
+    },
+    {
+      key: 'earned',
+      label: 'Tổng thu nhập',
+      value: formatCurrency(summary?.totalEarned ?? 0),
+      note: 'Tổng tích lũy từ trước đến nay',
+      tooltip: 'Tổng số tiền bạn đã kiếm được trên TUTORA',
+      icon: <RiseOutlined />,
+      tone: 'green',
+    },
+    {
+      key: 'last-withdrawal',
+      label: 'Lần rút gần nhất',
+      value: summary?.lastWithdrawalAt ? formatDateTime(summary.lastWithdrawalAt) : 'Chưa có',
+      note: summary?.lastWithdrawalAt ? 'Thời điểm gửi yêu cầu rút tiền gần nhất' : 'Bạn chưa gửi yêu cầu rút tiền',
+      tooltip: 'Thời điểm bạn tạo yêu cầu rút tiền gần nhất, không phụ thuộc trạng thái xử lý',
+      icon: <CalendarOutlined />,
+      tone: 'slate',
+    },
+  ];
 
-            <Card className="finance-card" loading={loading}>
-                <div className="card-label">
-                    <HistoryOutlined style={{ color: '#faad14' }} />
-                    <span>Đang chờ quyết toán</span>
-                    <Tooltip title="Tiền từ các buổi học vừa hoàn thành, đang trong thời gian đối soát">
-                        <InfoCircleOutlined style={{ fontSize: '12px', cursor: 'help' }} />
-                    </Tooltip>
-                </div>
-                <div className="card-value">
-                    {formatCurrency(summary?.pendingSettlement || 0)}
-                </div>
-                <div className="card-footer">
-                    Chờ xử lý từ hệ thống
-                </div>
-            </Card>
-
-            <Card className="finance-card" loading={loading}>
-                <div className="card-label">
-                    <LockOutlined style={{ color: '#ff4d4f' }} />
-                    <span>Đang tạm giữ</span>
-                    <Tooltip title="Số tiền bị tạm giữ do khiếu nại hoặc chính sách bảo mật">
-                        <InfoCircleOutlined style={{ fontSize: '12px', cursor: 'help' }} />
-                    </Tooltip>
-                </div>
-                <div className="card-value" style={{ color: '#ff4d4f' }}>
-                    {formatCurrency(summary?.frozenBalance || 0)}
-                </div>
-                <div className="card-footer">
-                    Tiền ký quỹ (Escrow)
-                </div>
-            </Card>
-
-            <Card className="finance-card" loading={loading}>
-                <div className="card-label">
-                    <RiseOutlined style={{ color: '#1890ff' }} />
-                    <span>Tổng thu nhập</span>
-                </div>
-                <div className="card-value">
-                    {formatCurrency(summary?.totalEarned || 0)}
-                </div>
-                <div className="card-footer">
-                    Tổng tích lũy từ trước đến nay
-                </div>
-            </Card>
+  return (
+    <section className="finance-overview-grid" aria-label="Tổng quan số dư">
+      <Card className="finance-card finance-balance-card" loading={loading}>
+        <div className="finance-balance-card__header">
+          <div className="finance-balance-card__label">
+            <span className="finance-balance-card__icon" aria-hidden="true">
+              <WalletOutlined />
+            </span>
+            <span>Số dư khả dụng</span>
+          </div>
+          <Tooltip title="Số tiền bạn có thể rút ngay lập tức">
+            <InfoCircleOutlined className="finance-info-icon" aria-label="Thông tin số dư khả dụng" />
+          </Tooltip>
         </div>
-    );
+
+        <div className="finance-balance-card__value">{formatCurrency(summary?.availableBalance ?? 0)}</div>
+
+        <div className="finance-balance-card__footer">
+          <span className="finance-live-dot" aria-hidden="true" />
+          Cập nhật ngày {formatDate(new Date().toISOString())}
+        </div>
+      </Card>
+
+      {metrics.map((metric) => (
+        <Card
+          key={metric.key}
+          className={`finance-card finance-metric-card finance-metric-card--${metric.tone}`}
+          loading={loading}
+        >
+          <div className="finance-metric-card__top">
+            <span className="finance-metric-card__icon" aria-hidden="true">
+              {metric.icon}
+            </span>
+            <Tooltip title={metric.tooltip}>
+              <InfoCircleOutlined className="finance-info-icon" aria-label={`Thông tin ${metric.label}`} />
+            </Tooltip>
+          </div>
+          <span className="finance-metric-card__label">{metric.label}</span>
+          <strong className="finance-metric-card__value">{metric.value}</strong>
+          {metric.note && <span className="finance-metric-card__note">{metric.note}</span>}
+          {metric.detail && (
+            <div className="finance-metric-card__breakdown">
+              <span>{metric.detail.label}</span>
+              <strong>{metric.detail.value}</strong>
+            </div>
+          )}
+        </Card>
+      ))}
+    </section>
+  );
 };
 
 export default FinanceOverviewCards;

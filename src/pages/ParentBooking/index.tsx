@@ -16,6 +16,7 @@ import { toast } from 'react-toastify';
 import { useCurrentTime } from '../../hooks/useCurrentTime';
 import { getParentBookings, isFirstLessonFinished, type BookingResponseDTO } from '../../services/booking.service';
 import { getBookingResponseDeadlineState } from '../../utils/bookingDeadline';
+import { formatVNDNumber } from '../../utils/formatters';
 import styles from './styles.module.css';
 
 const STATUS_TABS = [
@@ -26,7 +27,7 @@ const STATUS_TABS = [
   { key: 'pending_remaining_payment', label: 'Thanh toán còn lại' },
   { key: 'ongoing', label: 'Đang học' },
   { key: 'completed', label: 'Hoàn thành' },
-  { key: 'cancelled', label: 'Đã hủy' },
+  { key: 'cancelled,cancelled_noshow,payment_timeout', label: 'Đã hủy' },
 ];
 
 const STATUS_CONFIG: Record<string, { label: string; tone: string }> = {
@@ -39,7 +40,7 @@ const STATUS_CONFIG: Record<string, { label: string; tone: string }> = {
   ongoing: { label: 'Đang học', tone: 'active' },
   completed: { label: 'Hoàn thành', tone: 'completed' },
   cancelled: { label: 'Đã hủy', tone: 'cancelled' },
-  cancelled_noshow: { label: 'Đã hủy', tone: 'cancelled' },
+  cancelled_noshow: { label: 'Hủy do vắng mặt', tone: 'cancelled' },
   payment_timeout: { label: 'Hết hạn thanh toán', tone: 'cancelled' },
 };
 
@@ -72,18 +73,13 @@ const EMPTY_STATE_COPY: Record<string, { title: string; description: string }> =
     title: 'Chưa có lớp hoàn thành',
     description: 'Những lớp đã hoàn thành sẽ được lưu tại đây.',
   },
-  cancelled: {
+  'cancelled,cancelled_noshow,payment_timeout': {
     title: 'Chưa có lịch đã hủy',
-    description: 'Các booking bị hủy hoặc hết hạn sẽ được lưu tại đây.',
+    description: 'Các booking bị hủy, hết hạn hoặc vắng mặt sẽ được lưu tại đây.',
   },
 };
 
-const formatPrice = (amount: number) =>
-  new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0,
-  }).format(Math.max(0, amount));
+const formatPrice = (amount: number) => `${formatVNDNumber(Math.max(0, amount))} ₫`;
 
 const formatDate = (value?: string) => {
   if (!value) return '';

@@ -2,11 +2,10 @@ import styles from './styles.module.css';
 import MessageBubble from './MessageBubble';
 import type { ChatMessage } from '../../services/chat.service';
 import InfiniteScroll from 'react-infinite-scroll-component';
-import { Loader2, Video, CheckCircle, XCircle, BookOpen } from 'lucide-react';
+import { Loader2, Video, CheckCircle, XCircle, BookOpen, MessageCircleDashed } from 'lucide-react';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import BookingRequestCard from '../../components/BookingRequestCard/BookingRequestCard';
-
 
 interface ChatMessagesAreaProps {
   messages: Array<ChatMessage>;
@@ -30,7 +29,15 @@ const MeetLinkCard = ({ message }: { message: ChatMessage }) => {
       <div className={styles.systemCard} style={{ borderLeft: '3px solid #1a73e8' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
           <Video size={16} style={{ color: '#1a73e8' }} />
-          <span style={{ fontWeight: 600, fontSize: '13px', color: '#1a73e8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          <span
+            style={{
+              fontWeight: 600,
+              fontSize: '13px',
+              color: '#1a73e8',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+            }}
+          >
             Link buổi học
           </span>
         </div>
@@ -65,13 +72,7 @@ const MeetLinkCard = ({ message }: { message: ChatMessage }) => {
 };
 
 /** Renders a booking_accepted / booking_declined / booking_cancelled system message */
-const BookingStatusCard = ({
-  message,
-  isParent,
-}: {
-  message: ChatMessage;
-  isParent: boolean;
-}) => {
+const BookingStatusCard = ({ message, isParent }: { message: ChatMessage; isParent: boolean }) => {
   const isAccepted = message.messageType === 'booking_accepted';
   const color = isAccepted ? '#2e7d32' : '#c62828';
   const Icon = isAccepted ? CheckCircle : XCircle;
@@ -82,9 +83,7 @@ const BookingStatusCard = ({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Icon size={16} style={{ color }} />
-            <span style={{ fontWeight: 600, fontSize: '13px', color }}>
-              {message.content}
-            </span>
+            <span style={{ fontWeight: 600, fontSize: '13px', color }}>{message.content}</span>
           </div>
 
           {isAccepted && isParent && (
@@ -106,10 +105,14 @@ const ChatMessagesArea = ({
   loadMessages,
   isTutor = false,
   onProceedToPayment,
-  isOtherTyping = false
+  isOtherTyping = false,
 }: ChatMessagesAreaProps) => {
   const [page, setPage] = useState(1);
   const navigate = useNavigate();
+  const location = useLocation();
+  const bookingPath = location.pathname.startsWith('/student-portal')
+    ? '/student-portal/booking'
+    : '/parent-portal/booking';
   if (loading) {
     return (
       <div className={styles.messagesArea}>
@@ -125,7 +128,11 @@ const ChatMessagesArea = ({
     return (
       <div className={styles.messagesArea}>
         <div className={styles.chatEmptyState}>
-          <p className={styles.emptyStateText}>Chưa có tin nhắn nào</p>
+          <div className={styles.chatEmptyIcon} aria-hidden="true">
+            <MessageCircleDashed size={28} />
+          </div>
+          <h3 className={styles.emptyStateTitle}>Bắt đầu cuộc trò chuyện</h3>
+          <p className={styles.emptyStateText}>Gửi lời chào để cùng trao đổi về lịch học và mục tiêu học tập.</p>
         </div>
       </div>
     );
@@ -150,7 +157,9 @@ const ChatMessagesArea = ({
       {isOtherTyping && (
         <div className={styles.typingIndicator}>
           <span className={styles.typingDots}>
-            <span /><span /><span />
+            <span />
+            <span />
+            <span />
           </span>
           <span>Đang nhập...</span>
         </div>
@@ -174,11 +183,7 @@ const ChatMessagesArea = ({
             if (isTutor) {
               return (
                 <div key={msg.messageId || index} className={styles.systemMessageContainer}>
-                  <BookingRequestCard
-                    message={msg}
-                    isTutor={isTutor}
-                    onProceedToPayment={onProceedToPayment}
-                  />
+                  <BookingRequestCard message={msg} isTutor={isTutor} onProceedToPayment={onProceedToPayment} />
                 </div>
               );
             }
@@ -188,12 +193,20 @@ const ChatMessagesArea = ({
                 <div className={styles.systemCard} style={{ borderLeft: '3px solid #7c6f5b' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                     <BookOpen size={16} style={{ color: '#7c6f5b' }} />
-                    <span style={{ fontWeight: 600, fontSize: '13px', color: '#7c6f5b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <span
+                      style={{
+                        fontWeight: 600,
+                        fontSize: '13px',
+                        color: '#7c6f5b',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                      }}
+                    >
                       Yêu cầu đặt lịch đã được gửi
                     </span>
                   </div>
                   <button
-                    onClick={() => navigate('/parent-portal/booking')}
+                    onClick={() => navigate(bookingPath)}
                     style={{
                       background: 'none',
                       border: 'none',
@@ -223,22 +236,17 @@ const ChatMessagesArea = ({
             msg.messageType === 'booking_declined' ||
             msg.messageType === 'booking_cancelled'
           ) {
-            return (
-              <BookingStatusCard
-                key={msg.messageId || index}
-                message={msg}
-                isParent={!isTutor}
-              />
-            );
+            return <BookingStatusCard key={msg.messageId || index} message={msg} isParent={!isTutor} />;
           }
 
           // Regular text or image message
+          const isSender = currentUserId ? msg.senderId === currentUserId : false;
           return (
             <MessageBubble
               key={msg.messageId || index}
               message={msg.content}
               time={msg.createdAt}
-              isSender={currentUserId ? msg.senderId === currentUserId : false}
+              isSender={isSender}
               isRead={msg.isRead}
               messageType={msg.messageType}
             />

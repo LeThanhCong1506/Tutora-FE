@@ -10,8 +10,8 @@ import {
     confirmStudentClassSession,
     type StudentClassSessionSummaryResponse,
     type StudentClassSessionDetailResponse,
+    type ScheduleChangeAuditDto,
 } from './classSession.service';
-import type { CalendarDayDto } from './parent-lesson.service';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -51,6 +51,9 @@ export interface StudentLessonDetailDto extends Omit<LessonDetailDto, 'lessonId'
     lessonId: number;
     subjectName?: string;
     tutorName?: string;
+    bookingStatus?: string;
+    isSettled?: boolean;
+    scheduleChanges?: ScheduleChangeAuditDto[];
 }
 
 const mapDetail = (d: StudentClassSessionDetailResponse): StudentLessonDetailDto => ({
@@ -61,6 +64,8 @@ const mapDetail = (d: StudentClassSessionDetailResponse): StudentLessonDetailDto
     confirmDeadline: d.confirmDeadline,
     lessonPrice: d.classSessionPrice,
     status: d.status,
+    bookingStatus: d.bookingStatus,
+    isSettled: d.isSettled,
     meetingLink: d.meetingLink,
     checkInTime: d.checkinTime,
     checkOutTime: d.checkoutTime,
@@ -74,14 +79,17 @@ const mapDetail = (d: StudentClassSessionDetailResponse): StudentLessonDetailDto
               reportId: 0,
               contentCovered: d.report.topicsCovered ?? '',
               homeworkAssigned: d.report.homeworkAssigned ?? '',
-              studentPerformanceRating: 0,
-              attachments: [] as string[],
+              // 0 = sentinel "chưa đánh giá" — studentPerformanceRating không optional trên
+              // LessonDetailDto dùng chung. StudentLessonDetail.tsx phải check `> 0`, không phải `!= null`.
+              studentPerformanceRating: d.report.studentPerformanceRating ?? 0,
+              attachments: d.report.attachments ?? [],
               createdAt: '',
           }
         : undefined,
     // Alias phẳng — khớp với cách `StudentLessons/index.tsx` đang đọc
     subjectName: d.subjectName,
     tutorName: d.tutorName,
+    scheduleChanges: d.scheduleChanges,
 });
 
 // ============================================
@@ -89,6 +97,28 @@ const mapDetail = (d: StudentClassSessionDetailResponse): StudentLessonDetailDto
 // ============================================
 
 type StudentLessonSummaryDto = ReturnType<typeof mapSummary>;
+
+export interface StudentCalendarLessonDto {
+    lessonId: number;
+    scheduledStart: string;
+    scheduledEnd: string;
+    studentName?: string;
+    tutorName?: string;
+    subjectName?: string;
+    status: string;
+    meetingLink?: string;
+    /** Đã check-out (phòng đóng) — in_progress + checkOutTime = chờ gia sư gửi báo cáo. */
+    checkOutTime?: string;
+    /** True nếu buổi học đã có video xem lại. */
+    hasRecording?: boolean;
+    /** Yêu cầu dời lịch đang hiệu lực cho buổi này — "pending"/"approved", null nếu không có. */
+    scheduleChangeStatus?: 'pending' | 'approved' | null;
+}
+
+export interface StudentCalendarDayDto {
+    date: string;
+    lessons: StudentCalendarLessonDto[];
+}
 
 export const getStudentLessons = async (params: {
     page?: number;
@@ -123,7 +153,7 @@ export const confirmStudentLesson = async (
 export const getStudentCalendar = async (
     startDate?: string,
     endDate?: string
-): Promise<ApiResponse<CalendarDayDto[]>> => {
+): Promise<ApiResponse<StudentCalendarDayDto[]>> => {
     const response = await getStudentCalendarReal(startDate, endDate);
     return {
         ...response,
@@ -138,6 +168,9 @@ export const getStudentCalendar = async (
                 subjectName: c.subjectName,
                 status: c.status ?? '',
                 meetingLink: c.meetingLink,
+                checkOutTime: c.checkOutTime,
+                hasRecording: c.hasRecording,
+                scheduleChangeStatus: c.scheduleChangeStatus,
             })),
         })),
     };

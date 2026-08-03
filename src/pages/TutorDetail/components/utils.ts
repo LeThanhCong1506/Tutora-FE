@@ -1,6 +1,8 @@
+import { formatVNDNumber } from '../../../utils/formatters';
+
 export const formatCurrency = (amount: number | null): string => {
     if (amount === null || amount === undefined) return "0đ";
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    return `${formatVNDNumber(amount)} ₫`;
 };
 
 export const formatTeachingMode = (mode: string | null | undefined): string => {

@@ -37,28 +37,83 @@ const addMinutes = (hour: number, minute: number, add: number): string => {
 };
 
 // ── Pricing (Step 1) ────────────────────────────────────────────
-export const priceItemToRecord = (item: SubjectGradePriceItem): SubjectRecord => ({
-  id: `price_${item.id}`,
-  subjectId: item.subjectId,
-  subjectName: item.subjectName || subjectNameById(item.subjectId),
-  gradeLevel: gradeIdToKey(item.gradeLevelId),
-  hourlyRate: item.pricePerHour,
-  hoursPerSession: (item.durationMinutesPerSession || 60) / 60,
-  sessionsPerWeek: item.sessionsPerWeek || 1,
-});
+// BE lưu phẳng theo từng (môn × lớp). FE gom các dòng có cùng môn, giá,
+// thời lượng và số buổi thành một cấu hình nhiều lớp để gia sư thao tác gọn hơn.
+export const priceItemsToRecords = (items: SubjectGradePriceItem[]): SubjectRecord[] => {
+  const groups = new Map<
+    string,
+    {
+      ids: number[];
+      subjectId: number;
+      subjectName: string;
+      gradeLevels: Set<string>;
+      hourlyRate: number;
+      hoursPerSession: number;
+      sessionsPerWeek: number;
+    }
+  >();
 
-export const recordToSubjectGradePricePayload = (r: Omit<SubjectRecord, 'id'>) => ({
-  subjectId: r.subjectId,
-  gradeLevelId: gradeKeyToId(r.gradeLevel),
-  pricePerHour: r.hourlyRate,
-  durationMinutesPerSession: Math.round(r.hoursPerSession * 60),
-  sessionsPerWeek: r.sessionsPerWeek,
-  currency: 'VND',
-  isActive: true,
-});
+  items.forEach((item) => {
+    const durationMinutes = item.durationMinutesPerSession || 60;
+    const sessionsPerWeek = item.sessionsPerWeek || 1;
+    const currency = item.currency || 'VND';
+    const key = [
+      item.subjectId,
+      item.pricePerHour,
+      durationMinutes,
+      sessionsPerWeek,
+      currency,
+      item.isActive !== false,
+    ].join('|');
+    const current = groups.get(key);
+
+    if (current) {
+      current.ids.push(item.id);
+      current.gradeLevels.add(gradeIdToKey(item.gradeLevelId));
+      return;
+    }
+
+    groups.set(key, {
+      ids: [item.id],
+      subjectId: item.subjectId,
+      subjectName: item.subjectName || subjectNameById(item.subjectId),
+      gradeLevels: new Set([gradeIdToKey(item.gradeLevelId)]),
+      hourlyRate: item.pricePerHour,
+      hoursPerSession: durationMinutes / 60,
+      sessionsPerWeek,
+    });
+  });
+
+  return Array.from(groups.values()).map((group) => {
+    const sortedIds = [...group.ids].sort((a, b) => a - b);
+    const gradeLevels = Array.from(group.gradeLevels).sort((a, b) => gradeKeyToId(a) - gradeKeyToId(b));
+    return {
+      id: `prices_${sortedIds.join('_')}`,
+      subjectId: group.subjectId,
+      subjectName: group.subjectName,
+      gradeLevels,
+      hourlyRate: group.hourlyRate,
+      hoursPerSession: group.hoursPerSession,
+      sessionsPerWeek: group.sessionsPerWeek,
+    };
+  });
+};
+
+export const recordToSubjectGradePricePayloads = (r: Omit<SubjectRecord, 'id'>) =>
+  Array.from(new Set(r.gradeLevels))
+    .sort((a, b) => gradeKeyToId(a) - gradeKeyToId(b))
+    .map((gradeLevel) => ({
+      subjectId: r.subjectId,
+      gradeLevelId: gradeKeyToId(gradeLevel),
+      pricePerHour: r.hourlyRate,
+      durationMinutesPerSession: Math.round(r.hoursPerSession * 60),
+      sessionsPerWeek: r.sessionsPerWeek,
+      currency: 'VND',
+      isActive: true,
+    }));
 
 export const recordsToPricingPayload = (records: SubjectRecord[]): UpdatePricingData => ({
-  subjectGradePrices: records.map(recordToSubjectGradePricePayload),
+  subjectGradePrices: records.flatMap(recordToSubjectGradePricePayloads),
 });
 
 // ── Availability (Step 2) ───────────────────────────────────────

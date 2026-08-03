@@ -42,10 +42,17 @@ const VideoTile = ({
 
   useEffect(() => {
     const el = containerRef.current;
-    if (!el || !videoTrack) return;
-    videoTrack.play(el, { fit });
+    if (!el) return;
+    if (videoTrack) videoTrack.play(el, { fit });
     return () => {
-      videoTrack.stop();
+      // Luôn dừng track + xoá video còn sót → tránh đóng băng khung hình khi remote
+      // gỡ track (dừng chia sẻ màn hình) hoặc rời phòng.
+      try {
+        videoTrack?.stop();
+      } catch {
+        // ignore
+      }
+      el.innerHTML = '';
     };
   }, [videoTrack, fit]);
 
@@ -68,6 +75,8 @@ const VideoTile = ({
           className={`${styles.pinBtn} ${isPinned ? styles.pinBtnActive : ''}`}
           onClick={onTogglePin}
           title={isPinned ? 'Bỏ ghim' : 'Ghim để xem full'}
+          aria-label={isPinned ? `Bỏ ghim ${name}` : `Ghim ${name} để xem lớn`}
+          aria-pressed={isPinned}
         >
           {isPinned ? <PinOff size={compact ? 13 : 16} /> : <Pin size={compact ? 13 : 16} />}
         </button>

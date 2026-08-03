@@ -21,7 +21,6 @@ interface StepSubjectRecordsProps {
   // Lấy từ BE (GET /api/subjects, /api/grade-levels); mặc định = hằng số nếu chưa truyền.
   subjects?: SubjectOption[];
   gradeLevels?: GradeOption[];
-  onCreateSubjectRecord?: (record: Omit<SubjectRecord, 'id'>) => Promise<SubjectRecord | null>;
   onSaveSubjectRecords?: (records: SubjectRecord[]) => Promise<boolean>;
   saving?: boolean;
 }
@@ -49,14 +48,13 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
   onboarding,
   subjects = SUBJECTS,
   gradeLevels = GRADE_LEVELS,
-  onCreateSubjectRecord,
   onSaveSubjectRecords,
   saving = false,
 }) => {
   const { state, addSubjectRecord, removeSubjectRecord, updateSubjectRecord } = onboarding;
 
   const [subjectId, setSubjectId] = useState<number | null>(null);
-  const [gradeLevel, setGradeLevel] = useState<string | null>(null);
+  const [selectedGradeLevels, setSelectedGradeLevels] = useState<string[]>([]);
   const [hourlyRate, setHourlyRate] = useState<number | null>(null);
   const [hoursPerSession, setHoursPerSession] = useState<number | null>(null);
   const [sessionsPerWeek, setSessionsPerWeek] = useState<number | null>(null);
@@ -91,7 +89,7 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
 
   const canAdd =
     subjectId != null &&
-    gradeLevel != null &&
+    selectedGradeLevels.length > 0 &&
     hourlyRate != null &&
     hourlyRate > 0 &&
     hoursPerSession != null &&
@@ -105,7 +103,7 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
 
   const resetForm = () => {
     setSubjectId(null);
-    setGradeLevel(null);
+    setSelectedGradeLevels([]);
     setHourlyRate(null);
     setHoursPerSession(null);
     setSessionsPerWeek(null);
@@ -115,7 +113,7 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
   const startEditRecord = (record: SubjectRecord) => {
     setEditingRecordId(record.id);
     setSubjectId(record.subjectId);
-    setGradeLevel(record.gradeLevel);
+    setSelectedGradeLevels(record.gradeLevels);
     setHourlyRate(record.hourlyRate);
     setHoursPerSession(record.hoursPerSession);
     setSessionsPerWeek(record.sessionsPerWeek);
@@ -123,27 +121,34 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
 
   const handleSaveRecord = async () => {
     if (!canAdd) return;
+    const gradeOrder = new Map(gradeLevels.map((grade, index) => [grade.value, index]));
+    const normalizedGradeLevels = Array.from(new Set(selectedGradeLevels)).sort(
+      (a, b) => (gradeOrder.get(a) ?? Number.MAX_SAFE_INTEGER) - (gradeOrder.get(b) ?? Number.MAX_SAFE_INTEGER),
+    );
     const input = {
       subjectId: subjectId as number,
       subjectName,
-      gradeLevel: gradeLevel as string,
+      gradeLevels: normalizedGradeLevels,
       hourlyRate: hourlyRate as number,
       hoursPerSession: hoursPerSession as number,
       sessionsPerWeek: sessionsPerWeek as number,
     };
+    const conflictingGrades = new Set(
+      state.subjectRecords
+        .filter((record) => record.id !== editingRecordId && record.subjectId === input.subjectId)
+        .flatMap((record) => record.gradeLevels)
+        .filter((gradeLevel) => input.gradeLevels.includes(gradeLevel)),
+    );
+
+    if (conflictingGrades.size > 0) {
+      const labels = Array.from(conflictingGrades).map(
+        (value) => gradeLevels.find((grade) => grade.value === value)?.label ?? value,
+      );
+      toast.warning(`Môn này đã có cấu hình cho ${labels.join(', ')}.`);
+      return;
+    }
 
     if (editingRecordId) {
-      const exists = state.subjectRecords.some(
-        (record) =>
-          record.id !== editingRecordId &&
-          record.subjectId === input.subjectId &&
-          record.gradeLevel === input.gradeLevel,
-      );
-      if (exists) {
-        toast.warning('Đã có cấu hình cho môn và khối lớp này.');
-        return;
-      }
-
       const nextRecords = state.subjectRecords.map((record) =>
         record.id === editingRecordId ? { ...record, ...input } : record,
       );
@@ -156,26 +161,16 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
       return;
     }
 
-    const exists = state.subjectRecords.some(
-      (record) => record.subjectId === input.subjectId && record.gradeLevel === input.gradeLevel,
-    );
-    if (exists) {
-      toast.warning('Đã có cấu hình cho môn và khối lớp này.');
-      return;
-    }
+    const nextRecords: SubjectRecord[] = [
+      ...state.subjectRecords,
+      { ...input, id: `pending_${Date.now()}` },
+    ];
+    const saved = onSaveSubjectRecords ? await onSaveSubjectRecords(nextRecords) : true;
+    if (!saved) return;
 
-    const recordToAdd = onCreateSubjectRecord ? await onCreateSubjectRecord(input) : input;
-    if (!recordToAdd) return;
-
-    const ok = addSubjectRecord(recordToAdd);
-    if (!ok) {
-      toast.warning('Đã có cấu hình cho môn và khối lớp này.');
-      return;
-    }
+    addSubjectRecord(input);
     resetForm();
-    if (!onCreateSubjectRecord) {
-      toast.success('Đã thêm 1 cấu hình');
-    }
+    toast.success('Đã thêm cấu hình');
   };
 
   const handleRemoveRecord = async (record: SubjectRecord) => {
@@ -224,12 +219,17 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
                 />
               </label>
               <label className={styles.recordField}>
-                <span className={styles.recordFieldLabel}>2. Khối lớp</span>
+                <span className={styles.recordFieldLabel}>2. Khối lớp áp dụng</span>
                 <Select
-                  placeholder="Chọn khối lớp"
-                  value={gradeLevel}
-                  onChange={(v) => setGradeLevel(v)}
+                  mode="multiple"
+                  allowClear
+                  maxTagCount="responsive"
+                  optionFilterProp="label"
+                  placeholder="Chọn một hoặc nhiều khối lớp"
+                  value={selectedGradeLevels}
+                  onChange={setSelectedGradeLevels}
                   options={gradeLevels.map((g) => ({ value: g.value, label: g.label }))}
+                  className={styles.recordGradeSelect}
                   style={{ width: '100%' }}
                 />
               </label>
@@ -419,7 +419,9 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
             <ul className={styles.recordsAsideList}>
               {state.subjectRecords.map((r) => {
                 const isActive = editingRecordId === r.id;
-                const gradeText = gradeLevels.find((g) => g.value === r.gradeLevel)?.label ?? r.gradeLevel;
+                const gradeTexts = r.gradeLevels.map(
+                  (gradeLevel) => gradeLevels.find((grade) => grade.value === gradeLevel)?.label ?? gradeLevel,
+                );
                 return (
                   <li
                     key={r.id}
@@ -429,10 +431,17 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
                       <div className={styles.recordsAsideItemMain}>
                         <div className={styles.recordsAsideTitleRow}>
                           <strong>{r.subjectName}</strong>
-                          <span>{gradeText}</span>
                         </div>
                       </div>
                       <div className={styles.recordsAsideItemPrice}>{formatPrice(r.hourlyRate)}đ</div>
+                    </div>
+
+                    <div className={styles.recordsAsideGradeList} aria-label={`Khối lớp: ${gradeTexts.join(', ')}`}>
+                      {gradeTexts.map((gradeText) => (
+                        <span key={gradeText} className={styles.recordsAsideGradeChip}>
+                          {gradeText}
+                        </span>
+                      ))}
                     </div>
 
                     <div className={styles.recordsAsideMetaGrid}>

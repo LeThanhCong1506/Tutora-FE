@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import { Spin } from 'antd';
 import { getStudentBookings } from '../../services/student-lesson.service';
 import { getPaymentBadge, type PaymentBadgeTone } from '../../utils/paymentBadge';
+import { formatVNDNumber } from '../../utils/formatters';
 import s from '../StudentPages.module.css';
 
 // Map shared badge tone → local color values. Keeps the visual decisions
@@ -21,23 +22,26 @@ const TABS = [
     { key: '', label: 'Tất cả' },
     { key: 'pending_tutor', label: 'Chờ gia sư' },
     { key: 'accepted', label: 'Chờ đặt cọc' },
-    { key: 'active', label: 'Đang học' },
+    { key: 'deposit_paid,ongoing,pending_remaining_payment,paid', label: 'Đang học' },
     { key: 'completed', label: 'Hoàn thành' },
-    { key: 'cancelled', label: 'Đã hủy' },
+    { key: 'cancelled,cancelled_noshow,payment_timeout', label: 'Đã hủy' },
 ];
 
 const STATUS_MAP: Record<string, { label: string; cls: string }> = {
+    pending_payment: { label: 'Chờ thanh toán', cls: s.pending },
     pending_tutor: { label: 'Chờ gia sư', cls: s.pending },
     accepted: { label: 'Chờ đặt cọc', cls: s.pending },
-    pending_deposit: { label: 'Chờ đặt cọc', cls: s.pending },
+    deposit_paid: { label: 'Đã đặt cọc', cls: s.active },
     pending_remaining_payment: { label: 'Chờ TT còn lại', cls: s.pending },
-    active: { label: 'Đang học', cls: s.active },
+    paid: { label: 'Đã thanh toán', cls: s.active },
+    ongoing: { label: 'Đang học', cls: s.active },
     completed: { label: 'Hoàn thành', cls: s.completed },
     cancelled: { label: 'Đã hủy', cls: s.cancelled },
+    cancelled_noshow: { label: 'Hủy do vắng mặt', cls: s.cancelled },
     payment_timeout: { label: 'Hết hạn', cls: s.cancelled },
 };
 
-const formatPrice = (n: number) => n?.toLocaleString('vi-VN') + 'đ';
+const formatPrice = (n: number) => `${formatVNDNumber(n)}đ`;
 
 const StudentBooking = () => {
     const navigate = useNavigate();

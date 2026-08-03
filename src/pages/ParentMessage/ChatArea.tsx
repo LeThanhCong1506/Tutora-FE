@@ -4,11 +4,18 @@ import ChatHeader from './ChatHeader';
 import ChatMessagesArea from './ChatMessagesArea';
 import MessageComposer from './MessageComposer';
 import SessionContextCard from './SessionContextCard';
-import { getChatMessages, markMessagesAsRead, uploadChatImage, type ChatMessage, type ChatChannel } from '../../services/chat.service';
+import {
+  getChatMessages,
+  markMessagesAsRead,
+  uploadChatImage,
+  type ChatMessage,
+  type ChatChannel,
+} from '../../services/chat.service';
 import { getBookingById, type BookingResponseDTO } from '../../services/booking.service';
-import { signalRService } from '../../services/signalr.service';
+import { signalRService, type ChatConnectionLifecycle } from '../../services/signalr.service';
 import { toast } from 'react-toastify';
 import PaymentModal from '../../components/PaymentModal/PaymentModal';
+import { MessageCircleMore } from 'lucide-react';
 
 interface ChatAreaProps {
   selectedChannelId: number | null;
@@ -18,11 +25,35 @@ interface ChatAreaProps {
   onBack?: () => void;
 }
 
+interface SignalRMessagePayload {
+  channelId?: number;
+  ChannelId?: number;
+  messageId?: number;
+  MessageId?: number;
+  senderId?: string;
+  SenderId?: string;
+  content?: string;
+  Content?: string;
+  messageType?: string;
+  MessageType?: string;
+  createdAt?: string;
+  CreatedAt?: string;
+  metadata?: unknown;
+  Metadata?: unknown;
+}
+
+interface SignalRChannelPayload {
+  channelId?: number;
+  ChannelId?: number;
+}
+
+type ChatConnectionState = ChatConnectionLifecycle | 'error';
+
 const ChatArea = ({ selectedChannelId, currentUserId, selectedChannel, isTutor = false, onBack }: ChatAreaProps) => {
   const [hasMore, setHasMore] = useState(true);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
-  const [connectionState, setConnectionState] = useState<string>('disconnected');
+  const [connectionState, setConnectionState] = useState<ChatConnectionState>('disconnected');
   const [booking, setBooking] = useState<BookingResponseDTO | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<number | null>(null);
@@ -43,6 +74,11 @@ const ChatArea = ({ selectedChannelId, currentUserId, selectedChannel, isTutor =
   useEffect(() => {
     currentUserIdRef.current = currentUserId;
   }, [currentUserId]);
+
+  useEffect(() => {
+    setSearchQuery('');
+    setIsSearchOpen(false);
+  }, [selectedChannelId]);
 
   // Fetch booking details when channel changes
   useEffect(() => {
@@ -68,28 +104,31 @@ const ChatArea = ({ selectedChannelId, currentUserId, selectedChannel, isTutor =
   // Kết nối SignalR khi component mount
   useEffect(() => {
     let mounted = true;
+    const unsubscribeLifecycle = signalRService.subscribeToChatLifecycle((state) => {
+      if (!mounted) return;
+      setConnectionState(state === 'connected' || state === 'reconnected' ? 'connected' : state);
+    });
 
     const initSignalR = async () => {
       try {
         await signalRService.connect();
         if (mounted) {
-          setConnectionState('connected');
+          setConnectionState(signalRService.isConnected() ? 'connected' : 'reconnecting');
 
           // Đăng ký nhận tin nhắn — dùng ref để luôn có giá trị mới nhất
-          signalRService.onMessageReceived((data: any) => {
-            console.log('📩 SignalR messageReceived:', data);
-            const channelId = data.channelId || data.ChannelId;
+          signalRService.onMessageReceived((data: SignalRMessagePayload) => {
+            const channelId = data.channelId ?? data.ChannelId;
 
             // So sánh với ref thay vì state để tránh stale closure
-            if (channelId === selectedChannelIdRef.current) {
+            if (typeof channelId === 'number' && channelId === selectedChannelIdRef.current) {
               const newMessage: ChatMessage = {
-                messageId: data.messageId || data.MessageId,
+                messageId: data.messageId ?? data.MessageId ?? Date.now(),
                 channelId: channelId,
-                senderId: data.senderId || data.SenderId,
-                content: data.content || data.Content,
-                messageType: data.messageType || data.MessageType || 'text',
-                createdAt: data.createdAt || data.CreatedAt,
-                metadata: data.metadata || data.Metadata,
+                senderId: data.senderId ?? data.SenderId ?? '',
+                content: data.content ?? data.Content ?? '',
+                messageType: data.messageType ?? data.MessageType ?? 'text',
+                createdAt: data.createdAt ?? data.CreatedAt ?? new Date().toISOString(),
+                metadata: data.metadata ?? data.Metadata,
               };
 
               setMessages((prev) => {
@@ -99,7 +138,12 @@ const ChatArea = ({ selectedChannelId, currentUserId, selectedChannel, isTutor =
                 if (senderId === currentUserIdRef.current) {
                   // Tìm và xóa temp message có cùng content
                   const filtered = prev.filter(
-                    (msg) => !(msg.messageId > 1000000000000 && msg.content === newMessage.content && msg.senderId === senderId)
+                    (msg) =>
+                      !(
+                        msg.messageId > 1000000000000 &&
+                        msg.content === newMessage.content &&
+                        msg.senderId === senderId
+                      ),
                   );
                   return [newMessage, ...filtered];
                 }
@@ -126,6 +170,7 @@ const ChatArea = ({ selectedChannelId, currentUserId, selectedChannel, isTutor =
       signalRService.offUserLeft();
       signalRService.offUserTyping();
       signalRService.offUserStoppedTyping();
+      unsubscribeLifecycle();
     };
   }, []);
 
@@ -135,13 +180,12 @@ const ChatArea = ({ selectedChannelId, currentUserId, selectedChannel, isTutor =
       if (selectedChannelId && signalRService.isConnected()) {
         try {
           await signalRService.joinChannel(Number(selectedChannelId));
-          console.log(`✅ Joined channel ${selectedChannelId}`);
-        } catch (err: any) {
+        } catch (err: unknown) {
           console.error('Error joining channel:', err);
           // Chỉ hiện toast nếu lỗi thực sự nghiêm trọng, tránh spam
-          const errorMsg = err.message || 'Lỗi không xác định';
+          const errorMsg = err instanceof Error ? err.message : 'Lỗi không xác định';
           if (!errorMsg.includes('Connection is not active')) {
-             toast.error(`Không thể tham gia kênh chat: ${errorMsg}`);
+            toast.error(`Không thể tham gia kênh chat: ${errorMsg}`);
           }
         }
       }
@@ -192,12 +236,12 @@ const ChatArea = ({ selectedChannelId, currentUserId, selectedChannel, isTutor =
     };
 
     fetchMessages();
-  }, [selectedChannelId]);
+  }, [selectedChannelId, currentUserId, loadMessages]);
 
   // Typing indicator listeners
   useEffect(() => {
-    signalRService.onUserTyping((data: any) => {
-      const channelId = data.channelId || data.ChannelId;
+    signalRService.onUserTyping((data: SignalRChannelPayload) => {
+      const channelId = data.channelId ?? data.ChannelId;
       if (channelId === selectedChannelIdRef.current) {
         setIsOtherTyping(true);
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
@@ -205,8 +249,8 @@ const ChatArea = ({ selectedChannelId, currentUserId, selectedChannel, isTutor =
       }
     });
 
-    signalRService.onUserStoppedTyping((data: any) => {
-      const channelId = data.channelId || data.ChannelId;
+    signalRService.onUserStoppedTyping((data: SignalRChannelPayload) => {
+      const channelId = data.channelId ?? data.ChannelId;
       if (channelId === selectedChannelIdRef.current) {
         setIsOtherTyping(false);
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
@@ -222,13 +266,28 @@ const ChatArea = ({ selectedChannelId, currentUserId, selectedChannel, isTutor =
 
   // Search with debounce
   useEffect(() => {
-    if (!selectedChannelId) return;
+    if (!selectedChannelId || !isSearchOpen) return;
     const timer = setTimeout(() => {
       setHasMore(true);
       loadMessages({ page: 1, pageSize: 50, search: searchQuery || undefined });
     }, 400);
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, selectedChannelId, loadMessages, isSearchOpen]);
+
+  const handleSearchToggle = useCallback(() => {
+    if (!isSearchOpen) {
+      setIsSearchOpen(true);
+      return;
+    }
+
+    setIsSearchOpen(false);
+    setSearchQuery('');
+    setHasMore(true);
+    loadMessages({ page: 1, pageSize: 50 }).catch((err) => {
+      console.error('Error restoring chat messages:', err);
+      toast.error('Không thể tải lại toàn bộ tin nhắn');
+    });
+  }, [isSearchOpen, loadMessages]);
 
   // Handler gửi tin nhắn - hiển thị message ngay lên đầu
   const handleSendMessage = useCallback(
@@ -252,7 +311,6 @@ const ChatArea = ({ selectedChannelId, currentUserId, selectedChannel, isTutor =
 
       try {
         await signalRService.sendMessage(selectedChannelId, content.trim());
-        console.log(`✅ Sent message to channel ${selectedChannelId}:`, content);
       } catch (err) {
         console.error('Error sending message:', err);
         // Xóa message thất bại khỏi UI
@@ -279,7 +337,6 @@ const ChatArea = ({ selectedChannelId, currentUserId, selectedChannel, isTutor =
 
     try {
       await signalRService.leaveChannel(selectedChannelId);
-      console.log(`✅ Left channel ${selectedChannelId}`);
       setMessages([]);
     } catch (err) {
       console.error('Error leaving channel:', err);
@@ -296,7 +353,7 @@ const ChatArea = ({ selectedChannelId, currentUserId, selectedChannel, isTutor =
     toast.success('Thanh toán thành công! Lớp học đang được thiết lập.');
     // Refresh booking details
     if (selectedChannel?.bookingId) {
-      getBookingById(selectedChannel.bookingId).then(response => {
+      getBookingById(selectedChannel.bookingId).then((response) => {
         if (response.statusCode === 200) {
           setBooking(response.content);
         }
@@ -311,7 +368,13 @@ const ChatArea = ({ selectedChannelId, currentUserId, selectedChannel, isTutor =
     return (
       <section className={styles.chatArea}>
         <div className={styles.chatEmptyState}>
-          <p className={styles.emptyStateText}>Chọn một cuộc trò chuyện để bắt đầu nhắn tin</p>
+          <div className={styles.chatEmptyIcon} aria-hidden="true">
+            <MessageCircleMore size={30} />
+          </div>
+          <h2 className={styles.emptyStateTitle}>Tin nhắn của bạn</h2>
+          <p className={styles.emptyStateText}>
+            Chọn một cuộc trò chuyện bên trái để xem nội dung và bắt đầu trao đổi.
+          </p>
         </div>
       </section>
     );
@@ -326,30 +389,30 @@ const ChatArea = ({ selectedChannelId, currentUserId, selectedChannel, isTutor =
         booking={booking}
         onBack={onBack}
         isSearchOpen={isSearchOpen}
-        onSearchToggle={() => { setIsSearchOpen(v => !v); if (isSearchOpen) setSearchQuery(''); }}
+        onSearchToggle={handleSearchToggle}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        isTutor={isTutor}
       />
       <div className={styles.messagesAreaContainer}>
-        <div className={styles.messagesArea}>
-          {booking && <SessionContextCard booking={booking} />}
-          <ChatMessagesArea
-            messages={messages}
-            loading={loading}
-            currentUserId={currentUserId}
-            loadMessages={loadMessages}
-            hasMore={hasMore}
-            isTutor={isTutor}
-            onProceedToPayment={handleProceedToPayment}
-            isOtherTyping={isOtherTyping}
-          />
-        </div>
+        {booking && <SessionContextCard booking={booking} isTutor={isTutor} />}
+        <ChatMessagesArea
+          key={selectedChannelId}
+          messages={messages}
+          loading={loading}
+          currentUserId={currentUserId}
+          loadMessages={loadMessages}
+          hasMore={hasMore}
+          isTutor={isTutor}
+          onProceedToPayment={handleProceedToPayment}
+          isOtherTyping={isOtherTyping}
+        />
       </div>
       <div className={styles.chatFooter}>
         <MessageComposer
           onSend={handleSendMessage}
           onSendImage={handleSendImage}
-          disabled={!signalRService.isConnected()}
+          disabled={connectionState !== 'connected'}
           channelId={selectedChannelId}
         />
       </div>

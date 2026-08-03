@@ -12,7 +12,10 @@ interface Props {
   onSuccess: () => void;
 }
 
-const MIN_WITHDRAWAL = 100000;
+const MIN_WITHDRAWAL = 10000;
+
+const normalizeHolderName = (value: string): string =>
+  value.normalize('NFD').replace(/\p{M}/gu, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toUpperCase();
 
 const WithdrawModal = ({ availableBalance, onClose, onSuccess }: Props) => {
   const [banks, setBanks] = useState<BankListItem[]>([]);
@@ -36,7 +39,10 @@ const WithdrawModal = ({ availableBalance, onClose, onSuccess }: Props) => {
     amountNumber >= MIN_WITHDRAWAL &&
     amountNumber <= availableBalance;
   const formValid =
-    amountValid && bankName.trim() && accountNumber.trim() && accountHolderName.trim();
+    amountValid &&
+    bankName.trim() &&
+    /^\d{8,19}$/.test(accountNumber.trim()) &&
+    /^[A-Z\s]+$/.test(accountHolderName.trim());
 
   const handleSubmit = async () => {
     if (!formValid || submitting) return;
@@ -82,14 +88,14 @@ const WithdrawModal = ({ availableBalance, onClose, onSuccess }: Props) => {
               type="number"
               inputMode="numeric"
               min={MIN_WITHDRAWAL}
-              placeholder="Tối thiểu 100.000₫"
+              placeholder="Tối thiểu 10,000₫"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
             />
             {amount !== '' && !amountValid && (
               <span className={styles.fieldError}>
                 {amountNumber < MIN_WITHDRAWAL
-                  ? 'Số tiền rút tối thiểu là 100.000₫.'
+                  ? 'Số tiền rút tối thiểu là 10,000₫.'
                   : 'Số tiền vượt quá số dư khả dụng.'}
               </span>
             )}
@@ -119,8 +125,11 @@ const WithdrawModal = ({ availableBalance, onClose, onSuccess }: Props) => {
               inputMode="numeric"
               placeholder="Nhập số tài khoản nhận tiền"
               value={accountNumber}
-              onChange={(e) => setAccountNumber(e.target.value)}
+              onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 19))}
             />
+            {accountNumber !== '' && !/^\d{8,19}$/.test(accountNumber) && (
+              <span className={styles.fieldError}>Số tài khoản gồm 8-19 chữ số.</span>
+            )}
           </label>
 
           <label className={styles.field}>
@@ -130,8 +139,13 @@ const WithdrawModal = ({ availableBalance, onClose, onSuccess }: Props) => {
               type="text"
               placeholder="VD: NGUYEN VAN A"
               value={accountHolderName}
-              onChange={(e) => setAccountHolderName(e.target.value.toUpperCase())}
+              onChange={(e) => setAccountHolderName(normalizeHolderName(e.target.value))}
             />
+            {accountHolderName !== '' && !/^[A-Z\s]+$/.test(accountHolderName) && (
+              <span className={styles.fieldError}>
+                Tên chủ tài khoản chỉ gồm chữ cái không dấu và khoảng trắng.
+              </span>
+            )}
           </label>
 
           <div className={styles.modalNote}>

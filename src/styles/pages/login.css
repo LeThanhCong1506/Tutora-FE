@@ -236,8 +236,6 @@
 /* Form Container */
 .login-form {
     width: clamp(280px, 90vw, 440px);
-    max-height: calc(100vh - 180px);
-    max-height: calc(100dvh - 180px);
     background-color: var(--color-white);
     border-radius: var(--radius-2xl);
     box-shadow: var(--shadow-medium);

@@ -97,20 +97,20 @@ export const LogoutIcon = () => (
     </svg>
 );
 
-// Lessons Icon
-export const LessonsIcon = () => (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M2 4C2 2.89543 2.89543 2 4 2H14C15.1046 2 16 2.89543 16 4V14C16 15.1046 15.1046 16 14 16H4C2.89543 16 2 15.1046 2 14V4Z" strokeLinecap="round" />
-        <path d="M6 6H12M6 9H12M6 12H9" strokeLinecap="round" />
-    </svg>
-);
-
 export const CalendarIcon = () => (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
         <rect x="2" y="3" width="14" height="13" rx="2" />
         <path d="M12 1v4" strokeLinecap="round" strokeLinejoin="round" />
         <path d="M6 1v4" strokeLinecap="round" strokeLinejoin="round" />
         <path d="M2 7h14" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+);
+
+export const DisputeIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M9 1.5L16.5 15H1.5L9 1.5Z" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M9 7V10" strokeLinecap="round" />
+        <circle cx="9" cy="12.5" r="0.75" fill="currentColor" stroke="none" />
     </svg>
 );
 

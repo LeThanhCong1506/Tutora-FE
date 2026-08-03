@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
     getTutorClassSessions,
     getTutorClassSessionDetail,
@@ -88,13 +88,12 @@ interface NoteRecord {
 
 const TutorPortalStudentProfile: React.FC = () => {
     const navigate = useNavigate();
-    const { studentId: _studentId } = useParams();
     const searchParams = new URLSearchParams(window.location.search);
-    const classId = searchParams.get('classId');
-    const bookingId = classId ? parseInt(classId) : undefined;
+    const bookingParam = searchParams.get('bookingId') ?? searchParams.get('classId');
+    const classSessionId = searchParams.get('classSessionId');
+    const bookingId = bookingParam ? parseInt(bookingParam) : undefined;
 
     const [newNote, setNewNote] = useState('');
-    const [_lessons, setLessons] = useState<ClassSessionResponse[]>([]);
     const [loading, setLoading] = useState(true);
     const [studentData, setStudentData] = useState<StudentData | null>(null);
     const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
@@ -104,8 +103,11 @@ const TutorPortalStudentProfile: React.FC = () => {
 
     useEffect(() => {
         if (bookingId) {
-            fetchStudentData();
+            void fetchStudentData();
+        } else {
+            setLoading(false);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [bookingId]);
 
     const fetchStudentData = async () => {
@@ -117,11 +119,10 @@ const TutorPortalStudentProfile: React.FC = () => {
 
             // Filter sessions for this booking/class
             const classSessions = allSessions.filter(s => s.bookingId === bookingId);
-            setLessons(classSessions);
 
             if (classSessions.length > 0) {
                 // homework/tutorNotes/classSessionContent chỉ có ở detail, không có ở list —
-                // nạp song song chi tiết từng buổi (giống TutorPortalClassDetail.tsx).
+                // nạp song song chi tiết từng buổi để tổng hợp hồ sơ học tập.
                 const detailResults = await Promise.all(
                     classSessions.map(s =>
                         getTutorClassSessionDetail(s.classSessionId)
@@ -231,25 +232,18 @@ const TutorPortalStudentProfile: React.FC = () => {
             score: 85 + Math.floor(Math.random() * 15) // Placeholder score 85-100%
         })));
 
-        console.log('✅ Computed student data:', {
-            attendance: attendanceData.length,
-            homework: homeworkData.length,
-            notes: notes.length,
-            scores: scoreData.length
-        });
     };
 
     const handleBack = () => {
-        if (classId) {
-            navigate(`/tutor-portal/classes/${classId}`);
+        if (classSessionId) {
+            navigate(`/tutor-portal/class-sessions/${classSessionId}`);
         } else {
-            navigate('/tutor-portal/classes');
+            navigate('/tutor-portal/calendar');
         }
     };
 
     const handleSaveNote = () => {
         if (newNote.trim()) {
-            console.log('Save note:', newNote);
             setNewNote('');
         }
     };
