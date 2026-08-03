@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { getStudentLessonDetail, confirmStudentLesson, type StudentLessonDetailDto } from '../../services/student-lesson.service';
+import { getMaterials, type LearningMaterialResponse } from '../../services/materials.service';
 import {
     getClassSessionDispute,
     getClassSessionDisputeThread,
@@ -95,6 +96,7 @@ const StudentLessonDetail = () => {
     const [sendingThreadMessage, setSendingThreadMessage] = useState(false);
     const [scheduleChange, setScheduleChange] = useState<SessionScheduleChangeResponse | null>(null);
     const [submittingScheduleDecision, setSubmittingScheduleDecision] = useState(false);
+    const [materials, setMaterials] = useState<LearningMaterialResponse[]>([]);
 
     const fetchDetail = useCallback(async () => {
         if (!lessonId) return;
@@ -118,6 +120,15 @@ const StudentLessonDetail = () => {
             setDispute(null);
         }
     }, [lessonId]);
+
+    const fetchMaterials = useCallback(async (bookingId: number) => {
+        try {
+            const response = await getMaterials(bookingId);
+            setMaterials(Array.isArray(response.content) ? response.content : []);
+        } catch {
+            setMaterials([]);
+        }
+    }, []);
 
     const fetchScheduleChange = useCallback(async () => {
         if (!lessonId) return;
@@ -158,6 +169,10 @@ const StudentLessonDetail = () => {
         fetchDetail();
         fetchDispute();
     }, [fetchDetail, fetchDispute]);
+
+    useEffect(() => {
+        if (lesson?.bookingId) void fetchMaterials(lesson.bookingId);
+    }, [lesson?.bookingId, fetchMaterials]);
 
     useEffect(() => {
         if (!lessonId) return;
@@ -824,6 +839,36 @@ const StudentLessonDetail = () => {
                                     </div>
                                 </div>
                             )}
+                        </div>
+                    </div>
+                )}
+
+                {/* ─── Tài liệu lớp học ─── */}
+                {materials.length > 0 && (
+                    <div style={sectionCard}>
+                        <div style={sectionHeaderRow}>
+                            <div style={{ ...sectionIconWrap, background: 'rgba(37,99,235,0.10)' }}>
+                                <FileText size={16} style={{ color: '#2563eb' }} />
+                            </div>
+                            <div style={sectionTitleText}>Tài liệu lớp học</div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {materials.map((m) => (
+                                <a
+                                    key={m.materialId}
+                                    href={m.fileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={attachmentLinkStyle}
+                                >
+                                    <Paperclip size={14} style={{ flexShrink: 0, color: '#6366F1' }} />
+                                    <span style={attachmentNameStyle}>
+                                        {m.title}
+                                        {m.description ? ` · ${m.description}` : ''}
+                                    </span>
+                                    <Download size={14} style={{ flexShrink: 0, color: '#9ca3af' }} />
+                                </a>
+                            ))}
                         </div>
                     </div>
                 )}
