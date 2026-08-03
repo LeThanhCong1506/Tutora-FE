@@ -45,7 +45,6 @@ const AttachmentUploader: React.FC<AttachmentUploaderProps> = ({
     <div className={styles.card}>
       <div className={styles.header}>
         <div>
-          <span>Tệp báo cáo</span>
           <h4>Tài liệu đính kèm</h4>
         </div>
         <small>Ảnh, PDF hoặc Word</small>
