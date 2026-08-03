@@ -38,3 +38,6 @@ export type { ErrorFallbackProps } from './ErrorBoundary';
 
 export { ClassSessionRecording } from './ClassSessionRecording';
 export type { ClassSessionRecordingProps } from './ClassSessionRecording';
+
+export { ConfirmDialog } from './ConfirmDialog';
+export type { ConfirmDialogProps, ConfirmType } from './ConfirmDialog';
