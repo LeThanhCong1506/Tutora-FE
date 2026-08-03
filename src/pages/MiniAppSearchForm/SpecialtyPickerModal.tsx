@@ -9,10 +9,13 @@ interface SpecialtyPickerModalProps {
     onToggle: (option: string) => void;
     onClearAll: () => void;
     onClose: () => void;
+    /** Bấm "Áp dụng" — đóng modal VÀ tiến luôn sang bước kế tiếp của wizard (khác onClose:
+     * quay lại đúng bước "focus" hiện tại mà không tiến bước, dùng cho nút back). */
+    onApply: () => void;
 }
 
 /** Full-screen picker kiểu Preply "Specialties": search + nhóm chủ đề + checkbox + đếm số đã chọn. */
-const SpecialtyPickerModal = ({ groups, selected, lang, onToggle, onClearAll, onClose }: SpecialtyPickerModalProps) => {
+const SpecialtyPickerModal = ({ groups, selected, lang, onToggle, onClearAll, onClose, onApply }: SpecialtyPickerModalProps) => {
     const [search, setSearch] = useState("");
 
     // Search khớp trên CẢ bản gốc tiếng Việt lẫn bản dịch hiện tại — PH gõ tiếng Anh vẫn tìm được dù data gốc là VI.
@@ -32,8 +35,8 @@ const SpecialtyPickerModal = ({ groups, selected, lang, onToggle, onClearAll, on
     return (
         <div className="specialty-modal">
             <div className="specialty-modal__header">
-                <button type="button" className="specialty-modal__close" onClick={onClose} aria-label={tr("Đóng", lang)}>
-                    ✕
+                <button type="button" className="specialty-modal__close" onClick={onClose} aria-label={tr("Quay lại", lang)}>
+                    ←
                 </button>
                 <span className="specialty-modal__title">{tr("Chọn trọng tâm", lang)}</span>
                 <button type="button" className="specialty-modal__clear" onClick={onClearAll}>
@@ -72,7 +75,7 @@ const SpecialtyPickerModal = ({ groups, selected, lang, onToggle, onClearAll, on
             </div>
 
             <div className="specialty-modal__footer">
-                <button type="button" className="specialty-modal__apply" onClick={onClose}>
+                <button type="button" className="specialty-modal__apply" onClick={onApply}>
                     {tr("Áp dụng", lang)} ({selected.length})
                 </button>
             </div>

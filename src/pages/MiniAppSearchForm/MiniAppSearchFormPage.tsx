@@ -23,7 +23,7 @@ type TutorGender = "male" | "female" | "";
 const TEACHING_MODE_OPTIONS: { value: TeachingMode; label: string }[] = [
     { value: "online", label: "Online" },
     { value: "offline", label: "Tại nhà" },
-    { value: "both", label: "Cả hai" },
+    { value: "both", label: "Không quan trọng" },
 ];
 
 const GOAL_OPTIONS = [
@@ -32,6 +32,7 @@ const GOAL_OPTIONS = [
     "Mất gốc, cần củng cố lại",
     "Nâng cao, bồi dưỡng giỏi",
 ];
+const GOAL_OTHER_LABEL = "Khác";
 
 const GENDER_OPTIONS: { value: TutorGender; label: string }[] = [
     { value: "", label: "Không yêu cầu" },
@@ -110,6 +111,9 @@ const MiniAppSearchFormPage = () => {
     const [subjectId, setSubjectId] = useState<number | null>(null);
     const [gradeLevelId, setGradeLevelId] = useState<number | null>(null);
     const [goal, setGoal] = useState("");
+    // "Khác": PH gõ lý do tự do thay vì chọn 1 trong 4 lựa chọn có sẵn — goal vẫn lưu
+    // NGUYÊN VĂN chuỗi PH gõ (không qua tr()) vì đây là input, không phải khoá dịch.
+    const [showCustomGoal, setShowCustomGoal] = useState(false);
     const [level, setLevel] = useState("");
     const [budgetRange, setBudgetRange] = useState("all");
     const [teachingMode, setTeachingMode] = useState<TeachingMode>("online");
@@ -168,7 +172,14 @@ const MiniAppSearchFormPage = () => {
                 // Anh) — quy về đúng chuỗi VI gốc để khớp GOAL_OPTIONS (logic luôn so khớp
                 // trên bản VI, chỉ dịch lúc hiển thị — xem i18n.ts).
                 const matched = GOAL_OPTIONS.find((g) => g === p.goal || tr(g, "en") === p.goal);
-                if (matched) setGoal(matched);
+                if (matched) {
+                    setGoal(matched);
+                } else {
+                    // Lần trước PH gõ lý do tự do ("Khác") — không khớp 4 lựa chọn cố định,
+                    // giữ nguyên văn và mở lại ô nhập tự do thay vì bỏ qua.
+                    setGoal(p.goal);
+                    setShowCustomGoal(true);
+                }
             }
             if (p.teachingMode) setTeachingMode(p.teachingMode);
             if (p.city) setCity(p.city);
@@ -404,6 +415,7 @@ const MiniAppSearchFormPage = () => {
         setSubjectId(null);
         setGradeLevelId(null);
         setGoal("");
+        setShowCustomGoal(false);
         setLevel("");
         setBudgetRange("all");
         setTeachingMode("online");
@@ -550,12 +562,36 @@ const MiniAppSearchFormPage = () => {
                             <button
                                 key={g}
                                 type="button"
-                                className={`mini-app-form-list-item ${goal === g ? "active" : ""}`}
-                                onClick={() => setGoal(g)}
+                                className={`mini-app-form-list-item ${!showCustomGoal && goal === g ? "active" : ""}`}
+                                onClick={() => {
+                                    setShowCustomGoal(false);
+                                    setGoal(g);
+                                }}
                             >
                                 {tr(g, lang)}
                             </button>
                         ))}
+                        <button
+                            type="button"
+                            className={`mini-app-form-list-item ${showCustomGoal ? "active" : ""}`}
+                            onClick={() => {
+                                setShowCustomGoal(true);
+                                setGoal("");
+                            }}
+                        >
+                            {tr(GOAL_OTHER_LABEL, lang)}
+                        </button>
+                        {showCustomGoal && (
+                            <div className="mini-app-form-field">
+                                <textarea
+                                    rows={2}
+                                    placeholder={tr("Nhập lý do khác...", lang)}
+                                    value={goal}
+                                    onChange={(e) => setGoal(e.target.value)}
+                                    autoFocus
+                                />
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -805,6 +841,10 @@ const MiniAppSearchFormPage = () => {
                     onToggle={(option) => setFocus((prev) => toggleInList(prev, option))}
                     onClearAll={() => setFocus([])}
                     onClose={() => setShowSpecialtyModal(false)}
+                    onApply={() => {
+                        setShowSpecialtyModal(false);
+                        handleNext();
+                    }}
                 />
             )}
         </div>
