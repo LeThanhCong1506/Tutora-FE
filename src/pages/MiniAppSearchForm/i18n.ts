@@ -73,6 +73,8 @@ const DICTIONARY: Record<string, string> = {
     "Ôn thi, kiểm tra": "Exam / test prep",
     "Mất gốc, cần củng cố lại": "Rebuilding weak foundations",
     "Nâng cao, bồi dưỡng giỏi": "Advanced / gifted-level enrichment",
+    "Khác": "Other",
+    "Nhập lý do khác...": "Enter your reason...",
 
     // Level options
     "Mới bắt đầu, chưa có nền tảng": "Just starting, no foundation yet",
@@ -83,7 +85,7 @@ const DICTIONARY: Record<string, string> = {
     // Teaching mode
     "Online": "Online",
     "Tại nhà": "In person",
-    "Cả hai": "Both",
+    "Không quan trọng": "No preference",
 
     // Gender
     "Gia sư nữ": "Female tutor",
@@ -91,11 +93,9 @@ const DICTIONARY: Record<string, string> = {
 
     // Budget (utils/budgetRange.ts)
     "Mọi giá": "Any budget",
-    "Dưới 50,000đ/giờ": "Under 50,000₫/hour",
-    "50,000đ - 100,000đ/giờ": "50,000₫ - 100,000₫/hour",
+    "Dưới 100,000đ/giờ": "Under 100,000₫/hour",
     "100,000đ - 200,000đ/giờ": "100,000₫ - 200,000₫/hour",
-    "200,000đ - 500,000đ/giờ": "200,000₫ - 500,000₫/hour",
-    "Trên 500,000đ/giờ": "Over 500,000₫/hour",
+    "Trên 200,000đ/giờ": "Over 200,000₫/hour",
 
     // Days
     "Thứ 2": "Mon", "Thứ 3": "Tue", "Thứ 4": "Wed", "Thứ 5": "Thu",

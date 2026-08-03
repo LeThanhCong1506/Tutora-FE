@@ -12,6 +12,7 @@ import { MINI_APP_SEARCH_LANG_KEY, MINI_APP_SEARCH_FRESH_KEY } from "../../compo
 import { BUDGET_RANGE_OPTIONS, budgetRangeToMinMax, minMaxToBudgetRange } from "../../utils/budgetRange";
 import { getSpecialtyGroupsForSubject, getSpecialtyPreview } from "./specialtyOptions";
 import SpecialtyPickerModal from "./SpecialtyPickerModal";
+import FindMoreOptionsModal from "./FindMoreOptionsModal";
 import TutorResultsList from "./TutorResultsList";
 import { tr, type Lang } from "./i18n";
 import "../../styles/pages/mini-app-search-form.css";
@@ -22,7 +23,7 @@ type TutorGender = "male" | "female" | "";
 const TEACHING_MODE_OPTIONS: { value: TeachingMode; label: string }[] = [
     { value: "online", label: "Online" },
     { value: "offline", label: "Tại nhà" },
-    { value: "both", label: "Cả hai" },
+    { value: "both", label: "Không quan trọng" },
 ];
 
 const GOAL_OPTIONS = [
@@ -31,6 +32,7 @@ const GOAL_OPTIONS = [
     "Mất gốc, cần củng cố lại",
     "Nâng cao, bồi dưỡng giỏi",
 ];
+const GOAL_OTHER_LABEL = "Khác";
 
 const GENDER_OPTIONS: { value: TutorGender; label: string }[] = [
     { value: "", label: "Không yêu cầu" },
@@ -109,6 +111,9 @@ const MiniAppSearchFormPage = () => {
     const [subjectId, setSubjectId] = useState<number | null>(null);
     const [gradeLevelId, setGradeLevelId] = useState<number | null>(null);
     const [goal, setGoal] = useState("");
+    // "Khác": PH gõ lý do tự do thay vì chọn 1 trong 4 lựa chọn có sẵn — goal vẫn lưu
+    // NGUYÊN VĂN chuỗi PH gõ (không qua tr()) vì đây là input, không phải khoá dịch.
+    const [showCustomGoal, setShowCustomGoal] = useState(false);
     const [level, setLevel] = useState("");
     const [budgetRange, setBudgetRange] = useState("all");
     const [teachingMode, setTeachingMode] = useState<TeachingMode>("online");
@@ -123,6 +128,7 @@ const MiniAppSearchFormPage = () => {
     const [showAllSubjects, setShowAllSubjects] = useState(false);
     const [showAllCities, setShowAllCities] = useState(false);
     const [showSpecialtyModal, setShowSpecialtyModal] = useState(false);
+    const [showFindMoreModal, setShowFindMoreModal] = useState(false);
 
     const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -166,7 +172,14 @@ const MiniAppSearchFormPage = () => {
                 // Anh) — quy về đúng chuỗi VI gốc để khớp GOAL_OPTIONS (logic luôn so khớp
                 // trên bản VI, chỉ dịch lúc hiển thị — xem i18n.ts).
                 const matched = GOAL_OPTIONS.find((g) => g === p.goal || tr(g, "en") === p.goal);
-                if (matched) setGoal(matched);
+                if (matched) {
+                    setGoal(matched);
+                } else {
+                    // Lần trước PH gõ lý do tự do ("Khác") — không khớp 4 lựa chọn cố định,
+                    // giữ nguyên văn và mở lại ô nhập tự do thay vì bỏ qua.
+                    setGoal(p.goal);
+                    setShowCustomGoal(true);
+                }
             }
             if (p.teachingMode) setTeachingMode(p.teachingMode);
             if (p.city) setCity(p.city);
@@ -353,28 +366,73 @@ const MiniAppSearchFormPage = () => {
         }
     }, [buildSearchPayload, lang]);
 
-    // Nút "Tìm gia sư khác" trong TutorResultsList — giữ NGUYÊN tiêu chí, loại các gia sư
-    // đang hiện. Rỗng kết quả mới KHÔNG xoá danh sách cũ (PH vẫn xem được gia sư đã có) —
-    // chỉ báo "hết gợi ý mới" qua `exhausted`.
-    const handleFindMore = useCallback(async () => {
-        const payload = buildSearchPayload(tutors.map((t) => t.tutorId));
-        if (!payload) return;
-
-        setFindMoreLoading(true);
+    // Nút "Tìm gia sư khác" trong TutorResultsList giờ mở popup 2 lựa chọn (xem
+    // FindMoreOptionsModal) thay vì search thẳng — PH chọn (1) thêm tiêu chí hay (2) tiêu
+    // chí khác hẳn (quay lại đầu wizard).
+    const handleOpenFindMoreModal = useCallback(() => {
         setFindMoreError(null);
-        const result = await fetchMiniAppSearchResults(payload);
-        setFindMoreLoading(false);
+        setShowFindMoreModal(true);
+    }, []);
 
-        if (!result.ok) {
-            setFindMoreError(tr("Không tìm được kết quả — anh/chị thử lại giúp em nhé.", lang));
-            return;
-        }
-        if (!result.tutors?.length) {
-            setExhausted(true);
-            return;
-        }
-        setTutors(result.tutors);
-    }, [buildSearchPayload, tutors, lang]);
+    // Lựa chọn (1): giữ NGUYÊN môn/lớp/tiêu chí đã có, CHỈ thêm 1 yêu cầu phụ PH vừa gõ (vd
+    // "nhiều kinh nghiệm hơn") vào cuối `preferences`, loại các gia sư đang hiện. Rỗng kết
+    // quả mới KHÔNG xoá danh sách cũ (PH vẫn xem được gia sư đã có) — chỉ báo "hết gợi ý
+    // mới" qua `exhausted`.
+    const handleRefineWithExtraCriteria = useCallback(
+        async (extraCriteria: string) => {
+            const basePayload = buildSearchPayload(tutors.map((t) => t.tutorId));
+            if (!basePayload) return;
+            const payload = {
+                ...basePayload,
+                preferences: extraCriteria
+                    ? [basePayload.preferences, extraCriteria].filter(Boolean).join(". ")
+                    : basePayload.preferences,
+            };
+
+            setFindMoreLoading(true);
+            setFindMoreError(null);
+            const result = await fetchMiniAppSearchResults(payload);
+            setFindMoreLoading(false);
+
+            if (!result.ok) {
+                setFindMoreError(tr("Không tìm được kết quả — anh/chị thử lại giúp em nhé.", lang));
+                return;
+            }
+            setShowFindMoreModal(false);
+            if (!result.tutors?.length) {
+                setExhausted(true);
+                return;
+            }
+            setTutors(result.tutors);
+        },
+        [buildSearchPayload, tutors, lang]
+    );
+
+    // Lựa chọn (2): tiêu chí KHÁC HẲN (môn khác/giá khác/nhu cầu khác...) — quay lại ĐẦU
+    // wizard, xoá sạch mọi lựa chọn cũ (khác hẳn "Chỉnh sửa tiêu chí" — nhảy tới bước cuối
+    // giữ nguyên dữ liệu), PH điền lại từ đầu như 1 lượt tìm hoàn toàn mới.
+    const handleStartOver = useCallback(() => {
+        setSubjectId(null);
+        setGradeLevelId(null);
+        setGoal("");
+        setShowCustomGoal(false);
+        setLevel("");
+        setBudgetRange("all");
+        setTeachingMode("online");
+        setCity("");
+        setTutorGender("");
+        setFocus([]);
+        setDays([]);
+        setTimes([]);
+        setCrossSellSubjectIds([]);
+        setNotes("");
+        setTutors([]);
+        setExhausted(false);
+        setFindMoreError(null);
+        setShowFindMoreModal(false);
+        setStepIndex(0);
+        setStatus("idle");
+    }, []);
 
     // Nút "Chỉnh sửa tiêu chí" trên màn kết quả — quay lại wizard ở bước "summary" (cuối
     // cùng, luôn có sẵn mọi field đã điền) để PH xem lại/đổi rồi tự bấm "Tìm gia sư" lại,
@@ -413,12 +471,21 @@ const MiniAppSearchFormPage = () => {
                 <TutorResultsList
                     tutors={tutors}
                     lang={lang}
-                    onFindMore={handleFindMore}
+                    onFindMore={handleOpenFindMoreModal}
                     findMoreLoading={findMoreLoading}
                     findMoreError={findMoreError}
                     exhausted={exhausted}
                     onEditCriteria={handleEditCriteria}
                 />
+                {showFindMoreModal && (
+                    <FindMoreOptionsModal
+                        lang={lang}
+                        loading={findMoreLoading}
+                        onRefineWithExtraCriteria={handleRefineWithExtraCriteria}
+                        onStartOver={handleStartOver}
+                        onClose={() => setShowFindMoreModal(false)}
+                    />
+                )}
             </div>
         );
     }
@@ -495,12 +562,36 @@ const MiniAppSearchFormPage = () => {
                             <button
                                 key={g}
                                 type="button"
-                                className={`mini-app-form-list-item ${goal === g ? "active" : ""}`}
-                                onClick={() => setGoal(g)}
+                                className={`mini-app-form-list-item ${!showCustomGoal && goal === g ? "active" : ""}`}
+                                onClick={() => {
+                                    setShowCustomGoal(false);
+                                    setGoal(g);
+                                }}
                             >
                                 {tr(g, lang)}
                             </button>
                         ))}
+                        <button
+                            type="button"
+                            className={`mini-app-form-list-item ${showCustomGoal ? "active" : ""}`}
+                            onClick={() => {
+                                setShowCustomGoal(true);
+                                setGoal("");
+                            }}
+                        >
+                            {tr(GOAL_OTHER_LABEL, lang)}
+                        </button>
+                        {showCustomGoal && (
+                            <div className="mini-app-form-field">
+                                <textarea
+                                    rows={2}
+                                    placeholder={tr("Nhập lý do khác...", lang)}
+                                    value={goal}
+                                    onChange={(e) => setGoal(e.target.value)}
+                                    autoFocus
+                                />
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -750,6 +841,10 @@ const MiniAppSearchFormPage = () => {
                     onToggle={(option) => setFocus((prev) => toggleInList(prev, option))}
                     onClearAll={() => setFocus([])}
                     onClose={() => setShowSpecialtyModal(false)}
+                    onApply={() => {
+                        setShowSpecialtyModal(false);
+                        handleNext();
+                    }}
                 />
             )}
         </div>
