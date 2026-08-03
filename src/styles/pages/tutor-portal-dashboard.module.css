@@ -626,6 +626,9 @@
 }
 
 .outlineBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     padding: 7.2px 14.2px;
     background-color: #fff;
     border: 1.2px solid rgba(62, 47, 40, 0.2);
@@ -634,8 +637,13 @@
     line-height: 14px;
     font-weight: 700;
     color: #1a2238;
+    white-space: nowrap;
     cursor: pointer;
     transition: all 0.2s ease;
+}
+
+.outlineBtn svg {
+    flex-shrink: 0;
 }
 
 .outlineBtn:hover {

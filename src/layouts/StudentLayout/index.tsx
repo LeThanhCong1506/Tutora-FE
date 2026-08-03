@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { PortalLayout } from '../../components/shared/PortalLayout';
-import type { NavItem } from '../../components/shared/PortalLayout';
+import type { NavItem, ProfileMenuItem } from '../../components/shared/PortalLayout';
+import { buildStudentProfileMenuItems } from '../shared/profileMenus';
 import { useUnreadMessageBadge } from '../../hooks/useUnreadMessageBadge';
 import { useUnreadBadgesByTab } from '../../hooks/useUnreadBadgesByTab';
 import { StudentProfileProvider, useStudentProfile } from '../../contexts/StudentProfileContext';
@@ -71,6 +72,12 @@ const StudentLayoutInner: React.FC<StudentLayoutProps> = ({ children }) => {
   // Học sinh do phụ huynh quản lý không tự tạo khiếu nại được (xem StudentLessonDetail) → ẩn luôn mục này.
   const showDisputes = !loading && !isParentManaged;
 
+  // Ví & khiếu nại ẩn đúng theo điều kiện của sidebar.
+  const profileMenuItems = useMemo<ProfileMenuItem[]>(
+    () => buildStudentProfileMenuItems({ showWallet, showDisputes }),
+    [showWallet, showDisputes],
+  );
+
   const navItems = useMemo<NavItem[]>(
     () =>
       baseStudentNavItems
@@ -87,7 +94,13 @@ const StudentLayoutInner: React.FC<StudentLayoutProps> = ({ children }) => {
   );
 
   return (
-    <PortalLayout navItems={navItems} userRole="STUDENT" showSidebarUserCard={false} showAvatarImage={false}>
+    <PortalLayout
+      navItems={navItems}
+      userRole="STUDENT"
+      showSidebarUserCard={false}
+      showAvatarImage={false}
+      profileMenuItems={profileMenuItems}
+    >
       {children}
     </PortalLayout>
   );

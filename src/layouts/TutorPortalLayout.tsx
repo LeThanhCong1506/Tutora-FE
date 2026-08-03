@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { PortalLayout } from '../components/shared/PortalLayout';
 import type { NavItem } from '../components/shared/PortalLayout';
+import { tutorProfileMenuItems } from './shared/profileMenus';
 import styles from '../components/shared/PortalLayout/PortalLayout.module.css';
 import { getTourStatus, completeTour } from '../services/auth.service';
 import TutorTour, { type TourStep } from '../components/TutorTour/TutorTour';
@@ -367,6 +368,7 @@ const TutorPortalLayout: React.FC = () => {
             sidebarNavFooter={sidebarNavFooter}
             showSidebarUserCard={true}
             showAvatarImage={true}
+            profileMenuItems={tutorProfileMenuItems}
             sidebarDataTour="sidebar"
             sidebarOpenExternal={sidebarOpen}
             onSidebarOpen={() => setSidebarOpen(true)}
