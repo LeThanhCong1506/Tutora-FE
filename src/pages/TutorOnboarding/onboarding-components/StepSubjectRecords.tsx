@@ -41,6 +41,22 @@ const MIN_SESSIONS_PER_WEEK = 1;
 // 30 phút = 0.5 giờ → số giờ/buổi hợp lệ phải là bội số của 0.5 (1e-9 để tránh sai số dấu phẩy động).
 const isHalfHourMultiple = (hours: number) => Math.abs(hours * 2 - Math.round(hours * 2)) < 1e-9;
 
+// Khối lớp hợp lệ cho 1 môn — so theo levelOrder (id không đảm bảo tăng dần theo khối lớp).
+// Chưa chọn môn (subject=null) -> rỗng, ép chọn môn trước khi chọn lớp.
+const getAllowedGradeLevels = <G extends { levelOrder: number }>(
+  subject: Pick<SubjectOption, 'minGradeLevelOrder' | 'maxGradeLevelOrder'> | null,
+  gradeLevels: G[],
+): G[] => {
+  if (!subject) return [];
+  const { minGradeLevelOrder, maxGradeLevelOrder } = subject;
+  if (minGradeLevelOrder == null && maxGradeLevelOrder == null) return gradeLevels;
+  return gradeLevels.filter(
+    (g) =>
+      (minGradeLevelOrder == null || g.levelOrder >= minGradeLevelOrder) &&
+      (maxGradeLevelOrder == null || g.levelOrder <= maxGradeLevelOrder),
+  );
+};
+
 const formatPresetPrice = (n: number) =>
   n >= 1_000_000 ? `${Math.round(n / 100_000) / 10}tr` : `${Math.round(n / 1000)}k`;
 
@@ -60,10 +76,26 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
   const [sessionsPerWeek, setSessionsPerWeek] = useState<number | null>(null);
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
 
-  const subjectName = useMemo(
-    () => (subjectId == null ? '' : (subjects.find((s) => s.id === subjectId)?.name ?? '')),
+  const selectedSubject = useMemo(
+    () => (subjectId == null ? null : (subjects.find((s) => s.id === subjectId) ?? null)),
     [subjectId, subjects],
   );
+  const subjectName = selectedSubject?.name ?? '';
+
+  // Lớp áp dụng phụ thuộc môn đã chọn (vd Vật Lý/Hóa Học không hiện Lớp 1-5 — sai chương trình).
+  const allowedGradeLevels = useMemo(
+    () => getAllowedGradeLevels(selectedSubject, gradeLevels),
+    [selectedSubject, gradeLevels],
+  );
+
+  // Đổi môn -> lọc lại các lớp đã chọn xuống phần còn hợp lệ với môn mới (giữ giao nhau thay
+  // vì xoá trắng, đỡ khó chịu hơn khi tutor lỡ chọn nhầm môn rồi sửa lại).
+  const handleSubjectChange = (nextSubjectId: number) => {
+    setSubjectId(nextSubjectId);
+    const nextSubject = subjects.find((s) => s.id === nextSubjectId) ?? null;
+    const allowedValues = new Set(getAllowedGradeLevels(nextSubject, gradeLevels).map((g) => g.value));
+    setSelectedGradeLevels((prev) => prev.filter((v) => allowedValues.has(v)));
+  };
 
   // Giới hạn suy ra từ lịch rảnh đã thiết lập ở bước 1:
   // - Số giờ/buổi không thể vượt khối rảnh liên tục dài nhất trong 1 ngày.
@@ -213,7 +245,7 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
                 <Select
                   placeholder="Chọn môn bạn giảng dạy"
                   value={subjectId}
-                  onChange={(v) => setSubjectId(v)}
+                  onChange={handleSubjectChange}
                   options={subjects.map((s) => ({ value: s.id, label: s.name }))}
                   style={{ width: '100%' }}
                 />
@@ -225,10 +257,11 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
                   allowClear
                   maxTagCount="responsive"
                   optionFilterProp="label"
-                  placeholder="Chọn một hoặc nhiều khối lớp"
+                  disabled={subjectId == null}
+                  placeholder={subjectId == null ? 'Chọn môn học trước' : 'Chọn một hoặc nhiều khối lớp'}
                   value={selectedGradeLevels}
                   onChange={setSelectedGradeLevels}
-                  options={gradeLevels.map((g) => ({ value: g.value, label: g.label }))}
+                  options={allowedGradeLevels.map((g) => ({ value: g.value, label: g.label }))}
                   className={styles.recordGradeSelect}
                   style={{ width: '100%' }}
                 />

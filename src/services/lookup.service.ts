@@ -20,6 +20,10 @@ setupAuthInterceptor(api);
 export interface SubjectLookup {
   subjectId: number;
   subjectName: string | null;
+  /** Khối lớp thấp nhất môn này áp dụng. Null = không giới hạn. */
+  minGradeLevelId: number | null;
+  /** Khối lớp cao nhất môn này áp dụng. Null = không giới hạn. */
+  maxGradeLevelId: number | null;
 }
 
 export interface GradeLevelLookup {
