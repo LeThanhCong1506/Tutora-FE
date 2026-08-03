@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
@@ -29,12 +29,15 @@ import '../../styles/pages/tutor-detail.css';
 const TutorDetailPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const inMiniApp = isZaloMiniApp();
     const [profile, setProfile] = useState<TutorFullProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showBooking, setShowBooking] = useState(false);
     const [showRoleSelect, setShowRoleSelect] = useState(false);
     const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+    const autoBookingTriggered = useRef(false);
 
     const requireLogin = async (onSuccess: () => void): Promise<void> => {
         const user = getCurrentUser();
@@ -75,6 +78,18 @@ const TutorDetailPage = () => {
             toast.error('Đăng nhập Zalo thất bại, vui lòng thử lại.');
         }
     };
+
+    // Nút "Đặt lịch" trên tutor card (Zalo OA) mở thẳng trang này kèm ?openBooking=1 —
+    // tự mở BookingModal ngay khi profile load xong, thay cho luồng chat text cũ (chọn gói
+    // qua DeepSeek, xem tutora-zalo-bot MiniAppButtonService.buildTutorDetailLink). Chỉ tự
+    // mở ĐÚNG 1 lần (autoBookingTriggered) — tránh mở lại nếu profile re-fetch/re-render.
+    useEffect(() => {
+        if (autoBookingTriggered.current || !profile) return;
+        if (searchParams.get('openBooking') !== '1') return;
+        autoBookingTriggered.current = true;
+        void requireLogin(openBooking);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [profile, searchParams]);
 
     useEffect(() => {
         let mounted = true;
@@ -133,22 +148,20 @@ const TutorDetailPage = () => {
 
     if (error || !profile) {
         return (
-            <div className="tutor-detail-page">
-                <Header />
+            <div className={`tutor-detail-page${inMiniApp ? ' tutor-detail-page--mini-app' : ''}`}>
+                {!inMiniApp && <Header />}
                 <div className="error-container">
                     <h2>Oops!</h2>
                     <p>{error || 'Không tìm thấy thông tin gia sư.'}</p>
                     <button onClick={() => window.history.back()} className="btn-back">Quay lại</button>
                 </div>
-                <Footer />
+                {!inMiniApp && <Footer />}
             </div>
         );
     }
 
-    const inMiniApp = isZaloMiniApp();
-
     return (
-        <div className="tutor-detail-page">
+        <div className={`tutor-detail-page${inMiniApp ? ' tutor-detail-page--mini-app' : ''}`}>
             {!inMiniApp && <Header />}
 
             {/*
@@ -158,10 +171,7 @@ const TutorDetailPage = () => {
               * có thể thêm lại bằng JSON-LD trong <head> mà không hiển thị UI.
               */}
 
-            <main
-                className="tutor-detail-main"
-                style={inMiniApp ? { paddingTop: '0' } : undefined}
-            >
+            <main className="tutor-detail-main">
                 <div className="tutor-detail-container">
                     <div className="tutor-detail-content">
                         <VideoIntroSection profile={profile} />

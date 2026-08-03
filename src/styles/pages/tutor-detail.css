@@ -18,6 +18,14 @@
     padding-bottom: 100px;
 }
 
+/* Mini App: khớp padding-top với padding ngang mặc định của .tutor-detail-container (35px,
+ * dưới đây) để 4 cạnh quanh video hero đều nhau — override xuống 16px trong
+ * @media (max-width:600px) nơi container cũng đổi padding ngang xuống 16px. !important vì
+ * độ đặc hiệu bằng các rule ≤900px/≤600px gốc, cần thắng bất kể thứ tự trong file. */
+.tutor-detail-page--mini-app .tutor-detail-main {
+    padding-top: 35px !important;
+}
+
 .tutor-detail-page .tutor-detail-container {
     width: 100%;
     display: flex;
@@ -2114,6 +2122,10 @@
         gap: 20px;
     }
 
+    .tutor-detail-page--mini-app .tutor-detail-main {
+        padding-top: 16px !important;
+    }
+
     .tutor-detail-page .tutor-detail-content {
         gap: 24px;
     }
@@ -2880,6 +2892,54 @@
 
 .tutor-detail-page .mobile-sticky-cta {
     display: none;
+}
+
+/* ===== MINI APP OVERRIDES (không phụ thuộc @media theo bề rộng màn hình) =====
+ * Trong Mini App, BookingSidebar luôn bị ẩn bởi React bất kể màn hình rộng hay hẹp
+ * (xem TutorDetailPage.tsx/TutorDetailSkeleton.tsx — {!inMiniApp && <BookingSidebar/>}).
+ * Nút "ĐẶT LỊCH" sticky trước đây chỉ hiện trong @media (max-width:600px) — bug thật
+ * 2026-07-17: màn hình Mini App rộng hơn 600px (máy to/tablet) sẽ mất trắng nút đặt lịch
+ * vì vừa không có sidebar (JS ẩn) vừa không có sticky CTA (CSS ẩn ngoài breakpoint).
+ * Class .tutor-detail-page--mini-app đảm bảo sticky CTA LUÔN hiện khi ở Mini App, không
+ * phụ thuộc bề rộng màn hình. Cũng bỏ padding-top:0 lệch cạnh — dùng giá trị bằng padding
+ * ngang của .tutor-detail-container để 4 cạnh quanh video hero đều nhau. */
+.tutor-detail-page--mini-app .mobile-sticky-cta {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    padding: 12px 16px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(62, 47, 40, 0.08);
+    box-shadow: 0 -4px 20px -4px rgba(0, 0, 0, 0.08);
+    gap: 10px;
+    align-items: center;
+}
+
+.tutor-detail-page--mini-app .mobile-sticky-cta .mobile-cta-book {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 9999px;
+    background-color: var(--color-burgundy);
+    border: none;
+    color: #fff;
+    font-size: 9px;
+    letter-spacing: 1.8px;
+    line-height: 14px;
+    text-transform: uppercase;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0px 8px 16px -4px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+}
+
+.tutor-detail-page--mini-app .mobile-sticky-cta .mobile-cta-book:active {
+    transform: scale(0.97);
 }
 
 /* ===== ACTIVE CLASSES SECTION ===== */
