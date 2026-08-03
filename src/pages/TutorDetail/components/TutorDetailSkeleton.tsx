@@ -1,5 +1,6 @@
 import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
+import { isZaloMiniApp } from '../../../services/zalo-env';
 
 const tagWidths = [92, 116, 84, 108, 76, 96];
 const introLineWidths = [98, 92, 96, 86, 74];
@@ -7,9 +8,16 @@ const experienceLineWidths = [95, 88, 91, 68];
 // Số "khung giờ" giả lập cho 7 cột T2 → CN — lệch nhau để giống lịch rảnh thật.
 const scheduleColumns = [3, 2, 4, 2, 3, 4, 1];
 
-const TutorDetailSkeleton = () => (
-    <div className="tutor-detail-page">
-        <Header />
+// Phải khớp CHÍNH XÁC cấu trúc ẩn/hiện Header/Footer/booking-sidebar của trang thật
+// (TutorDetailPage.tsx) theo isZaloMiniApp() — bug thật 2026-07-17: skeleton luôn render
+// Header/Footer bất kể Mini App hay không, khiến lúc loading hiện thanh nav web desktop rồi
+// biến mất đột ngột ngay khi load xong → cảm giác giật/lệch layout trong Mini App.
+const TutorDetailSkeleton = () => {
+    const inMiniApp = isZaloMiniApp();
+
+    return (
+    <div className={`tutor-detail-page${inMiniApp ? ' tutor-detail-page--mini-app' : ''}`}>
+        {!inMiniApp && <Header />}
         <main className="tutor-detail-main">
             <div className="tutor-detail-container">
                 <div className="tutor-detail-content tutor-detail-skeleton" aria-busy="true" aria-label="Dang tai thong tin gia su">
@@ -130,38 +138,47 @@ const TutorDetailSkeleton = () => (
                     </section>
                 </div>
 
-                <aside className="booking-sidebar skeleton-booking-sidebar" aria-hidden="true">
-                    <div className="booking-card">
-                        <div className="skeleton-booking-header">
-                            <div className="skeleton-box skeleton-booking-label" />
-                        </div>
-                        <div className="skeleton-booking-body">
-                            <div className="skeleton-schedule-heading">
-                                <div className="skeleton-box skeleton-schedule-icon" />
-                                <div className="skeleton-box skeleton-schedule-label" />
+                {!inMiniApp && (
+                    <aside className="booking-sidebar skeleton-booking-sidebar" aria-hidden="true">
+                        <div className="booking-card">
+                            <div className="skeleton-booking-header">
+                                <div className="skeleton-box skeleton-booking-label" />
                             </div>
-                            <div className="skeleton-schedule-week-grid">
-                                {scheduleColumns.map((chipCount, dayIndex) => (
-                                    <div key={dayIndex} className="skeleton-schedule-day-col">
-                                        <div className="skeleton-box skeleton-schedule-weekday" />
-                                        <div className="skeleton-schedule-chip-list">
-                                            {Array.from({ length: chipCount }).map((_, chipIndex) => (
-                                                <div key={chipIndex} className="skeleton-box skeleton-schedule-chip" />
-                                            ))}
+                            <div className="skeleton-booking-body">
+                                <div className="skeleton-schedule-heading">
+                                    <div className="skeleton-box skeleton-schedule-icon" />
+                                    <div className="skeleton-box skeleton-schedule-label" />
+                                </div>
+                                <div className="skeleton-schedule-week-grid">
+                                    {scheduleColumns.map((chipCount, dayIndex) => (
+                                        <div key={dayIndex} className="skeleton-schedule-day-col">
+                                            <div className="skeleton-box skeleton-schedule-weekday" />
+                                            <div className="skeleton-schedule-chip-list">
+                                                {Array.from({ length: chipCount }).map((_, chipIndex) => (
+                                                    <div key={chipIndex} className="skeleton-box skeleton-schedule-chip" />
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="skeleton-booking-actions">
+                                <div className="skeleton-box skeleton-primary-button" />
                             </div>
                         </div>
-                        <div className="skeleton-booking-actions">
-                            <div className="skeleton-box skeleton-primary-button" />
-                        </div>
-                    </div>
-                </aside>
+                    </aside>
+                )}
             </div>
         </main>
-        <Footer />
+        {!inMiniApp && <Footer />}
+
+        {inMiniApp && (
+            <div className="mobile-sticky-cta" aria-hidden="true">
+                <div className="skeleton-box skeleton-primary-button" style={{ width: '100%', height: 48 }} />
+            </div>
+        )}
     </div>
-);
+    );
+};
 
 export default TutorDetailSkeleton;

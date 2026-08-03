@@ -2,182 +2,266 @@
  * TutorResultsList.tsx. Dùng chung bộ màu thương hiệu (variables.css) như
  * mini-app-search-form.css: navy = chính, burgundy = accent, cream = nền, gold = premium. */
 .mini-app-results {
-    padding-top: 4px;
+  padding-top: 4px;
 }
 
 .mini-app-results__title {
-    font-size: 20px;
-    font-weight: 800;
-    color: var(--color-navy);
-    margin: 0 0 4px;
-    line-height: 1.3;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--color-navy);
+  margin: 0 0 4px;
+  line-height: 1.3;
 }
 
 .mini-app-results__subtitle {
-    font-size: 13px;
-    color: var(--color-navy-60);
-    margin: 0 0 20px;
+  font-size: 13px;
+  color: var(--color-navy-60);
+  margin: 0 0 20px;
 }
 
 .mini-app-results__list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.mini-app-tutor-row {
-    display: flex;
-    gap: 12px;
-    padding: 14px;
-    border: 1px solid var(--color-navy-05);
-    border-radius: var(--radius-md);
-    background: var(--color-white);
-    box-shadow: var(--shadow-soft);
+.mini-app-tutor-card {
+  padding: 16px;
+  border: 1px solid rgba(26, 34, 56, 0.14);
+  border-radius: 16px;
+  background: var(--color-white);
+  box-shadow: var(--shadow-soft);
+  cursor: pointer;
 }
 
-.mini-app-tutor-row__avatar {
-    flex-shrink: 0;
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, var(--color-green), var(--color-navy));
-    color: var(--color-gold);
-    font-weight: 700;
+.mini-app-tutor-card:active {
+  opacity: 0.85;
+}
+
+.mini-app-tutor-card__top {
+  display: flex;
+  gap: 14px;
+}
+
+.mini-app-tutor-card__avatar {
+  flex-shrink: 0;
+  width: 108px;
+  height: 108px;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-green), var(--color-navy));
+  color: var(--color-gold);
+  font-weight: 700;
+  font-size: 24px;
+}
+
+.mini-app-tutor-card__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mini-app-tutor-card__summary {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mini-app-tutor-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mini-app-tutor-card__name {
+  min-width: 0;
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.2;
+  font-weight: 800;
+  color: var(--color-navy);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.mini-app-tutor-card__tier {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border-radius: var(--radius-full);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.mini-app-tutor-card__tier--standard {
+  background: var(--color-cream-light);
+  color: var(--color-navy-60);
+}
+
+.mini-app-tutor-card__tier--pro {
+  background: var(--color-navy-05);
+  color: var(--color-navy);
+}
+
+.mini-app-tutor-card__tier--premium {
+  background: var(--color-gold);
+  color: var(--color-navy);
+}
+
+.mini-app-tutor-card__numbers {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mini-app-tutor-card__numbers > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mini-app-tutor-card__rating-block {
+  text-align: right;
+}
+
+.mini-app-tutor-card__price,
+.mini-app-tutor-card__rating {
+  color: var(--color-navy);
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.mini-app-tutor-card__rating {
+  white-space: nowrap;
+}
+
+.mini-app-tutor-card__unit,
+.mini-app-tutor-card__reviews {
+  color: var(--color-navy-40);
+  font-size: 11px;
+}
+
+.mini-app-tutor-card__headline {
+  margin: 14px 0 0;
+  color: var(--color-navy);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.45;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.mini-app-tutor-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.mini-app-tutor-card__tag {
+  padding: 4px 9px;
+  border-radius: var(--radius-sm);
+  background: var(--color-cream-light);
+  color: var(--color-burgundy);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.mini-app-tutor-card__tag--muted {
+  background: var(--color-navy-05);
+  color: var(--color-navy-60);
+}
+
+.mini-app-tutor-card__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-navy-05);
+  color: var(--color-navy-40);
+  font-size: 11px;
+}
+
+.mini-app-tutor-card__facts span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mini-app-tutor-card__facts svg {
+  width: 14px;
+  height: 14px;
+  color: var(--color-burgundy);
+}
+
+@media (max-width: 359px) {
+  .mini-app-tutor-card {
+    padding: 13px;
+  }
+
+  .mini-app-tutor-card__top {
+    gap: 11px;
+  }
+
+  .mini-app-tutor-card__avatar {
+    width: 92px;
+    height: 100px;
+  }
+
+  .mini-app-tutor-card__name {
+    font-size: 17px;
+  }
+
+  .mini-app-tutor-card__price,
+  .mini-app-tutor-card__rating {
     font-size: 16px;
-}
-
-.mini-app-tutor-row__avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.mini-app-tutor-row__body {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.mini-app-tutor-row__head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-}
-
-.mini-app-tutor-row__name {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--color-navy);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.mini-app-tutor-row__tier {
-    flex-shrink: 0;
-    padding: 3px 10px;
-    border-radius: var(--radius-full);
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-}
-
-.mini-app-tutor-row__tier--standard {
-    background: var(--color-cream-light);
-    color: var(--color-navy-60);
-}
-
-.mini-app-tutor-row__tier--pro {
-    background: var(--color-navy-05);
-    color: var(--color-navy);
-}
-
-.mini-app-tutor-row__tier--premium {
-    background: var(--color-gold);
-    color: var(--color-navy);
-}
-
-.mini-app-tutor-row__tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-.mini-app-tutor-row__tag {
-    padding: 2px 8px;
-    border-radius: var(--radius-sm);
-    background: var(--color-cream-light);
-    color: var(--color-burgundy);
-    font-size: 11px;
-    font-weight: 600;
-}
-
-.mini-app-tutor-row__tag--muted {
-    background: var(--color-navy-05);
-    color: var(--color-navy-60);
-}
-
-.mini-app-tutor-row__meta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    margin-top: 2px;
-}
-
-.mini-app-tutor-row__rating {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--color-gold);
-}
-
-.mini-app-tutor-row__reviews {
-    font-weight: 400;
-    color: var(--color-navy-40);
-}
-
-.mini-app-tutor-row__price {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--color-navy);
+  }
 }
 
 .mini-app-results__error {
-    color: var(--color-burgundy);
-    font-size: 13px;
-    margin: 16px 0 0;
+  color: var(--color-burgundy);
+  font-size: 13px;
+  margin: 16px 0 0;
 }
 
 .mini-app-results__exhausted {
-    text-align: center;
-    font-size: 13px;
-    color: var(--color-navy-40);
-    margin: 20px 0 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-navy-40);
+  margin: 20px 0 0;
 }
 
 .mini-app-results__find-more {
-    width: 100%;
-    padding: 14px 20px;
-    border: 1px solid var(--color-navy);
-    border-radius: var(--radius-md);
-    background: transparent;
-    color: var(--color-navy);
-    font-weight: 600;
-    font-size: 15px;
-    cursor: pointer;
-    margin-top: 20px;
-    font-family: inherit;
+  width: 100%;
+  padding: 14px 20px;
+  border: 1px solid var(--color-navy);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-navy);
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  margin-top: 20px;
+  font-family: inherit;
 }
 
 .mini-app-results__find-more:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  opacity: 0.5;
+  cursor: not-allowed;
 }
