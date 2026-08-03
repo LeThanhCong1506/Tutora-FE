@@ -3,12 +3,16 @@ import styles from './styles.module.css';
 import MessageInfoItem from './MessageInfoItem';
 import MessageSearch from './MessageSearch';
 import { getChats, type ChatChannel } from '../../services/chat.service';
+import { signalRService } from '../../services/signalr.service';
+import { useUsersPresence } from '../../hooks/useUserPresence';
+import { normalizePresenceUserId } from '../../utils/presence';
 
 interface MessageListSidebarProps {
-    onChannelSelect: (channelId: number | null) => void;
-    onChannelObjectSelect?: (channel: ChatChannel | null) => void;
-    selectedChannelId: number | null;
-    isTutor?: boolean;
+  onChannelSelect: (channelId: number | null) => void;
+  onChannelObjectSelect?: (channel: ChatChannel | null) => void;
+  selectedChannelId: number | null;
+  currentUserId?: string | null;
+  isTutor?: boolean;
 }
 
 // Helper function to format date/time
@@ -40,16 +44,28 @@ const formatPreview = (text: string | null): string => {
   return text;
 };
 
-const MessageListSidebar = ({ onChannelSelect, onChannelObjectSelect, selectedChannelId, isTutor = false }: MessageListSidebarProps) => {
+const MessageListSidebar = ({
+  onChannelSelect,
+  onChannelObjectSelect,
+  selectedChannelId,
+  currentUserId,
+  isTutor = false,
+}: MessageListSidebarProps) => {
   const [channels, setChannels] = useState<ChatChannel[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  // Chỉ dùng để ép re-render mỗi phút → nhãn thời gian tương đối luôn cập nhật.
+  const [, forceTick] = useState(0);
+  const presenceByUserId = useUsersPresence(channels.map((channel) => channel.otherUserId));
 
   const handleChannelClick = (channel: ChatChannel) => {
+    setChannels((currentChannels) =>
+      currentChannels.map((item) => (item.channelId === channel.channelId ? { ...item, unreadCount: 0 } : item)),
+    );
     onChannelSelect(channel.channelId);
     if (onChannelObjectSelect) {
-      onChannelObjectSelect(channel);
+      onChannelObjectSelect({ ...channel, unreadCount: 0 });
     }
   };
 
@@ -73,13 +89,74 @@ const MessageListSidebar = ({ onChannelSelect, onChannelObjectSelect, selectedCh
     fetchChannels();
   }, []);
 
-  const filteredChannels = channels.filter(channel => 
-    channel.otherUserName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    channel.lastMessagePreview?.toLowerCase().includes(searchQuery.toLowerCase())
+  // Realtime: khi có tin nhắn mới (kể cả tin mình vừa gửi — BE broadcast lại qua group),
+  // cập nhật thời gian + preview của đúng kênh và đẩy kênh đó lên đầu. Nhờ vậy timestamp
+  // hiển thị "Vừa xong" thay vì kẹt ở mốc lúc mở trang. Dùng subscribeToChatMessages
+  // (multi-subscriber) để không đụng handler của ChatArea.
+  useEffect(() => {
+    const unsubscribe = signalRService.subscribeToChatMessages(
+      (msg: {
+        channelId?: number;
+        ChannelId?: number;
+        content?: string;
+        Content?: string;
+        createdAt?: string;
+        CreatedAt?: string;
+        senderId?: string;
+        SenderId?: string;
+      }) => {
+        const channelId = msg?.channelId ?? msg?.ChannelId;
+        if (!channelId) return;
+        const content = msg?.content ?? msg?.Content ?? '';
+        const createdAt = msg?.createdAt ?? msg?.CreatedAt ?? new Date().toISOString();
+        const senderId = msg?.senderId ?? msg?.SenderId;
+        const shouldIncrementUnread =
+          channelId !== selectedChannelId && !!currentUserId && !!senderId && senderId !== currentUserId;
+
+        setChannels((prev) => {
+          if (!prev.some((c) => c.channelId === channelId)) return prev; // kênh chưa có trong list → bỏ qua
+          const updated = prev.map((c) => {
+            if (c.channelId !== channelId) return c;
+            return {
+              ...c,
+              lastMessageAt: createdAt,
+              lastMessagePreview: content,
+              unreadCount: shouldIncrementUnread ? (c.unreadCount ?? 0) + 1 : c.unreadCount,
+            };
+          });
+          updated.sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
+          return updated;
+        });
+      },
+    );
+    return unsubscribe;
+  }, [currentUserId, selectedChannelId]);
+
+  // Nhịp 60s để refresh nhãn thời gian tương đối ("Vừa xong" → "1 phút trước" → ...).
+  useEffect(() => {
+    const id = setInterval(() => forceTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const filteredChannels = channels.filter(
+    (channel) =>
+      channel.otherUserName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      channel.lastMessagePreview?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
-    <aside className={styles.sidebar}>
+    <aside className={styles.sidebar} aria-label="Danh sách cuộc trò chuyện">
+      <div className={styles.sidebarHeading}>
+        <div className={styles.sidebarHeadingCopy}>
+          <span className={styles.sidebarEyebrow}>Hộp thư</span>
+          <h2 className={styles.sidebarTitle}>Cuộc trò chuyện</h2>
+        </div>
+        {!loading && !error && (
+          <span className={styles.conversationCount} aria-label={`${filteredChannels.length} cuộc trò chuyện`}>
+            {filteredChannels.length}
+          </span>
+        )}
+      </div>
       <MessageSearch onSearch={setSearchQuery} />
       <div className={styles.messageList}>
         {loading ? (
@@ -103,18 +180,21 @@ const MessageListSidebar = ({ onChannelSelect, onChannelObjectSelect, selectedCh
           </div>
         ) : (
           filteredChannels.map((channel) => (
-            <div key={channel.channelId} onClick={() => handleChannelClick(channel)}>
-              <MessageInfoItem
-                active={selectedChannelId === channel.channelId}
-                avatar={channel.otherUserAvatarUrl || ''}
-                name={channel.otherUserName || 'Người dùng'}
-                preview={formatPreview(channel.lastMessagePreview)}
-                role={isTutor ? 'Phụ huynh / Học sinh' : 'Gia sư'}
-                session={channel.bookingId ? `Buổi #${channel.bookingId}` : 'Tư vấn'}
-                status={channel.status}
-                timestamp={formatTimestamp(channel.lastMessageAt)}
-              />
-            </div>
+            <MessageInfoItem
+              key={channel.channelId}
+              active={selectedChannelId === channel.channelId}
+              avatar={channel.otherUserAvatarUrl || ''}
+              name={channel.otherUserName || 'Người dùng'}
+              preview={formatPreview(channel.lastMessagePreview)}
+              role={isTutor ? 'Phụ huynh / Học sinh' : 'Gia sư'}
+              session={channel.bookingId ? `Buổi #${channel.bookingId}` : 'Tư vấn'}
+              status={channel.status}
+              timestamp={formatTimestamp(channel.lastMessageAt)}
+              unread={!!channel.unreadCount}
+              unreadCount={channel.unreadCount ?? 0}
+              isOnline={presenceByUserId.get(normalizePresenceUserId(channel.otherUserId))?.status === 'online'}
+              onClick={() => handleChannelClick(channel)}
+            />
           ))
         )}
       </div>

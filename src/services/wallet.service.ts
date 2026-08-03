@@ -34,6 +34,81 @@ export interface WalletBalanceResponse {
   lastUpdated?: string;
 }
 
+// Nạp ví (dùng trong luồng "nạp bù rồi thanh toán booking")
+
+/** Khớp `TopupResponse` của backend (dữ liệu tạo QR nạp tiền PayOS). */
+export interface TopupResponse {
+  paymentLinkId: string;
+  orderCode: number;
+  amount: number;
+  currency: string;
+  checkoutUrl: string;
+  qrCode: string;
+  accountNumber: string;
+  accountName: string;
+  bin: string;
+  description: string;
+  expiredAt: string | null;
+}
+
+/** Khớp `TopupStatusResponse` của backend. `walletCredited` là cờ FE dựa vào để auto-pay. */
+export interface TopupStatusResponse {
+  orderCode: number;
+  bookingId: number;
+  paymentPhase: string;
+  status: string;
+  walletCredited: boolean;
+  amount: number;
+  walletBalance: number;
+}
+
+/** Tạo QR nạp đúng phần thiếu của booking; backend tự tính số tiền từ payment summary và số dư ví. */
+export const createTopup = async (bookingId: number): Promise<ApiResponse<TopupResponse>> => {
+  try {
+    const response = await api.post(`/bookings/${bookingId}/payment/wallet-shortfall`, undefined, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error: unknown) {
+    logRequestError('❌ Error creating booking shortfall topup:', error);
+    throw error;
+  }
+};
+
+/** Poll trạng thái lệnh nạp bù đã được ràng buộc với booking. */
+export const getTopupStatus = async (
+  bookingId: number,
+  orderCode: number
+): Promise<ApiResponse<TopupStatusResponse>> => {
+  try {
+    const response = await api.get(
+      `/bookings/${bookingId}/payment/wallet-shortfall/${orderCode}/status`,
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error: unknown) {
+    logRequestError('❌ Error fetching booking shortfall topup status:', error);
+    throw error;
+  }
+};
+
+/** Dùng khoản nạp bù đã hoàn tất để thanh toán đúng booking và phase đã tạo QR. */
+export const applyBookingShortfallTopup = async (
+  bookingId: number,
+  orderCode: number
+): Promise<ApiResponse<unknown>> => {
+  try {
+    const response = await api.post(
+      `/bookings/${bookingId}/payment/wallet-shortfall/${orderCode}/apply`,
+      undefined,
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error: unknown) {
+    logRequestError('❌ Error applying booking shortfall topup:', error);
+    throw error;
+  }
+};
 /**
  * Get wallet balance
  */
@@ -138,9 +213,17 @@ export interface TransactionDetail {
   referenceId: number | null;
   referenceTable: string | null;
   createdAt: string;
-  booking: BookingInvoiceDetail | null;
-  dispute: DisputeTransactionDetail | null;
-  withdrawal: WithdrawalTransactionDetail | null;
+  /** Set only when referenceTable is 'withdrawal' — backend-generated payout reference. */
+  providerTransactionId: string | null;
+  paidAt: string | null;
+  proofImageUrl: string | null;
+  // NOTE: the backend's flat wallet-transaction-detail endpoint does not enrich these —
+  // kept optional so any future booking/dispute enrichment can populate them without a
+  // breaking type change; for withdrawal-type transactions the modal fetches the full
+  // WithdrawalDetail separately instead (see TransactionDetailModal.tsx).
+  booking?: BookingInvoiceDetail | null;
+  dispute?: DisputeTransactionDetail | null;
+  withdrawal?: WithdrawalTransactionDetail | null;
 }
 
 /**
@@ -178,6 +261,13 @@ export interface WithdrawalDetail {
   accountHolderName: string | null;
   requestedAt: string;
   processedAt: string | null;
+  claimedAt: string | null;
+  completionNote: string | null;
+  rejectionReason: string | null;
+  /** Backend-generated payout reference — NOT a real bank trace code. */
+  transactionId: string | null;
+  paidAt: string | null;
+  proofImageUrl: string | null;
 }
 
 export interface WithdrawalItem {
@@ -227,6 +317,22 @@ export const getWithdrawals = async (
     return response.data;
   } catch (error: unknown) {
     logRequestError('❌ Error fetching withdrawals:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get a single withdrawal's detail — ownership-checked on the backend, includes the
+ * backend-generated payout reference and a signed proof-image URL when available.
+ */
+export const getWithdrawalDetail = async (id: number): Promise<ApiResponse<WithdrawalDetail>> => {
+  try {
+    const response = await api.get(`/wallet/withdrawals/${id}`, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error: unknown) {
+    logRequestError('❌ Error fetching withdrawal detail:', error);
     throw error;
   }
 };

@@ -11,6 +11,7 @@ interface StudentProfileContextValue {
   loading: boolean;
   /** Hồ sơ học tập đã đầy đủ các trường bắt buộc chưa. */
   isComplete: boolean;
+  isParentManaged: boolean;
   /** Tải lại trạng thái hồ sơ (gọi sau khi học sinh lưu hồ sơ). */
   refresh: () => Promise<void>;
 }
@@ -29,6 +30,7 @@ export const StudentProfileProvider = ({ children }: { children: ReactNode }) =>
   const [loading, setLoading] = useState(true);
   // Fail-open: mặc định coi là đủ để không "nhốt" học sinh nếu API trạng thái lỗi.
   const [isComplete, setIsComplete] = useState(true);
+  const [isParentManaged, setIsParentManaged] = useState(false);
 
   const refresh = async () => {
     setLoading(true);
@@ -37,6 +39,7 @@ export const StudentProfileProvider = ({ children }: { children: ReactNode }) =>
       const p = res.content?.studentProfile ?? null;
       setProfile(p);
       setIsComplete(isStudentProfileComplete(p));
+      setIsParentManaged(res.content?.linked === true || !!p?.parentId);
     } catch {
       // Lỗi mạng/khác → không chặn học sinh.
       setIsComplete(true);
@@ -50,7 +53,7 @@ export const StudentProfileProvider = ({ children }: { children: ReactNode }) =>
   }, []);
 
   return (
-    <StudentProfileContext.Provider value={{ profile, loading, isComplete, refresh }}>
+    <StudentProfileContext.Provider value={{ profile, loading, isComplete, isParentManaged, refresh }}>
       {children}
     </StudentProfileContext.Provider>
   );
@@ -77,6 +80,20 @@ export const StudentProfileGate = () => {
 
   if (!isComplete && location.pathname !== STUDENT_PROFILE_PATH) {
     return <Navigate to={STUDENT_PROFILE_PATH} replace />;
+  }
+
+  return <Outlet />;
+};
+
+export const StudentSelfRegisteredGate = () => {
+  const { loading, isParentManaged } = useStudentProfile();
+
+  if (loading) {
+    return <div style={{ padding: 48, textAlign: 'center', color: '#737373' }}>Đang tải...</div>;
+  }
+
+  if (isParentManaged) {
+    return <Navigate to="/student-portal/dashboard" replace />;
   }
 
   return <Outlet />;

@@ -38,6 +38,26 @@ export interface PaymentInfoDTO {
     isRemainingPaid: boolean;
 }
 
+/**
+ * Lightweight payment summary for the current unpaid phase. Mirrors backend
+ * `PaymentSummaryResponse`. Loading this (instead of getPaymentInfo) on the payment
+ * screen means NO PayOS link is created until the user actually picks bank transfer,
+ * so paying by wallet leaves no PayOS artifact.
+ */
+export interface PaymentSummaryDTO {
+    bookingId: number;
+    amount: number;
+    paymentPhase: 'deposit' | 'remaining';
+    totalAmount: number;
+    depositAmount: number;
+    remainingAmount: number;
+    isDepositPaid: boolean;
+    isRemainingPaid: boolean;
+    walletBalance: number;
+    canPayWithWallet: boolean;
+    expiredAt: string | null;
+}
+
 export interface PaymentStatusDTO {
     bookingId: number;
     status: string;
@@ -52,7 +72,22 @@ export interface PaymentStatusDTO {
     isRemainingPaid?: boolean;
 }
 
-/** Get payment information for a booking (QR code, checkout URL, wallet balance) */
+/**
+ * Get the lightweight payment summary (amounts + wallet balance) for a booking's
+ * current unpaid phase. Does NOT create a PayOS link — call this to render the
+ * payment-method choice screen.
+ */
+export const getPaymentSummary = async (bookingId: number): Promise<PaymentSummaryDTO> => {
+    const response = await api.get(`/bookings/${bookingId}/payment/summary`, {
+        headers: getAuthHeaders(),
+    });
+    return response.data.content ?? response.data;
+};
+
+/**
+ * Get full payment information for a booking (QR code, checkout URL, bank details).
+ * This CREATES a PayOS payment link — only call it when the user chooses bank transfer.
+ */
 export const getPaymentInfo = async (bookingId: number): Promise<PaymentInfoDTO> => {
     const response = await api.get(`/bookings/${bookingId}/payment`, {
         headers: getAuthHeaders(),

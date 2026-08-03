@@ -42,7 +42,7 @@ const TutorOnboarding: React.FC = () => {
       return 'Cần thêm ít nhất 1 khung giờ rảnh để tiếp tục.';
     }
     if (state.currentStep === 2) {
-      return 'Cần thêm ít nhất 1 record (môn × khối × giá) để tiếp tục.';
+      return 'Cần thêm ít nhất 1 cấu hình môn, khối lớp và giá để tiếp tục.';
     }
     if (!combosMatchAvailability) {
       return 'Có gói lịch học cố định không còn nằm trong lịch rảnh. Hãy cập nhật gói trước khi hoàn tất.';
@@ -131,7 +131,6 @@ const TutorOnboarding: React.FC = () => {
             onboarding={onboarding}
             subjects={subjects}
             gradeLevels={gradeLevels}
-            onCreateSubjectRecord={sync.createSubjectRecord}
             onSaveSubjectRecords={sync.savePricing}
             saving={sync.saving}
           />

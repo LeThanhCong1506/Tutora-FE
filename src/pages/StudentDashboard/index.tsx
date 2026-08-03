@@ -11,6 +11,7 @@ import {
   getStudentLessons,
 } from '../../services/student-lesson.service';
 import { getUserInfoFromToken } from '../../services/auth.service';
+import { canJoinLiveSession } from '../../utils/liveSession';
 import { isZaloMiniApp } from '../../services/zalo-env';
 import { StatCard } from '../../components/shared';
 import styles from './styles.module.css';
@@ -186,8 +187,8 @@ const StudentDashboard = () => {
                   </div>
                   Đặt lịch học
                 </Link>
-                <Link to="/student-portal/lessons" className={styles.quickActionBtn}>
-                  Buổi học
+                <Link to="/student-portal/calendar" className={styles.quickActionBtn}>
+                  Thời khóa biểu
                 </Link>
               </div>
             </div>
@@ -201,7 +202,7 @@ const StudentDashboard = () => {
             label="Buổi sắp tới"
             subLabel="Trong 14 ngày tới"
             variant="default"
-            onClick={() => navigate('/student-portal/lessons')}
+            onClick={() => navigate('/student-portal/calendar')}
           />
           <StatCard
             icon={<CircleAlert size={20} />}
@@ -209,7 +210,7 @@ const StudentDashboard = () => {
             label="Chờ xác nhận"
             subLabel={pendingCount > 0 ? 'Cần bạn kiểm tra' : 'Không có yêu cầu mới'}
             variant="default"
-            onClick={() => navigate('/student-portal/lessons')}
+            onClick={() => navigate('/student-portal/calendar')}
           />
           <StatCard
             icon={<CheckCircle2 size={20} />}
@@ -217,7 +218,7 @@ const StudentDashboard = () => {
             label="Hoàn thành"
             subLabel="Tổng số buổi học"
             variant="default"
-            onClick={() => navigate('/student-portal/lessons')}
+            onClick={() => navigate('/student-portal/calendar')}
           />
         </div>
 
@@ -275,7 +276,7 @@ const StudentDashboard = () => {
             <div className={styles.scheduleWidget}>
               <div className={`${styles.scheduleTitle} ${styles.scheduleHeader}`}>
                 <span>Buổi học sắp tới</span>
-                <Link to="/student-portal/lessons" className={styles.scheduleLink}>
+                <Link to="/student-portal/calendar" className={styles.scheduleLink}>
                   Xem tất cả →
                 </Link>
               </div>
@@ -290,12 +291,21 @@ const StudentDashboard = () => {
                     const isWithinTimeWindow =
                       startTime && endTime && dayjs().isAfter(dayjs(startTime)) && dayjs().isBefore(dayjs(endTime));
                     const isActive = isInProgress || isWithinTimeWindow;
-                    const canJoin = lesson.meetingLink && isActive;
+                    // Phòng mở từ 30ph trước giờ học, không cần gia sư vào trước (khớp BE AgoraController)
+                    const canJoin =
+                      lesson.lessonId &&
+                      canJoinLiveSession({
+                        status: lesson.status,
+                        meetingLink: lesson.meetingLink,
+                        scheduledStart: startTime,
+                        scheduledEnd: endTime,
+                        checkOutTime: lesson.checkOutTime,
+                      });
                     return (
                       <div
                         key={lesson.lessonId || idx}
                         className={`${styles.scheduleItem} ${isActive ? styles.active : ''}`}
-                        onClick={() => lesson.lessonId && navigate(`/student-portal/lessons/${lesson.lessonId}`)}
+                        onClick={() => lesson.lessonId && navigate(`/student-portal/calendar/${lesson.lessonId}`)}
                         style={{ cursor: lesson.lessonId ? 'pointer' : 'default' }}
                       >
                         <div className={styles.scheduleItemHeader}>
@@ -313,16 +323,14 @@ const StudentDashboard = () => {
                           {endTime ? dayjs(endTime).format('HH:mm') : ''}
                         </div>
                         {canJoin && (
-                          <a
-                            href={lesson.meetingLink}
-                            target="_blank"
-                            rel="noreferrer"
+                          <Link
+                            to={`/session-lobby/${lesson.lessonId}`}
                             className={styles.joinBtn}
                             onClick={(e) => e.stopPropagation()}
                           >
                             <Video size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
                             Tham gia ngay
-                          </a>
+                          </Link>
                         )}
                       </div>
                     );

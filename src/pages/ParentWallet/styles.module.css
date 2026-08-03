@@ -717,6 +717,47 @@
     text-decoration: underline;
 }
 
+/* Proof image (ảnh biên lai) */
+.proofImageLink {
+    display: block;
+    width: 100%;
+    max-width: 300px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.proofImageLink:hover {
+    border-color: #52c41a;
+    box-shadow: 0 4px 12px rgba(82, 196, 26, 0.15);
+}
+
+.proofImage {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    background: #fafafa;
+}
+
+.viewFullImageBtn {
+    margin-top: 8px;
+    background: transparent;
+    border: none;
+    color: #1890ff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    text-align: right;
+    width: 100%;
+}
+
+.viewFullImageBtn:hover {
+    text-decoration: underline;
+}
+
 /* Withdraw form */
 .balanceHint {
     font-size: 14px;

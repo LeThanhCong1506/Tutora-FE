@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import styles from '../../styles/pages/tutor-portal-dashboard.module.css';
 import {
     getTutorDashboardStats,
     getTutorCalendar,
-    checkInClassSession,
     type TutorDashboardStatsResponse,
     type CalendarDayResponse,
     type CalendarClassSessionResponse,
@@ -16,6 +14,7 @@ import { StatCard } from '../../components/shared';
 import ReplyFeedbackModal from './components/ReplyFeedbackModal';
 import { useTutorProfileForm } from './hooks/useTutorProfileForm';
 import { getProfileCompletionItems } from './profileCompletion';
+import { formatVNDNumber } from '../../utils/formatters';
 
 // Icons
 const ClockIcon = () => (
@@ -280,45 +279,9 @@ const TutorPortalDashboard: React.FC = () => {
             .sort((a, b) => new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime());
     };
 
-    // ── Check-in / Vào lớp helpers (shared với ClassDetail) ──
-    const [checkingInLessonId, setCheckingInLessonId] = useState<number | null>(null);
-
-    const canCheckIn = (lesson: CalendarClassSessionResponse): boolean => {
-        if (lesson.status !== 'scheduled') return false;
-        const diffMinutes = Math.abs(Date.now() - new Date(lesson.scheduledStart).getTime()) / (1000 * 60);
-        return diffMinutes <= 15;
-    };
-
-    const handleEnterLesson = async (lesson: CalendarClassSessionResponse) => {
-        // Re-join nếu lesson đang chạy & đã có link
-        if (lesson.status === 'in_progress' && lesson.meetingLink) {
-            window.open(lesson.meetingLink, '_blank', 'noopener,noreferrer');
-            return;
-        }
-
-        try {
-            setCheckingInLessonId(lesson.classSessionId);
-            const response = await checkInClassSession(lesson.classSessionId);
-            const link = response.content?.meetingLink;
-            if (link) {
-                window.open(link, '_blank', 'noopener,noreferrer');
-                toast.success('Check-in thành công! Đang mở lớp học…');
-            } else {
-                toast.success('Check-in thành công!');
-            }
-            // Refetch calendar — lesson đã đổi sang in_progress + có meetingLink
-            try {
-                const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-                const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-                const calendarResponse = await getTutorCalendar(firstDay.toISOString(), lastDay.toISOString());
-                if (calendarResponse.content) setCalendarData(calendarResponse.content);
-            } catch { /* non-critical */ }
-        } catch (error: unknown) {
-            const e = error as { response?: { data?: { message?: string } } };
-            toast.error(e.response?.data?.message || 'Không thể check-in. Vui lòng thử lại.');
-        } finally {
-            setCheckingInLessonId(null);
-        }
+    // ── "Vào lớp" — phòng mở 24/7; check-in tự động khi cả gia sư và học viên cùng vào ──
+    const handleEnterLesson = (lesson: CalendarClassSessionResponse) => {
+        navigate(`/session-lobby/${lesson.classSessionId}`);
     };
 
     const formatTime = (dateString: string) => {
@@ -496,7 +459,7 @@ const TutorPortalDashboard: React.FC = () => {
                     />
                     <StatCard
                         icon={<WalletIcon />}
-                        value={`${new Intl.NumberFormat('vi-VN').format(stats.walletBalance)}đ`}
+                        value={`${formatVNDNumber(stats.walletBalance)}đ`}
                         label="Số dư ví"
                         badge={stats.pendingConfirmation > 0 ? `${stats.pendingConfirmation} chờ xác nhận` : undefined}
                         badgeVariant="orange"
@@ -504,7 +467,7 @@ const TutorPortalDashboard: React.FC = () => {
                     />
                     <StatCard
                         icon={<FrozenIcon />}
-                        value={`${new Intl.NumberFormat('vi-VN').format(stats.frozenBalance)}đ`}
+                        value={`${formatVNDNumber(stats.frozenBalance)}đ`}
                         label="Số dư đóng băng"
                         badge={stats.activeDisputes > 0 ? `${stats.activeDisputes} khiếu nại` : undefined}
                         badgeVariant="red"
@@ -512,9 +475,9 @@ const TutorPortalDashboard: React.FC = () => {
                     />
                     <StatCard
                         icon={<DollarIcon />}
-                        value={`${new Intl.NumberFormat('vi-VN').format(stats.earningsThisMonth)}đ`}
+                        value={`${formatVNDNumber(stats.earningsThisMonth)}đ`}
                         label="Doanh thu tháng"
-                        subLabel={`/ ${new Intl.NumberFormat('vi-VN').format(stats.totalEarnings)}đ tổng`}
+                        subLabel={`/ ${formatVNDNumber(stats.totalEarnings)}đ tổng`}
                         className={styles.statCard}
                     />
                 </div>
@@ -522,7 +485,7 @@ const TutorPortalDashboard: React.FC = () => {
 
             {/* Quick Actions */}
             <div className={styles.quickActions} data-tour="quick-actions">
-                <button className={styles.actionBtn} onClick={() => navigate('/tutor-portal/classes')}>
+                <button className={styles.actionBtn} onClick={() => navigate('/tutor-portal/calendar')}>
                     <CheckInIcon />
                     <span>Bắt đầu điểm danh</span>
                 </button>
@@ -530,7 +493,7 @@ const TutorPortalDashboard: React.FC = () => {
                     <PlusIcon />
                     <span>Thêm lịch rảnh</span>
                 </button>
-                <button className={styles.actionBtn} onClick={() => navigate('/tutor-portal/classes')}>
+                <button className={styles.actionBtn} onClick={() => navigate('/tutor-portal/calendar')}>
                     <BookIcon />
                     <span>Tạo lớp học</span>
                 </button>
@@ -545,7 +508,7 @@ const TutorPortalDashboard: React.FC = () => {
                 <div className={styles.sectionCard} style={{ padding: '20px' }}>
                     <div className={styles.sectionHeader} style={{ marginBottom: '14px' }}>
                         <h2 className={styles.sectionTitle}>Buổi học sắp tới</h2>
-                        <button className={styles.outlineBtn} onClick={() => navigate('/tutor-portal/classes')}>
+                        <button className={styles.outlineBtn} onClick={() => navigate('/tutor-portal/calendar')}>
                             Xem tất cả
                             <ArrowRightIcon />
                         </button>
@@ -579,7 +542,7 @@ const TutorPortalDashboard: React.FC = () => {
                                         </div>
                                     </div>
                                 </div>
-                                <button className={styles.outlineBtn} onClick={() => navigate(`/tutor-portal/classes/${lesson.bookingId}`)}>
+                                <button className={styles.outlineBtn} onClick={() => navigate(`/tutor-portal/class-sessions/${lesson.classSessionId}`)}>
                                     Chi tiết
                                 </button>
                             </div>
@@ -637,14 +600,13 @@ const TutorPortalDashboard: React.FC = () => {
                                             </div>
                                         </div>
                                         <div className={styles.lessonActions}>
-                                            {/* Scheduled & trong cửa sổ 15ph → nút Vào lớp (gọi check-in) */}
-                                            {canCheckIn(lesson) && (
+                                            {/* Scheduled & online → nút Vào lớp (phòng mở 24/7) */}
+                                            {lesson.status === 'scheduled' && lesson.meetingLink && (
                                                 <button
                                                     className={styles.primaryBtn}
                                                     onClick={() => handleEnterLesson(lesson)}
-                                                    disabled={checkingInLessonId === lesson.classSessionId}
                                                 >
-                                                    {checkingInLessonId === lesson.classSessionId ? 'Đang xử lý…' : '▶ Vào lớp'}
+                                                    ▶ Vào lớp
                                                 </button>
                                             )}
                                             {/* In-progress & đã có link → nút Vào lại lớp (re-open) */}

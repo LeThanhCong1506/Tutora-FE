@@ -2925,3 +2925,34 @@
     font-size: 12px;
   }
 }
+
+/* banner cảnh báo chưa đủ điều kiện đặt lịch */
+.eligibilityBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 12px 24px 0;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.eligibilityBanner svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.eligibilityLink {
+  font-weight: 700;
+  color: #b45309;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
+.eligibilityLink:hover {
+  color: #7c2d12;
+}

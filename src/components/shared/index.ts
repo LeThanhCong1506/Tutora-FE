@@ -35,3 +35,6 @@ export type { BreadcrumbItem } from './Breadcrumb';
 
 export { ErrorBoundary, ErrorFallback } from './ErrorBoundary';
 export type { ErrorFallbackProps } from './ErrorBoundary';
+
+export { ClassSessionRecording } from './ClassSessionRecording';
+export type { ClassSessionRecordingProps } from './ClassSessionRecording';

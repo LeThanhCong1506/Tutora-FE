@@ -11,4 +11,5 @@ export type StudentType = {
   createdAt: string;
   age: number;
   username: string;
+  isIdentityVerified?: boolean;
 };

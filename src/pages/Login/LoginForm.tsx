@@ -19,6 +19,40 @@ const sanitizePhone = (raw: string) => raw.replace(/[^\d+]/g, '').replace(/(?!^)
 const looksLikeEmail = (raw: string) => raw.includes('@');
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/**
+ * Các origin được phép quay lại sau khi đăng nhập (AI Homework Helper...).
+ * Allowlist chứ KHÔNG nhận mọi URL: nếu không sẽ thành lỗ hổng open redirect,
+ * kẻ xấu gửi link ?returnUrl=<trang giả> để lừa người dùng ngay sau khi login.
+ */
+const ALLOWED_RETURN_ORIGINS = Array.from(
+  new Set(
+    (import.meta.env.VITE_ALLOWED_RETURN_ORIGINS || '')
+      .split(',')
+      .map((o: string) => o.trim())
+      .filter(Boolean),
+  ),
+);
+
+const getSafeReturnUrl = (): string | null => {
+  const raw = new URLSearchParams(window.location.search).get('returnUrl');
+  if (!raw) return null;
+  try {
+    const url = new URL(raw, window.location.origin);
+    if (url.origin === window.location.origin) return null;
+    return ALLOWED_RETURN_ORIGINS.includes(url.origin) ? url.href : null;
+  } catch {
+    return null;
+  }
+};
+
+// Tạm thời cho tới khi BE set cookie HttpOnly Domain=.tutora.vn — lúc đó bỏ hàm này.
+const appendSessionToReturnUrl = (returnUrl: string, accessToken: string, refreshToken: string) => {
+  const url = new URL(returnUrl);
+  const fragment = new URLSearchParams({ accessToken, refreshToken });
+  url.hash = fragment.toString();
+  return url.href;
+};
+
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
 
@@ -79,7 +113,7 @@ const LoginForm: React.FC = () => {
     }
   };
 
-  const ADMIN_PORTAL_URL = import.meta.env.VITE_ADMIN_PORTAL_URL || 'https://admin.tutora.vn';
+  const ADMIN_PORTAL_URL = import.meta.env.VITE_ADMIN_PORTAL_URL || 'https://cms.tutora.vn';
 
   /**
    * Hoàn tất đăng nhập sau khi đã có JWT (dùng chung cho password & Google).
@@ -114,7 +148,12 @@ const LoginForm: React.FC = () => {
 
     saveUserToStorage({ accessToken: token, refreshToken });
     toast.success("Đăng nhập thành công!");
-    setTimeout(() => navigate(getPortalPathFromRole(role)), 800);
+
+    const returnUrl = getSafeReturnUrl();
+    setTimeout(() => {
+      if (returnUrl) window.location.href = appendSessionToReturnUrl(returnUrl, token, refreshToken);
+      else navigate(getPortalPathFromRole(role));
+    }, 800);
     return true;
   };
 
@@ -164,18 +203,24 @@ const LoginForm: React.FC = () => {
       return;
     }
 
-    // Chấp nhận email HOẶC số điện thoại — khớp với /auth/login của backend.
+    // Chấp nhận email / số điện thoại / username — khớp đúng 3 nhánh phân loại
+    // của /auth/login (SimpleAuthService.SimpleLoginAsync): chứa '@' → email;
+    // toàn số hoặc bắt đầu bằng '+' → số điện thoại; còn lại → username (tài
+    // khoản con do phụ huynh tạo dùng username, không có số điện thoại).
     if (looksLikeEmail(identifier)) {
       if (!EMAIL_RE.test(identifier)) {
         toast.warning("Email không hợp lệ!");
         return;
       }
-    } else {
+    } else if (identifier.startsWith("+") || /^\d+$/.test(identifier)) {
       const phoneDigits = identifier.replace(/\D/g, "");
       if (phoneDigits.length < 9 || phoneDigits.length > 11) {
         toast.warning("Số điện thoại không hợp lệ!");
         return;
       }
+    } else if (identifier.length < 3) {
+      toast.warning("Tên đăng nhập không hợp lệ!");
+      return;
     }
 
     try {
@@ -251,8 +296,8 @@ const LoginForm: React.FC = () => {
               id="phone"
               name="phone"
               type="text"
-              label="Số điện thoại hoặc email"
-              placeholder="090... hoặc email@example.com"
+              label="Số điện thoại, email hoặc tên đăng nhập"
+              placeholder="090..., email@example.com hoặc tên đăng nhập"
               icon="phone"
               value={formData.phone}
               onChange={handleChange}

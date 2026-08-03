@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 
 import { getUserIdFromToken } from '../../../../services/auth.service';
-import { addSubjectGradePrice, getPricing, updatePricing } from '../../../../services/tutorProfile.service';
+import { getPricing, updatePricing } from '../../../../services/tutorProfile.service';
 import {
   getMyAvailability,
   bulkCreateAvailabilities,
@@ -19,7 +19,7 @@ import {
 } from '../../../../services/tutorPackages.service';
 
 import {
-  priceItemToRecord,
+  priceItemsToRecords,
   recordsToPricingPayload,
   expandAvailabilityToCells,
   diffAvailability,
@@ -28,13 +28,11 @@ import {
   packageToFixedCombo,
   comboToPackagePayload,
   DEFAULT_FLEXIBLE_PACKAGE,
-  recordToSubjectGradePricePayload,
 } from '../api-mapping';
 import type { OnboardingState, SubjectRecord, TutorAvailabilitySlot } from '../types';
 import type { FixedCombo } from '../../../../types/combo.types';
 
 type HydrateFn = (data: Partial<Pick<OnboardingState, 'subjectRecords' | 'availability' | 'combos'>>) => void;
-type SubjectRecordInput = Omit<SubjectRecord, 'id'>;
 
 const getPackageIdFromComboId = (comboId: string): number | null => {
   const match = /^pkg_(\d+)$/.exec(comboId);
@@ -121,7 +119,9 @@ export function useOnboardingSync(hydrate: HydrateFn) {
     ]);
 
     const records: SubjectRecord[] =
-      pricingR.status === 'fulfilled' ? (pricingR.value.content?.subjectGradePrices ?? []).map(priceItemToRecord) : [];
+      pricingR.status === 'fulfilled'
+        ? priceItemsToRecords(pricingR.value.content?.subjectGradePrices ?? [])
+        : [];
 
     let availability: TutorAvailabilitySlot[] = [];
     if (availR.status === 'fulfilled') {
@@ -222,36 +222,6 @@ export function useOnboardingSync(hydrate: HydrateFn) {
   );
 
   // ── Bước 2: Môn học & giá ──────────────────────────────────────
-  const createSubjectRecord = useCallback(
-    async (record: SubjectRecordInput): Promise<SubjectRecord | null> => {
-      const userId = userIdRef.current;
-      if (!userId) {
-        toast.error('Không xác định được tài khoản gia sư.');
-        return null;
-      }
-
-      setSaving(true);
-      try {
-        const response = await addSubjectGradePrice(userId, recordToSubjectGradePricePayload(record));
-        if (!response.content) {
-          toast.error('Đã thêm cấu hình nhưng chưa nhận được dữ liệu phản hồi.');
-          return null;
-        }
-
-        const created = priceItemToRecord(response.content);
-        toast.success('Đã thêm cấu hình');
-        return created;
-      } catch (err) {
-        console.error('[Onboarding] createSubjectRecord:', err);
-        toast.error(extractApiError(err, 'Thêm cấu hình thất bại.'));
-        return null;
-      } finally {
-        setSaving(false);
-      }
-    },
-    [],
-  );
-
   const savePricing = useCallback(async (subjectRecords: SubjectRecord[]): Promise<boolean> => {
     const userId = userIdRef.current;
     if (!userId) {
@@ -442,7 +412,6 @@ export function useOnboardingSync(hydrate: HydrateFn) {
     saving,
     loadError,
     saveAvailability,
-    createSubjectRecord,
     savePricing,
     createFixedPackage,
     updateFixedPackage,

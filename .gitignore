@@ -48,3 +48,4 @@ git-status-output.txt
 # Ad-hoc debug / test scratch files
 debug-*.js
 test_*.html
+.understand-anything

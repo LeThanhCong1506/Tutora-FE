@@ -103,6 +103,16 @@ export interface BookingResponseDTO {
         status?: string;
         lessonPrice?: number;
     }>;
+    /** Real field name sent by the backend (BookingResponse.ClassSessions) — `lessons` above
+     * is never actually populated by the API. bookingToLocal() maps this into `lessons`. */
+    classSessions?: Array<{
+        classSessionId: number;
+        sessionIndex: number;
+        scheduledStart: string;
+        scheduledEnd: string;
+        status?: string;
+        classSessionPrice?: number;
+    }>;
     startDate?: string;
     createdAt: string;
     paymentDueAt: string | null;
@@ -144,6 +154,20 @@ const bookingToLocal = (b: BookingResponseDTO): BookingResponseDTO => ({
         startTime: utcTimeOfDayToLocal(s.startTime),
         endTime: utcTimeOfDayToLocal(s.endTime),
     })),
+    // Backend renamed lessons -> class_sessions; the API response only ever carries
+    // `classSessions`, so `lessons` was always empty. Map the real field so lesson-status
+    // dependent UI (lesson list, "X/N buổi hoàn thành", canFinalizeEarly/canCancel) works.
+    lessons:
+        b.lessons && b.lessons.length > 0
+            ? b.lessons
+            : (b.classSessions ?? []).map((cs) => ({
+                  lessonId: cs.classSessionId,
+                  sessionIndex: cs.sessionIndex,
+                  scheduledStart: cs.scheduledStart,
+                  scheduledEnd: cs.scheduledEnd,
+                  status: cs.status,
+                  lessonPrice: cs.classSessionPrice,
+              })),
 });
 
 /** POST /api/bookings — Create a new booking */
@@ -264,6 +288,24 @@ export const cancelBooking = async (bookingId: number, reason?: string): Promise
     }
 };
 
+
+/** POST /api/bookings/:id/finalize-early — End a course early after delivered sessions, before paying the remaining amount. */
+export const finalizeBookingEarly = async (bookingId: number, reason?: string): Promise<ApiResponse<string>> => {
+    try {
+        const response = await api.post(`/bookings/${bookingId}/finalize-early`, null, {
+            headers: getAuthHeaders(),
+            params: reason ? { reason } : undefined,
+        });
+        return response.data;
+    } catch (error: any) {
+        console.error('❌ Error finalizing booking early:', {
+            status: error.response?.status,
+            data: error.response?.data,
+            message: error.message,
+        });
+        throw error;
+    }
+};
 /** GET /api/parent/bookings — Get list of parent bookings (BE differentiates by JWT role) */
 export const getParentBookings = async (params: { page?: number; pageSize?: number; status?: string }): Promise<ApiResponse<{ items: BookingResponseDTO[], totalCount: number }>> => {
     try {
@@ -344,6 +386,33 @@ export interface PaymentInfoResponse {
     isRemainingPaid?: boolean;
 }
 
+/**
+ * Lightweight payment summary (amounts + wallet balance) for the current unpaid phase.
+ * Does NOT create a PayOS link — use it to render the payment-method choice; the link
+ * is created lazily via {@link getPaymentInfo} only when the user picks bank transfer.
+ */
+export interface PaymentSummaryResponse {
+    bookingId: number;
+    amount: number;
+    paymentPhase: 'deposit' | 'remaining';
+    totalAmount: number;
+    depositAmount: number;
+    remainingAmount: number;
+    isDepositPaid: boolean;
+    isRemainingPaid: boolean;
+    walletBalance: number;
+    canPayWithWallet: boolean;
+    expiredAt: string | null;
+}
+
+export const getPaymentSummary = async (bookingId: number): Promise<ApiResponse<PaymentSummaryResponse>> => {
+    const response = await api.get(`/bookings/${bookingId}/payment/summary`, {
+        headers: getAuthHeaders(),
+    });
+    return response.data;
+};
+
+/** Creates a PayOS link — only call when the user chooses bank transfer. */
 export const getPaymentInfo = async (bookingId: number): Promise<ApiResponse<PaymentInfoResponse>> => {
     try {
         const response = await api.get(`/bookings/${bookingId}/payment`, {
