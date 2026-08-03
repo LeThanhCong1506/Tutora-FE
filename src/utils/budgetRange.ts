@@ -1,20 +1,19 @@
-// Mốc GIÁ TRỊ THẬT (đơn vị VND), không phải nghìn — "50_100" nghĩa là 50,000đ-100,000đ/h.
+// Mốc GIÁ TRỊ THẬT (đơn vị VND), không phải nghìn — "100_200" nghĩa là 100,000đ-200,000đ/h.
+// Rút từ 5 mức xuống còn 3 (feedback Lien, ex-MD Check24, 2026-08: "at most 3 buckets in
+// the beginning" — nhiều mức làm chậm quyết định của phụ huynh). "Mọi giá" là lựa chọn
+// trung lập, không tính vào 3 bucket (giống "Không yêu cầu" ở bước giới tính/khu vực).
 export const BUDGET_RANGE_OPTIONS = [
   { value: "all", label: "Mọi giá" },
-  { value: "under_50", label: "Dưới 50,000đ/giờ" },
-  { value: "50_100", label: "50,000đ - 100,000đ/giờ" },
+  { value: "under_100", label: "Dưới 100,000đ/giờ" },
   { value: "100_200", label: "100,000đ - 200,000đ/giờ" },
-  { value: "200_500", label: "200,000đ - 500,000đ/giờ" },
-  { value: "over_500", label: "Trên 500,000đ/giờ" },
+  { value: "over_200", label: "Trên 200,000đ/giờ" },
 ] as const;
 
 export function budgetRangeToMinMax(budgetRange: string): { minRate?: number; maxRate?: number } {
   switch (budgetRange) {
-    case "under_50": return { maxRate: 50_000 };
-    case "50_100": return { minRate: 50_000, maxRate: 100_000 };
+    case "under_100": return { maxRate: 100_000 };
     case "100_200": return { minRate: 100_000, maxRate: 200_000 };
-    case "200_500": return { minRate: 200_000, maxRate: 500_000 };
-    case "over_500": return { minRate: 500_000 };
+    case "over_200": return { minRate: 200_000 };
     default: return {};
   }
 }
