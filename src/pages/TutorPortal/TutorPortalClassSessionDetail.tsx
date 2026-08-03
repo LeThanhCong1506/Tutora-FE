@@ -34,7 +34,6 @@ import {
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 import { canJoinLiveSession } from '../../utils/liveSession';
 import { signalRService } from '../../services/signalr.service';
-import AttachmentUploader from './components/AttachmentUploader';
 import LessonReportForm from './components/LessonReportForm';
 import MaterialsTab from './components/MaterialsTab';
 import { ClassSessionRecording } from '../../components/shared';
@@ -786,16 +785,13 @@ const TutorPortalClassSessionDetail = () => {
 
                     {showReportForm ? (
                       <div className={styles.reportComposer}>
-                        <AttachmentUploader
+                        <LessonReportForm
                           classSessionId={session.classSessionId}
+                          attachmentUrls={pendingAttachments}
                           onUploadComplete={(url) => setPendingAttachments((current) => [...current, url])}
                           onRemoveComplete={(url) =>
                             setPendingAttachments((current) => current.filter((item) => item !== url))
                           }
-                        />
-                        <LessonReportForm
-                          classSessionId={session.classSessionId}
-                          attachmentUrls={pendingAttachments}
                           onSubmitSuccess={handleReportSuccess}
                           onCancel={handleReportCancel}
                         />

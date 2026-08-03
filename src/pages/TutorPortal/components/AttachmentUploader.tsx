@@ -48,7 +48,7 @@ const AttachmentUploader: React.FC<AttachmentUploaderProps> = ({
           <span>Tệp báo cáo</span>
           <h4>Tài liệu đính kèm</h4>
         </div>
-        <small>Ảnh, PDF, Word hoặc PowerPoint</small>
+        <small>Ảnh, PDF hoặc Word</small>
       </div>
 
       <Upload
@@ -57,7 +57,7 @@ const AttachmentUploader: React.FC<AttachmentUploaderProps> = ({
           return false;
         }}
         showUploadList={false}
-        accept="image/*,.pdf,.doc,.docx,.ppt,.pptx"
+        accept="image/*,.pdf,.doc,.docx"
         multiple
       >
         <Button icon={<UploadOutlined />} loading={uploading} className={styles.uploadButton}>
