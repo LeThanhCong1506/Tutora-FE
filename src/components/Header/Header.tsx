@@ -1,9 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import "./Header.css";
-import { clearUserFromStorage, getCurrentUser, getUserInfoFromToken } from "../../services/auth.service";
-import { Popconfirm } from "antd";
-import { LogOut, LayoutDashboard } from "lucide-react";
+import { clearUserFromStorage, getCurrentUser, getUserInfoFromToken, getUserProfile } from "../../services/auth.service";
+import { ConfirmDialog } from "../shared/ConfirmDialog";
+import ProfileDropdown from "../shared/PortalLayout/ProfileDropdown";
+import type { ProfileMenuItem } from "../shared/PortalLayout/ProfileDropdown";
+import { getProfileMenuItemsByRole } from "../../layouts/shared/profileMenus";
+import { getMyLinkStatus } from "../../services/student.service";
+
+const generateAvatarUrl = (name: string) =>
+  `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=3d4a3e&color=f2f0e4&size=128`;
 
 const Header = () => {
   const location = useLocation();
@@ -11,22 +17,11 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userDisplayName, setUserDisplayName] = useState<string>("User");
-
-  // Determine portal path based on role
-  const getPortalPath = () => {
-    const userInfo = getUserInfoFromToken();
-    if (!userInfo?.role) return "/login";
-
-    switch (userInfo.role.toLowerCase()) {
-      case 'admin': return "/admin-portal/dashboard";
-      case 'tutor': return "/tutor-portal";
-      case 'parent': return "/parent-portal/dashboard";
-      case 'student': return "/student-portal/dashboard";
-      default: return "/";
-    }
-  };
-
-  const portalPath = getPortalPath();
+  const [userEmail, setUserEmail] = useState<string>("");
+  const [userRole, setUserRole] = useState<string>("");
+  const [userAvatar, setUserAvatar] = useState<string>("");
+  const [studentSelfRegistered, setStudentSelfRegistered] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Ẩn user info trên trang đăng ký/đăng nhập
   const isAuthPage = location.pathname === "/register" || location.pathname === "/login";
@@ -35,6 +30,7 @@ const Header = () => {
     // Check if user is logged in from localStorage
     const user = getCurrentUser();
     if (user && user.accessToken) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoggedIn(true);
 
       const userInfo = getUserInfoFromToken();
@@ -43,18 +39,76 @@ const Header = () => {
         userInfo?.email?.split('@')[0] ||
         "User";
       setUserDisplayName(displayName);
+      setUserEmail(userInfo?.email || "");
+      setUserRole(userInfo?.role || "");
+      setUserAvatar(generateAvatarUrl(displayName));
+
+      if (userInfo?.userId) {
+        getUserProfile()
+          .then((profile) => {
+            const avatar = profile?.content?.avatarUrl || profile?.content?.avatarurl;
+            if (avatar) setUserAvatar(avatar);
+          })
+          .catch(() => { /* giữ avatar fallback */ });
+      }
     } else {
       setIsLoggedIn(false);
     }
   }, [location.pathname]); // Re-check on navigation
 
+  useEffect(() => {
+    if (userRole.toLowerCase() !== "student") return;
+
+    let cancelled = false;
+    getMyLinkStatus()
+      .then((res) => {
+        if (cancelled) return;
+        const linked = res.content?.linked === true || !!res.content?.studentProfile?.parentId;
+        setStudentSelfRegistered(!linked);
+      })
+      .catch(() => { /* giữ ẩn */ });
+
+    return () => { cancelled = true; };
+  }, [userRole]);
+
+  // Đồng bộ khi trang tài khoản vừa đổi ảnh đại diện
+  useEffect(() => {
+    const handleAvatarUpdated = (e: Event) => {
+      const newUrl = (e as CustomEvent<string>).detail;
+      if (newUrl) setUserAvatar(newUrl);
+    };
+    window.addEventListener("avatar-updated", handleAvatarUpdated);
+    return () => window.removeEventListener("avatar-updated", handleAvatarUpdated);
+  }, []);
+
   const confirmLogout = async () => {
     await clearUserFromStorage();
-    setIsLoggedIn(false);
+    setShowLogoutConfirm(false);
     setIsLoggedIn(false);
     setIsMenuOpen(false);
     navigate("/login");
   };
+
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(" ").filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  const profileMenuItems = useMemo<ProfileMenuItem[]>(() => [
+    ...getProfileMenuItemsByRole(userRole, { studentSelfRegistered }),
+    {
+      key: "logout",
+      label: "Đăng xuất",
+      materialIcon: "logout",
+      danger: true,
+      startsGroup: true,
+      onSelect: () => setShowLogoutConfirm(true),
+    },
+  ], [userRole, studentSelfRegistered]);
+
   return (
     <header className="header">
       <div className="header-content">
@@ -85,56 +139,16 @@ const Header = () => {
         {/* Auth Buttons - Xử lý điều kiện hiển thị */}
         <div className="auth-buttons">
           {isLoggedIn && !isAuthPage ? (
-            // --- GIAO DIỆN TỐI GIẢN KHI ĐÃ ĐĂNG NHẬP ---
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              {/* Nút Portal tương ứng theo Role - Icon version */}
-              <Link
-                to={portalPath}
-                className="btn-portal-icon"
-                style={{
-                  color: "var(--color-navy)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "8px",
-                  borderRadius: "50%",
-                  cursor: "pointer",
-                  transition: "background 0.2s ease",
-                }}
-                title="Go to Portal"
-              >
-                <LayoutDashboard size={20} />
-              </Link>
-
-              {/* Nút Đăng xuất - Icon version */}
-              <Popconfirm
-                title="Đăng xuất"
-                description="Bạn có chắc chắn muốn đăng xuất?"
-                onConfirm={confirmLogout}
-                okText="Đồng ý"
-                cancelText="Hủy"
-                placement="bottomRight"
-              >
-                <button
-                  className="btn-logout-icon"
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "#ef4444",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: "8px",
-                    borderRadius: "50%",
-                    cursor: "pointer",
-                    transition: "background 0.2s ease",
-                  }}
-                  title="Đăng xuất"
-                >
-                  <LogOut size={20} />
-                </button>
-              </Popconfirm>
-            </div>
+            // --- DROPDOWN TÀI KHOẢN KHI ĐÃ ĐĂNG NHẬP ---
+            <ProfileDropdown
+              name={userDisplayName}
+              role={userRole || "TÀI KHOẢN"}
+              initials={getInitials(userDisplayName)}
+              avatarUrl={userAvatar}
+              subtitle={userEmail}
+              items={profileMenuItems}
+              onNavigate={(path) => navigate(path)}
+            />
           ) : (
             <>
               <Link to="/login" className="btn-login">
@@ -210,58 +224,90 @@ const Header = () => {
                     display: "flex",
                     alignItems: "center",
                     gap: "0.5rem",
+                    width: "100%",
                   }}
                 >
-                  <div
-                    style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '50%',
-                      border: '2px solid #d4b483',
-                      background: '#631b1b',
-                      color: '#fff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '14px',
-                      fontWeight: 600,
-                    }}
-                  >
-                    {userDisplayName.charAt(0).toUpperCase()}
+                  {userAvatar ? (
+                    <img
+                      src={userAvatar}
+                      alt={userDisplayName}
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        flexShrink: 0,
+                      }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '50%',
+                        background: '#3d4a3e',
+                        color: '#f2f0e4',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {getInitials(userDisplayName)}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                    <span style={{ fontWeight: 600, fontSize: '14px' }}>
+                      {userDisplayName}
+                    </span>
+                    {userEmail && (
+                      <span
+                        style={{
+                          fontSize: '12px',
+                          color: 'rgba(62, 47, 40, 0.5)',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {userEmail}
+                      </span>
+                    )}
                   </div>
-                  <span style={{ fontWeight: 600 }}>
-                    {userDisplayName}
-                  </span>
                 </div>
 
-                <Link
-                  to={portalPath}
-                  className="btn-signup"
-                  style={{ width: "100%", textAlign: "center" }}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  TRANG CÁ NHÂN
-                </Link>
-
-                <Popconfirm
-                  title="Đăng xuất"
-                  description="Bạn có muốn đăng xuất không?"
-                  onConfirm={confirmLogout}
-                  okText="Có"
-                  cancelText="Không"
-                >
+                {/* Cùng bộ thao tác nhanh với dropdown ở desktop */}
+                {getProfileMenuItemsByRole(userRole, { studentSelfRegistered }).map((item) => (
                   <button
-                    className="btn-login"
-                    style={{
-                      width: "100%",
-                      border: "1px solid #ef4444",
-                      color: "#ef4444",
-                      cursor: "pointer",
+                    key={item.key}
+                    type="button"
+                    className="mobile-quick-action"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      navigate(item.key);
                     }}
                   >
-                    LOG OUT
+                    {item.materialIcon && (
+                      <span className="material-symbols-outlined">{item.materialIcon}</span>
+                    )}
+                    <span>{item.label}</span>
                   </button>
-                </Popconfirm>
+                ))}
+
+                <button
+                  className="btn-login"
+                  style={{
+                    width: "100%",
+                    border: "1px solid #ef4444",
+                    color: "#ef4444",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => setShowLogoutConfirm(true)}
+                >
+                  ĐĂNG XUẤT
+                </button>
               </div>
             ) : (
               <>
@@ -284,6 +330,16 @@ const Header = () => {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={showLogoutConfirm}
+        type="warning"
+        title="Đăng xuất"
+        message="Bạn có chắc muốn kết thúc phiên làm việc hiện tại không?"
+        confirmText="Đăng xuất"
+        onConfirm={confirmLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </header>
   );
 };
