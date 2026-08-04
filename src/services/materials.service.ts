@@ -58,19 +58,6 @@ export const uploadMaterial = async (
     return response.data;
 };
 
-export const updateMaterialVisibility = async (
-    bookingId: number,
-    materialId: number,
-    isPublic: boolean,
-): Promise<ApiResponse<LearningMaterialResponse>> => {
-    const response = await api.patch(
-        `/bookings/${bookingId}/materials/${materialId}`,
-        { isPublic },
-        { headers: getAuthHeaders() },
-    );
-    return response.data;
-};
-
 export const deleteMaterial = async (bookingId: number, materialId: number): Promise<ApiResponse<null>> => {
     const response = await api.delete(`/bookings/${bookingId}/materials/${materialId}`, { headers: getAuthHeaders() });
     return response.data;
