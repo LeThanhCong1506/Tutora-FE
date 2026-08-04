@@ -752,8 +752,8 @@ const StudentLessonDetail = () => {
                     </div>
                 )}
 
-                {/* ─── Content + Homework ─── */}
-                {(lesson.lessonContent || lesson.homework) && (
+                {/* ─── Content + Homework — cũng gồm tệp đính kèm của báo cáo (thường là bài tập) ─── */}
+                {(lesson.lessonContent || lesson.homework || (report && Array.isArray(report.attachments) && report.attachments.length > 0)) && (
                     <div style={sectionCard}>
                         <div style={sectionHeaderRow}>
                             <div style={sectionIconWrap}>
@@ -778,50 +778,9 @@ const StudentLessonDetail = () => {
                                     value={lesson.homework}
                                 />
                             )}
-                        </div>
-                    </div>
-                )}
-
-                {/* ─── Tutor Report ─── */}
-                {report && (
-                    <div style={sectionCard}>
-                        <div style={sectionHeaderRow}>
-                            <div style={{ ...sectionIconWrap, background: 'rgba(5,150,105,0.10)' }}>
-                                <ClipboardCheck size={16} style={{ color: '#059669' }} />
-                            </div>
-                            <div style={sectionTitleText}>Báo cáo gia sư</div>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                            {report.contentCovered && (
-                                <ReportRow label="Nội dung đã dạy" value={report.contentCovered} />
-                            )}
-                            {report.homeworkAssigned && (
-                                <ReportRow label="Bài tập giao" value={report.homeworkAssigned} />
-                            )}
-                            <div style={ratingRow}>
-                                <span style={reportLabelStyle}>Đánh giá học sinh</span>
-                                {report.studentPerformanceRating > 0 ? (
-                                    <div style={ratingStars}>
-                                        {[1, 2, 3, 4, 5].map(i => (
-                                            <Star
-                                                key={i}
-                                                size={16}
-                                                fill={i <= report.studentPerformanceRating ? '#fbbf24' : '#e5e7eb'}
-                                                color={i <= report.studentPerformanceRating ? '#f59e0b' : '#d1d5db'}
-                                                strokeWidth={1.5}
-                                            />
-                                        ))}
-                                        <span style={ratingNumber}>
-                                            {report.studentPerformanceRating}/5
-                                        </span>
-                                    </div>
-                                ) : (
-                                    <span style={{ fontSize: 13, color: '#999' }}>Chưa đánh giá</span>
-                                )}
-                            </div>
-                            {Array.isArray(report.attachments) && report.attachments.length > 0 && (
+                            {report && Array.isArray(report.attachments) && report.attachments.length > 0 && (
                                 <div>
-                                    <span style={reportLabelStyle}>Tệp đính kèm</span>
+                                    <span style={reportLabelStyle}>Bài tập được giao</span>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
                                         {report.attachments.map((url: string, index: number) => (
                                             <a
@@ -843,32 +802,68 @@ const StudentLessonDetail = () => {
                     </div>
                 )}
 
-                {/* ─── Tài liệu lớp học ─── */}
-                {materials.length > 0 && (
+                {/* ─── Tutor Report — cũng gồm tài liệu lớp học (cùng chỗ gia sư chia sẻ cho học sinh) ─── */}
+                {(report || materials.length > 0) && (
                     <div style={sectionCard}>
                         <div style={sectionHeaderRow}>
-                            <div style={{ ...sectionIconWrap, background: 'rgba(37,99,235,0.10)' }}>
-                                <FileText size={16} style={{ color: '#2563eb' }} />
+                            <div style={{ ...sectionIconWrap, background: 'rgba(5,150,105,0.10)' }}>
+                                <ClipboardCheck size={16} style={{ color: '#059669' }} />
                             </div>
-                            <div style={sectionTitleText}>Tài liệu lớp học</div>
+                            <div style={sectionTitleText}>Báo cáo gia sư</div>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {materials.map((m) => (
-                                <a
-                                    key={m.materialId}
-                                    href={m.fileUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    style={attachmentLinkStyle}
-                                >
-                                    <Paperclip size={14} style={{ flexShrink: 0, color: '#6366F1' }} />
-                                    <span style={attachmentNameStyle}>
-                                        {m.title}
-                                        {m.description ? ` · ${m.description}` : ''}
-                                    </span>
-                                    <Download size={14} style={{ flexShrink: 0, color: '#9ca3af' }} />
-                                </a>
-                            ))}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                            {report?.contentCovered && (
+                                <ReportRow label="Nội dung đã dạy" value={report.contentCovered} />
+                            )}
+                            {report?.homeworkAssigned && (
+                                <ReportRow label="Bài tập giao" value={report.homeworkAssigned} />
+                            )}
+                            {report && (
+                                <div style={ratingRow}>
+                                    <span style={reportLabelStyle}>Đánh giá học sinh</span>
+                                    {report.studentPerformanceRating > 0 ? (
+                                        <div style={ratingStars}>
+                                            {[1, 2, 3, 4, 5].map(i => (
+                                                <Star
+                                                    key={i}
+                                                    size={16}
+                                                    fill={i <= report.studentPerformanceRating ? '#fbbf24' : '#e5e7eb'}
+                                                    color={i <= report.studentPerformanceRating ? '#f59e0b' : '#d1d5db'}
+                                                    strokeWidth={1.5}
+                                                />
+                                            ))}
+                                            <span style={ratingNumber}>
+                                                {report.studentPerformanceRating}/5
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <span style={{ fontSize: 13, color: '#999' }}>Chưa đánh giá</span>
+                                    )}
+                                </div>
+                            )}
+                            {materials.length > 0 && (
+                                <div>
+                                    <span style={reportLabelStyle}>Tài liệu lớp học</span>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                                        {materials.map((m) => (
+                                            <a
+                                                key={m.materialId}
+                                                href={m.fileUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={attachmentLinkStyle}
+                                            >
+                                                <Paperclip size={14} style={{ flexShrink: 0, color: '#6366F1' }} />
+                                                <span style={attachmentNameStyle}>
+                                                    {m.title}
+                                                    {m.description ? ` · ${m.description}` : ''}
+                                                </span>
+                                                <Download size={14} style={{ flexShrink: 0, color: '#9ca3af' }} />
+                                            </a>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
