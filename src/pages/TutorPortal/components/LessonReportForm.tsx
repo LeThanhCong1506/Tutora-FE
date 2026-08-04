@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Form, Input, Checkbox, Button } from 'antd';
+import { Form, Input, Button } from 'antd';
 import { toast } from 'react-toastify';
 import {
   submitClassSessionReport,
@@ -7,6 +7,7 @@ import {
   type ClassSessionDetailResponse,
 } from '../../../services/classSession.service';
 import { useFormDraft } from '../../../hooks/useFormDraft';
+import AttachmentUploader from './AttachmentUploader';
 import styles from './LessonReportForm.module.css';
 
 const { TextArea } = Input;
@@ -14,6 +15,8 @@ const { TextArea } = Input;
 interface LessonReportFormProps {
   classSessionId: number;
   attachmentUrls?: string[];
+  onUploadComplete?: (url: string) => void;
+  onRemoveComplete?: (url: string) => void;
   onSubmitSuccess: (detail: ClassSessionDetailResponse) => void;
   onCancel?: () => void;
 }
@@ -22,13 +25,13 @@ interface ReportFormValues {
   lessonContent: string;
   homework?: string;
   tutorNotes?: string;
-  isStudentPresent?: boolean;
-  attendanceNote?: string;
 }
 
 const LessonReportForm: React.FC<LessonReportFormProps> = ({
   classSessionId,
   attachmentUrls,
+  onUploadComplete,
+  onRemoveComplete,
   onSubmitSuccess,
   onCancel,
 }) => {
@@ -61,8 +64,9 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
         contentCovered: values.lessonContent,
         homeworkAssigned: values.homework || '',
         tutorNotes: values.tutorNotes || '',
-        isStudentPresent: values.isStudentPresent ?? true,
-        attendanceNote: values.attendanceNote || '',
+        // Nộp được báo cáo nghĩa là buổi học đã diễn ra với học sinh — không cần hỏi lại điểm danh.
+        isStudentPresent: true,
+        attendanceNote: '',
         attachments: attachmentUrls && attachmentUrls.length > 0 ? attachmentUrls : undefined,
       };
       const response = await submitClassSessionReport(classSessionId, request);
@@ -89,7 +93,6 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
         layout="vertical"
         onFinish={handleSubmit}
         onValuesChange={handleValuesChange}
-        initialValues={{ isStudentPresent: true }}
         className={styles.form}
       >
         <Form.Item
@@ -104,16 +107,16 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
           <TextArea rows={3} placeholder="Bài tập giao cho học sinh (nếu có)..." />
         </Form.Item>
 
+        <div className={styles.attachmentSection}>
+          <AttachmentUploader
+            classSessionId={classSessionId}
+            onUploadComplete={onUploadComplete}
+            onRemoveComplete={onRemoveComplete}
+          />
+        </div>
+
         <Form.Item name="tutorNotes" label="Ghi chú">
           <TextArea rows={2} placeholder="Ghi chú thêm về buổi học..." />
-        </Form.Item>
-
-        <Form.Item name="isStudentPresent" valuePropName="checked">
-          <Checkbox>Học sinh có mặt</Checkbox>
-        </Form.Item>
-
-        <Form.Item name="attendanceNote" label="Ghi chú điểm danh">
-          <Input placeholder="Ghi chú về việc tham gia của học sinh..." />
         </Form.Item>
 
         <div className={styles.actions}>
