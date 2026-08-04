@@ -23,6 +23,14 @@ const TARGET_BY_ROLE: Record<string, Partial<Record<PortalRole, (id?: string) =>
     student: () => '/student-portal/calendar',
     tutor: () => '/tutor-portal/bookings',
   },
+  // Khu vực dùng cho nút "Thanh toán ngay" của template payment_reminder: đưa thẳng tới danh sách
+  // đơn đặt lịch học, nơi người dùng tự chọn booking cần đóng tiền. Không mang id nên URL nút là
+  // tĩnh — bấm được ngay lúc Zalo kiểm duyệt, không cần link demo riêng.
+  booking: {
+    parent: () => '/parent-portal/booking',
+    student: () => '/student-portal/booking',
+    tutor: () => '/tutor-portal/bookings',
+  },
   payment: {
     parent: (id) => (id ? `/parent-portal/booking/${id}/payment` : '/parent-portal/booking'),
     student: (id) => (id ? `/student-portal/booking/${id}/payment` : '/student-portal/booking'),
@@ -51,6 +59,11 @@ const TARGET_INFO: Record<string, { title: string; desc: string; idLabel?: strin
   bookings: {
     title: 'Đơn đặt lịch học trên Tutora',
     desc: 'Vui lòng đăng nhập để xem chi tiết đơn đặt lịch học.',
+    idLabel: 'Mã booking',
+  },
+  booking: {
+    title: 'Đơn đặt lịch học và thanh toán học phí',
+    desc: 'Vui lòng đăng nhập bằng tài khoản đã đặt lịch học để xem đơn đặt lịch, số tiền cần đóng và hoàn tất thanh toán học phí.',
     idLabel: 'Mã booking',
   },
   payout: {
