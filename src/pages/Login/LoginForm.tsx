@@ -8,7 +8,7 @@ import ForgotPasswordModal from "../../components/ForgotPasswordModal";
 import GoogleSignInButton from "../../components/GoogleSignInButton";
 import ZaloSignInButton from "../../components/ZaloSignInButton";
 import axios from "axios";
-import { saveUserToStorage, googleAuth } from "../../services/auth.service";
+import { saveUserToStorage, googleAuth, takePendingRedirect } from "../../services/auth.service";
 
 const API_BASE_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5166') + '/api';
 const REMEMBERED_PHONE_KEY = 'TUTORA_remembered_phone';
@@ -151,8 +151,13 @@ const LoginForm: React.FC = () => {
 
     const returnUrl = getSafeReturnUrl();
     setTimeout(() => {
-      if (returnUrl) window.location.href = appendSessionToReturnUrl(returnUrl, token, refreshToken);
-      else navigate(getPortalPathFromRole(role));
+      if (returnUrl) {
+        window.location.href = appendSessionToReturnUrl(returnUrl, token, refreshToken);
+        return;
+      }
+      // Ai bấm nút trong tin ZNS lúc chưa đăng nhập thì /go/... đã nhớ sẵn đích — trả họ về đúng
+      // trang đó thay vì thả về dashboard.
+      void takePendingRedirect().then((pending) => navigate(pending ?? getPortalPathFromRole(role)));
     }, 800);
     return true;
   };

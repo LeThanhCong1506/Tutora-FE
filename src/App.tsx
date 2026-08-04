@@ -325,6 +325,9 @@ function App() {
             <Route path="/payment/success" element={<PaymentCallback />} />
             <Route path="/payment/cancel" element={<PaymentCallback />} />
             <Route path="/go/:target" element={<GoRedirect />} />
+            {/* Dạng path cho id — nút ZNS đang dùng dạng query `?b=`, giữ cả hai để không phụ thuộc
+                việc công cụ Zalo có chấp nhận tham số nằm trong đường dẫn hay không. */}
+            <Route path="/go/:target/:id" element={<GoRedirect />} />
 
             {/* Live video-call session — full-screen, không có portal chrome */}
             <Route
