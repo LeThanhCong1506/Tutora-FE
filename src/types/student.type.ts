@@ -12,4 +12,5 @@ export type StudentType = {
   age: number;
   username: string;
   isIdentityVerified?: boolean;
+  parentPhone?: string | null;
 };

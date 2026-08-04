@@ -57,7 +57,11 @@ const StudentProfile = () => {
   const [frontPreview, setFrontPreview] = useState<string | null>(null);
   const [backPreview, setBackPreview] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
-  const [parentPhone, setParentPhoneInput] = useState('');
+  // savedParentPhone = số đã lưu ở DB, hiển thị mờ khi ô chưa được bấm vào.
+  // phoneDraft = giá trị đang gõ, chỉ dùng khi phoneEditing = true (sau khi bấm/focus vào ô).
+  const [savedParentPhone, setSavedParentPhone] = useState('');
+  const [phoneDraft, setPhoneDraft] = useState('');
+  const [phoneEditing, setPhoneEditing] = useState(false);
   const [savingPhone, setSavingPhone] = useState(false);
   const frontRef = useRef<HTMLInputElement>(null);
   const backRef = useRef<HTMLInputElement>(null);
@@ -95,6 +99,7 @@ const StudentProfile = () => {
       gradeLevelId: profile.gradeLevelId != null ? String(profile.gradeLevelId) : '',
       learninggoals: profile.learningGoals ?? '',
     });
+    setSavedParentPhone(profile.parentPhone ?? '');
   }, [profile]);
 
   const set = (key: keyof FormState, value: string) => {
@@ -195,13 +200,28 @@ const StudentProfile = () => {
     }
   };
 
-  // Prefill ô SĐT phụ huynh nếu hồ sơ đã có (StudentType hiện chưa expose parentPhone → để trống).
+  // Bấm/focus vào ô số phụ huynh → xóa hiển thị mờ, để gõ số mới từ đầu.
+  const handleFocusParentPhone = () => {
+    if (phoneEditing) return;
+    setPhoneEditing(true);
+    setPhoneDraft('');
+  };
+
+  // Rời ô mà không gõ gì → coi như không đổi, quay lại hiển thị mờ số cũ
+  // (tránh lưu nhầm thành rỗng nếu người dùng chỉ bấm vào xem rồi bấm ra).
+  const handleBlurParentPhone = () => {
+    if (phoneDraft.trim() === '') setPhoneEditing(false);
+  };
+
   const handleSaveParentPhone = async (ev: React.FormEvent) => {
     ev.preventDefault();
+    const valueToSave = phoneEditing ? phoneDraft.trim() : savedParentPhone;
     setSavingPhone(true);
     try {
-      const res = await setParentPhone(parentPhone.trim() || null);
-      setParentPhoneInput(res.content?.parentPhone ?? '');
+      const res = await setParentPhone(valueToSave || null);
+      setSavedParentPhone(res.content?.parentPhone ?? '');
+      setPhoneEditing(false);
+      setPhoneDraft('');
       toast.success('Cập nhật số điện thoại phụ huynh thành công.');
     } catch (err) {
       const message =
@@ -454,10 +474,13 @@ const StudentProfile = () => {
                 <div className={styles.field}>
                   <input
                     id="parent-phone"
-                    value={parentPhone}
-                    onChange={(e) => setParentPhoneInput(e.target.value)}
+                    value={phoneEditing ? phoneDraft : savedParentPhone}
+                    onFocus={handleFocusParentPhone}
+                    onBlur={handleBlurParentPhone}
+                    onChange={(e) => setPhoneDraft(e.target.value)}
                     placeholder="VD: 0901234567"
                     maxLength={12}
+                    className={!phoneEditing && savedParentPhone ? styles.savedPhoneDisplay : ''}
                   />
                   <span className={styles.counter}>
                     Tùy chọn — để phụ huynh nhận thông báo theo dõi (ZNS). Không tạo liên kết tài khoản.
