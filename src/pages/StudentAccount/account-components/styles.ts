@@ -33,6 +33,7 @@ export const avatarInitials: CSSProperties = {
 
 export const profileMeta: CSSProperties = {
     flex: 1,
+    minWidth: 0,
     display: "flex",
     flexDirection: "column",
     gap: 6,
@@ -43,6 +44,8 @@ export const profileName: CSSProperties = {
     fontWeight: 700,
     color: "#1a2238",
     margin: 0,
+    overflowWrap: "break-word",
+    wordBreak: "break-word",
 };
 
 export const roleBadge: CSSProperties = {
@@ -104,6 +107,7 @@ export const fieldGroup: CSSProperties = {
     display: "flex",
     flexDirection: "column",
     gap: 6,
+    minWidth: 0,
 };
 
 export const fieldLabel: CSSProperties = {
@@ -119,6 +123,8 @@ export const fieldValue: CSSProperties = {
     color: "#1a2238",
     margin: 0,
     fontWeight: 500,
+    overflowWrap: "break-word",
+    wordBreak: "break-word",
 };
 
 export const fieldInput: CSSProperties = {

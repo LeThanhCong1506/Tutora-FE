@@ -177,8 +177,9 @@ export const getStudentCalendar = async (
 };
 
 /**
- * Get student bookings
- * Reuses the same /bookings endpoint — BE filters by role automatically
+ * Get student bookings — GET /api/student/bookings (role-gated ParentOrStudent
+ * on BE, but plain GET /api/bookings only maps a POST/create action and
+ * returns 405 for GET; the student-scoped list lives under this prefix).
  */
 export const getStudentBookings = async (params: {
     page?: number;
@@ -186,7 +187,7 @@ export const getStudentBookings = async (params: {
     status?: string;
 }): Promise<ApiResponse<{ items: unknown[]; totalCount: number }>> => {
     try {
-        const response = await api.get('/bookings', {
+        const response = await api.get('/student/bookings', {
             headers: getAuthHeaders(),
             params,
         });

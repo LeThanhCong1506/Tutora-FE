@@ -157,6 +157,13 @@
   cursor: not-allowed;
 }
 
+/* Ô SĐT phụ huynh khi đang hiển thị số đã lưu (chưa bấm vào để sửa) — mờ đi để
+   phân biệt với lúc đang nhập giá trị mới. */
+.field input.savedPhoneDisplay {
+  color: #9ca3af;
+  background: #f9fafb;
+}
+
 .counter {
   align-self: flex-end;
   font-size: 12px;

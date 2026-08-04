@@ -79,7 +79,7 @@ const StudentBooking = () => {
             {/* Top Bar */}
             <div className={s.topBar}>
                 <div className={s.topBarLeft}>
-                    <h1 className={s.pageTitle}>Booking</h1>
+                    <h1 className={s.pageTitle}>Đặt lịch</h1>
                     <p className={s.pageSubtitle}>Quản lý lịch đặt gia sư của bạn</p>
                 </div>
             </div>
