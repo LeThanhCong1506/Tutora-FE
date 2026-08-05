@@ -201,14 +201,14 @@ const TutorPortalClassSessionDetail = () => {
   }, [dispute]);
 
   const handleSendThreadMessage = async () => {
-    if (!session || threadInput.trim().length === 0) return;
+    if (!session || threadInput.trim().length === 0 || sendingThreadMessage) return;
     setSendingThreadMessage(true);
     try {
       await sendTutorDisputeThreadMessage(session.classSessionId, threadInput.trim());
       setThreadInput('');
       await loadThread();
     } catch (requestError: unknown) {
-      toast.error(getErrorMessage(requestError));
+      toast.error(getErrorMessage(requestError), { toastId: 'dispute-thread-send-error' });
     } finally {
       setSendingThreadMessage(false);
     }

@@ -30,6 +30,8 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
     const [isLoading, setIsLoading] = useState(false);
     const [cooldown, setCooldown] = useState(0);
     const [resendCount, setResendCount] = useState(0);
+    const [showNewPw, setShowNewPw] = useState(false);
+    const [showConfirmPw, setShowConfirmPw] = useState(false);
 
     // Cooldown timer
     useEffect(() => {
@@ -56,6 +58,8 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
         setConfirmPassword("");
         setCooldown(0);
         setResendCount(0);
+        setShowNewPw(false);
+        setShowConfirmPw(false);
     };
 
     const handleClose = () => {
@@ -263,13 +267,21 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                                         </div>
                                         <input
                                             id="reset-new-password"
-                                            type="password"
+                                            type={showNewPw ? "text" : "password"}
                                             autoComplete="new-password"
                                             value={newPassword}
                                             onChange={(e) => setNewPassword(e.target.value)}
                                             placeholder="••••••••"
-                                            className={styles.input}
+                                            className={`${styles.input} ${styles.inputPassword}`}
                                         />
+                                        <button
+                                            type="button"
+                                            className={styles.eyeBtn}
+                                            onClick={() => setShowNewPw((v) => !v)}
+                                            aria-label={showNewPw ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                                        >
+                                            {showNewPw ? <EyeOffIcon /> : <EyeIcon />}
+                                        </button>
                                     </div>
                                 </div>
 
@@ -284,13 +296,21 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                                         </div>
                                         <input
                                             id="reset-confirm-password"
-                                            type="password"
+                                            type={showConfirmPw ? "text" : "password"}
                                             autoComplete="new-password"
                                             value={confirmPassword}
                                             onChange={(e) => setConfirmPassword(e.target.value)}
                                             placeholder="••••••••"
-                                            className={styles.input}
+                                            className={`${styles.input} ${styles.inputPassword}`}
                                         />
+                                        <button
+                                            type="button"
+                                            className={styles.eyeBtn}
+                                            onClick={() => setShowConfirmPw((v) => !v)}
+                                            aria-label={showConfirmPw ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                                        >
+                                            {showConfirmPw ? <EyeOffIcon /> : <EyeIcon />}
+                                        </button>
                                     </div>
                                 </div>
 
@@ -342,5 +362,19 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
         </div>
     );
 };
+
+const EyeIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+        <circle cx="12" cy="12" r="3" />
+    </svg>
+);
+
+const EyeOffIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" />
+        <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+);
 
 export default ForgotPasswordModal;

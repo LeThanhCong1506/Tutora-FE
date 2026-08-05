@@ -41,6 +41,7 @@ class SignalRService {
   private notificationSubscribers: Set<(notification: any) => void> = new Set();
   private presenceSubscribers: Set<(presence: unknown) => void> = new Set();
   private disputeMessageSubscribers: Set<(message: any) => void> = new Set();
+  private forceLogoutSubscribers: Set<(payload: { reason?: string }) => void> = new Set();
   private chatLifecycleSubscribers: Set<(state: ChatConnectionLifecycle) => void> = new Set();
   private notificationLifecycleSubscribers: Set<(state: NotificationConnectionLifecycle) => void> = new Set();
 
@@ -355,6 +356,19 @@ class SignalRService {
     };
   }
 
+  /**
+   * Multi-subscriber cho sự kiện "ForceLogout" ("đăng nhập ở thiết bị khác" / "mật khẩu
+   * đã đổi") — BE push qua notificationHub, group user:{userId} (xem
+   * SimpleAuthService.KickOtherWebSessionsAsync / PasswordService.ChangePasswordAsync).
+   * Trả về cleanup function.
+   */
+  subscribeToForceLogout(handler: (payload: { reason?: string }) => void): () => void {
+    this.forceLogoutSubscribers.add(handler);
+    return () => {
+      this.forceLogoutSubscribers.delete(handler);
+    };
+  }
+
   subscribeToChatLifecycle(handler: (state: ChatConnectionLifecycle) => void): () => void {
     this.chatLifecycleSubscribers.add(handler);
     return () => {
@@ -583,6 +597,18 @@ class SignalRService {
           fn(message);
         } catch (err) {
           console.error('dispute message subscriber failed:', err);
+        }
+      });
+    });
+
+    connection.on('ForceLogout', (payload: { reason?: string }) => {
+      if (this.notificationConnection !== connection) return;
+      console.log('🚪 ForceLogout received:', payload);
+      this.forceLogoutSubscribers.forEach((fn) => {
+        try {
+          fn(payload ?? {});
+        } catch (err) {
+          console.error('force-logout subscriber failed:', err);
         }
       });
     });

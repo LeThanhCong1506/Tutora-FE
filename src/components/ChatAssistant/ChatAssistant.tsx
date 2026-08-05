@@ -148,9 +148,9 @@ const ChatAssistant: React.FC = () => {
         className={`${styles.launcher} ${open ? styles.launcherHidden : ''}`}
         onClick={() => setOpen(true)}
         aria-label="Mở trợ lý Tutora"
+        title="Trợ lý Tutora"
       >
-        <MessageCircle size={20} />
-        Trợ lý Tutora
+        <MessageCircle size={26} />
       </button>
 
       {open && (

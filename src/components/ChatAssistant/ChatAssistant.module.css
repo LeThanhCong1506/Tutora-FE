@@ -5,16 +5,16 @@
   z-index: 1000;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 18px;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  padding: 0;
   border: none;
-  border-radius: var(--radius-full);
+  border-radius: 50%;
   background: var(--color-navy);
   color: #fff;
-  font-family: var(--font-primary);
-  font-size: 0.95rem;
-  font-weight: 600;
   cursor: pointer;
+  box-shadow: 0 6px 16px rgba(26, 34, 56, 0.3);
   transition: background 0.15s, transform 0.15s;
 }
 .launcher:hover {
