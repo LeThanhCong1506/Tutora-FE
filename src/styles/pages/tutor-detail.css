@@ -221,6 +221,10 @@
     text-transform: uppercase;
     color: #fff;
     width: fit-content;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .tutor-detail-page .tutor-name {
@@ -3196,36 +3200,6 @@
     background: linear-gradient(0deg, rgba(26, 34, 56, 0.96), rgba(26, 34, 56, 0.44) 48%, rgba(26, 34, 56, 0.05));
 }
 
-.tutor-detail-page .skeleton-interview-pill {
-    position: absolute;
-    top: 29px;
-    left: 29px;
-    z-index: 3;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    border-radius: 12px;
-    background: rgba(26, 34, 56, 0.72);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(14px);
-}
-
-.tutor-detail-page .skeleton-live-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--color-gold);
-    box-shadow: 0 0 0 4px rgba(212, 180, 131, 0.14);
-}
-
-.tutor-detail-page .skeleton-pill-line {
-    width: 174px;
-    height: 10px;
-    border-radius: 9999px;
-    background: rgba(242, 240, 228, 0.18);
-}
-
 .tutor-detail-page .skeleton-play-ring {
     position: absolute;
     top: 50%;
@@ -3254,6 +3228,7 @@
     border-left: 16px solid rgba(255, 255, 255, 0.72);
 }
 
+/* Khớp VideoIntroSection .tutor-info-card + .rating-card — overlay đè lên video. */
 .tutor-detail-page .skeleton-hero-overlay {
     position: absolute;
     bottom: 0;
@@ -3611,6 +3586,65 @@
     background: rgba(62, 47, 40, 0.1);
 }
 
+/* Khớp TestimonialsSection (.section5) — trước đây skeleton thiếu hẳn section này,
+   khiến cả block "Nhật ký thành công" đột ngột xuất hiện sau khi load xong. */
+.tutor-detail-page .skeleton-testimonial-card {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+.tutor-detail-page .skeleton-testimonial-heading {
+    display: flex;
+}
+
+.tutor-detail-page .skeleton-testimonial-body {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    border-radius: 20px;
+    background-color: #fff;
+    border: 1px solid #e4ded5;
+    padding: 34px 35px;
+}
+
+.tutor-detail-page .skeleton-testimonial-top-row {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-bottom: 6px;
+}
+
+.tutor-detail-page .skeleton-testimonial-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.tutor-detail-page .skeleton-testimonial-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.tutor-detail-page .skeleton-testimonial-name {
+    width: 120px;
+    height: 13px;
+}
+
+.tutor-detail-page .skeleton-testimonial-date {
+    width: 80px;
+    height: 10px;
+    opacity: 0.78;
+}
+
+.tutor-detail-page .skeleton-testimonial-quote-line {
+    height: 16px;
+    border-radius: 9999px;
+}
+
 .tutor-detail-page .skeleton-booking-sidebar .booking-card {
     flex: none;
 }
@@ -3731,16 +3765,6 @@
 @media (max-width: 600px) {
     .tutor-detail-page .skeleton-hero-media {
         height: 240px;
-    }
-
-    .tutor-detail-page .skeleton-interview-pill {
-        top: 14px;
-        left: 14px;
-        padding: 6px 10px;
-    }
-
-    .tutor-detail-page .skeleton-pill-line {
-        width: 112px;
     }
 
     .tutor-detail-page .skeleton-play-ring {
