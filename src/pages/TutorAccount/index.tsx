@@ -280,6 +280,11 @@ const TutorAccount = () => {
     };
 
     const pwStrength = getPasswordStrength(passwordForm.newPassword);
+    const isChangePasswordDisabled =
+        changingPassword ||
+        !passwordForm.oldPassword.trim() ||
+        !passwordForm.newPassword.trim() ||
+        !passwordForm.confirmPassword.trim();
 
     const getInitials = (name: string) => {
         const parts = name.trim().split(' ');
@@ -482,7 +487,7 @@ const TutorAccount = () => {
                     <div style={fieldGroup}>
                         <label style={fieldLabel}>Email</label>
                         <p style={{ ...fieldValue, color: '#525252' }}>{profile?.email || '—'}</p>
-                        <span style={readOnlyHint}>Không thể thay đổi</span>
+                        {editing && <span style={readOnlyHint}>Không thể thay đổi</span>}
                     </div>
 
                     <div style={fieldGroup}>
@@ -657,9 +662,9 @@ const TutorAccount = () => {
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 4 }}>
                             <button
-                                style={{ ...saveBtn, ...(changingPassword ? disabledStyle : {}) }}
+                                style={{ ...saveBtn, ...(isChangePasswordDisabled ? disabledStyle : {}) }}
                                 onClick={handleChangePassword}
-                                disabled={changingPassword}
+                                disabled={isChangePasswordDisabled}
                                 type="button"
                             >
                                 {changingPassword ? 'Đang xử lý...' : 'Xác nhận đổi mật khẩu'}

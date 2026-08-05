@@ -113,6 +113,14 @@ const ASSISTANT_HIDDEN_PREFIXES = [
   '/session-lobby',
 ];
 
+// Trang "Tổng quan" của mỗi portal — ngoại lệ vẫn hiện bong bóng Trợ lý Tutora dù nằm
+// trong 1 trong các prefix bị ẩn ở trên.
+const ASSISTANT_VISIBLE_PATHS = [
+  '/tutor-portal/dashboard',
+  '/parent-portal/dashboard',
+  '/student-portal/dashboard',
+];
+
 function LegacyStudentLessonsRedirect() {
   const { lessonId } = useParams();
   const location = useLocation();
@@ -133,7 +141,9 @@ function App() {
   const [forceLogoutReason, setForceLogoutReason] = useState<string | null>(null);
   const isDemoRoute = location.pathname.startsWith('/demo/');
   const showChatAssistant =
-    !inMiniApp && !ASSISTANT_HIDDEN_PREFIXES.some((prefix) => location.pathname.startsWith(prefix));
+    !inMiniApp &&
+    (ASSISTANT_VISIBLE_PATHS.includes(location.pathname) ||
+      !ASSISTANT_HIDDEN_PREFIXES.some((prefix) => location.pathname.startsWith(prefix)));
 
   // Detect Supabase recovery hash and redirect to /reset-password
   useEffect(() => {

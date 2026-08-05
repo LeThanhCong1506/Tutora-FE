@@ -11,7 +11,6 @@ import {
   IdCard,
   X,
   Check,
-  Lock,
 } from 'lucide-react';
 import {
   updateMyStudentProfile,
@@ -297,7 +296,6 @@ const StudentProfile = () => {
               <div className={styles.field}>
                 <label htmlFor="sp-birthdate">
                   Ngày sinh <span className={styles.req}>*</span>
-                  {identityVerified && <Lock size={12} style={{ marginLeft: 4, verticalAlign: 'middle' }} />}
                 </label>
                 <input
                   id="sp-birthdate"
@@ -308,7 +306,7 @@ const StudentProfile = () => {
                   disabled={identityVerified}
                 />
                 {identityVerified ? (
-                  <span className={styles.counter}>Đã xác minh qua CCCD, không thể chỉnh sửa.</span>
+                  <span className={styles.verifiedHint}>Đã xác minh qua CCCD, không thể chỉnh sửa.</span>
                 ) : (
                   errors.birthdate && <span className={styles.err}>{errors.birthdate}</span>
                 )}
