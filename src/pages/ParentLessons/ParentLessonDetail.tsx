@@ -104,14 +104,14 @@ const ParentLessonDetail: React.FC = () => {
   };
 
   const handleSendThreadMessage = async () => {
-    if (!id || threadInput.trim().length === 0) return;
+    if (!id || threadInput.trim().length === 0 || sendingThreadMessage) return;
     setSendingThreadMessage(true);
     try {
       await sendClassSessionDisputeThreadMessage(id, threadInput.trim());
       setThreadInput('');
       await fetchThread();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Không thể gửi tin nhắn.');
+      toast.error(error.response?.data?.message || 'Không thể gửi tin nhắn.', { toastId: 'dispute-thread-send-error' });
     } finally {
       setSendingThreadMessage(false);
     }

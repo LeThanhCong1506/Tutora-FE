@@ -11,6 +11,7 @@ export interface UserProfileData {
     createdat?: string;
     lastloginat?: string;
     zabornotifyenabled?: boolean;
+    isidentityverified?: boolean;
 }
 
 export interface EditForm {

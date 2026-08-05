@@ -48,6 +48,9 @@ const PersonalInfoSection: React.FC<Props> = ({
         setErrors(e => (e[field] ? { ...e, [field]: undefined } : e));
     };
 
+    // BE chặn và bỏ qua thay đổi ngày sinh khi CCCD đã xác thực (UserService.UpdateUserAsync) — khóa luôn ở FE.
+    const birthdateLocked = profile?.isidentityverified === true;
+
     return (
     <div className={styles.sectionCard}>
         <div style={sectionHeader}>
@@ -65,7 +68,7 @@ const PersonalInfoSection: React.FC<Props> = ({
             <div style={fieldGroup}>
                 <label style={fieldLabel}>Email</label>
                 <p style={{ ...fieldValue, color: "#525252" }}>{profile?.email || "—"}</p>
-                <span style={readOnlyHint}>Không thể thay đổi</span>
+                {editing && <span style={readOnlyHint}>Không thể thay đổi</span>}
             </div>
 
             <div style={fieldGroup}>
@@ -87,17 +90,28 @@ const PersonalInfoSection: React.FC<Props> = ({
             </div>
 
             <div style={fieldGroup}>
-                <label style={fieldLabel}>Ngày sinh{editing && required}</label>
+                <label style={fieldLabel}>
+                    Ngày sinh{editing && required}
+                </label>
                 {editing ? (
                     <>
                         <input
-                            style={{ ...fieldInput, ...(errors.birthdate ? { borderColor: "#dc2626" } : {}) }}
+                            style={{
+                                ...fieldInput,
+                                ...(errors.birthdate ? { borderColor: "#dc2626" } : {}),
+                                ...(birthdateLocked ? disabledStyle : {}),
+                            }}
                             type="date"
                             value={form.birthdate}
                             max={new Date().toISOString().slice(0, 10)}
                             onChange={e => updateField("birthdate", e.target.value)}
+                            disabled={birthdateLocked}
                         />
-                        {errors.birthdate && <span style={errorTextStyle}>{errors.birthdate}</span>}
+                        {birthdateLocked ? (
+                            <span style={readOnlyHint}>Đã xác minh qua CCCD, không thể chỉnh sửa.</span>
+                        ) : (
+                            errors.birthdate && <span style={errorTextStyle}>{errors.birthdate}</span>
+                        )}
                     </>
                 ) : (
                     <p style={fieldValue}>{formatDate(profile?.birthdate)}</p>

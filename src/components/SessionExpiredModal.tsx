@@ -8,11 +8,15 @@ import styles from "../styles/components/session-expired-modal.module.css";
 interface SessionExpiredModalProps {
     isOpen: boolean;
     onClose: () => void;
+    title?: string;
+    description?: string;
 }
 
 const SessionExpiredModal: React.FC<SessionExpiredModalProps> = ({
     isOpen,
     onClose,
+    title = "Phiên đăng nhập hết hạn",
+    description = "Phiên đăng nhập của bạn đã hết hạn. Vui lòng đăng nhập lại để tiếp tục sử dụng dịch vụ.",
 }) => {
     const navigate = useNavigate();
 
@@ -62,11 +66,8 @@ const SessionExpiredModal: React.FC<SessionExpiredModalProps> = ({
                     </div>
 
                     {/* Title & Description */}
-                    <h2 className={styles.title}>Phiên đăng nhập hết hạn</h2>
-                    <p className={styles.description}>
-                        Phiên đăng nhập của bạn đã hết hạn. Vui lòng đăng nhập lại để tiếp
-                        tục sử dụng dịch vụ.
-                    </p>
+                    <h2 className={styles.title}>{title}</h2>
+                    <p className={styles.description}>{description}</p>
 
                     {/* Login Button */}
                     <button

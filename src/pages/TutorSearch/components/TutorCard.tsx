@@ -32,6 +32,7 @@ interface TutorCardProps {
 const TutorCard = ({ tutor }: TutorCardProps) => {
   const navigate = useNavigate();
   const [showVideoModal, setShowVideoModal] = useState(false);
+  const [sendingMessage, setSendingMessage] = useState(false);
   const { saved, toggle: toggleWishlist } = useWishlist(tutor.id);
 
   const handleCardClick = () => {
@@ -63,6 +64,7 @@ const TutorCard = ({ tutor }: TutorCardProps) => {
   // Nhắn tin: tạo/lấy kênh chat với gia sư rồi mở thẳng cuộc trò chuyện ở trang Tin nhắn.
   const handleMessageClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (sendingMessage) return;
 
     const role = (getCurrentUserRole() || '').toLowerCase();
     if (!getCurrentUser() || !role) {
@@ -71,6 +73,7 @@ const TutorCard = ({ tutor }: TutorCardProps) => {
       return;
     }
 
+    setSendingMessage(true);
     try {
       const res = await createChannel(tutor.id);
       const channelId = res.content?.channelId;
@@ -99,7 +102,9 @@ const TutorCard = ({ tutor }: TutorCardProps) => {
         },
       });
     } catch {
-      toast.error('Không mở được cuộc trò chuyện. Vui lòng thử lại.');
+      toast.error('Không mở được cuộc trò chuyện. Vui lòng thử lại.', { toastId: 'tutor-card-message-error' });
+    } finally {
+      setSendingMessage(false);
     }
   };
 
@@ -223,8 +228,8 @@ const TutorCard = ({ tutor }: TutorCardProps) => {
 
       <div className="tutor-card-footer">
         <div className="tutor-actions">
-          <button className="btn-details" onClick={handleMessageClick}>
-            Nhắn tin
+          <button className="btn-details" onClick={handleMessageClick} disabled={sendingMessage}>
+            {sendingMessage ? 'Đang mở...' : 'Nhắn tin'}
           </button>
           <button className="btn-start-plan" onClick={handleButtonClick}>
             <span className="btn-start-plan-text">XEM HỒ SƠ</span>

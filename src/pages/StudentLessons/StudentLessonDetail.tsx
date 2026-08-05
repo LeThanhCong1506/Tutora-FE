@@ -152,14 +152,17 @@ const StudentLessonDetail = () => {
     }, [lessonId]);
 
     const handleSendThreadMessage = async () => {
-        if (!lessonId || threadInput.trim().length === 0) return;
+        if (!lessonId || threadInput.trim().length === 0 || sendingThreadMessage) return;
         setSendingThreadMessage(true);
         try {
             await sendClassSessionDisputeThreadMessage(parseInt(lessonId), threadInput.trim());
             setThreadInput('');
             await fetchThread();
         } catch (error: any) {
-            antMessage.error(error.response?.data?.message || 'Không thể gửi tin nhắn');
+            antMessage.error({
+                content: error.response?.data?.message || 'Không thể gửi tin nhắn',
+                key: 'dispute-thread-send-error',
+            });
         } finally {
             setSendingThreadMessage(false);
         }

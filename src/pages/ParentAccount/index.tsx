@@ -501,7 +501,7 @@ const ParentAccount = () => {
                     <div style={fieldGroup}>
                         <label style={fieldLabel}>Email</label>
                         <p style={{ ...fieldValue, color: '#525252' }}>{profile?.email || '—'}</p>
-                        <span style={readOnlyHint}>Không thể thay đổi</span>
+                        {editing && <span style={readOnlyHint}>Không thể thay đổi</span>}
                     </div>
 
                     <div style={fieldGroup}>

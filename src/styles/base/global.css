@@ -35,6 +35,14 @@ img {
     display: block;
 }
 
+/* Edge/IE tự chèn icon "reveal password" riêng (::-ms-reveal) khi input type="password"
+   có giá trị — chồng lên icon con mắt tùy chỉnh của app, hiện thành 2 icon. Ẩn hẳn icon
+   native này để chỉ còn đúng 1 icon (icon do app tự vẽ) trên mọi input password. */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
+
 a {
     text-decoration: none;
     color: inherit;
