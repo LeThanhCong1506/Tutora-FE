@@ -24,7 +24,6 @@ import ConfirmLessonModal from './components/ConfirmLessonModal';
 import CreateDisputeForm from './components/CreateDisputeForm';
 import ReportNoShowModal from './components/ReportNoShowModal';
 import NoShowActionModal from './components/NoShowActionModal';
-import CreateFeedbackModal from './components/CreateFeedbackModal';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 import { ClassSessionRecording } from '../../components/shared';
 import { formatVNDNumber } from '../../utils/formatters';
@@ -55,7 +54,6 @@ const ParentLessonDetail: React.FC = () => {
   const [showDisputeForm, setShowDisputeForm] = useState(false);
   const [showNoShowModal, setShowNoShowModal] = useState(false);
   const [showNoShowActionModal, setShowNoShowActionModal] = useState(false);
-  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [dispute, setDispute] = useState<DisputeDetailResponse | null>(null);
   const [thread, setThread] = useState<DisputeMessage[]>([]);
   const [threadInput, setThreadInput] = useState('');
@@ -759,26 +757,14 @@ const ParentLessonDetail: React.FC = () => {
           </div>
         )}
 
-        {lesson.status === 'completed' && (
-          <>
-            <Button
-              type="primary"
-              size="large"
-              onClick={() => setShowFeedbackModal(true)}
-              style={{ background: '#3e2f28', borderColor: '#3e2f28' }}
-            >
-              Đánh giá buổi học
-            </Button>
-            {!dispute && canCreateDispute && (
-              <Button
-                size="large"
-                danger
-                onClick={() => setShowDisputeForm(true)}
-              >
-                Báo cáo gia sư
-              </Button>
-            )}
-          </>
+        {lesson.status === 'completed' && !dispute && canCreateDispute && (
+          <Button
+            size="large"
+            danger
+            onClick={() => setShowDisputeForm(true)}
+          >
+            Báo cáo gia sư
+          </Button>
         )}
 
         <Button size="large" onClick={() => navigate('/parent-portal/dashboard')}>
@@ -787,17 +773,6 @@ const ParentLessonDetail: React.FC = () => {
       </div>
 
       {/* Modals */}
-      <CreateFeedbackModal
-        open={showFeedbackModal}
-        onClose={() => setShowFeedbackModal(false)}
-        onSuccess={handleActionSuccess}
-        lessonId={id}
-        bookingId={lesson.bookingId || 0}
-        tutorId={(lesson.tutorId || lesson.tutor?.tutorId) || ''}
-        tutorName={lesson.tutorName || lesson.tutor?.fullName}
-        subjectName={lesson.subjectName || lesson.subject?.subjectName}
-      />
-
       <ConfirmLessonModal
         open={showConfirmModal}
         lessonId={id}

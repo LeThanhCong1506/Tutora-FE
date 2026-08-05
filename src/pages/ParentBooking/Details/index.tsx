@@ -280,10 +280,8 @@ const BookingDetailPage = () => {
         const response = await getBookingById(bookingId);
         setBooking(response.content);
 
-        if (
-          ['cancelled', 'cancelled_noshow', 'completed', 'payment_timeout'].includes(response.content.status) &&
-          ['Escrowed', 'paid'].includes(response.content.paymentStatus)
-        ) {
+        // Chỉ khóa học đã hoàn thành mới được đánh giá — khớp với điều kiện ở BE.
+        if (response.content.status === 'completed') {
           const feedbackResponse = await canLeaveBookingFeedback(bookingId);
           setCanReview(feedbackResponse.content);
         }
@@ -830,9 +828,7 @@ const BookingDetailPage = () => {
           setShowReviewModal(false);
           setCanReview(false);
         }}
-        feedbackType="early_termination"
         bookingId={booking.bookingId}
-        tutorId={booking.tutor?.tutorId || ''}
         tutorName={booking.tutor?.fullName}
         subjectName={booking.subject?.subjectName}
       />
@@ -862,10 +858,7 @@ const BookingDetailPage = () => {
             setShowCancelModal(false);
             const response = await getBookingById(booking.bookingId);
             setBooking(response.content);
-            if (
-              ['cancelled', 'cancelled_noshow', 'completed', 'payment_timeout'].includes(response.content.status) &&
-              ['Escrowed', 'paid'].includes(response.content.paymentStatus)
-            ) {
+            if (response.content.status === 'completed') {
               const feedbackResponse = await canLeaveBookingFeedback(booking.bookingId);
               setCanReview(feedbackResponse.content);
             }
