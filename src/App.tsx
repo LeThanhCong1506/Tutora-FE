@@ -17,6 +17,7 @@ import PageLoader from './components/PageLoader/PageLoader';
 import { ErrorBoundary } from './components/shared';
 import axios from 'axios';
 import { getCurrentUser, isTokenExpired, updateTokens, clearUserFromStorage } from './services/auth.service';
+import { signalRService } from './services/signalr.service';
 
 const BACKEND_API = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5166') + '/api';
 import { ToastContainer, Slide } from 'react-toastify';
@@ -129,6 +130,7 @@ function LegacyTutorClassesRedirect() {
 function App() {
   const location = useLocation();
   const [showSessionExpired, setShowSessionExpired] = useState(false);
+  const [forceLogoutReason, setForceLogoutReason] = useState<string | null>(null);
   const isDemoRoute = location.pathname.startsWith('/demo/');
   const showChatAssistant =
     !inMiniApp && !ASSISTANT_HIDDEN_PREFIXES.some((prefix) => location.pathname.startsWith(prefix));
@@ -182,9 +184,38 @@ function App() {
     return () => clearInterval(interval);
   }, [checkTokenExpiry, isDemoRoute]);
 
+  // Lắng nghe "ForceLogout" từ BE — đăng nhập ở thiết bị khác (chỉ giữ 1 phiên web/Zalo
+  // Mini App) hoặc mật khẩu vừa bị đổi. Đẩy tức thời qua SignalR, không cần đợi access
+  // token tự hết hạn (~1h) mới bị đá.
+  useEffect(() => {
+    const unsubscribe = signalRService.subscribeToForceLogout(async (payload) => {
+      await clearUserFromStorage();
+      setForceLogoutReason(payload?.reason ?? null);
+      setShowSessionExpired(true);
+    });
+    return unsubscribe;
+  }, []);
+
   return (
     <div>
-      <SessionExpiredModal isOpen={showSessionExpired} onClose={() => setShowSessionExpired(false)} />
+      <SessionExpiredModal
+        isOpen={showSessionExpired}
+        onClose={() => setShowSessionExpired(false)}
+        title={
+          forceLogoutReason === 'new_login'
+            ? 'Tài khoản đã đăng nhập ở thiết bị khác'
+            : forceLogoutReason === 'password_changed'
+              ? 'Mật khẩu vừa được thay đổi'
+              : undefined
+        }
+        description={
+          forceLogoutReason === 'new_login'
+            ? 'Tài khoản của bạn vừa đăng nhập ở một thiết bị/trình duyệt khác. Vui lòng đăng nhập lại nếu đây không phải là bạn.'
+            : forceLogoutReason === 'password_changed'
+              ? 'Mật khẩu tài khoản vừa được thay đổi. Vui lòng đăng nhập lại bằng mật khẩu mới.'
+              : undefined
+        }
+      />
       <ToastContainer
         position="top-right"
         autoClose={5000}

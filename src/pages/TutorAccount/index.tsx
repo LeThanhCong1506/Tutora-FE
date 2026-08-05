@@ -4,7 +4,6 @@ import Cropper from 'react-easy-crop';
 import type { Area, Point } from 'react-easy-crop';
 import { getUserIdFromToken, changePassword } from '../../services/auth.service';
 import { getUserProfile, updateUserProfile, updateUserAvatar } from '../../services/user.service';
-import { getGoogleAuthErrorMessage } from '../../services/googleAuth.service';
 import { formatDateTime } from '../../utils/formatters';
 import {
     validateUserProfileForm,
@@ -12,7 +11,6 @@ import {
     toDateInputValue,
     type UserProfileFieldErrors,
 } from '../../utils/userProfileForm';
-import GoogleCalendarSection from './account-components/GoogleCalendarSection';
 import styles from './styles.module.css';
 
 interface UserProfileData {
@@ -109,29 +107,6 @@ const TutorAccount = () => {
     const [showOldPw, setShowOldPw] = useState(false);
     const [showNewPw, setShowNewPw] = useState(false);
     const [showConfirmPw, setShowConfirmPw] = useState(false);
-
-    // Bump signal để GoogleCalendarSection refetch status sau callback OAuth.
-    const [googleRefreshSignal, setGoogleRefreshSignal] = useState(0);
-
-    // Handle Google OAuth callback query params: ?googleConnected=true|false&error=...&message=...
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        if (!params.has('googleConnected')) return;
-
-        const success = params.get('googleConnected') === 'true';
-        if (success) {
-            toast.success('Kết nối Google Calendar thành công!');
-        } else {
-            const code = params.get('error');
-            const msg = params.get('message') ?? undefined;
-            toast.error(getGoogleAuthErrorMessage(code, msg));
-        }
-
-        // Trigger section refetch + clean URL để tránh hiện toast lại khi reload.
-        setGoogleRefreshSignal((n) => n + 1);
-        const cleanUrl = window.location.pathname + window.location.hash;
-        window.history.replaceState({}, '', cleanUrl);
-    }, []);
 
     useEffect(() => {
         const loadProfile = async () => {
@@ -600,9 +575,6 @@ const TutorAccount = () => {
                     </div>
                 )}
             </div>
-
-            {/* Google Calendar Connect Section */}
-            <GoogleCalendarSection refreshSignal={googleRefreshSignal} />
 
             {/* Change Password Section */}
             <div className={styles.sectionCard}>

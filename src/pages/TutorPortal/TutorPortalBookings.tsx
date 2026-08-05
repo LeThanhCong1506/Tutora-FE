@@ -547,16 +547,18 @@ const TutorPortalBookings = () => {
                     </div>
 
                     <div className={styles.actions}>
-                      <button
-                        type="button"
-                        className={styles.chatBtn}
-                        disabled={openingChatId === booking.bookingId}
-                        onClick={() => handleContactParent(booking)}
-                      >
-                        <MessageCircle size={16} />
-                        {openingChatId === booking.bookingId ? 'Đang mở...' : 'Liên hệ phụ huynh'}
-                        <ChevronRight size={16} />
-                      </button>
+                      {booking.status !== 'pending_tutor' && (
+                        <button
+                          type="button"
+                          className={styles.chatBtn}
+                          disabled={openingChatId === booking.bookingId}
+                          onClick={() => handleContactParent(booking)}
+                        >
+                          <MessageCircle size={16} />
+                          {openingChatId === booking.bookingId ? 'Đang mở...' : 'Liên hệ phụ huynh'}
+                          <ChevronRight size={16} />
+                        </button>
+                      )}
                       {booking.status === 'pending_tutor' && (
                         <>
                           <button
