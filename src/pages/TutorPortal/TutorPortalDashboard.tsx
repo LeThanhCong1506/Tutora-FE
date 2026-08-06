@@ -435,12 +435,14 @@ const TutorPortalDashboard: React.FC = () => {
                         icon={<CalendarIcon />}
                         value={stats.upcomingClassSessions}
                         label="Buổi học sắp tới"
+                        infoTooltip="Số buổi học đã lên lịch, chưa diễn ra."
                         className={styles.statCard}
                     />
                     <StatCard
                         icon={<SessionsIcon />}
                         value={<>{stats.completedThisMonth} <span style={{ fontSize: '12px', fontWeight: 400, color: 'rgba(62,47,40,0.5)' }}>/ {stats.totalCompleted} tổng</span></>}
                         label="Hoàn thành tháng này"
+                        infoTooltip="Số buổi học bạn đã hoàn thành trong tháng này, trên tổng số buổi đã hoàn thành."
                         className={styles.statCard}
                     />
                     <StatCard
@@ -448,6 +450,7 @@ const TutorPortalDashboard: React.FC = () => {
                         value={(stats.averageRating || 0).toFixed(1)}
                         label="Đánh giá trung bình"
                         subLabel={`${stats.totalReviews} đánh giá`}
+                        infoTooltip="Điểm đánh giá trung bình từ học viên và phụ huynh."
                         className={styles.statCard}
                     />
                     <StatCard
@@ -456,6 +459,7 @@ const TutorPortalDashboard: React.FC = () => {
                         label="Số dư ví"
                         badge={stats.pendingConfirmation > 0 ? `${stats.pendingConfirmation} chờ xác nhận` : undefined}
                         badgeVariant="orange"
+                        infoTooltip="Số tiền đã được giải ngân, có thể rút về bất cứ lúc nào."
                         className={styles.statCard}
                     />
                     <StatCard
@@ -464,6 +468,7 @@ const TutorPortalDashboard: React.FC = () => {
                         label="Số dư đóng băng"
                         badge={stats.activeDisputes > 0 ? `${stats.activeDisputes} khiếu nại` : undefined}
                         badgeVariant="red"
+                        infoTooltip="Số tiền đang tạm giữ cho các buổi học chưa được xác nhận hoàn thành, sẽ chuyển vào ví sau khi giải ngân."
                         className={styles.statCard}
                     />
                     <StatCard
@@ -471,6 +476,7 @@ const TutorPortalDashboard: React.FC = () => {
                         value={`${formatVNDNumber(stats.earningsThisMonth)}đ`}
                         label="Doanh thu tháng"
                         subLabel={`/ ${formatVNDNumber(stats.totalEarnings)}đ tổng`}
+                        infoTooltip="Tổng thu nhập từ các buổi học trong tháng này."
                         className={styles.statCard}
                     />
                 </div>
