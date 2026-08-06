@@ -60,6 +60,11 @@ export interface FeedbackDto {
   /** Lý do quản trị viên ẩn đánh giá — chỉ có giá trị khi `isVisible` là false. */
   hiddenReason?: string;
   hiddenAt?: string;
+  /**
+   * Ai viết đánh giá: `parent` hoặc `student`. `parentName` giữ tên cũ vì tương thích
+   * nhưng có thể là tên học sinh tự đăng ký, nên nhãn hiển thị phải dựa vào field này.
+   */
+  reviewerRole?: 'parent' | 'student';
 }
 
 export interface FeedbackStatsDto {

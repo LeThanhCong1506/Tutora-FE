@@ -566,7 +566,11 @@ const TutorPortalBookings = () => {
                     <section className={styles.feedbackBlock}>
                       <div className={styles.feedbackHead}>
                         <Star size={16} />
-                        <strong>Đánh giá của phụ huynh</strong>
+                        <strong>
+                          {bookingFeedback.reviewerRole === 'student'
+                            ? 'Đánh giá của học viên'
+                            : 'Đánh giá của phụ huynh'}
+                        </strong>
                         <span className={styles.feedbackStars} aria-hidden="true">
                           {'★'.repeat(bookingFeedback.rating)}
                           <span className={styles.feedbackStarsDim}>
@@ -731,6 +735,7 @@ const TutorPortalBookings = () => {
         }}
         feedbackId={replyModal.feedback?.feedbackId || 0}
         parentName={replyModal.feedback?.parentName}
+        reviewerRole={replyModal.feedback?.reviewerRole}
         rating={replyModal.feedback?.rating}
         comment={replyModal.feedback?.comment}
         createdAt={replyModal.feedback?.createdAt}

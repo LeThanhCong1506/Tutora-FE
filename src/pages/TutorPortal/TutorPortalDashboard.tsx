@@ -768,7 +768,8 @@ const TutorPortalDashboard: React.FC = () => {
                                                         {fb.parentName?.charAt(0)?.toUpperCase() || 'P'}
                                                     </div>
                                                     <span style={{ fontWeight: 600, fontSize: '13px', color: '#1a2238' }}>
-                                                        {fb.parentName || 'Phụ huynh'}
+                                                        {fb.parentName
+                                                            || (fb.reviewerRole === 'student' ? 'Học viên' : 'Phụ huynh')}
                                                     </span>
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
@@ -835,6 +836,7 @@ const TutorPortalDashboard: React.FC = () => {
                         }}
                         feedbackId={replyModal.feedback?.feedbackId || 0}
                         parentName={replyModal.feedback?.parentName}
+                        reviewerRole={replyModal.feedback?.reviewerRole}
                         rating={replyModal.feedback?.rating}
                         comment={replyModal.feedback?.comment}
                         createdAt={replyModal.feedback?.createdAt}
