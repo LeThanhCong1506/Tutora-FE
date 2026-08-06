@@ -24,6 +24,10 @@ const NOTIFICATION_TYPES_BY_PATH: Record<string, string[]> = {
         'booking_cancelled',
         'payment_remaining_required',
         'booking_payment_due_soon',
+        // Đánh giá khóa học nằm trong trang chi tiết booking nên badge đổ về tab này.
+        'feedback_request',
+        'feedback_reply',
+        'feedback_moderated',
     ],
     '/parent-portal/wallet': ['withdrawal_request'],
     '/parent-portal/disputes': ['dispute_message'],

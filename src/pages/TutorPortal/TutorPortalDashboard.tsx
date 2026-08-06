@@ -9,7 +9,7 @@ import {
     type CalendarClassSessionResponse,
 } from '../../services/classSession.service';
 import { getTutorFeedbacks, type FeedbackDto } from '../../services/feedback.service';
-import { getCurrentUser } from '../../services/auth.service';
+import { getUserInfoFromToken } from '../../services/auth.service';
 import { StatCard } from '../../components/shared';
 import ReplyFeedbackModal from './components/ReplyFeedbackModal';
 import { useTutorProfileForm } from './hooks/useTutorProfileForm';
@@ -114,6 +114,22 @@ const ChevronRightIcon = () => (
 
 
 
+/**
+ * Lấy 3 đánh giá gần nhất của gia sư.
+ *
+ * Nhánh mảng mới là nhánh chạy thật: `PagedList<T>` ở BE kế thừa `List<T>` nên serialize ra
+ * mảng JSON thuần, `content.items` không bao giờ tồn tại. Trước đây chỗ refresh sau khi trả
+ * lời chỉ xử lý `content.items` nên danh sách không bao giờ được cập nhật.
+ */
+const fetchRecentFeedbacks = async (tutorUserId: string): Promise<FeedbackDto[]> => {
+    const response = await getTutorFeedbacks(tutorUserId, 1, 3);
+    const content = response.content as unknown;
+
+    if (Array.isArray(content)) return content as FeedbackDto[];
+    const paged = content as { items?: FeedbackDto[] } | null;
+    return paged?.items ?? [];
+};
+
 const TutorPortalDashboard: React.FC = () => {
     const navigate = useNavigate();
     const { formData: profileData, isInitialLoading: isProfileLoading } = useTutorProfileForm();
@@ -129,7 +145,6 @@ const TutorPortalDashboard: React.FC = () => {
     const [replyModal, setReplyModal] = useState<{ open: boolean; feedback: FeedbackDto | null }>({ open: false, feedback: null });
 
 
-    // Fetch dashboard data
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
@@ -154,16 +169,20 @@ const TutorPortalDashboard: React.FC = () => {
                 }
 
                 // Fetch recent feedbacks
-                const user = getCurrentUser();
-                if (user?.userId) {
+                // getCurrentUser() chỉ trả object thô trong localStorage và KHÔNG có userId;
+                // userId nằm trong claim của JWT nên phải qua getUserInfoFromToken(), giống
+                // các layout/ProtectedRoute đang làm.
+                const tutorUserId = getUserInfoFromToken()?.userId;
+                if (!tutorUserId) {
+                    console.warn('Không lấy được userId từ token — bỏ qua phần đánh giá gần đây.');
+                } else {
                     try {
-                        const fbResponse = await getTutorFeedbacks(user.userId, 1, 3);
-                        if (fbResponse.content?.items) {
-                            setRecentFeedbacks(fbResponse.content.items);
-                        } else if (Array.isArray(fbResponse.content)) {
-                            setRecentFeedbacks(fbResponse.content as unknown as FeedbackDto[]);
-                        }
-                    } catch { /* feedback is optional */ }
+                        setRecentFeedbacks(await fetchRecentFeedbacks(tutorUserId));
+                    } catch (err) {
+                        // Trước đây lỗi bị nuốt hoàn toàn nên danh sách trống trông y hệt
+                        // "chưa có đánh giá nào"; log ra để còn phân biệt được.
+                        console.error('Error fetching recent feedbacks:', err);
+                    }
                 }
             } catch (err) {
                 console.error('Error fetching dashboard data:', err);
@@ -744,7 +763,8 @@ const TutorPortalDashboard: React.FC = () => {
                                                         {fb.parentName?.charAt(0)?.toUpperCase() || 'P'}
                                                     </div>
                                                     <span style={{ fontWeight: 600, fontSize: '13px', color: '#1a2238' }}>
-                                                        {fb.parentName || 'Phụ huynh'}
+                                                        {fb.parentName
+                                                            || (fb.reviewerRole === 'student' ? 'Học viên' : 'Phụ huynh')}
                                                     </span>
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
@@ -800,19 +820,18 @@ const TutorPortalDashboard: React.FC = () => {
                         onClose={() => setReplyModal({ open: false, feedback: null })}
                         onSuccess={async () => {
                             setReplyModal({ open: false, feedback: null });
-                            // Refresh feedbacks
-                            const user = getCurrentUser();
-                            if (user?.userId) {
+                            const tutorUserId = getUserInfoFromToken()?.userId;
+                            if (tutorUserId) {
                                 try {
-                                    const fbResponse = await getTutorFeedbacks(user.userId, 1, 3);
-                                    if (fbResponse.content?.items) {
-                                        setRecentFeedbacks(fbResponse.content.items);
-                                    }
-                                } catch { /* ignore */ }
+                                    setRecentFeedbacks(await fetchRecentFeedbacks(tutorUserId));
+                                } catch (err) {
+                                    console.error('Error refreshing feedbacks after reply:', err);
+                                }
                             }
                         }}
                         feedbackId={replyModal.feedback?.feedbackId || 0}
                         parentName={replyModal.feedback?.parentName}
+                        reviewerRole={replyModal.feedback?.reviewerRole}
                         rating={replyModal.feedback?.rating}
                         comment={replyModal.feedback?.comment}
                         createdAt={replyModal.feedback?.createdAt}
