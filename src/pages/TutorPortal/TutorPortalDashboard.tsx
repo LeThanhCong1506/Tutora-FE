@@ -61,13 +61,6 @@ const PlusIcon = () => (
     </svg>
 );
 
-const BookIcon = () => (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M2 2H5C6.10457 2 7 2.89543 7 4V13C7 12.4477 6.55228 12 6 12H2V2Z" />
-        <path d="M12 2H9C7.89543 2 7 2.89543 7 4V13C7 12.4477 7.44772 12 8 12H12V2Z" />
-    </svg>
-);
-
 
 const WithdrawIcon = () => (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -492,10 +485,6 @@ const TutorPortalDashboard: React.FC = () => {
                 <button className={styles.actionBtn} onClick={() => navigate('/tutor-portal/onboarding')}>
                     <PlusIcon />
                     <span>Thêm lịch rảnh</span>
-                </button>
-                <button className={styles.actionBtn} onClick={() => navigate('/tutor-portal/calendar')}>
-                    <BookIcon />
-                    <span>Tạo lớp học</span>
                 </button>
                 <button className={styles.actionBtn} onClick={() => navigate('/tutor-portal/finance/withdraw')}>
                     <WithdrawIcon />
