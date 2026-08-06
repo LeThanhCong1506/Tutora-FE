@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 // message import removed
 import styles from './AddStudentModal.module.css';
-import { Trash2 } from 'lucide-react';
+import { X } from 'lucide-react';
 import type { StudentType } from '../../../types/student.type';
 import type { ICreateParentStudent } from '../../../services/student.service';
 import { useGradeLevels } from '../../../hooks/useGradeLevels';
@@ -87,7 +87,7 @@ const EditStudentModal = ({ isOpen, onClose, onSubmit, student }: EditStudentMod
                 <div className={styles.modalHeader}>
                     <h2 className={styles.modalTitle}>Chỉnh sửa thông tin</h2>
                     <button className={styles.modalCloseBtn} onClick={onClose} type="button" disabled={submitting}>
-                        <Trash2 size={20} />
+                        <X size={20} />
                     </button>
                 </div>
 
