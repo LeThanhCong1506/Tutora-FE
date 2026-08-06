@@ -36,6 +36,7 @@ interface EditForm {
     birthdate: string;
     address: string;
     gender: string;
+    email: string;
 }
 
 interface PasswordForm {
@@ -98,6 +99,7 @@ const ParentAccount = () => {
         birthdate: '',
         address: '',
         gender: '',
+        email: '',
     });
     const [errors, setErrors] = useState<UserProfileFieldErrors>({});
     const [showPasswordSection, setShowPasswordSection] = useState(false);
@@ -132,6 +134,7 @@ const ParentAccount = () => {
                     birthdate: toDateInputValue(data.birthdate),
                     address: data.address || '',
                     gender: data.gender || '',
+                    email: data.email || '',
                 });
             } catch {
                 toast.error('Không thể tải thông tin tài khoản');
@@ -166,15 +169,20 @@ const ParentAccount = () => {
                 birthdate: form.birthdate,
                 address: form.address.trim(),
                 gender: form.gender,
+                email: form.email.trim() || undefined,
                 avatarurl: profile.avatarurl,
             });
             setProfile(prev => prev ? { ...prev, ...form } : null);
+            window.dispatchEvent(new CustomEvent('profile-name-updated', { detail: form.fullname.trim() }));
             setEditing(false);
             toast.success('Cập nhật thông tin thành công!');
         } catch (err: unknown) {
             const apiError = (err as { response?: { data?: { error?: unknown; message?: string } } })?.response?.data;
             const mapped = mapApiFieldErrors(apiError?.error);
-            if (Object.keys(mapped).length > 0) {
+            if (/email.*already exist/i.test(apiError?.message || '')) {
+                setErrors(e => ({ ...e, email: 'Email này đã được sử dụng bởi tài khoản khác.' }));
+                toast.error('Email này đã được sử dụng bởi tài khoản khác.');
+            } else if (Object.keys(mapped).length > 0) {
                 setErrors(mapped);
                 toast.error('Vui lòng kiểm tra lại các thông tin được đánh dấu.');
             } else {
@@ -192,6 +200,7 @@ const ParentAccount = () => {
                 birthdate: toDateInputValue(profile.birthdate),
                 address: profile.address || '',
                 gender: profile.gender || '',
+                email: profile.email || '',
             });
         }
         setErrors({});
@@ -500,8 +509,23 @@ const ParentAccount = () => {
 
                     <div style={fieldGroup}>
                         <label style={fieldLabel}>Email</label>
-                        <p style={{ ...fieldValue, color: '#525252' }}>{profile?.email || '—'}</p>
-                        {editing && <span style={readOnlyHint}>Không thể thay đổi</span>}
+                        {editing ? (
+                            <>
+                                <input
+                                    style={{ ...fieldInput, ...(errors.email ? { borderColor: '#dc2626' } : {}) }}
+                                    type="email"
+                                    value={form.email}
+                                    onChange={e => updateField('email', e.target.value)}
+                                    maxLength={100}
+                                    placeholder="Nhập email"
+                                />
+                                {errors.email && <span style={errorTextStyle}>{errors.email}</span>}
+                            </>
+                        ) : (
+                            <p style={{ ...fieldValue, color: profile?.email ? '#1a2238' : '#9ca3af' }}>
+                                {profile?.email || 'Chưa cập nhật'}
+                            </p>
+                        )}
                     </div>
 
                     <div style={fieldGroup}>
@@ -847,12 +871,6 @@ const fieldInput: React.CSSProperties = {
     fontFamily: "'IBM Plex Sans', sans-serif",
     width: '100%',
     boxSizing: 'border-box' as const,
-};
-
-const readOnlyHint: React.CSSProperties = {
-    fontSize: 11,
-    color: '#9ca3af',
-    fontStyle: 'italic',
 };
 
 const actionRow: React.CSSProperties = {

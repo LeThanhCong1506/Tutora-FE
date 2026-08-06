@@ -242,6 +242,7 @@ const ParentDashboard = () => {
             badge={`${activeBookings} đang hoạt động`}
             badgeVariant="green"
             variant="quiet"
+            infoTooltip="Tổng số lịch hẹn bạn đã đặt với gia sư, gồm cả đang hoạt động và đã hoàn tất."
             onClick={() => navigate('/parent-portal/booking')}
           />
           <StatCard
@@ -252,6 +253,7 @@ const ParentDashboard = () => {
             badge="Đã liên kết"
             badgeVariant="blue"
             variant="quiet"
+            infoTooltip="Số học sinh (con) đã được liên kết với tài khoản của bạn."
             onClick={() => navigate('/parent-portal/student')}
           />
           <StatCard
@@ -262,6 +264,7 @@ const ParentDashboard = () => {
             badge="Tuần này"
             badgeVariant="green"
             variant="quiet"
+            infoTooltip="Số buổi học đã lên lịch trong tuần này (Thứ Hai - Chủ Nhật)."
             onClick={() => scheduleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           />
           <StatCard
@@ -272,6 +275,7 @@ const ParentDashboard = () => {
             badge={pendingBookings.length > 0 ? 'Cần xử lý' : 'Đã cập nhật'}
             badgeVariant={pendingBookings.length > 0 ? 'green' : 'blue'}
             variant="quiet"
+            infoTooltip="Số lịch hẹn đang xử lý: chờ gia sư phản hồi hoặc chờ hoàn tất xác nhận đặt lịch."
           />
         </div>
 

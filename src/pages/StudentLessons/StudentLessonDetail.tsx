@@ -23,7 +23,6 @@ import {
 import { signalRService } from '../../services/signalr.service';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
 import { message as antMessage, Spin, Modal } from 'antd';
-import CreateFeedbackModal from '../ParentLessons/components/CreateFeedbackModal';
 import { ClassSessionRecording } from '../../components/shared';
 import CreateDisputeForm from '../ParentLessons/components/CreateDisputeForm';
 import ReportNoShowModal from '../ParentLessons/components/ReportNoShowModal';
@@ -86,7 +85,6 @@ const StudentLessonDetail = () => {
     const [loading, setLoading] = useState(true);
     const [confirming, setConfirming] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const [showFeedbackModal, setShowFeedbackModal] = useState(false);
     const [showDisputeForm, setShowDisputeForm] = useState(false);
     const [showNoShowModal, setShowNoShowModal] = useState(false);
     const [showNoShowActionModal, setShowNoShowActionModal] = useState(false);
@@ -219,7 +217,6 @@ const StudentLessonDetail = () => {
 
     const handleActionSuccess = () => {
         setShowConfirmModal(false);
-        setShowFeedbackModal(false);
         setShowDisputeForm(false);
         setShowNoShowModal(false);
         setShowNoShowActionModal(false);
@@ -589,6 +586,11 @@ const StudentLessonDetail = () => {
                             <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(26,34,56,0.06)' }}>
                                 <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Kết quả xử lý</div>
                                 <div style={{ fontSize: '14px', color: '#1a2238' }}>{dispute.resolutionNote || 'Không có ghi chú.'}</div>
+                                {typeof dispute.refundPercentage === 'number' && (
+                                    <div style={{ fontSize: '14px', color: '#1a2238', marginTop: '6px' }}>
+                                        Tỷ lệ hoàn tiền: {dispute.refundPercentage}%
+                                    </div>
+                                )}
                             </div>
                         )}
                         {dispute.status !== 'resolved' && (
@@ -680,31 +682,23 @@ const StudentLessonDetail = () => {
                     </div>
                 )}
 
-                {lesson.status === 'completed' && (
+                {lesson.status === 'completed' && !dispute && canCreateDispute && (
                     <div style={actionCardFeedback}>
                         <div style={{ ...actionCardIconWrap, background: 'rgba(26,34,56,0.08)' }}>
                             <Star size={20} style={{ color: '#1a2238' }} />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={actionCardTitle}>Đánh giá buổi học</div>
+                            <div style={actionCardTitle}>Buổi học đã hoàn thành</div>
                             <div style={actionCardDesc}>
-                                Chia sẻ trải nghiệm giúp gia sư cải thiện chất lượng dạy.
+                                Nếu có vấn đề với buổi học này, bạn có thể báo cáo gia sư.
                             </div>
                         </div>
                         <button
-                            style={actionBtnFeedback}
-                            onClick={() => setShowFeedbackModal(true)}
+                            style={actionBtnDispute}
+                            onClick={() => setShowDisputeForm(true)}
                         >
-                            <Star size={15} /> Đánh giá
+                            Báo cáo gia sư
                         </button>
-                        {!dispute && canCreateDispute && (
-                            <button
-                                style={actionBtnDispute}
-                                onClick={() => setShowDisputeForm(true)}
-                            >
-                                Báo cáo gia sư
-                            </button>
-                        )}
                     </div>
                 )}
 
@@ -895,17 +889,6 @@ const StudentLessonDetail = () => {
                     <p>Bạn có chắc chắn muốn xác nhận buổi học #{lesson.lessonId}?</p>
                     <p>Tiền sẽ được chuyển cho gia sư sau khi xác nhận.</p>
                 </Modal>
-
-                <CreateFeedbackModal
-                    open={showFeedbackModal}
-                    onClose={() => setShowFeedbackModal(false)}
-                    onSuccess={handleActionSuccess}
-                    lessonId={lesson.lessonId}
-                    bookingId={lesson.bookingId || 0}
-                    tutorId={(lesson as any).tutorId || (lesson as any).tutor?.tutorId}
-                    tutorName={tutorName}
-                    subjectName={subjectName}
-                />
 
                 <CreateDisputeForm
                     open={showDisputeForm}
@@ -1382,12 +1365,6 @@ const actionBtnDispute: React.CSSProperties = {
     ...actionBtnBase,
     background: 'linear-gradient(135deg, #dc2626, #ef4444)',
     boxShadow: '0 2px 8px rgba(220,38,38,0.25)',
-};
-
-const actionBtnFeedback: React.CSSProperties = {
-    ...actionBtnBase,
-    background: 'linear-gradient(135deg, #1a2238, #374151)',
-    boxShadow: '0 2px 8px rgba(26,34,56,0.2)',
 };
 
 // ── Section card ──

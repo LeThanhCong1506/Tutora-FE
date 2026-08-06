@@ -9,7 +9,7 @@ import {
     type CalendarClassSessionResponse,
 } from '../../services/classSession.service';
 import { getTutorFeedbacks, type FeedbackDto } from '../../services/feedback.service';
-import { getCurrentUser } from '../../services/auth.service';
+import { getUserInfoFromToken } from '../../services/auth.service';
 import { StatCard } from '../../components/shared';
 import ReplyFeedbackModal from './components/ReplyFeedbackModal';
 import { useTutorProfileForm } from './hooks/useTutorProfileForm';
@@ -58,13 +58,6 @@ const CheckInIcon = () => (
 const PlusIcon = () => (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M7 2V12M2 7H12" strokeLinecap="round" />
-    </svg>
-);
-
-const BookIcon = () => (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M2 2H5C6.10457 2 7 2.89543 7 4V13C7 12.4477 6.55228 12 6 12H2V2Z" />
-        <path d="M12 2H9C7.89543 2 7 2.89543 7 4V13C7 12.4477 7.44772 12 8 12H12V2Z" />
     </svg>
 );
 
@@ -121,6 +114,22 @@ const ChevronRightIcon = () => (
 
 
 
+/**
+ * Lấy 3 đánh giá gần nhất của gia sư.
+ *
+ * Nhánh mảng mới là nhánh chạy thật: `PagedList<T>` ở BE kế thừa `List<T>` nên serialize ra
+ * mảng JSON thuần, `content.items` không bao giờ tồn tại. Trước đây chỗ refresh sau khi trả
+ * lời chỉ xử lý `content.items` nên danh sách không bao giờ được cập nhật.
+ */
+const fetchRecentFeedbacks = async (tutorUserId: string): Promise<FeedbackDto[]> => {
+    const response = await getTutorFeedbacks(tutorUserId, 1, 3);
+    const content = response.content as unknown;
+
+    if (Array.isArray(content)) return content as FeedbackDto[];
+    const paged = content as { items?: FeedbackDto[] } | null;
+    return paged?.items ?? [];
+};
+
 const TutorPortalDashboard: React.FC = () => {
     const navigate = useNavigate();
     const { formData: profileData, isInitialLoading: isProfileLoading } = useTutorProfileForm();
@@ -136,7 +145,6 @@ const TutorPortalDashboard: React.FC = () => {
     const [replyModal, setReplyModal] = useState<{ open: boolean; feedback: FeedbackDto | null }>({ open: false, feedback: null });
 
 
-    // Fetch dashboard data
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
@@ -161,16 +169,20 @@ const TutorPortalDashboard: React.FC = () => {
                 }
 
                 // Fetch recent feedbacks
-                const user = getCurrentUser();
-                if (user?.userId) {
+                // getCurrentUser() chỉ trả object thô trong localStorage và KHÔNG có userId;
+                // userId nằm trong claim của JWT nên phải qua getUserInfoFromToken(), giống
+                // các layout/ProtectedRoute đang làm.
+                const tutorUserId = getUserInfoFromToken()?.userId;
+                if (!tutorUserId) {
+                    console.warn('Không lấy được userId từ token — bỏ qua phần đánh giá gần đây.');
+                } else {
                     try {
-                        const fbResponse = await getTutorFeedbacks(user.userId, 1, 3);
-                        if (fbResponse.content?.items) {
-                            setRecentFeedbacks(fbResponse.content.items);
-                        } else if (Array.isArray(fbResponse.content)) {
-                            setRecentFeedbacks(fbResponse.content as unknown as FeedbackDto[]);
-                        }
-                    } catch { /* feedback is optional */ }
+                        setRecentFeedbacks(await fetchRecentFeedbacks(tutorUserId));
+                    } catch (err) {
+                        // Trước đây lỗi bị nuốt hoàn toàn nên danh sách trống trông y hệt
+                        // "chưa có đánh giá nào"; log ra để còn phân biệt được.
+                        console.error('Error fetching recent feedbacks:', err);
+                    }
                 }
             } catch (err) {
                 console.error('Error fetching dashboard data:', err);
@@ -442,12 +454,14 @@ const TutorPortalDashboard: React.FC = () => {
                         icon={<CalendarIcon />}
                         value={stats.upcomingClassSessions}
                         label="Buổi học sắp tới"
+                        infoTooltip="Số buổi học đã lên lịch, chưa diễn ra."
                         className={styles.statCard}
                     />
                     <StatCard
                         icon={<SessionsIcon />}
                         value={<>{stats.completedThisMonth} <span style={{ fontSize: '12px', fontWeight: 400, color: 'rgba(62,47,40,0.5)' }}>/ {stats.totalCompleted} tổng</span></>}
                         label="Hoàn thành tháng này"
+                        infoTooltip="Số buổi học bạn đã hoàn thành trong tháng này, trên tổng số buổi đã hoàn thành."
                         className={styles.statCard}
                     />
                     <StatCard
@@ -455,6 +469,7 @@ const TutorPortalDashboard: React.FC = () => {
                         value={(stats.averageRating || 0).toFixed(1)}
                         label="Đánh giá trung bình"
                         subLabel={`${stats.totalReviews} đánh giá`}
+                        infoTooltip="Điểm đánh giá trung bình từ học viên và phụ huynh."
                         className={styles.statCard}
                     />
                     <StatCard
@@ -463,6 +478,7 @@ const TutorPortalDashboard: React.FC = () => {
                         label="Số dư ví"
                         badge={stats.pendingConfirmation > 0 ? `${stats.pendingConfirmation} chờ xác nhận` : undefined}
                         badgeVariant="orange"
+                        infoTooltip="Số tiền đã được giải ngân, có thể rút về bất cứ lúc nào."
                         className={styles.statCard}
                     />
                     <StatCard
@@ -471,6 +487,7 @@ const TutorPortalDashboard: React.FC = () => {
                         label="Số dư đóng băng"
                         badge={stats.activeDisputes > 0 ? `${stats.activeDisputes} khiếu nại` : undefined}
                         badgeVariant="red"
+                        infoTooltip="Số tiền đang tạm giữ cho các buổi học chưa được xác nhận hoàn thành, sẽ chuyển vào ví sau khi giải ngân."
                         className={styles.statCard}
                     />
                     <StatCard
@@ -478,6 +495,7 @@ const TutorPortalDashboard: React.FC = () => {
                         value={`${formatVNDNumber(stats.earningsThisMonth)}đ`}
                         label="Doanh thu tháng"
                         subLabel={`/ ${formatVNDNumber(stats.totalEarnings)}đ tổng`}
+                        infoTooltip="Tổng thu nhập từ các buổi học trong tháng này."
                         className={styles.statCard}
                     />
                 </div>
@@ -492,10 +510,6 @@ const TutorPortalDashboard: React.FC = () => {
                 <button className={styles.actionBtn} onClick={() => navigate('/tutor-portal/onboarding')}>
                     <PlusIcon />
                     <span>Thêm lịch rảnh</span>
-                </button>
-                <button className={styles.actionBtn} onClick={() => navigate('/tutor-portal/calendar')}>
-                    <BookIcon />
-                    <span>Tạo lớp học</span>
                 </button>
                 <button className={styles.actionBtn} onClick={() => navigate('/tutor-portal/finance/withdraw')}>
                     <WithdrawIcon />
@@ -749,7 +763,8 @@ const TutorPortalDashboard: React.FC = () => {
                                                         {fb.parentName?.charAt(0)?.toUpperCase() || 'P'}
                                                     </div>
                                                     <span style={{ fontWeight: 600, fontSize: '13px', color: '#1a2238' }}>
-                                                        {fb.parentName || 'Phụ huynh'}
+                                                        {fb.parentName
+                                                            || (fb.reviewerRole === 'student' ? 'Học viên' : 'Phụ huynh')}
                                                     </span>
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
@@ -805,19 +820,18 @@ const TutorPortalDashboard: React.FC = () => {
                         onClose={() => setReplyModal({ open: false, feedback: null })}
                         onSuccess={async () => {
                             setReplyModal({ open: false, feedback: null });
-                            // Refresh feedbacks
-                            const user = getCurrentUser();
-                            if (user?.userId) {
+                            const tutorUserId = getUserInfoFromToken()?.userId;
+                            if (tutorUserId) {
                                 try {
-                                    const fbResponse = await getTutorFeedbacks(user.userId, 1, 3);
-                                    if (fbResponse.content?.items) {
-                                        setRecentFeedbacks(fbResponse.content.items);
-                                    }
-                                } catch { /* ignore */ }
+                                    setRecentFeedbacks(await fetchRecentFeedbacks(tutorUserId));
+                                } catch (err) {
+                                    console.error('Error refreshing feedbacks after reply:', err);
+                                }
                             }
                         }}
                         feedbackId={replyModal.feedback?.feedbackId || 0}
                         parentName={replyModal.feedback?.parentName}
+                        reviewerRole={replyModal.feedback?.reviewerRole}
                         rating={replyModal.feedback?.rating}
                         comment={replyModal.feedback?.comment}
                         createdAt={replyModal.feedback?.createdAt}

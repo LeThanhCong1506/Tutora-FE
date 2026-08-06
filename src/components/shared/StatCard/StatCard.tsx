@@ -1,4 +1,6 @@
 import React from 'react';
+import { Tooltip } from 'antd';
+import { InfoCircleOutlined } from '@ant-design/icons';
 import styles from './StatCard.module.css';
 
 export interface StatCardProps {
@@ -10,6 +12,8 @@ export interface StatCardProps {
     label: string;
     /** Optional sub-label for supplementary info */
     subLabel?: React.ReactNode;
+    /** Optional tooltip explaining what this card means, shown via an info icon next to the label */
+    infoTooltip?: string;
     /** Optional badge text shown next to the icon (e.g. "+12%", "Tuần này") */
     badge?: string;
     /** Badge color variant */
@@ -31,6 +35,7 @@ const StatCard: React.FC<StatCardProps> = ({
     value,
     label,
     subLabel,
+    infoTooltip,
     badge,
     badgeVariant = 'green',
     variant = 'default',
@@ -51,7 +56,18 @@ const StatCard: React.FC<StatCardProps> = ({
                 )}
             </div>
             <div className={styles.statValue}>{value}</div>
-            <div className={styles.statLabel}>{label}</div>
+            <div className={styles.statLabelRow}>
+                <span className={styles.statLabel}>{label}</span>
+                {infoTooltip && (
+                    <Tooltip title={infoTooltip}>
+                        <InfoCircleOutlined
+                            className={styles.infoIcon}
+                            aria-label={`Thông tin ${label}`}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </Tooltip>
+                )}
+            </div>
             {subLabel && <div className={styles.statSubLabel}>{subLabel}</div>}
         </div>
     );

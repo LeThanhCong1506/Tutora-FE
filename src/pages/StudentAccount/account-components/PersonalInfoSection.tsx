@@ -48,8 +48,8 @@ const PersonalInfoSection: React.FC<Props> = ({
         setErrors(e => (e[field] ? { ...e, [field]: undefined } : e));
     };
 
-    // BE chặn và bỏ qua thay đổi ngày sinh khi CCCD đã xác thực (UserService.UpdateUserAsync) — khóa luôn ở FE.
-    const birthdateLocked = profile?.isidentityverified === true;
+    // BE chặn và bỏ qua thay đổi họ tên/ngày sinh khi CCCD đã xác thực (UserService.UpdateUserAsync) — khóa luôn ở FE.
+    const identityLocked = profile?.isidentityverified === true;
 
     return (
     <div className={styles.sectionCard}>
@@ -67,8 +67,23 @@ const PersonalInfoSection: React.FC<Props> = ({
 
             <div style={fieldGroup}>
                 <label style={fieldLabel}>Email</label>
-                <p style={{ ...fieldValue, color: "#525252" }}>{profile?.email || "—"}</p>
-                {editing && <span style={readOnlyHint}>Không thể thay đổi</span>}
+                {editing ? (
+                    <>
+                        <input
+                            style={{ ...fieldInput, ...(errors.email ? { borderColor: "#dc2626" } : {}) }}
+                            type="email"
+                            value={form.email}
+                            onChange={e => updateField("email", e.target.value)}
+                            maxLength={100}
+                            placeholder="Nhập email"
+                        />
+                        {errors.email && <span style={errorTextStyle}>{errors.email}</span>}
+                    </>
+                ) : (
+                    <p style={{ ...fieldValue, color: profile?.email ? "#1a2238" : "#9ca3af" }}>
+                        {profile?.email || "Chưa cập nhật"}
+                    </p>
+                )}
             </div>
 
             <div style={fieldGroup}>
@@ -76,13 +91,22 @@ const PersonalInfoSection: React.FC<Props> = ({
                 {editing ? (
                     <>
                         <input
-                            style={{ ...fieldInput, ...(errors.fullname ? { borderColor: "#dc2626" } : {}) }}
+                            style={{
+                                ...fieldInput,
+                                ...(errors.fullname ? { borderColor: "#dc2626" } : {}),
+                                ...(identityLocked ? disabledStyle : {}),
+                            }}
                             value={form.fullname}
                             onChange={e => updateField("fullname", e.target.value)}
                             maxLength={100}
                             placeholder="Nhập họ và tên"
+                            disabled={identityLocked}
                         />
-                        {errors.fullname && <span style={errorTextStyle}>{errors.fullname}</span>}
+                        {identityLocked ? (
+                            <span style={readOnlyHint}>Đã xác minh qua CCCD, không thể chỉnh sửa.</span>
+                        ) : (
+                            errors.fullname && <span style={errorTextStyle}>{errors.fullname}</span>
+                        )}
                     </>
                 ) : (
                     <p style={fieldValue}>{profile?.fullname || "—"}</p>
@@ -99,15 +123,15 @@ const PersonalInfoSection: React.FC<Props> = ({
                             style={{
                                 ...fieldInput,
                                 ...(errors.birthdate ? { borderColor: "#dc2626" } : {}),
-                                ...(birthdateLocked ? disabledStyle : {}),
+                                ...(identityLocked ? disabledStyle : {}),
                             }}
                             type="date"
                             value={form.birthdate}
                             max={new Date().toISOString().slice(0, 10)}
                             onChange={e => updateField("birthdate", e.target.value)}
-                            disabled={birthdateLocked}
+                            disabled={identityLocked}
                         />
-                        {birthdateLocked ? (
+                        {identityLocked ? (
                             <span style={readOnlyHint}>Đã xác minh qua CCCD, không thể chỉnh sửa.</span>
                         ) : (
                             errors.birthdate && <span style={errorTextStyle}>{errors.birthdate}</span>
