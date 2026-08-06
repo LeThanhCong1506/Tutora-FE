@@ -18,12 +18,9 @@ setupAuthInterceptor(api);
 // ============================================
 
 export interface CreateFeedbackRequest {
-  lessonId?: number;
-  bookingId?: number;
-  toUserId: string;
+  bookingId: number;
   rating: number;
   comment?: string;
-  feedbackType: 'post_lesson' | 'early_termination';
   initialGoal?: string;
   actualResult?: string;
   courseDuration?: string;
@@ -36,7 +33,8 @@ export interface ReplyFeedbackRequest {
 export interface FeedbackDto {
   feedbackId: number;
   bookingId?: number;
-  lessonId?: number;
+  /** Chỉ có ở dữ liệu cũ thời còn đánh giá theo từng buổi. */
+  classSessionId?: number;
   rating: number;
   comment?: string;
   feedbackType?: string;
@@ -75,17 +73,13 @@ export interface FeedbackStatsDto {
 // ============================================
 
 /**
- * Create feedback for a lesson (parent)
+ * Đánh giá khóa học — chỉ mở khi booking đã hoàn thành, mỗi người một lần cho mỗi booking.
  */
 export const createFeedback = async (
   request: CreateFeedbackRequest
 ): Promise<ApiResponse<FeedbackDto>> => {
   try {
-    // BE `CreateFeedbackRequest.ClassSessionId` (đã đổi tên từ `LessonId`) — map ở đây để
-    // không phải sửa `lessonId` prop xuyên suốt CreateFeedbackModal.tsx và các trang gọi nó.
-    const { lessonId, ...rest } = request;
-    const body = { ...rest, classSessionId: lessonId };
-    const response = await api.post('/feedbacks', body, {
+    const response = await api.post('/feedbacks', request, {
       headers: getAuthHeaders(),
     });
     return response.data;
@@ -148,24 +142,7 @@ export const getTutorFeedbackStats = async (
 };
 
 /**
- * Check if user can leave feedback for a lesson
- */
-export const canLeaveFeedback = async (
-  lessonId: number
-): Promise<ApiResponse<boolean>> => {
-  try {
-    const response = await api.get(`/feedbacks/eligibility/class-sessions/${lessonId}`, {
-      headers: getAuthHeaders(),
-    });
-    return response.data;
-  } catch (error: any) {
-    console.error('Error checking feedback eligibility:', error.message);
-    throw error;
-  }
-};
-
-/**
- * Check if user can leave early termination feedback for a booking
+ * Check if user can review a booking
  */
 export const canLeaveBookingFeedback = async (
   bookingId: number

@@ -25,6 +25,7 @@ interface UserProfileData {
     role?: string;
     createdat?: string;
     lastloginat?: string;
+    isidentityverified?: boolean;
 }
 
 interface EditForm {
@@ -32,6 +33,7 @@ interface EditForm {
     birthdate: string;
     address: string;
     gender: string;
+    email: string;
 }
 
 interface PasswordForm {
@@ -95,6 +97,7 @@ const TutorAccount = () => {
         birthdate: '',
         address: '',
         gender: '',
+        email: '',
     });
     const [errors, setErrors] = useState<UserProfileFieldErrors>({});
     const [showPasswordSection, setShowPasswordSection] = useState(false);
@@ -127,6 +130,7 @@ const TutorAccount = () => {
                     birthdate: toDateInputValue(data.birthdate),
                     address: data.address || '',
                     gender: data.gender || '',
+                    email: data.email || '',
                 });
             } catch {
                 toast.error('Không thể tải thông tin tài khoản');
@@ -141,6 +145,9 @@ const TutorAccount = () => {
         setForm(f => ({ ...f, [field]: value }));
         setErrors(e => (e[field] ? { ...e, [field]: undefined } : e));
     };
+
+    // BE chặn và bỏ qua thay đổi họ tên/ngày sinh khi CCCD đã xác thực (UserService.UpdateUserAsync) — khóa luôn ở FE.
+    const identityLocked = profile?.isidentityverified === true;
 
     const handleSave = async () => {
         if (!profile) return;
@@ -161,15 +168,20 @@ const TutorAccount = () => {
                 birthdate: form.birthdate,
                 address: form.address.trim(),
                 gender: form.gender,
+                email: form.email.trim() || undefined,
                 avatarurl: profile.avatarurl,
             });
             setProfile(prev => prev ? { ...prev, ...form } : null);
+            window.dispatchEvent(new CustomEvent('profile-name-updated', { detail: form.fullname.trim() }));
             setEditing(false);
             toast.success('Cập nhật thông tin thành công!');
         } catch (err: unknown) {
             const apiError = (err as { response?: { data?: { error?: unknown; message?: string } } })?.response?.data;
             const mapped = mapApiFieldErrors(apiError?.error);
-            if (Object.keys(mapped).length > 0) {
+            if (/email.*already exist/i.test(apiError?.message || '')) {
+                setErrors(e => ({ ...e, email: 'Email này đã được sử dụng bởi tài khoản khác.' }));
+                toast.error('Email này đã được sử dụng bởi tài khoản khác.');
+            } else if (Object.keys(mapped).length > 0) {
                 setErrors(mapped);
                 toast.error('Vui lòng kiểm tra lại các thông tin được đánh dấu.');
             } else {
@@ -187,6 +199,7 @@ const TutorAccount = () => {
                 birthdate: toDateInputValue(profile.birthdate),
                 address: profile.address || '',
                 gender: profile.gender || '',
+                email: profile.email || '',
             });
         }
         setErrors({});
@@ -486,8 +499,23 @@ const TutorAccount = () => {
 
                     <div style={fieldGroup}>
                         <label style={fieldLabel}>Email</label>
-                        <p style={{ ...fieldValue, color: '#525252' }}>{profile?.email || '—'}</p>
-                        {editing && <span style={readOnlyHint}>Không thể thay đổi</span>}
+                        {editing ? (
+                            <>
+                                <input
+                                    style={{ ...fieldInput, ...(errors.email ? { borderColor: '#dc2626' } : {}) }}
+                                    type="email"
+                                    value={form.email}
+                                    onChange={e => updateField('email', e.target.value)}
+                                    maxLength={100}
+                                    placeholder="Nhập email"
+                                />
+                                {errors.email && <span style={errorTextStyle}>{errors.email}</span>}
+                            </>
+                        ) : (
+                            <p style={{ ...fieldValue, color: profile?.email ? '#1a2238' : '#9ca3af' }}>
+                                {profile?.email || 'Chưa cập nhật'}
+                            </p>
+                        )}
                     </div>
 
                     <div style={fieldGroup}>
@@ -495,13 +523,22 @@ const TutorAccount = () => {
                         {editing ? (
                             <>
                                 <input
-                                    style={{ ...fieldInput, ...(errors.fullname ? { borderColor: '#dc2626' } : {}) }}
+                                    style={{
+                                        ...fieldInput,
+                                        ...(errors.fullname ? { borderColor: '#dc2626' } : {}),
+                                        ...(identityLocked ? disabledStyle : {}),
+                                    }}
                                     value={form.fullname}
                                     onChange={e => updateField('fullname', e.target.value)}
                                     maxLength={100}
                                     placeholder="Nhập họ và tên"
+                                    disabled={identityLocked}
                                 />
-                                {errors.fullname && <span style={errorTextStyle}>{errors.fullname}</span>}
+                                {identityLocked ? (
+                                    <span style={readOnlyHint}>Đã xác minh qua CCCD, không thể chỉnh sửa.</span>
+                                ) : (
+                                    errors.fullname && <span style={errorTextStyle}>{errors.fullname}</span>
+                                )}
                             </>
                         ) : (
                             <p style={fieldValue}>{profile?.fullname || '—'}</p>
@@ -513,13 +550,22 @@ const TutorAccount = () => {
                         {editing ? (
                             <>
                                 <input
-                                    style={{ ...fieldInput, ...(errors.birthdate ? { borderColor: '#dc2626' } : {}) }}
+                                    style={{
+                                        ...fieldInput,
+                                        ...(errors.birthdate ? { borderColor: '#dc2626' } : {}),
+                                        ...(identityLocked ? disabledStyle : {}),
+                                    }}
                                     type="date"
                                     value={form.birthdate}
                                     max={new Date().toISOString().slice(0, 10)}
                                     onChange={e => updateField('birthdate', e.target.value)}
+                                    disabled={identityLocked}
                                 />
-                                {errors.birthdate && <span style={errorTextStyle}>{errors.birthdate}</span>}
+                                {identityLocked ? (
+                                    <span style={readOnlyHint}>Đã xác minh qua CCCD, không thể chỉnh sửa.</span>
+                                ) : (
+                                    errors.birthdate && <span style={errorTextStyle}>{errors.birthdate}</span>
+                                )}
                             </>
                         ) : (
                             <p style={fieldValue}>{formatDate(profile?.birthdate)}</p>
@@ -800,12 +846,6 @@ const fieldInput: React.CSSProperties = {
     boxSizing: 'border-box' as const,
 };
 
-const readOnlyHint: React.CSSProperties = {
-    fontSize: 11,
-    color: '#9ca3af',
-    fontStyle: 'italic',
-};
-
 const actionRow: React.CSSProperties = {
     display: 'flex',
     justifyContent: 'flex-end',
@@ -825,6 +865,12 @@ const cancelBtn: React.CSSProperties = {
     color: '#737373',
     fontWeight: 500,
     cursor: 'pointer',
+};
+
+const readOnlyHint: React.CSSProperties = {
+    fontSize: 11,
+    color: '#9ca3af',
+    fontStyle: 'italic',
 };
 
 const saveBtn: React.CSSProperties = {

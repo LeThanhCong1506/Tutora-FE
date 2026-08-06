@@ -191,6 +191,18 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
         return () => window.removeEventListener('avatar-updated', handleAvatarUpdated);
     }, []);
 
+    // Listen for name updates dispatched by account pages after profile save
+    useEffect(() => {
+        const handleNameUpdated = (e: Event) => {
+            const newName = (e as CustomEvent<string>).detail;
+            if (newName) {
+                setUserData(prev => ({ ...prev, name: newName, initials: getInitials(newName) }));
+            }
+        };
+        window.addEventListener('profile-name-updated', handleNameUpdated);
+        return () => window.removeEventListener('profile-name-updated', handleNameUpdated);
+    }, []);
+
     // ── Notifications ──
     const [notificationCount, setNotificationCount] = useState(0);
     const [showNotifDropdown, setShowNotifDropdown] = useState(false);

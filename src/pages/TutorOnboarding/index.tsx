@@ -104,6 +104,7 @@ const TutorOnboarding: React.FC = () => {
         subjectRecords={state.subjectRecords}
         availability={state.availability}
         combos={state.combos}
+        gradeLevels={gradeLevels}
         onBack={() => setFinished(false)}
         onFinish={() => navigate('/tutor-portal/dashboard')}
       />

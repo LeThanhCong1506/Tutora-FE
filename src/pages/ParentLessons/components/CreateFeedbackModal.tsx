@@ -10,16 +10,13 @@ interface CreateFeedbackModalProps {
     open: boolean;
     onClose: () => void;
     onSuccess: () => void;
-    feedbackType?: 'post_lesson' | 'early_termination';
-    lessonId?: number;
     bookingId: number;
-    tutorId: string;
     tutorName?: string;
     subjectName?: string;
 }
 
 const CreateFeedbackModal: React.FC<CreateFeedbackModalProps> = ({
-    open, onClose, onSuccess, feedbackType = 'post_lesson', lessonId, bookingId, tutorId, tutorName, subjectName,
+    open, onClose, onSuccess, bookingId, tutorName, subjectName,
 }) => {
     const [rating, setRating] = useState(0);
     const [comment, setComment] = useState('');
@@ -61,15 +58,12 @@ const CreateFeedbackModal: React.FC<CreateFeedbackModalProps> = ({
         try {
             setSubmitting(true);
             const request: CreateFeedbackRequest = {
-                lessonId: feedbackType === 'post_lesson' ? lessonId : undefined,
                 bookingId,
-                toUserId: tutorId,
                 rating,
                 comment: comment.trim() || undefined,
-                feedbackType,
-                initialGoal: feedbackType === 'early_termination' && initialGoal.trim() ? initialGoal.trim() : undefined,
-                actualResult: feedbackType === 'early_termination' && actualResult.trim() ? actualResult.trim() : undefined,
-                courseDuration: feedbackType === 'early_termination' && courseDuration.trim() ? courseDuration.trim() : undefined,
+                initialGoal: initialGoal.trim() || undefined,
+                actualResult: actualResult.trim() || undefined,
+                courseDuration: courseDuration.trim() || undefined,
             };
             await createFeedback(request);
             toast.success('Đã gửi đánh giá thành công!');
@@ -111,7 +105,7 @@ const CreateFeedbackModal: React.FC<CreateFeedbackModalProps> = ({
                 {/* Header */}
                 <div style={{ textAlign: 'center', marginBottom: '24px' }}>
                     <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1a2238', margin: '0 0 4px 0' }}>
-                        {feedbackType === 'early_termination' ? 'Đánh giá khóa học' : 'Đánh giá buổi học'}
+                        Đánh giá khóa học
                     </h2>
                     {tutorName && (
                         <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>
@@ -135,47 +129,45 @@ const CreateFeedbackModal: React.FC<CreateFeedbackModalProps> = ({
                     )}
                 </div>
 
-                {/* Review Fields (Early Termination) */}
-                {feedbackType === 'early_termination' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px' }}>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#1a2238', marginBottom: '6px' }}>
-                                Mục tiêu ban đầu (không bắt buộc)
-                            </label>
-                            <Input
-                                value={initialGoal}
-                                onChange={(e) => setInitialGoal(e.target.value)}
-                                placeholder="Ví dụ: Cải thiện giao tiếp tiếng Anh..."
-                                maxLength={200}
-                                style={{ borderRadius: '8px' }}
-                            />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#1a2238', marginBottom: '6px' }}>
-                                Kết quả thực tế đạt được (không bắt buộc)
-                            </label>
-                            <Input
-                                value={actualResult}
-                                onChange={(e) => setActualResult(e.target.value)}
-                                placeholder="Ví dụ: Đã có thể phản xạ nhanh hơn..."
-                                maxLength={200}
-                                style={{ borderRadius: '8px' }}
-                            />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#1a2238', marginBottom: '6px' }}>
-                                Thời gian đã học (không bắt buộc)
-                            </label>
-                            <Input
-                                value={courseDuration}
-                                onChange={(e) => setCourseDuration(e.target.value)}
-                                placeholder="Ví dụ: 2 tháng, 10 buổi..."
-                                maxLength={100}
-                                style={{ borderRadius: '8px' }}
-                            />
-                        </div>
+                {/* Success Diary — mục tiêu / kết quả / thời lượng của cả khóa */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px' }}>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#1a2238', marginBottom: '6px' }}>
+                            Mục tiêu ban đầu (không bắt buộc)
+                        </label>
+                        <Input
+                            value={initialGoal}
+                            onChange={(e) => setInitialGoal(e.target.value)}
+                            placeholder="Ví dụ: Cải thiện giao tiếp tiếng Anh..."
+                            maxLength={200}
+                            style={{ borderRadius: '8px' }}
+                        />
                     </div>
-                )}
+                    <div>
+                        <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#1a2238', marginBottom: '6px' }}>
+                            Kết quả thực tế đạt được (không bắt buộc)
+                        </label>
+                        <Input
+                            value={actualResult}
+                            onChange={(e) => setActualResult(e.target.value)}
+                            placeholder="Ví dụ: Đã có thể phản xạ nhanh hơn..."
+                            maxLength={200}
+                            style={{ borderRadius: '8px' }}
+                        />
+                    </div>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#1a2238', marginBottom: '6px' }}>
+                            Thời gian đã học (không bắt buộc)
+                        </label>
+                        <Input
+                            value={courseDuration}
+                            onChange={(e) => setCourseDuration(e.target.value)}
+                            placeholder="Ví dụ: 2 tháng, 10 buổi..."
+                            maxLength={100}
+                            style={{ borderRadius: '8px' }}
+                        />
+                    </div>
+                </div>
 
                 {/* Comment */}
                 <div style={{ marginBottom: '20px' }}>

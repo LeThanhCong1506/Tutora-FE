@@ -286,9 +286,27 @@ const ParentStudent = () => {
         <div className={styles.content}>
           {/* ── Quick Stats ── */}
           <div className={styles.quickStats}>
-            <StatCard icon={<PeopleIcon />} value={activeCount} label="Số con" badgeVariant="green" />
-            <StatCard icon={<SessionsStatIcon />} value="—" label="Tổng buổi học" badgeVariant="blue" />
-            <StatCard icon={<ChartIcon />} value="—" label="Tiến độ TB" badgeVariant="blue" />
+            <StatCard
+              icon={<PeopleIcon />}
+              value={activeCount}
+              label="Số con"
+              badgeVariant="green"
+              infoTooltip="Số học sinh (con) đang được liên kết trong tài khoản của bạn."
+            />
+            <StatCard
+              icon={<SessionsStatIcon />}
+              value="—"
+              label="Tổng buổi học"
+              badgeVariant="blue"
+              infoTooltip="Tổng số buổi học của tất cả các con."
+            />
+            <StatCard
+              icon={<ChartIcon />}
+              value="—"
+              label="Tiến độ TB"
+              badgeVariant="blue"
+              infoTooltip="Mức độ tiến bộ trung bình của các con trong quá trình học."
+            />
           </div>
 
           {students.length === 0 ? (
