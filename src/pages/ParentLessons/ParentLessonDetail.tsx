@@ -642,6 +642,11 @@ const ParentLessonDetail: React.FC = () => {
             <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(26,34,56,0.06)' }}>
               <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Kết quả xử lý</div>
               <div style={{ fontSize: '14px', color: '#1a2238' }}>{dispute.resolutionNote || 'Không có ghi chú.'}</div>
+              {typeof dispute.refundPercentage === 'number' && (
+                <div style={{ fontSize: '14px', color: '#1a2238', marginTop: '6px' }}>
+                  Tỷ lệ hoàn tiền: {dispute.refundPercentage}%
+                </div>
+              )}
             </div>
           )}
           {dispute.status !== 'resolved' && (

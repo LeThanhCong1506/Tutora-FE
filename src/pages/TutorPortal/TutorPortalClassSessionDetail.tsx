@@ -628,11 +628,16 @@ const TutorPortalClassSessionDetail = () => {
                       </div>
 
                       {dispute.status === 'resolved' ? (
-                        <div className={styles.inlineEmpty}>
-                          <h3>Kết quả xử lý</h3>
-                          <p>{dispute.resolutionNote || 'Không có ghi chú.'}</p>
+                        <div className={styles.reportGrid}>
+                          <div className={`${styles.reportField} ${styles.reportFieldWide}`}>
+                            <span>Kết quả xử lý</span>
+                            <p>{dispute.resolutionNote || 'Không có ghi chú.'}</p>
+                          </div>
                           {typeof dispute.refundPercentage === 'number' && (
-                            <p>Tỷ lệ hoàn tiền: {dispute.refundPercentage}%</p>
+                            <div className={styles.reportField}>
+                              <span>Tỷ lệ hoàn tiền</span>
+                              <p>{dispute.refundPercentage}%</p>
+                            </div>
                           )}
                         </div>
                       ) : (
