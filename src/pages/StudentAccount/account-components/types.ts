@@ -19,6 +19,7 @@ export interface EditForm {
     birthdate: string;
     address: string;
     gender: string;
+    email: string;
 }
 
 export interface PasswordForm {

@@ -67,8 +67,23 @@ const PersonalInfoSection: React.FC<Props> = ({
 
             <div style={fieldGroup}>
                 <label style={fieldLabel}>Email</label>
-                <p style={{ ...fieldValue, color: "#525252" }}>{profile?.email || "—"}</p>
-                {editing && <span style={readOnlyHint}>Không thể thay đổi</span>}
+                {editing ? (
+                    <>
+                        <input
+                            style={{ ...fieldInput, ...(errors.email ? { borderColor: "#dc2626" } : {}) }}
+                            type="email"
+                            value={form.email}
+                            onChange={e => updateField("email", e.target.value)}
+                            maxLength={100}
+                            placeholder="Nhập email"
+                        />
+                        {errors.email && <span style={errorTextStyle}>{errors.email}</span>}
+                    </>
+                ) : (
+                    <p style={{ ...fieldValue, color: profile?.email ? "#1a2238" : "#9ca3af" }}>
+                        {profile?.email || "Chưa cập nhật"}
+                    </p>
+                )}
             </div>
 
             <div style={fieldGroup}>
