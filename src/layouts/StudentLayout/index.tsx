@@ -33,6 +33,7 @@ const NOTIFICATION_TYPES_BY_PATH: Record<string, string[]> = {
     'feedback_request',
     'feedback_reply',
     'feedback_moderated',
+    'booking_timeout',
   ],
   '/student-portal/calendar': [
     'lesson_reminder',
@@ -41,8 +42,9 @@ const NOTIFICATION_TYPES_BY_PATH: Record<string, string[]> = {
     'lesson_no_show',
     'lesson_schedule_change',
     'lesson_report',
+    'lesson_confirm_deadline',
   ],
-  '/student-portal/wallet': ['withdrawal_request'],
+  '/student-portal/wallet': ['withdrawal_request', 'payment_success', 'payment_refund_success'],
   '/student-portal/disputes': ['dispute_message'],
 };
 
