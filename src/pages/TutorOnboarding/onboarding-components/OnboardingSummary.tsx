@@ -2,7 +2,6 @@ import React, { useMemo, useState } from 'react';
 import styles from '../styles.module.css';
 import {
   DAY_COLUMNS,
-  GRADE_LEVELS,
   formatHourMinute,
   formatPrice,
   formatDuration,
@@ -10,6 +9,7 @@ import {
   parseTime,
 } from './constants';
 import HourSlotGrid from './HourSlotGrid';
+import type { GradeOption } from './hooks/useLookups';
 import type { FixedCombo, SubjectRecord, TutorAvailabilitySlot } from './types';
 
 // Convert (giờ thập phân, vd 1.5) → "Hh Mm" cho hiển thị end-time.
@@ -24,6 +24,7 @@ interface OnboardingSummaryProps {
   subjectRecords: SubjectRecord[];
   availability: TutorAvailabilitySlot[];
   combos: FixedCombo[];
+  gradeLevels: GradeOption[];
   onBack: () => void;
   onFinish: () => void;
 }
@@ -31,8 +32,6 @@ interface OnboardingSummaryProps {
 type View = 'schedule' | 'subjects' | 'combos';
 
 const dayLabel = (dow: number) => DAY_COLUMNS.find((c) => c.dayOfWeek === dow)?.full ?? `Ngày ${dow}`;
-const gradeLabel = (g: string) => GRADE_LEVELS.find((x) => x.value === g)?.label ?? g;
-const gradeLabels = (grades: string[]) => grades.map(gradeLabel);
 const formatHourAmount = (hours: number) => (Number.isInteger(hours) ? `${hours}` : hours.toFixed(1).replace('.', ','));
 
 // Palette để phân biệt gói trên lưới (rotate theo index).
@@ -80,10 +79,14 @@ const OnboardingSummary: React.FC<OnboardingSummaryProps> = ({
   subjectRecords,
   availability,
   combos,
+  gradeLevels,
   onBack,
   onFinish,
 }) => {
   const [view, setView] = useState<View>(() => (combos.length > 0 ? 'schedule' : 'subjects'));
+
+  const gradeLabel = (g: string) => gradeLevels.find((x) => x.value === g)?.label ?? g;
+  const gradeLabels = (grades: string[]) => grades.map(gradeLabel);
 
   // ── Subject stats ──
   const uniqueSubjects = new Set(subjectRecords.map((r) => r.subjectId)).size;

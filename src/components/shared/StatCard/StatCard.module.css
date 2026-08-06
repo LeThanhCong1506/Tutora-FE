@@ -149,6 +149,12 @@
     white-space: nowrap;
 }
 
+.statLabelRow {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
 .statLabel {
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: 11px;
@@ -157,6 +163,12 @@
     color: rgba(62, 47, 40, 0.6);
     letter-spacing: 0.26px;
     text-transform: uppercase;
+}
+
+.infoIcon {
+    color: rgba(62, 47, 40, 0.4);
+    font-size: 12px;
+    cursor: help;
 }
 
 .statSubLabel {

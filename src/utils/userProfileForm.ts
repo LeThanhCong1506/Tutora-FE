@@ -8,11 +8,15 @@ export interface UserProfileFormValues {
   birthdate: string;
   address: string;
   gender: string;
+  email?: string;
 }
 
 export type UserProfileFieldErrors = Partial<Record<keyof UserProfileFormValues, string>>;
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+// Cùng mức kiểm tra format với [EmailAddress] DataAnnotation ở BE — email là optional,
+// chỉ validate format khi người dùng có nhập.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Cắt birthdate về dạng yyyy-MM-dd để hợp với input[type=date] (phòng khi BE trả ISO datetime). */
 export function toDateInputValue(raw: string | null | undefined): string {
@@ -42,6 +46,9 @@ export function validateUserProfileForm(form: UserProfileFormValues): UserProfil
 
   if (!form.gender) errors.gender = 'Vui lòng chọn giới tính.';
 
+  const email = form.email?.trim();
+  if (email && !EMAIL_RE.test(email)) errors.email = 'Email không đúng định dạng.';
+
   return errors;
 }
 
@@ -50,6 +57,7 @@ const FIELD_KEYS: Record<string, keyof UserProfileFormValues> = {
   birthdate: 'birthdate',
   address: 'address',
   gender: 'gender',
+  email: 'email',
 };
 
 const FIELD_VI_MESSAGE: Record<keyof UserProfileFormValues, string> = {
@@ -57,6 +65,7 @@ const FIELD_VI_MESSAGE: Record<keyof UserProfileFormValues, string> = {
   birthdate: 'Ngày sinh không hợp lệ (định dạng yyyy-MM-dd).',
   address: 'Địa chỉ không hợp lệ.',
   gender: 'Giới tính không hợp lệ.',
+  email: 'Email không đúng định dạng hoặc đã được sử dụng.',
 };
 
 /**

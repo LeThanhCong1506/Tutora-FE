@@ -39,6 +39,7 @@ export interface IUpdateUserProfile {
     birthdate: string;
     address: string;
     gender: string;
+    email?: string;
     avatarurl?: string;
 }
 

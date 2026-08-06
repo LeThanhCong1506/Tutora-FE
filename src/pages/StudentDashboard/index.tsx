@@ -202,6 +202,7 @@ const StudentDashboard = () => {
             label="Buổi sắp tới"
             subLabel="Trong 14 ngày tới"
             variant="default"
+            infoTooltip="Số buổi học sắp diễn ra trong 14 ngày tới."
             onClick={() => navigate('/student-portal/calendar')}
           />
           <StatCard
@@ -210,6 +211,7 @@ const StudentDashboard = () => {
             label="Chờ xác nhận"
             subLabel={pendingCount > 0 ? 'Cần bạn kiểm tra' : 'Không có yêu cầu mới'}
             variant="default"
+            infoTooltip="Số buổi học và lịch đặt đang chờ xử lý: chờ thanh toán, đã đặt cọc hoặc chờ xác nhận."
             onClick={() => navigate('/student-portal/calendar')}
           />
           <StatCard
@@ -218,6 +220,7 @@ const StudentDashboard = () => {
             label="Hoàn thành"
             subLabel="Tổng số buổi học"
             variant="default"
+            infoTooltip="Tổng số buổi học đã hoàn thành."
             onClick={() => navigate('/student-portal/calendar')}
           />
         </div>
