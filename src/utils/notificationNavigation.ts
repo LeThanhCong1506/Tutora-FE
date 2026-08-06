@@ -26,6 +26,10 @@ const NOTIFICATION_TYPE = {
     PaymentRemainingRequired: 'payment_remaining_required',
     WithdrawalRequest: 'withdrawal_request',
     BookingPaymentDueSoon: 'booking_payment_due_soon',
+    FeedbackRequest: 'feedback_request',
+    FeedbackReply: 'feedback_reply',
+    FeedbackReceived: 'feedback_received',
+    FeedbackModerated: 'feedback_moderated',
     Warning: 'warning',
     Message: 'message',
 } as const;
@@ -84,6 +88,19 @@ export function getNotificationTargetPath(notification: NotificationDTO): string
         // route `bookings/:id`, nên không tạo deep-link dẫn tới trang 404.
         if (prefix === '/tutor-portal') return `${prefix}/bookings`;
         return `${prefix}/booking/${refId}`;
+    }
+    // Đánh giá khóa học nằm trên trang chi tiết booking, cho cả parent lẫn student portal.
+    // Gia sư không nhận hai loại này nên không cần nhánh riêng cho tutor-portal.
+    if ((type === NOTIFICATION_TYPE.FeedbackRequest
+        || type === NOTIFICATION_TYPE.FeedbackReply) && refId) {
+        return `${prefix}/booking/${refId}`;
+    }
+    // Đánh giá mới / bị ẩn / hiện lại: gia sư về danh sách booking vì tutor portal không có
+    // route `booking/:id`; phụ huynh và học sinh vào thẳng chi tiết booking để đọc lý do.
+    if (type === NOTIFICATION_TYPE.FeedbackReceived
+        || type === NOTIFICATION_TYPE.FeedbackModerated) {
+        if (prefix === '/tutor-portal') return `${prefix}/bookings`;
+        return refId ? `${prefix}/booking/${refId}` : lessonListPath;
     }
     if (type === NOTIFICATION_TYPE.Message && refId) {
         return `${prefix}/messages`;

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ElementType } from 'react';
+import { useCallback, useEffect, useState, type ElementType } from 'react';
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { AxiosError } from 'axios';
 import { Input, Modal, Spin, message as antMessage } from 'antd';
@@ -18,6 +18,7 @@ import {
   GraduationCap,
   MessageSquare,
   ReceiptText,
+  Star,
   Tag,
   Timer,
   UserRound,
@@ -35,7 +36,7 @@ import {
   type BookingResponseDTO,
 } from '../../../services/booking.service';
 import { getBookingResponseDeadlineState } from '../../../utils/bookingDeadline';
-import { canLeaveBookingFeedback } from '../../../services/feedback.service';
+import { canLeaveBookingFeedback, getBookingFeedback, type FeedbackDto } from '../../../services/feedback.service';
 import { getPaymentBadge } from '../../../utils/paymentBadge';
 import CreateFeedbackModal from '../../ParentLessons/components/CreateFeedbackModal';
 import styles from './styles.module.css';
@@ -265,11 +266,28 @@ const BookingDetailPage = () => {
   const [booking, setBooking] = useState<BookingResponseDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [canReview, setCanReview] = useState(false);
+  const [feedback, setFeedback] = useState<FeedbackDto | null>(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
   const currentTime = useCurrentTime();
+
+  // Chỉ khóa học đã hoàn thành mới có đánh giá — khớp với điều kiện ở BE.
+  const refreshFeedbackState = useCallback(async (status: string) => {
+    if (status !== 'completed') {
+      setCanReview(false);
+      setFeedback(null);
+      return;
+    }
+
+    const [eligibility, existing] = await Promise.all([
+      canLeaveBookingFeedback(bookingId),
+      getBookingFeedback(bookingId),
+    ]);
+    setCanReview(eligibility.content);
+    setFeedback(existing.content);
+  }, [bookingId]);
 
   useEffect(() => {
     if (!isValidBookingId) return;
@@ -279,12 +297,7 @@ const BookingDetailPage = () => {
         setLoading(true);
         const response = await getBookingById(bookingId);
         setBooking(response.content);
-
-        // Chỉ khóa học đã hoàn thành mới được đánh giá — khớp với điều kiện ở BE.
-        if (response.content.status === 'completed') {
-          const feedbackResponse = await canLeaveBookingFeedback(bookingId);
-          setCanReview(feedbackResponse.content);
-        }
+        await refreshFeedbackState(response.content.status);
       } catch {
         antMessage.error('Không thể tải chi tiết đặt lịch.');
       } finally {
@@ -293,7 +306,7 @@ const BookingDetailPage = () => {
     };
 
     void fetchBooking();
-  }, [bookingId, isValidBookingId]);
+  }, [bookingId, isValidBookingId, refreshFeedbackState]);
 
   if (!isValidBookingId) return <Navigate to="/404" replace />;
 
@@ -602,6 +615,109 @@ const BookingDetailPage = () => {
                 )}
               </div>
             </section>
+
+            {booking.status === 'completed' && (canReview || feedback) && (
+              <section className={styles.card}>
+                <div className={styles.sectionHeader}>
+                  <div>
+                    <span className={styles.sectionIcon}>
+                      <Star size={18} />
+                    </span>
+                    <div>
+                      <p>Đánh giá</p>
+                      <h2>{feedback ? 'Đánh giá của bạn' : 'Đánh giá khóa học'}</h2>
+                    </div>
+                  </div>
+                  {feedback?.canEdit && (
+                    <button
+                      className={styles.reviewEditBtn}
+                      type="button"
+                      onClick={() => setShowReviewModal(true)}
+                    >
+                      Sửa đánh giá
+                    </button>
+                  )}
+                </div>
+
+                {feedback ? (
+                  <>
+                    <div className={styles.reviewScore}>
+                      <span className={styles.reviewStars} aria-hidden="true">
+                        {'★'.repeat(feedback.rating)}
+                        <span style={{ color: '#e0dbd2' }}>{'★'.repeat(5 - feedback.rating)}</span>
+                      </span>
+                      <strong>{feedback.rating}/5</strong>
+                      <time dateTime={feedback.createdAt}>
+                        Gửi ngày {formatDateOnly(feedback.createdAt)}
+                      </time>
+                    </div>
+
+                    {feedback.isVisible === false && (
+                      <div className={styles.reviewHidden}>
+                        <strong>Đánh giá này đang bị ẩn</strong>
+                        <p>
+                          {feedback.hiddenReason
+                            ? `Lý do: ${feedback.hiddenReason}`
+                            : 'Quản trị viên đã ẩn đánh giá này khỏi hồ sơ gia sư.'}
+                        </p>
+                      </div>
+                    )}
+
+                    {feedback.comment && <p className={styles.reviewComment}>{feedback.comment}</p>}
+
+                    {(feedback.initialGoal || feedback.actualResult || feedback.courseDuration) && (
+                      <dl className={styles.reviewDiary}>
+                        {feedback.initialGoal && (
+                          <div>
+                            <dt>Mục tiêu ban đầu</dt>
+                            <dd>{feedback.initialGoal}</dd>
+                          </div>
+                        )}
+                        {feedback.actualResult && (
+                          <div>
+                            <dt>Kết quả đạt được</dt>
+                            <dd>{feedback.actualResult}</dd>
+                          </div>
+                        )}
+                        {feedback.courseDuration && (
+                          <div>
+                            <dt>Thời gian đã học</dt>
+                            <dd>{feedback.courseDuration}</dd>
+                          </div>
+                        )}
+                      </dl>
+                    )}
+
+                    {feedback.reply && (
+                      <div className={styles.reviewReply}>
+                        <div className={styles.reviewReplyHead}>
+                          <MessageSquare size={14} />
+                          <span>Phản hồi từ gia sư</span>
+                          {feedback.repliedAt && (
+                            <time dateTime={feedback.repliedAt}>{formatDateOnly(feedback.repliedAt)}</time>
+                          )}
+                        </div>
+                        <p>{feedback.reply}</p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className={styles.reviewEmpty}>
+                    <p>
+                      Khóa học đã hoàn thành. Chia sẻ trải nghiệm của bạn để giúp phụ huynh khác
+                      chọn được gia sư phù hợp.
+                    </p>
+                    <button
+                      className={styles.primaryBtn}
+                      type="button"
+                      onClick={() => setShowReviewModal(true)}
+                    >
+                      <Star size={16} /> Viết đánh giá
+                    </button>
+                  </div>
+                )}
+              </section>
+            )}
           </div>
 
           <aside className={styles.sideColumn}>
@@ -826,11 +942,13 @@ const BookingDetailPage = () => {
         onClose={() => setShowReviewModal(false)}
         onSuccess={() => {
           setShowReviewModal(false);
-          setCanReview(false);
+          // Nạp lại để thẻ hiển thị đúng nội dung vừa gửi/sửa thay vì chỉ ẩn nút đi.
+          void refreshFeedbackState(booking.status);
         }}
         bookingId={booking.bookingId}
         tutorName={booking.tutor?.fullName}
         subjectName={booking.subject?.subjectName}
+        existingFeedback={feedback}
       />
 
       <Modal
@@ -858,10 +976,7 @@ const BookingDetailPage = () => {
             setShowCancelModal(false);
             const response = await getBookingById(booking.bookingId);
             setBooking(response.content);
-            if (response.content.status === 'completed') {
-              const feedbackResponse = await canLeaveBookingFeedback(booking.bookingId);
-              setCanReview(feedbackResponse.content);
-            }
+            await refreshFeedbackState(response.content.status);
           } catch (error) {
             const apiError = error as AxiosError<ApiErrorBody>;
             antMessage.error(

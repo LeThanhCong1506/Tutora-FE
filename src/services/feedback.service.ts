@@ -26,6 +26,9 @@ export interface CreateFeedbackRequest {
   courseDuration?: string;
 }
 
+/** Sửa đánh giá đã gửi — booking không đổi được nên không có bookingId. */
+export type UpdateFeedbackRequest = Omit<CreateFeedbackRequest, 'bookingId'>;
+
 export interface ReplyFeedbackRequest {
   replyComment: string;
 }
@@ -50,6 +53,13 @@ export interface FeedbackDto {
   courseDuration?: string;
   ratingDisplay?: string;
   timeSinceDisplay?: string;
+  /** Tên gia sư nhận đánh giá — chỉ có ở danh sách kiểm duyệt CMS. */
+  tutorName?: string;
+  /** Tác giả còn sửa được không: chỉ true khi gia sư chưa phản hồi. */
+  canEdit?: boolean;
+  /** Lý do quản trị viên ẩn đánh giá — chỉ có giá trị khi `isVisible` là false. */
+  hiddenReason?: string;
+  hiddenAt?: string;
 }
 
 export interface FeedbackStatsDto {
@@ -85,6 +95,41 @@ export const createFeedback = async (
     return response.data;
   } catch (error: any) {
     console.error('Error creating feedback:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Sửa đánh giá đã gửi. BE từ chối nếu gia sư đã phản hồi.
+ */
+export const updateFeedback = async (
+  feedbackId: number,
+  request: UpdateFeedbackRequest
+): Promise<ApiResponse<FeedbackDto>> => {
+  try {
+    const response = await api.put(`/feedbacks/${feedbackId}`, request, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error('Error updating feedback:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Đánh giá của một booking, kèm phản hồi gia sư. `content` null nếu chưa đánh giá.
+ */
+export const getBookingFeedback = async (
+  bookingId: number
+): Promise<ApiResponse<FeedbackDto | null>> => {
+  try {
+    const response = await api.get(`/feedbacks/bookings/${bookingId}`, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error('Error fetching booking feedback:', error.message);
     throw error;
   }
 };
