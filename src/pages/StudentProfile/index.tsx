@@ -288,8 +288,13 @@ const StudentProfile = () => {
                 onChange={(e) => set('fullname', e.target.value)}
                 placeholder="Nguyễn Văn A"
                 maxLength={100}
+                disabled={identityVerified}
               />
-              {errors.fullname && <span className={styles.err}>{errors.fullname}</span>}
+              {identityVerified ? (
+                <span className={styles.verifiedHint}>Đã xác minh qua CCCD, không thể chỉnh sửa.</span>
+              ) : (
+                errors.fullname && <span className={styles.err}>{errors.fullname}</span>
+              )}
             </div>
 
             <div className={styles.row}>

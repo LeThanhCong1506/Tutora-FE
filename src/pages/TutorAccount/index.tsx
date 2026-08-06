@@ -25,6 +25,7 @@ interface UserProfileData {
     role?: string;
     createdat?: string;
     lastloginat?: string;
+    isidentityverified?: boolean;
 }
 
 interface EditForm {
@@ -141,6 +142,9 @@ const TutorAccount = () => {
         setForm(f => ({ ...f, [field]: value }));
         setErrors(e => (e[field] ? { ...e, [field]: undefined } : e));
     };
+
+    // BE chặn và bỏ qua thay đổi họ tên/ngày sinh khi CCCD đã xác thực (UserService.UpdateUserAsync) — khóa luôn ở FE.
+    const identityLocked = profile?.isidentityverified === true;
 
     const handleSave = async () => {
         if (!profile) return;
@@ -495,13 +499,22 @@ const TutorAccount = () => {
                         {editing ? (
                             <>
                                 <input
-                                    style={{ ...fieldInput, ...(errors.fullname ? { borderColor: '#dc2626' } : {}) }}
+                                    style={{
+                                        ...fieldInput,
+                                        ...(errors.fullname ? { borderColor: '#dc2626' } : {}),
+                                        ...(identityLocked ? disabledStyle : {}),
+                                    }}
                                     value={form.fullname}
                                     onChange={e => updateField('fullname', e.target.value)}
                                     maxLength={100}
                                     placeholder="Nhập họ và tên"
+                                    disabled={identityLocked}
                                 />
-                                {errors.fullname && <span style={errorTextStyle}>{errors.fullname}</span>}
+                                {identityLocked ? (
+                                    <span style={readOnlyHint}>Đã xác minh qua CCCD, không thể chỉnh sửa.</span>
+                                ) : (
+                                    errors.fullname && <span style={errorTextStyle}>{errors.fullname}</span>
+                                )}
                             </>
                         ) : (
                             <p style={fieldValue}>{profile?.fullname || '—'}</p>
@@ -513,13 +526,22 @@ const TutorAccount = () => {
                         {editing ? (
                             <>
                                 <input
-                                    style={{ ...fieldInput, ...(errors.birthdate ? { borderColor: '#dc2626' } : {}) }}
+                                    style={{
+                                        ...fieldInput,
+                                        ...(errors.birthdate ? { borderColor: '#dc2626' } : {}),
+                                        ...(identityLocked ? disabledStyle : {}),
+                                    }}
                                     type="date"
                                     value={form.birthdate}
                                     max={new Date().toISOString().slice(0, 10)}
                                     onChange={e => updateField('birthdate', e.target.value)}
+                                    disabled={identityLocked}
                                 />
-                                {errors.birthdate && <span style={errorTextStyle}>{errors.birthdate}</span>}
+                                {identityLocked ? (
+                                    <span style={readOnlyHint}>Đã xác minh qua CCCD, không thể chỉnh sửa.</span>
+                                ) : (
+                                    errors.birthdate && <span style={errorTextStyle}>{errors.birthdate}</span>
+                                )}
                             </>
                         ) : (
                             <p style={fieldValue}>{formatDate(profile?.birthdate)}</p>
@@ -800,12 +822,6 @@ const fieldInput: React.CSSProperties = {
     boxSizing: 'border-box' as const,
 };
 
-const readOnlyHint: React.CSSProperties = {
-    fontSize: 11,
-    color: '#9ca3af',
-    fontStyle: 'italic',
-};
-
 const actionRow: React.CSSProperties = {
     display: 'flex',
     justifyContent: 'flex-end',
@@ -825,6 +841,12 @@ const cancelBtn: React.CSSProperties = {
     color: '#737373',
     fontWeight: 500,
     cursor: 'pointer',
+};
+
+const readOnlyHint: React.CSSProperties = {
+    fontSize: 11,
+    color: '#9ca3af',
+    fontStyle: 'italic',
 };
 
 const saveBtn: React.CSSProperties = {
