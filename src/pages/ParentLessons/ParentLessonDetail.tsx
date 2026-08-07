@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { isZaloMiniApp } from '../../services/zalo-env';
 
 const inMiniApp = isZaloMiniApp();
-import { ArrowLeft, CalendarClock, CheckCircle2, Clock3, XCircle, Paperclip, Download } from 'lucide-react';
+import { ArrowLeft, CalendarClock, CheckCircle2, Clock3, XCircle } from 'lucide-react';
 import { getParentLessonDetail, type ParentLessonDetailDto } from '../../services/parent-lesson.service';
 import {
   getClassSessionDispute,
@@ -13,6 +13,7 @@ import {
   type DisputeMessage,
   getParentScheduleChange,
   respondParentScheduleChange,
+  type ReportAttachment,
   type ScheduleChangeAuditDto,
   type SessionScheduleChangeResponse,
 } from '../../services/classSession.service';
@@ -26,25 +27,30 @@ import CreateDisputeForm from './components/CreateDisputeForm';
 import ReportNoShowModal from './components/ReportNoShowModal';
 import NoShowActionModal from './components/NoShowActionModal';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
-import { ClassSessionRecording, PageContainer, SectionCard, StatusBadge } from '../../components/shared';
+import {
+  AttachmentGallery,
+  buildSessionTimeline,
+  ClassSessionRecording,
+  PageContainer,
+  SectionCard,
+  SessionTimeline,
+  StatusBadge,
+} from '../../components/shared';
 import { getDisputeStatusMeta, getDisputeTypeLabel } from '../../components/disputes';
 import { formatVNDNumber } from '../../utils/formatters';
 import { formatLocalDate, formatLocalDateTime, formatLocalTime } from '../../utils/datetime';
 import styles from './lesson-detail.module.css';
 
-const getFileNameFromUrl = (url: string): string => {
-  try {
-    const path = new URL(url).pathname;
-    return decodeURIComponent(path.substring(path.lastIndexOf('/') + 1)) || 'Tệp đính kèm';
-  } catch {
-    return 'Tệp đính kèm';
-  }
-};
-
 const TERMINAL_BOOKING_STATUSES = ['completed', 'cancelled', 'cancelled_noshow'];
 
 const getApiErrorMessage = (error: unknown): string | undefined =>
   (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+
+const getPresenceLabel = (present?: boolean | null) =>
+  present === true ? 'Có mặt' : present === false ? 'Vắng mặt' : 'Chưa ghi nhận';
+
+const getPresenceClass = (present?: boolean | null) =>
+  present === true ? styles.present : present === false ? styles.absent : '';
 
 const SCHEDULE_CHANGE_STATUS_LABELS: Record<string, string> = {
   applied: 'Đã áp dụng',
@@ -59,11 +65,7 @@ const formatTime = formatLocalTime;
 const formatDate = formatLocalDate;
 const formatDateTime = formatLocalDateTime;
 
-const InfoItem: React.FC<{ label: string; value: React.ReactNode; accent?: boolean }> = ({
-  label,
-  value,
-  accent,
-}) => (
+const InfoItem: React.FC<{ label: string; value: React.ReactNode; accent?: boolean }> = ({ label, value, accent }) => (
   <div className={styles.infoItem}>
     <span className={styles.infoLabel}>{label}</span>
     <span className={`${styles.infoValue} ${accent ? styles.infoAccent : ''}`}>{value}</span>
@@ -74,18 +76,6 @@ const ReportBlock: React.FC<{ label: string; children: React.ReactNode }> = ({ l
   <div className={styles.reportBlock}>
     <p className={styles.reportLabel}>{label}</p>
     {children}
-  </div>
-);
-
-const AttachmentList: React.FC<{ urls: string[] }> = ({ urls }) => (
-  <div className={styles.fileList}>
-    {urls.map((url, index) => (
-      <a key={`${url}-${index}`} className={styles.fileItem} href={url} target="_blank" rel="noopener noreferrer">
-        <Paperclip size={14} className={styles.fileIcon} aria-hidden="true" />
-        <span className={styles.fileName}>{getFileNameFromUrl(url)}</span>
-        <Download size={14} className={styles.fileIcon} aria-hidden="true" />
-      </a>
-    ))}
   </div>
 );
 
@@ -201,14 +191,18 @@ const ParentLessonDetail: React.FC = () => {
     if (!dispute) return;
     const unsubscribe = signalRService.subscribeToDisputeMessages((message: DisputeMessage) => {
       if (message.disputeId !== dispute.disputeId) return;
-      setThread((prev) => (prev.some((m) => m.disputeMessageId === message.disputeMessageId) ? prev : [...prev, message]));
+      setThread((prev) =>
+        prev.some((m) => m.disputeMessageId === message.disputeMessageId) ? prev : [...prev, message],
+      );
       toast.info(`Admin: ${message.message}`);
     });
     return unsubscribe;
   }, [dispute]);
 
   // Tutor check-in → notification "Buổi học đã bắt đầu" → tự refetch để render banner Join
-  useLessonStartedListener(() => { if (id) fetchLesson(); });
+  useLessonStartedListener(() => {
+    if (id) fetchLesson();
+  });
 
   const handleScheduleChangeDecision = async (confirmed: boolean) => {
     if (!id) return;
@@ -274,20 +268,33 @@ const ParentLessonDetail: React.FC = () => {
   const durationMinutes = Math.max(0, Math.round((endTime.getTime() - startTime.getTime()) / 60000));
   const reportContent = lesson.report?.contentCovered || lesson.lessonContent;
   const reportHomework = lesson.report?.homeworkAssigned || lesson.homework;
-  const reportRating = typeof lesson.report?.studentPerformanceRating === 'number'
-    ? Math.max(0, Math.min(5, Math.round(lesson.report.studentPerformanceRating)))
-    : null;
+  const reportRating =
+    typeof lesson.report?.studentPerformanceRating === 'number'
+      ? Math.max(0, Math.min(5, Math.round(lesson.report.studentPerformanceRating)))
+      : null;
   const hasTutorReport = Boolean(lesson.report || reportContent || reportHomework || lesson.tutorNotes);
-  const canCreateDispute = !TERMINAL_BOOKING_STATUSES.includes(
-    String(lesson.bookingStatus || '').toLowerCase(),
-  );
+  // Báo cáo cũ chỉ có mảng URL; báo cáo mới có kèm mô tả gia sư đặt.
+  const reportAttachments: ReportAttachment[] =
+    lesson.report?.attachmentDetails ?? (lesson.report?.attachments ?? []).map((url) => ({ url }));
+  const canCreateDispute = !TERMINAL_BOOKING_STATUSES.includes(String(lesson.bookingStatus || '').toLowerCase());
   const disputeStatus = dispute ? getDisputeStatusMeta(dispute.status) : null;
+
+  const timelineEvents = buildSessionTimeline({
+    scheduledStart: lesson.scheduledStart,
+    checkInTime: lesson.checkInTime,
+    checkOutTime: lesson.checkOutTime,
+    confirmDeadline: lesson.status === 'pending_confirmation' ? lesson.confirmDeadline : null,
+    reportCreatedAt: lesson.report?.createdAt,
+    disputeCreatedAt: dispute?.createdAt,
+    disputeTutorRespondedAt: dispute?.tutorRespondedAt,
+    disputeResolvedAt: dispute?.resolvedAt,
+    scheduleChangeAppliedAt: lesson.scheduleChanges?.map((sc) => sc.appliedAt),
+  });
 
   const showConfirmAction = lesson.status === 'pending_confirmation';
   const showNoShowAction = lesson.status === 'scheduled';
   const showNoShowResolution = lesson.status === 'no_show' && dispute?.status === 'confirmed_no_show';
   const showReportTutorAction = lesson.status === 'completed' && !dispute && canCreateDispute;
-  const hasActions = showConfirmAction || showNoShowAction || showNoShowResolution || showReportTutorAction;
 
   return (
     <PageContainer className={pageClassName}>
@@ -301,12 +308,48 @@ const ParentLessonDetail: React.FC = () => {
           <span className={styles.eyebrow}>Buổi #{lesson.lessonId}</span>
           <h1 className={styles.title}>{lesson.subjectName || lesson.subject?.subjectName || 'Chi tiết buổi học'}</h1>
           <p className={styles.headerMeta}>
-            {startTime.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
+            {startTime.toLocaleDateString('vi-VN', {
+              weekday: 'long',
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+            })}
             {' · '}
             {formatTime(lesson.scheduledStart)}–{formatTime(lesson.scheduledEnd)}
+            {' · '}
+            {durationMinutes} phút
           </p>
         </div>
-        <StatusBadge variant={status.variant}>{status.label}</StatusBadge>
+        <div className={styles.headerActions}>
+          <StatusBadge variant={status.variant}>{status.label}</StatusBadge>
+          {showConfirmAction && (
+            <>
+              <Button type="primary" className={styles.primaryAction} onClick={() => setShowConfirmModal(true)}>
+                Xác nhận buổi học
+              </Button>
+              {canCreateDispute && (
+                <Button danger onClick={() => setShowDisputeForm(true)}>
+                  Khiếu nại
+                </Button>
+              )}
+            </>
+          )}
+          {showNoShowAction && (
+            <Button danger onClick={() => setShowNoShowModal(true)}>
+              Báo gia sư vắng mặt
+            </Button>
+          )}
+          {showNoShowResolution && (
+            <Button type="primary" className={styles.primaryAction} onClick={() => setShowNoShowActionModal(true)}>
+              Chọn hành động xử lý
+            </Button>
+          )}
+          {showReportTutorAction && (
+            <Button danger onClick={() => setShowDisputeForm(true)}>
+              Báo cáo gia sư
+            </Button>
+          )}
+        </div>
       </header>
 
       {lesson.confirmDeadline && lesson.status === 'pending_confirmation' && (
@@ -318,62 +361,6 @@ const ParentLessonDetail: React.FC = () => {
           </span>
         </div>
       )}
-
-      {/* Tóm tắt buổi học + hành động chính, đặt ngay đầu trang để không phải cuộn tìm. */}
-      <SectionCard>
-        <div className={styles.summaryCard}>
-          <div className={styles.infoGrid}>
-            <InfoItem label="Gia sư" value={lesson.tutorName || lesson.tutor?.fullName || 'Chưa cập nhật'} />
-            <InfoItem label="Học viên" value={lesson.student?.fullName || 'Chưa cập nhật'} />
-            <InfoItem label="Thời lượng" value={`${durationMinutes} phút`} />
-            <InfoItem label="Hình thức" value={lesson.meetingLink ? 'Học online' : 'Học trực tiếp'} />
-            {lesson.lessonPrice != null && (
-              <InfoItem label="Học phí buổi học" value={`${formatVNDNumber(lesson.lessonPrice)}đ`} accent />
-            )}
-            {lesson.checkInTime && (
-              <InfoItem
-                label="Điểm danh"
-                value={`Vào lúc ${formatTime(lesson.checkInTime)}${lesson.checkOutTime ? ` · Kết thúc ${formatTime(lesson.checkOutTime)}` : ''}`}
-              />
-            )}
-          </div>
-
-          {hasActions && (
-            <div className={styles.actionBar}>
-              {showConfirmAction && (
-                <>
-                  <Button type="primary" className={styles.primaryAction} onClick={() => setShowConfirmModal(true)}>
-                    Xác nhận buổi học
-                  </Button>
-                  {canCreateDispute && (
-                    <Button danger onClick={() => setShowDisputeForm(true)}>
-                      Khiếu nại
-                    </Button>
-                  )}
-                </>
-              )}
-
-              {showNoShowAction && (
-                <Button danger onClick={() => setShowNoShowModal(true)}>
-                  Báo gia sư vắng mặt
-                </Button>
-              )}
-
-              {showNoShowResolution && (
-                <Button type="primary" className={styles.primaryAction} onClick={() => setShowNoShowActionModal(true)}>
-                  Chọn hành động xử lý
-                </Button>
-              )}
-
-              {showReportTutorAction && (
-                <Button danger onClick={() => setShowDisputeForm(true)}>
-                  Báo cáo gia sư
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
-      </SectionCard>
 
       {lesson.status === 'no_show' && dispute?.status !== 'confirmed_no_show' && (
         <div className={`${styles.notice} ${styles.noticeWarning}`}>
@@ -389,8 +376,8 @@ const ParentLessonDetail: React.FC = () => {
         >
           <div className={styles.sectionBody}>
             <p className={styles.sectionLead}>
-              Gia sư và học viên đang muốn học ngoài thời gian mặc định. Phụ huynh chỉ xác nhận tại đây; học viên và
-              gia sư là hai người vào phòng học.
+              Gia sư và học viên đang muốn học ngoài thời gian mặc định. Phụ huynh chỉ xác nhận tại đây; học viên và gia
+              sư là hai người vào phòng học.
             </p>
 
             <div className={styles.infoGrid}>
@@ -414,9 +401,11 @@ const ParentLessonDetail: React.FC = () => {
 
             <div className={styles.confirmPair}>
               <div className={styles.confirmTile}>
-                {scheduleChange.tutorConfirmedAt
-                  ? <CheckCircle2 size={19} color="#059669" />
-                  : <Clock3 size={19} color="#d97706" />}
+                {scheduleChange.tutorConfirmedAt ? (
+                  <CheckCircle2 size={19} color="#059669" />
+                ) : (
+                  <Clock3 size={19} color="#d97706" />
+                )}
                 <div>
                   <div className={styles.confirmTileLabel}>Gia sư</div>
                   <div className={styles.confirmTileValue}>
@@ -425,9 +414,11 @@ const ParentLessonDetail: React.FC = () => {
                 </div>
               </div>
               <div className={styles.confirmTile}>
-                {scheduleChange.learnerConfirmedAt
-                  ? <CheckCircle2 size={19} color="#059669" />
-                  : <Clock3 size={19} color="#d97706" />}
+                {scheduleChange.learnerConfirmedAt ? (
+                  <CheckCircle2 size={19} color="#059669" />
+                ) : (
+                  <Clock3 size={19} color="#d97706" />
+                )}
                 <div>
                   <div className={styles.confirmTileLabel}>Phụ huynh</div>
                   <div className={styles.confirmTileValue}>
@@ -444,8 +435,8 @@ const ParentLessonDetail: React.FC = () => {
             ) : scheduleChange.status === 'approved' && scheduleChange.scheduleConflict ? (
               <div className={`${styles.notice} ${styles.noticeWarning} ${styles.blockGap}`}>
                 <span>
-                  <strong>Đã đủ xác nhận nhưng chưa thể bắt đầu:</strong> {scheduleChange.scheduleConflict.message}
-                  {' '}Hệ thống sẽ tự kiểm tra lại, phụ huynh không cần xác nhận lần nữa.
+                  <strong>Đã đủ xác nhận nhưng chưa thể bắt đầu:</strong> {scheduleChange.scheduleConflict.message} Hệ
+                  thống sẽ tự kiểm tra lại, phụ huynh không cần xác nhận lần nữa.
                 </span>
               </div>
             ) : scheduleChange.status === 'approved' ? (
@@ -481,196 +472,294 @@ const ParentLessonDetail: React.FC = () => {
         </SectionCard>
       )}
 
-      {hasTutorReport && (
-        <SectionCard
-          title="Báo cáo gia sư"
-          headerAction={
-            lesson.report?.createdAt ? (
-              <span className={styles.historyTime}>Gửi lúc {formatDateTime(lesson.report.createdAt)}</span>
-            ) : undefined
-          }
-        >
-          <div className={styles.sectionBody}>
-            <div className={styles.reportGrid}>
-              <ReportBlock label="Nội dung đã dạy">
-                <p className={`${styles.reportText} ${reportContent ? '' : styles.reportMuted}`}>
-                  {reportContent || 'Không có nội dung.'}
-                </p>
-              </ReportBlock>
-              <ReportBlock label="Bài tập về nhà">
-                <p className={`${styles.reportText} ${reportHomework ? '' : styles.reportMuted}`}>
-                  {reportHomework || 'Không giao bài tập.'}
-                </p>
-              </ReportBlock>
-              <ReportBlock label="Ghi chú gia sư">
-                <p className={`${styles.reportText} ${lesson.tutorNotes ? '' : styles.reportMuted}`}>
-                  {lesson.tutorNotes || 'Không có ghi chú.'}
-                </p>
-              </ReportBlock>
-              <ReportBlock label="Mức độ tiếp thu của học viên">
-                {reportRating != null && reportRating > 0 ? (
-                  <span className={styles.rating}>
-                    <span className={styles.ratingStars}>
-                      {'★'.repeat(reportRating)}
-                      <span>{'★'.repeat(5 - reportRating)}</span>
-                    </span>
-                    <span className={styles.ratingValue}>{reportRating}/5</span>
-                  </span>
-                ) : (
-                  <p className={`${styles.reportText} ${styles.reportMuted}`}>Chưa đánh giá.</p>
-                )}
-              </ReportBlock>
-            </div>
-
-            {Array.isArray(lesson.report?.attachments) && lesson.report.attachments.length > 0 && (
-              <div className={styles.blockGap}>
-                <p className={styles.reportLabel}>Tệp đính kèm</p>
-                <AttachmentList urls={lesson.report.attachments} />
+      <div className={styles.contentGrid}>
+        <div className={styles.primaryColumn}>
+          {timelineEvents.length > 0 && (
+            <SectionCard title="Diễn biến buổi học">
+              <div className={styles.sectionBody}>
+                <SessionTimeline events={timelineEvents} />
               </div>
-            )}
-          </div>
-        </SectionCard>
-      )}
+            </SectionCard>
+          )}
 
-      {dispute && (
-        <SectionCard
-          title="Khiếu nại của bạn"
-          headerAction={
-            disputeStatus ? <StatusBadge variant={disputeStatus.variant}>{disputeStatus.label}</StatusBadge> : undefined
-          }
-        >
-          <div className={styles.sectionBody}>
-            <div className={styles.reportGrid}>
-              <ReportBlock label="Loại khiếu nại">
-                <p className={styles.reportText}>{getDisputeTypeLabel(dispute.disputeType)}</p>
-              </ReportBlock>
-              {dispute.createdAt && (
-                <ReportBlock label="Ngày gửi">
-                  <p className={styles.reportText}>{formatDateTime(dispute.createdAt)}</p>
-                </ReportBlock>
-              )}
-            </div>
-
-            <div className={styles.blockGap}>
-              <p className={styles.reportLabel}>Nội dung</p>
-              <p className={styles.reportText}>{dispute.reason || 'Không có mô tả.'}</p>
-            </div>
-
-            {(Array.isArray(dispute.evidence) && dispute.evidence.length > 0) ||
-            (Array.isArray(dispute.additionalEvidence) && dispute.additionalEvidence.length > 0) ? (
-              <div className={styles.blockGap}>
-                <p className={styles.reportLabel}>Bằng chứng</p>
-                <AttachmentList
-                  urls={[
-                    ...(dispute.evidence ?? []),
-                    ...(dispute.additionalEvidence ?? []).map((item) => item.fileUrl).filter((url): url is string => Boolean(url)),
-                  ]}
-                />
-              </div>
-            ) : null}
-
-            {dispute.status === 'resolved' && (
-              <div className={`${styles.notice} ${styles.noticeSuccess} ${styles.blockGap}`}>
-                <span>
-                  <strong>Kết quả xử lý:</strong> {dispute.resolutionNote || 'Không có ghi chú.'}
-                  {typeof dispute.refundPercentage === 'number' && ` · Hoàn ${dispute.refundPercentage}%`}
-                </span>
-              </div>
-            )}
-
-            {dispute.status !== 'resolved' && (
-              <div className={styles.blockGap}>
-                <p className={styles.reportLabel}>Trao đổi riêng với quản trị viên</p>
-                {thread.length > 0 ? (
-                  <div className={styles.thread}>
-                    {thread.map((msg) => (
-                      <div
-                        key={msg.disputeMessageId}
-                        className={`${styles.threadBubble} ${msg.senderRole === 'admin' ? styles.threadAdmin : styles.threadMine}`}
-                      >
-                        <p className={styles.threadSender}>{msg.senderRole === 'admin' ? 'Quản trị viên' : 'Bạn'}</p>
-                        <p className={styles.threadText}>{msg.message}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className={styles.threadEmpty}>Chưa có tin nhắn nào. Gửi câu hỏi cho quản trị viên tại đây.</p>
-                )}
-                <div className={styles.threadForm}>
-                  <Input
-                    value={threadInput}
-                    placeholder="Nhắn cho quản trị viên..."
-                    onChange={(event) => setThreadInput(event.target.value)}
-                    onPressEnter={() => void handleSendThreadMessage()}
-                  />
-                  <Button
-                    loading={sendingThreadMessage}
-                    disabled={threadInput.trim().length === 0}
-                    onClick={() => void handleSendThreadMessage()}
-                  >
-                    Gửi
-                  </Button>
+          {hasTutorReport && (
+            <SectionCard
+              title="Báo cáo gia sư"
+              headerAction={
+                lesson.report?.createdAt ? (
+                  <span className={styles.historyTime}>Gửi lúc {formatDateTime(lesson.report.createdAt)}</span>
+                ) : undefined
+              }
+            >
+              <div className={styles.sectionBody}>
+                <div className={styles.reportGrid}>
+                  <ReportBlock label="Nội dung đã dạy">
+                    <p className={`${styles.reportText} ${reportContent ? '' : styles.reportMuted}`}>
+                      {reportContent || 'Không có nội dung.'}
+                    </p>
+                  </ReportBlock>
+                  <ReportBlock label="Bài tập về nhà">
+                    <p className={`${styles.reportText} ${reportHomework ? '' : styles.reportMuted}`}>
+                      {reportHomework || 'Không giao bài tập.'}
+                    </p>
+                  </ReportBlock>
+                  <ReportBlock label="Ghi chú gia sư">
+                    <p className={`${styles.reportText} ${lesson.tutorNotes ? '' : styles.reportMuted}`}>
+                      {lesson.tutorNotes || 'Không có ghi chú.'}
+                    </p>
+                  </ReportBlock>
+                  <ReportBlock label="Mức độ tiếp thu của học viên">
+                    {reportRating != null && reportRating > 0 ? (
+                      <span className={styles.rating}>
+                        <span className={styles.ratingStars}>
+                          {'★'.repeat(reportRating)}
+                          <span>{'★'.repeat(5 - reportRating)}</span>
+                        </span>
+                        <span className={styles.ratingValue}>{reportRating}/5</span>
+                      </span>
+                    ) : (
+                      <p className={`${styles.reportText} ${styles.reportMuted}`}>Chưa đánh giá.</p>
+                    )}
+                  </ReportBlock>
                 </div>
+
+                {reportAttachments.length > 0 && (
+                  <div className={styles.blockGap}>
+                    <p className={styles.reportLabel}>Tài liệu gia sư gửi kèm</p>
+                    <AttachmentGallery
+                      items={reportAttachments.map((item) => ({ url: item.url, label: item.description }))}
+                    />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </SectionCard>
-      )}
+            </SectionCard>
+          )}
 
-      <SectionCard title="Video buổi học">
-        <div className={styles.sectionBody}>
-          <ClassSessionRecording classSessionId={id} />
-        </div>
-      </SectionCard>
+          {dispute && (
+            <SectionCard
+              title="Khiếu nại của bạn"
+              headerAction={
+                disputeStatus ? (
+                  <StatusBadge variant={disputeStatus.variant}>{disputeStatus.label}</StatusBadge>
+                ) : undefined
+              }
+            >
+              <div className={styles.sectionBody}>
+                <div className={styles.reportGrid}>
+                  <ReportBlock label="Loại khiếu nại">
+                    <p className={styles.reportText}>{getDisputeTypeLabel(dispute.disputeType)}</p>
+                  </ReportBlock>
+                  {dispute.createdAt && (
+                    <ReportBlock label="Ngày gửi">
+                      <p className={styles.reportText}>{formatDateTime(dispute.createdAt)}</p>
+                    </ReportBlock>
+                  )}
+                </div>
 
-      {/* Bản tóm tắt cố định, khác với thẻ "cần xác nhận" ở trên (thẻ đó tự ẩn sau khi xử lý xong). */}
-      {Array.isArray(lesson.scheduleChanges) && lesson.scheduleChanges.length > 0 && (
-        <SectionCard title="Lịch sử dời lịch">
-          <div className={styles.sectionBody}>
-            <div className={styles.historyList}>
-              {lesson.scheduleChanges.map((sc: ScheduleChangeAuditDto) => (
-                <div key={sc.scheduleChangeId} className={styles.historyItem}>
-                  <div className={styles.historyTop}>
-                    <StatusBadge
-                      variant={
-                        sc.status === 'rejected' || sc.status === 'expired'
-                          ? 'neutral'
-                          : sc.status === 'pending'
-                            ? 'warning'
-                            : 'success'
-                      }
-                      shape="tag"
-                    >
-                      {SCHEDULE_CHANGE_STATUS_LABELS[sc.status] || sc.status}
-                    </StatusBadge>
-                    {sc.appliedAt && (
-                      <span className={styles.historyTime}>Áp dụng lúc {formatDateTime(sc.appliedAt)}</span>
-                    )}
+                <div className={styles.blockGap}>
+                  <p className={styles.reportLabel}>Nội dung</p>
+                  <p className={styles.reportText}>{dispute.reason || 'Không có mô tả.'}</p>
+                </div>
+
+                {(Array.isArray(dispute.evidence) && dispute.evidence.length > 0) ||
+                (Array.isArray(dispute.additionalEvidence) && dispute.additionalEvidence.length > 0) ? (
+                  <div className={styles.blockGap}>
+                    <p className={styles.reportLabel}>Bằng chứng</p>
+                    <AttachmentGallery
+                      items={[
+                        ...(dispute.evidence ?? []).map((url) => ({ url })),
+                        ...(dispute.additionalEvidence ?? []).map((item) => ({
+                          key: `additional-${item.disputeEvidenceId}`,
+                          url: item.fileUrl ?? '',
+                          label: item.description,
+                          mimeType: item.fileType,
+                        })),
+                      ]}
+                    />
                   </div>
-                  <div className={styles.historyRange}>
-                    {formatDate(sc.originalScheduledStart)}, {formatTime(sc.originalScheduledStart)}–
-                    {formatTime(sc.originalScheduledEnd)}
-                    {sc.adjustedScheduledStart && sc.adjustedScheduledEnd && (
-                      <>
-                        {' → '}
-                        {formatDate(sc.adjustedScheduledStart)}, {formatTime(sc.adjustedScheduledStart)}–
-                        {formatTime(sc.adjustedScheduledEnd)}
-                      </>
-                    )}
-                  </div>
-                  <div className={styles.historyMeta}>
-                    <span>Gia sư: {sc.tutorConfirmedByName ? `${sc.tutorConfirmedByName} đã xác nhận` : 'Chưa xác nhận'}</span>
+                ) : null}
+
+                {dispute.status === 'resolved' && (
+                  <div className={`${styles.notice} ${styles.noticeSuccess} ${styles.blockGap}`}>
                     <span>
-                      {sc.learnerApproverRole === 'Student' ? 'Học sinh' : 'Phụ huynh'}:{' '}
-                      {sc.learnerConfirmedByName ? `${sc.learnerConfirmedByName} đã xác nhận` : 'Chưa xác nhận'}
+                      <strong>Kết quả xử lý:</strong> {dispute.resolutionNote || 'Không có ghi chú.'}
+                      {typeof dispute.refundPercentage === 'number' && ` · Hoàn ${dispute.refundPercentage}%`}
                     </span>
                   </div>
-                </div>
-              ))}
+                )}
+
+                {dispute.status !== 'resolved' && (
+                  <div className={styles.blockGap}>
+                    <p className={styles.reportLabel}>Trao đổi riêng với quản trị viên</p>
+                    {thread.length > 0 ? (
+                      <div className={styles.thread}>
+                        {thread.map((msg) => (
+                          <div
+                            key={msg.disputeMessageId}
+                            className={`${styles.threadBubble} ${msg.senderRole === 'admin' ? styles.threadAdmin : styles.threadMine}`}
+                          >
+                            <p className={styles.threadSender}>
+                              {msg.senderRole === 'admin' ? 'Quản trị viên' : 'Bạn'}
+                            </p>
+                            <p className={styles.threadText}>{msg.message}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className={styles.threadEmpty}>Chưa có tin nhắn nào. Gửi câu hỏi cho quản trị viên tại đây.</p>
+                    )}
+                    <div className={styles.threadForm}>
+                      <Input
+                        value={threadInput}
+                        placeholder="Nhắn cho quản trị viên..."
+                        onChange={(event) => setThreadInput(event.target.value)}
+                        onPressEnter={() => void handleSendThreadMessage()}
+                      />
+                      <Button
+                        loading={sendingThreadMessage}
+                        disabled={threadInput.trim().length === 0}
+                        onClick={() => void handleSendThreadMessage()}
+                      >
+                        Gửi
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </SectionCard>
+          )}
+
+          <SectionCard title="Video buổi học">
+            <div className={styles.sectionBody}>
+              <ClassSessionRecording classSessionId={id} />
             </div>
-          </div>
-        </SectionCard>
-      )}
+          </SectionCard>
+        </div>
+
+        <aside className={styles.sidebar}>
+          <SectionCard title="Thông tin buổi học">
+            <div className={styles.sectionBody}>
+              <div className={styles.infoList}>
+                <div className={styles.infoRow}>
+                  <span className={styles.infoRowLabel}>Gia sư</span>
+                  <span className={styles.infoRowValue}>
+                    {lesson.tutorName || lesson.tutor?.fullName || 'Chưa cập nhật'}
+                  </span>
+                </div>
+                <div className={styles.infoRow}>
+                  <span className={styles.infoRowLabel}>Học viên</span>
+                  <span className={styles.infoRowValue}>{lesson.student?.fullName || 'Chưa cập nhật'}</span>
+                </div>
+                <div className={styles.infoRow}>
+                  <span className={styles.infoRowLabel}>Hình thức</span>
+                  <span className={styles.infoRowValue}>{lesson.meetingLink ? 'Học online' : 'Học trực tiếp'}</span>
+                </div>
+                {lesson.bookingId != null && (
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoRowLabel}>Mã đặt lịch</span>
+                    <span className={styles.infoRowValue}>#{lesson.bookingId}</span>
+                  </div>
+                )}
+                {lesson.lessonPrice != null && (
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoRowLabel}>Học phí buổi học</span>
+                    <span className={`${styles.infoRowValue} ${styles.infoRowAccent}`}>
+                      {formatVNDNumber(lesson.lessonPrice)}đ
+                    </span>
+                  </div>
+                )}
+                {lesson.confirmDeadline && (
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoRowLabel}>Hạn xác nhận</span>
+                    <span className={styles.infoRowValue}>{formatDateTime(lesson.confirmDeadline)}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Điểm danh">
+            <div className={styles.sectionBody}>
+              <div className={styles.attendanceList}>
+                <div className={styles.attendanceRow}>
+                  <span className={styles.attendanceAvatar}>GS</span>
+                  <span className={styles.attendanceText}>
+                    <strong>Gia sư</strong>
+                    <small>{getPresenceLabel(lesson.isTutorPresent)}</small>
+                  </span>
+                  <span className={`${styles.presenceDot} ${getPresenceClass(lesson.isTutorPresent)}`} />
+                </div>
+                <div className={styles.attendanceRow}>
+                  <span className={styles.attendanceAvatar}>HV</span>
+                  <span className={styles.attendanceText}>
+                    <strong>Học viên</strong>
+                    <small>{getPresenceLabel(lesson.isStudentPresent)}</small>
+                  </span>
+                  <span className={`${styles.presenceDot} ${getPresenceClass(lesson.isStudentPresent)}`} />
+                </div>
+              </div>
+              {lesson.checkInTime && (
+                <p className={styles.attendanceNote}>
+                  Vào lúc {formatTime(lesson.checkInTime)}
+                  {lesson.checkOutTime ? ` · Kết thúc ${formatTime(lesson.checkOutTime)}` : ''}
+                </p>
+              )}
+              {lesson.attendanceNote && <p className={styles.attendanceNote}>{lesson.attendanceNote}</p>}
+            </div>
+          </SectionCard>
+
+          {/* Bản tóm tắt cố định, khác với thẻ "cần xác nhận" ở trên (thẻ đó tự ẩn sau khi xử lý xong). */}
+          {Array.isArray(lesson.scheduleChanges) && lesson.scheduleChanges.length > 0 && (
+            <SectionCard title="Lịch sử dời lịch">
+              <div className={styles.sectionBody}>
+                <div className={styles.historyList}>
+                  {lesson.scheduleChanges.map((sc: ScheduleChangeAuditDto) => (
+                    <div key={sc.scheduleChangeId} className={styles.historyItem}>
+                      <div className={styles.historyTop}>
+                        <StatusBadge
+                          variant={
+                            sc.status === 'rejected' || sc.status === 'expired'
+                              ? 'neutral'
+                              : sc.status === 'pending'
+                                ? 'warning'
+                                : 'success'
+                          }
+                          shape="tag"
+                        >
+                          {SCHEDULE_CHANGE_STATUS_LABELS[sc.status] || sc.status}
+                        </StatusBadge>
+                        {sc.appliedAt && (
+                          <span className={styles.historyTime}>Áp dụng lúc {formatDateTime(sc.appliedAt)}</span>
+                        )}
+                      </div>
+                      <div className={styles.historyRange}>
+                        {formatDate(sc.originalScheduledStart)}, {formatTime(sc.originalScheduledStart)}–
+                        {formatTime(sc.originalScheduledEnd)}
+                        {sc.adjustedScheduledStart && sc.adjustedScheduledEnd && (
+                          <>
+                            {' → '}
+                            {formatDate(sc.adjustedScheduledStart)}, {formatTime(sc.adjustedScheduledStart)}–
+                            {formatTime(sc.adjustedScheduledEnd)}
+                          </>
+                        )}
+                      </div>
+                      <div className={styles.historyMeta}>
+                        <span>
+                          Gia sư: {sc.tutorConfirmedByName ? `${sc.tutorConfirmedByName} đã xác nhận` : 'Chưa xác nhận'}
+                        </span>
+                        <span>
+                          {sc.learnerApproverRole === 'Student' ? 'Học sinh' : 'Phụ huynh'}:{' '}
+                          {sc.learnerConfirmedByName ? `${sc.learnerConfirmedByName} đã xác nhận` : 'Chưa xác nhận'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </SectionCard>
+          )}
+        </aside>
+      </div>
 
       {/* Modals */}
       <ConfirmLessonModal

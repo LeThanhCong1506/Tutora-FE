@@ -6,7 +6,6 @@ import {
   Check,
   CircleAlert,
   Clock3,
-  ExternalLink,
   FileText,
   GraduationCap,
   MapPin,
@@ -30,13 +29,19 @@ import {
   type ClassSessionDetailResponse,
   type DisputeDetailResponse,
   type DisputeMessage,
+  type ReportAttachment,
 } from '../../services/classSession.service';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 import { canJoinLiveSession } from '../../utils/liveSession';
 import { signalRService } from '../../services/signalr.service';
 import LessonReportForm from './components/LessonReportForm';
 import MaterialsTab from './components/MaterialsTab';
-import { ClassSessionRecording } from '../../components/shared';
+import {
+  AttachmentGallery,
+  buildSessionTimeline,
+  ClassSessionRecording,
+  SessionTimeline,
+} from '../../components/shared';
 import styles from '../../styles/pages/tutor-portal-class-session-detail.module.css';
 
 type DetailTab = 'overview' | 'materials';
@@ -125,7 +130,7 @@ const TutorPortalClassSessionDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [checkingOut, setCheckingOut] = useState(false);
-  const [pendingAttachments, setPendingAttachments] = useState<string[]>([]);
+  const [pendingAttachments, setPendingAttachments] = useState<ReportAttachment[]>([]);
   const [dispute, setDispute] = useState<DisputeDetailResponse | null>(null);
   const [responseText, setResponseText] = useState('');
   const [submittingResponse, setSubmittingResponse] = useState(false);
@@ -376,10 +381,23 @@ const TutorPortalClassSessionDetail = () => {
   const reportContent = session.report?.contentCovered || session.classSessionContent;
   const reportHomework = session.report?.homeworkAssigned || session.homework;
   const reportNotes = session.tutorNotes;
-  const reportAttachments = session.report?.attachments || [];
+  // Báo cáo cũ chỉ có mảng URL; báo cáo mới có kèm mô tả gia sư đặt.
+  const reportAttachments: ReportAttachment[] =
+    session.report?.attachmentDetails ?? (session.report?.attachments ?? []).map((url) => ({ url }));
   const hasReport = Boolean(session.report || reportContent || reportHomework || reportNotes);
   const attendanceRecorded =
     typeof session.isTutorPresent === 'boolean' || typeof session.isStudentPresent === 'boolean';
+  const timelineEvents = buildSessionTimeline({
+    scheduledStart: session.scheduledStart,
+    checkInTime: session.realStart || session.checkInTime,
+    checkOutTime: session.realEnd || session.checkOutTime,
+    confirmDeadline: status === 'pending_confirmation' ? session.confirmDeadline : null,
+    reportCreatedAt: session.report?.createdAt,
+    disputeCreatedAt: dispute?.createdAt,
+    disputeTutorRespondedAt: dispute?.tutorRespondedAt,
+    disputeResolvedAt: dispute?.resolvedAt,
+    scheduleChangeAppliedAt: session.scheduleChanges?.map((sc) => sc.appliedAt),
+  });
   const sessionStyle = {
     '--status-color': displayStatus.color,
     '--status-bg': displayStatus.bg,
@@ -554,6 +572,19 @@ const TutorPortalClassSessionDetail = () => {
                     </div>
                   )}
 
+                  {/* Cùng dòng thời gian với portal phụ huynh — hai bên nhìn thấy đúng một diễn biến. */}
+                  {timelineEvents.length > 0 && (
+                    <section className={styles.card}>
+                      <div className={styles.cardHeader}>
+                        <div>
+                          <span className={styles.sectionLabel}>Tiến trình</span>
+                          <h2>Diễn biến buổi học</h2>
+                        </div>
+                      </div>
+                      <SessionTimeline events={timelineEvents} className={styles.timelineBody} />
+                    </section>
+                  )}
+
                   {dispute && (
                     <section className={styles.card}>
                       <div className={styles.cardHeader}>
@@ -603,15 +634,7 @@ const TutorPortalClassSessionDetail = () => {
                         {dispute.evidence && dispute.evidence.length > 0 && (
                           <div className={`${styles.reportField} ${styles.reportFieldWide}`}>
                             <span>Bằng chứng từ phụ huynh/học sinh</span>
-                            <div className={styles.attachmentList}>
-                              {dispute.evidence.map((url, index) => (
-                                <a key={url} href={url} target="_blank" rel="noopener noreferrer">
-                                  <Paperclip size={15} />
-                                  Bằng chứng {index + 1}
-                                  <ExternalLink size={13} />
-                                </a>
-                              ))}
-                            </div>
+                            <AttachmentGallery items={dispute.evidence.map((url) => ({ url }))} />
                           </div>
                         )}
                       </div>
@@ -640,15 +663,14 @@ const TutorPortalClassSessionDetail = () => {
                           {dispute.additionalEvidence && dispute.additionalEvidence.length > 0 && (
                             <div className={`${styles.reportField} ${styles.reportFieldWide}`}>
                               <span>Bằng chứng bạn đã nộp</span>
-                              <div className={styles.attachmentList}>
-                                {dispute.additionalEvidence.map((item, index) => (
-                                  <a key={item.disputeEvidenceId} href={item.fileUrl} target="_blank" rel="noopener noreferrer">
-                                    <Paperclip size={15} />
-                                    Bằng chứng {index + 1}
-                                    <ExternalLink size={13} />
-                                  </a>
-                                ))}
-                              </div>
+                              <AttachmentGallery
+                                items={dispute.additionalEvidence.map((item) => ({
+                                  key: `additional-${item.disputeEvidenceId}`,
+                                  url: item.fileUrl ?? '',
+                                  label: item.description,
+                                  mimeType: item.fileType,
+                                }))}
+                              />
                             </div>
                           )}
                           {!dispute.tutorResponse && (
@@ -795,15 +817,9 @@ const TutorPortalClassSessionDetail = () => {
                         {reportAttachments.length > 0 && (
                           <div className={`${styles.reportField} ${styles.reportFieldWide}`}>
                             <span>Tài liệu đính kèm</span>
-                            <div className={styles.attachmentList}>
-                              {reportAttachments.map((attachment, index) => (
-                                <a key={attachment} href={attachment} target="_blank" rel="noopener noreferrer">
-                                  <Paperclip size={15} />
-                                  Tài liệu {index + 1}
-                                  <ExternalLink size={13} />
-                                </a>
-                              ))}
-                            </div>
+                            <AttachmentGallery
+                              items={reportAttachments.map((item) => ({ url: item.url, label: item.description }))}
+                            />
                           </div>
                         )}
                       </div>
@@ -811,10 +827,17 @@ const TutorPortalClassSessionDetail = () => {
                       <div className={styles.reportComposer}>
                         <LessonReportForm
                           classSessionId={session.classSessionId}
-                          attachmentUrls={pendingAttachments}
-                          onUploadComplete={(url) => setPendingAttachments((current) => [...current, url])}
+                          attachments={pendingAttachments}
+                          onUploadComplete={(attachment) =>
+                            setPendingAttachments((current) => [...current, attachment])
+                          }
+                          onDescriptionChange={(url, description) =>
+                            setPendingAttachments((current) =>
+                              current.map((item) => (item.url === url ? { ...item, description } : item)),
+                            )
+                          }
                           onRemoveComplete={(url) =>
-                            setPendingAttachments((current) => current.filter((item) => item !== url))
+                            setPendingAttachments((current) => current.filter((item) => item.url !== url))
                           }
                           onSubmitSuccess={handleReportSuccess}
                         />
@@ -877,7 +900,7 @@ const TutorPortalClassSessionDetail = () => {
                         <dd>#{session.classSessionId}</dd>
                       </div>
                       <div>
-                        <dt>Mã booking</dt>
+                        <dt>Mã đặt lịch</dt>
                         <dd>{session.bookingId ? `#${session.bookingId}` : '—'}</dd>
                       </div>
                       <div>

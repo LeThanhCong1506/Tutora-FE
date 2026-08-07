@@ -50,7 +50,7 @@ const TARGET_INFO: Record<string, { title: string; desc: string; idLabel?: strin
   payment: {
     title: 'Thanh toán học phí Tutora',
     desc: 'Vui lòng đăng nhập bằng tài khoản đã đặt lịch học để xem môn học, số tiền, hạn thanh toán và hoàn tất thanh toán.',
-    idLabel: 'Mã booking',
+    idLabel: 'Mã đặt lịch',
   },
   lessons: {
     title: 'Lịch học trên Tutora',
@@ -59,12 +59,12 @@ const TARGET_INFO: Record<string, { title: string; desc: string; idLabel?: strin
   bookings: {
     title: 'Đơn đặt lịch học trên Tutora',
     desc: 'Vui lòng đăng nhập để xem chi tiết đơn đặt lịch học.',
-    idLabel: 'Mã booking',
+    idLabel: 'Mã đặt lịch',
   },
   booking: {
     title: 'Đơn đặt lịch học và thanh toán học phí',
     desc: 'Vui lòng đăng nhập bằng tài khoản đã đặt lịch học để xem đơn đặt lịch, số tiền cần đóng và hoàn tất thanh toán học phí.',
-    idLabel: 'Mã booking',
+    idLabel: 'Mã đặt lịch',
   },
   payout: {
     title: 'Yêu cầu rút tiền trên Tutora',
