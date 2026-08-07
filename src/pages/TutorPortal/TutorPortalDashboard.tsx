@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Switch } from 'antd';
+import { toast } from 'react-toastify';
 import styles from '../../styles/pages/tutor-portal-dashboard.module.css';
 import {
     getTutorDashboardStats,
@@ -10,6 +12,7 @@ import {
 } from '../../services/classSession.service';
 import { getTutorFeedbacks, type FeedbackDto } from '../../services/feedback.service';
 import { getCurrentUser } from '../../services/auth.service';
+import { getAcceptingBookings, setAcceptingBookings } from '../../services/tutorProfile.service';
 import { StatCard } from '../../components/shared';
 import ReplyFeedbackModal from './components/ReplyFeedbackModal';
 import { useTutorProfileForm } from './hooks/useTutorProfileForm';
@@ -127,6 +130,8 @@ const TutorPortalDashboard: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [recentFeedbacks, setRecentFeedbacks] = useState<FeedbackDto[]>([]);
     const [replyModal, setReplyModal] = useState<{ open: boolean; feedback: FeedbackDto | null }>({ open: false, feedback: null });
+    const [isAcceptingBookings, setIsAcceptingBookings] = useState<boolean | null>(null);
+    const [togglingBookings, setTogglingBookings] = useState(false);
 
 
     // Fetch dashboard data
@@ -164,6 +169,11 @@ const TutorPortalDashboard: React.FC = () => {
                             setRecentFeedbacks(fbResponse.content as unknown as FeedbackDto[]);
                         }
                     } catch { /* feedback is optional */ }
+
+                    try {
+                        const acceptingResponse = await getAcceptingBookings(user.userId);
+                        setIsAcceptingBookings(acceptingResponse.content.accepting);
+                    } catch { /* non-blocking — toggle just stays hidden if this fails */ }
                 }
             } catch (err) {
                 console.error('Error fetching dashboard data:', err);
@@ -174,6 +184,23 @@ const TutorPortalDashboard: React.FC = () => {
 
         fetchDashboardData();
     }, [currentMonth]);
+
+    const handleToggleAcceptingBookings = async (accepting: boolean) => {
+        const user = getCurrentUser();
+        if (!user?.userId || togglingBookings) return;
+
+        setTogglingBookings(true);
+        try {
+            const response = await setAcceptingBookings(user.userId, accepting);
+            setIsAcceptingBookings(response.content.accepting);
+            toast.success(accepting ? 'Đã mở nhận booking mới.' : 'Đã tạm dừng nhận booking mới.');
+        } catch (err) {
+            console.error('Error toggling accepting bookings:', err);
+            toast.error('Không thể cập nhật trạng thái nhận booking. Vui lòng thử lại.');
+        } finally {
+            setTogglingBookings(false);
+        }
+    };
 
     // Generate calendar days
     const generateCalendarDays = () => {
@@ -327,9 +354,22 @@ const TutorPortalDashboard: React.FC = () => {
             {/* Header */}
             <div className={styles.header}>
                 <h1 className={styles.title}>Bảng điều khiển</h1>
-                <span className={styles.date}>
-                    {new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                    {isAcceptingBookings !== null && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Switch
+                                checked={isAcceptingBookings}
+                                loading={togglingBookings}
+                                onChange={handleToggleAcceptingBookings}
+                                checkedChildren="Đang nhận booking"
+                                unCheckedChildren="Đã tạm dừng"
+                            />
+                        </div>
+                    )}
+                    <span className={styles.date}>
+                        {new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                    </span>
+                </div>
             </div>
 
             {/* Profile Status Banner - only show if NOT active */}
