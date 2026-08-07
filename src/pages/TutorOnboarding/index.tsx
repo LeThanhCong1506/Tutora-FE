@@ -139,9 +139,11 @@ const TutorOnboarding: React.FC = () => {
         {state.currentStep === 3 && (
           <StepCombos
             onboarding={onboarding}
+            inactiveCombos={sync.inactiveCombos}
             onCreatePackage={sync.createFixedPackage}
             onUpdatePackage={sync.updateFixedPackage}
             onDeactivatePackage={sync.deactivateFixedPackage}
+            onActivatePackage={sync.activateFixedPackage}
           />
         )}
       </div>

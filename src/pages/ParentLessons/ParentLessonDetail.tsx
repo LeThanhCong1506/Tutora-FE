@@ -210,6 +210,11 @@ const ParentLessonDetail: React.FC = () => {
     try {
       const response = await respondParentScheduleChange(id, confirmed);
       setScheduleChange(response.content);
+      // Khi cả hai bên đã chốt, BE dời luôn giờ của buổi học — phải nạp lại, không thì trang
+      // vẫn hiển thị giờ cũ cho tới khi người dùng tự F5.
+      if (response.content.status === 'approved') {
+        await fetchLesson();
+      }
       if (confirmed && response.content.scheduleConflict) {
         toast.warning(`Đã lưu xác nhận. ${response.content.scheduleConflict.message}`);
       } else {

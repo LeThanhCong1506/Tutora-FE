@@ -3,8 +3,9 @@ import { Popconfirm, Tooltip } from 'antd';
 import {
   CalendarOutlined,
   ClockCircleOutlined,
-  DeleteOutlined,
   EditOutlined,
+  EyeInvisibleOutlined,
+  EyeOutlined,
   LockOutlined,
   PlusOutlined,
 } from '@ant-design/icons';
@@ -15,6 +16,7 @@ import type { ComboSessionSlot, FixedCombo, SubjectRecord, TutorAvailabilitySlot
 
 interface ComboManagerProps {
   combos: FixedCombo[];
+  inactiveCombos?: FixedCombo[];
   availability: TutorAvailabilitySlot[];
   subjectRecords: SubjectRecord[];
   onAdd: (combo: FixedCombo) => void;
@@ -23,6 +25,7 @@ interface ComboManagerProps {
   onCreatePackage?: (combo: FixedCombo) => Promise<FixedCombo | null>;
   onUpdatePackage?: (comboId: string, combo: FixedCombo) => Promise<FixedCombo | null>;
   onDeactivatePackage?: (comboId: string) => Promise<boolean>;
+  onActivatePackage?: (comboId: string) => Promise<FixedCombo | null>;
 }
 
 const dayLabel = (dow: number) => DAY_COLUMNS.find((c) => c.dayOfWeek === dow)?.full ?? `Ngày ${dow}`;
@@ -41,6 +44,7 @@ const LOCKED_HINT =
 
 const ComboManager: React.FC<ComboManagerProps> = ({
   combos,
+  inactiveCombos = [],
   availability,
   subjectRecords,
   onAdd,
@@ -49,11 +53,13 @@ const ComboManager: React.FC<ComboManagerProps> = ({
   onCreatePackage,
   onUpdatePackage,
   onDeactivatePackage,
+  onActivatePackage,
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<FixedCombo | null>(null);
   const [savingPackage, setSavingPackage] = useState(false);
   const [removingComboId, setRemovingComboId] = useState<string | null>(null);
+  const [restoringComboId, setRestoringComboId] = useState<string | null>(null);
   const requiredDurationHours = useMemo(
     () => Math.max(1, ...subjectRecords.map((record) => record.hoursPerSession || 0)),
     [subjectRecords],
@@ -108,6 +114,13 @@ const ComboManager: React.FC<ComboManagerProps> = ({
     const canRemove = onDeactivatePackage ? await onDeactivatePackage(comboId) : true;
     setRemovingComboId(null);
     if (canRemove) onRemove(comboId);
+  };
+
+  const handleActivate = async (comboId: string) => {
+    if (!onActivatePackage) return;
+    setRestoringComboId(comboId);
+    await onActivatePackage(comboId);
+    setRestoringComboId(null);
   };
 
   return (
@@ -169,9 +182,10 @@ const ComboManager: React.FC<ComboManagerProps> = ({
                         </span>
                       </Tooltip>
                       <Popconfirm
-                        title="Xóa gói lịch học này?"
+                        title="Ẩn gói lịch học này?"
+                        description="Phụ huynh sẽ không còn thấy gói này. Bạn có thể hiện lại bất cứ lúc nào."
                         onConfirm={() => handleRemove(combo.id)}
-                        okText="Xóa"
+                        okText="Ẩn"
                         cancelText="Hủy"
                         okButtonProps={{ danger: true, loading: removingComboId === combo.id }}
                         disabled={locked}
@@ -182,10 +196,10 @@ const ComboManager: React.FC<ComboManagerProps> = ({
                               type="button"
                               className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
                               disabled={locked}
-                              aria-label={`Xóa ${combo.name}`}
-                              title={locked ? undefined : 'Xóa gói lịch học'}
+                              aria-label={`Ẩn ${combo.name}`}
+                              title={locked ? undefined : 'Ẩn gói lịch học'}
                             >
-                              <DeleteOutlined />
+                              <EyeInvisibleOutlined />
                             </button>
                           </span>
                         </Tooltip>
@@ -228,6 +242,55 @@ const ComboManager: React.FC<ComboManagerProps> = ({
               <strong>Thêm gói lịch học khác</strong>
               <span>Mở thêm lựa chọn lịch học cho phụ huynh</span>
             </button>
+          </div>
+        )}
+
+        {inactiveCombos.length > 0 && (
+          <div className={styles.comboInactiveSection}>
+            <h4 className={styles.comboSectionSubheading}>Gói đã ẩn ({inactiveCombos.length})</h4>
+            <div className={styles.comboList}>
+              {inactiveCombos.map((combo) => {
+                const displayCombo = applySubjectRules(combo);
+                return (
+                  <div key={combo.id} className={`${styles.comboCard} ${styles.comboCardInactive}`}>
+                    <div className={styles.comboCardHead}>
+                      <div className={styles.comboBadgeRow}>
+                        <span className={`${styles.comboTypeBadge} ${styles.comboHiddenBadge}`}>Đã ẩn</span>
+                      </div>
+                      <div className={styles.comboCardActions}>
+                        <Tooltip title="Hiện lại gói lịch học">
+                          <span className={styles.iconBtnWrap}>
+                            <button
+                              type="button"
+                              className={`${styles.iconBtn} ${styles.iconBtnRestore}`}
+                              onClick={() => handleActivate(combo.id)}
+                              disabled={restoringComboId === combo.id}
+                              aria-label={`Hiện lại ${combo.name}`}
+                              title="Hiện lại gói lịch học"
+                            >
+                              <EyeOutlined />
+                            </button>
+                          </span>
+                        </Tooltip>
+                      </div>
+                    </div>
+
+                    <h4 className={styles.comboName}>{combo.name}</h4>
+
+                    <div className={styles.comboMetaRow}>
+                      <span>
+                        <CalendarOutlined />
+                        <strong>{displayCombo.sessions.length}</strong> buổi/tuần
+                      </span>
+                      <span>
+                        <ClockCircleOutlined />
+                        <strong>{formatDuration(getTotalHours(displayCombo))}</strong>/tuần
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </section>

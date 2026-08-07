@@ -573,6 +573,51 @@ export const addSubjectGradePrice = async (
   }
 };
 
+/**
+ * Lấy trạng thái nhận booking hiện tại của gia sư (không cache — luôn realtime).
+ * GET /api/tutors/{id}/profile/accepting-bookings
+ */
+export const getAcceptingBookings = async (userId: string): Promise<ApiResponse<{ accepting: boolean }>> => {
+  try {
+    const response = await api.get(`/tutors/${userId}/profile/accepting-bookings`, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ Error fetching accepting-bookings status:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
+    throw error;
+  }
+};
+
+/**
+ * Gia sư tự bật/tắt nhận booking mới (tắt → ẩn khỏi marketplace + chặn booking mới).
+ * PUT /api/tutors/{id}/profile/accepting-bookings
+ */
+export const setAcceptingBookings = async (
+  userId: string,
+  accepting: boolean,
+): Promise<ApiResponse<{ accepting: boolean }>> => {
+  try {
+    const response = await api.put(
+      `/tutors/${userId}/profile/accepting-bookings`,
+      { accepting },
+      { headers: getAuthHeaders() },
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ Error updating accepting-bookings status:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
+    throw error;
+  }
+};
+
 // ============================================
 // TODO: Add more update endpoints here
 // - PUT /api/tutors/{id}/profile/certificates

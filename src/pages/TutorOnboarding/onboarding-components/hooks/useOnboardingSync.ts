@@ -15,6 +15,7 @@ import {
   createPackage,
   updatePackage,
   deactivatePackage,
+  activatePackage,
   type TutorPackageResponse,
 } from '../../../../services/tutorPackages.service';
 
@@ -94,6 +95,8 @@ export function useOnboardingSync(hydrate: HydrateFn) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  // Gói cố định đã bị tutor ẩn (Isactive=false) — hiển thị riêng để tutor có thể "Hiện lại".
+  const [inactiveCombos, setInactiveCombos] = useState<FixedCombo[]>([]);
 
   const userIdRef = useRef<string | null>(null);
   const rawAvailabilityRef = useRef<AvailabilitySlot[]>([]);
@@ -115,7 +118,7 @@ export function useOnboardingSync(hydrate: HydrateFn) {
     const [pricingR, availR, pkgR] = await Promise.allSettled([
       getPricing(userId),
       getMyAvailability(),
-      getPackages(userId, false),
+      getPackages(userId, true),
     ]);
 
     const records: SubjectRecord[] =
@@ -135,6 +138,7 @@ export function useOnboardingSync(hydrate: HydrateFn) {
       loadedFixedRef.current = pkgs.filter((p) => p.packageType === 2 && p.isActive);
       loadedFlexibleRef.current = pkgs.filter((p) => p.packageType === 1 && p.isActive);
       combos = loadedFixedRef.current.map(packageToFixedCombo);
+      setInactiveCombos(pkgs.filter((p) => p.packageType === 2 && !p.isActive).map(packageToFixedCombo));
     }
 
     if (pricingR.status === 'rejected' && availR.status === 'rejected' && pkgR.status === 'rejected') {
@@ -150,10 +154,11 @@ export function useOnboardingSync(hydrate: HydrateFn) {
   }, [load]);
 
   const refreshPackages = useCallback(async (userId: string) => {
-    const fresh = await getPackages(userId, false);
+    const fresh = await getPackages(userId, true);
     const pkgs = fresh.content ?? [];
     loadedFixedRef.current = pkgs.filter((p) => p.packageType === 2 && p.isActive);
     loadedFlexibleRef.current = pkgs.filter((p) => p.packageType === 1 && p.isActive);
+    setInactiveCombos(pkgs.filter((p) => p.packageType === 2 && !p.isActive).map(packageToFixedCombo));
     return pkgs;
   }, []);
 
@@ -334,12 +339,49 @@ export function useOnboardingSync(hydrate: HydrateFn) {
       try {
         await deactivatePackage(userId, packageId);
         await refreshPackages(userId);
-        toast.success('Đã xóa gói lịch học');
+        toast.success('Đã ẩn gói lịch học');
         return true;
       } catch (err) {
         console.error('[Onboarding] deactivateFixedPackage:', err);
-        toast.error(extractApiError(err, 'Xóa gói lịch học thất bại.'));
+        toast.error(extractApiError(err, 'Ẩn gói lịch học thất bại.'));
         return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [refreshPackages],
+  );
+
+  // Hiện lại một gói cố định đã ẩn trước đó (Isactive → true). Trả FixedCombo mới để caller
+  // đưa lại vào state.combos (danh sách gói đang hiển thị/sửa được).
+  const activateFixedPackage = useCallback(
+    async (comboId: string): Promise<FixedCombo | null> => {
+      const packageId = getPackageIdFromComboId(comboId);
+      if (!packageId) return null;
+
+      const userId = userIdRef.current;
+      if (!userId) {
+        toast.error('Không xác định được tài khoản gia sư.');
+        return null;
+      }
+
+      setSaving(true);
+      try {
+        await activatePackage(userId, packageId);
+        await refreshPackages(userId);
+
+        const reactivatedPackage = loadedFixedRef.current.find((pkg) => pkg.packageId === packageId);
+        if (!reactivatedPackage) {
+          toast.error('Đã hiện gói nhưng chưa nhận được dữ liệu phản hồi.');
+          return null;
+        }
+
+        toast.success('Đã hiện lại gói lịch học');
+        return packageToFixedCombo(reactivatedPackage);
+      } catch (err) {
+        console.error('[Onboarding] activateFixedPackage:', err);
+        toast.error(extractApiError(err, 'Hiện gói lịch học thất bại.'));
+        return null;
       } finally {
         setSaving(false);
       }
@@ -411,11 +453,13 @@ export function useOnboardingSync(hydrate: HydrateFn) {
     loading,
     saving,
     loadError,
+    inactiveCombos,
     saveAvailability,
     savePricing,
     createFixedPackage,
     updateFixedPackage,
     deactivateFixedPackage,
+    activateFixedPackage,
     savePackages,
     reload: load,
   };

@@ -266,14 +266,19 @@ const TutorAccount = () => {
             toast.warning('Mật khẩu mới phải có ít nhất 8 ký tự');
             return;
         }
+        if (passwordForm.newPassword === passwordForm.oldPassword) {
+            toast.error('Mật khẩu mới không được trùng với mật khẩu cũ. Vui lòng chọn mật khẩu khác.');
+            return;
+        }
         setChangingPassword(true);
         try {
             await changePassword(passwordForm.oldPassword, passwordForm.newPassword);
             toast.success('Đổi mật khẩu thành công!');
             setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
             setShowPasswordSection(false);
-        } catch {
-            toast.error('Đổi mật khẩu thất bại. Kiểm tra lại mật khẩu cũ.');
+        } catch (error) {
+            const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+            toast.error(message || 'Đổi mật khẩu thất bại. Vui lòng thử lại.');
         } finally {
             setChangingPassword(false);
         }

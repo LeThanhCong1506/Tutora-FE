@@ -202,9 +202,11 @@ const ParentStudent = () => {
       const response = await getStudents();
       if (response.statusCode === 200) setStudents(response.content);
       handleEditModalClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error updating student:', err);
-      toast.error('Cập nhật thất bại');
+      const detail = err.response?.data?.message || err.response?.data?.title;
+      toast.error(detail || 'Cập nhật thất bại');
+      throw err;
     }
   };
 

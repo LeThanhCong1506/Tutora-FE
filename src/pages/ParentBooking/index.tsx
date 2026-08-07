@@ -22,7 +22,10 @@ import styles from './styles.module.css';
 const STATUS_TABS = [
   { key: 'all', label: 'Tất cả' },
   { key: 'pending_tutor', label: 'Chờ gia sư' },
-  { key: 'accepted', label: 'Chờ đặt cọc' },
+  // 'accepted' không còn được BE gán ở luồng hiện tại (booking đi thẳng
+  // pending_payment → pending_tutor → deposit_paid) — giữ trong filter chỉ để
+  // không bỏ sót các booking cũ còn mang status này.
+  { key: 'pending_payment,accepted', label: 'Chờ đặt cọc' },
   { key: 'deposit_paid', label: 'Đã đặt cọc' },
   { key: 'pending_remaining_payment', label: 'Thanh toán còn lại' },
   { key: 'ongoing', label: 'Đang học' },
@@ -53,9 +56,9 @@ const EMPTY_STATE_COPY: Record<string, { title: string; description: string }> =
     title: 'Không có yêu cầu đang chờ',
     description: 'Các yêu cầu đang chờ gia sư xác nhận sẽ xuất hiện tại đây.',
   },
-  accepted: {
+  'pending_payment,accepted': {
     title: 'Không có lịch chờ đặt cọc',
-    description: 'Lịch được gia sư chấp nhận và chờ đặt cọc sẽ xuất hiện tại đây.',
+    description: 'Lịch vừa tạo, đang chờ bạn thanh toán buổi học đầu tiên sẽ xuất hiện tại đây.',
   },
   deposit_paid: {
     title: 'Chưa có lịch đã đặt cọc',

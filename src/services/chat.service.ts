@@ -29,6 +29,10 @@ export interface ChatChannel {
   otherUserId: string;
   otherUserName: string;
   otherUserAvatarUrl: string;
+  /** 'Parent' | 'Student' | 'Tutor' — which side of the channel the other user is. */
+  otherUserRole: 'Parent' | 'Student' | 'Tutor';
+  /** Only meaningful when otherUserRole is 'Student': true if that student has a linked Parent account. */
+  isOtherUserParentManaged: boolean | null;
   status: string;
   lastMessageAt: string;
   lastMessagePreview: string;

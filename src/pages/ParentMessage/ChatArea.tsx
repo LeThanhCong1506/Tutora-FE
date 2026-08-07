@@ -392,7 +392,6 @@ const ChatArea = ({ selectedChannelId, currentUserId, selectedChannel, isTutor =
         onSearchToggle={handleSearchToggle}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        isTutor={isTutor}
       />
       <div className={styles.messagesAreaContainer}>
         {booking && <SessionContextCard booking={booking} isTutor={isTutor} />}

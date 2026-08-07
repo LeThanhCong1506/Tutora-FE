@@ -269,6 +269,8 @@ const TutorPortalBookings = () => {
             otherUserId: booking.parentId ?? '',
             otherUserName: `Phụ huynh của ${booking.student?.fullName || 'học sinh'}`,
             otherUserAvatarUrl: '',
+            otherUserRole: 'Parent',
+            isOtherUserParentManaged: null,
             status: 'active',
             lastMessageAt: '',
             lastMessagePreview: '',
