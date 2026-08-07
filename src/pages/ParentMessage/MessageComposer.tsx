@@ -18,6 +18,7 @@ const MessageComposer = ({ onSend, onSendImage, disabled = false, channelId }: M
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTypingRef = useRef(false);
+  const lastTypingEmitAtRef = useRef(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hintId = 'message-composer-hint';
@@ -39,8 +40,12 @@ const MessageComposer = ({ onSend, onSendImage, disabled = false, channelId }: M
 
   const emitTyping = useCallback(() => {
     if (!channelId) return;
-    if (!isTypingRef.current) {
+    // Người nhận tự tắt chỉ báo "đang soạn tin" sau 3s không có tín hiệu mới (ChatArea.tsx).
+    // Nếu người gửi gõ liên tục >3s, phải phát lại tín hiệu định kỳ (dưới 3s) để không bị tắt oan.
+    const now = Date.now();
+    if (!isTypingRef.current || now - lastTypingEmitAtRef.current >= 1500) {
       isTypingRef.current = true;
+      lastTypingEmitAtRef.current = now;
       signalRService.typing(channelId);
     }
     if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
