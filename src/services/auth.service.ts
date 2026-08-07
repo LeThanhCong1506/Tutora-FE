@@ -33,6 +33,24 @@ export const getCurrentUser = () => {
 };
 
 /**
+ * Đích người dùng đang muốn tới nhưng bị chặn vì chưa đăng nhập (nút CTA trong tin ZNS mở
+ * /go/... khi máy chưa có phiên). Không dùng `?returnUrl` cho việc này: LoginForm cố tình chặn
+ * returnUrl same-origin để tránh open-redirect. Đường dẫn ở đây do chính app ghi ra, và vẫn được
+ * kiểm tra lại lúc đọc để chỉ chấp nhận path nội bộ.
+ */
+const PENDING_REDIRECT_KEY = "TUTORA_pending_redirect";
+
+export const setPendingRedirect = (path: string) => storageAdapter.set(PENDING_REDIRECT_KEY, path);
+
+/** Đọc rồi xoá luôn — đích chỉ dùng đúng một lần, tránh dính lại ở lần đăng nhập sau. */
+export const takePendingRedirect = async (): Promise<string | null> => {
+  const path = await storageAdapter.get(PENDING_REDIRECT_KEY);
+  if (path) await storageAdapter.remove(PENDING_REDIRECT_KEY);
+  // `//host` cũng là URL tuyệt đối với trình duyệt, nên chặn luôn dạng đó.
+  return path && path.startsWith("/") && !path.startsWith("//") ? path : null;
+};
+
+/**
  * Lấy thông tin user từ JWT token
  */
 export const getUserInfoFromToken = () => {

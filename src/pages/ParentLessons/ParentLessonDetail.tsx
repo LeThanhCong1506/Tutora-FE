@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { isZaloMiniApp } from '../../services/zalo-env';
 
 const inMiniApp = isZaloMiniApp();
 import { ArrowLeft, CalendarClock, CheckCircle2, Clock3, XCircle, Paperclip, Download } from 'lucide-react';
-import { getParentLessonDetail } from '../../services/parent-lesson.service';
+import { getParentLessonDetail, type ParentLessonDetailDto } from '../../services/parent-lesson.service';
 import {
   getClassSessionDispute,
   getClassSessionDisputeThread,
@@ -13,21 +13,24 @@ import {
   type DisputeMessage,
   getParentScheduleChange,
   respondParentScheduleChange,
+  type ScheduleChangeAuditDto,
   type SessionScheduleChangeResponse,
 } from '../../services/classSession.service';
 import { signalRService } from '../../services/signalr.service';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
-import { Spin, Tag, Button } from 'antd';
+import { Spin, Button, Input } from 'antd';
 import { toast } from 'react-toastify';
 import CountdownTimer from './components/CountdownTimer';
 import ConfirmLessonModal from './components/ConfirmLessonModal';
 import CreateDisputeForm from './components/CreateDisputeForm';
 import ReportNoShowModal from './components/ReportNoShowModal';
 import NoShowActionModal from './components/NoShowActionModal';
-import CreateFeedbackModal from './components/CreateFeedbackModal';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
-import { ClassSessionRecording } from '../../components/shared';
+import { ClassSessionRecording, PageContainer, SectionCard, StatusBadge } from '../../components/shared';
+import { getDisputeStatusMeta, getDisputeTypeLabel } from '../../components/disputes';
 import { formatVNDNumber } from '../../utils/formatters';
+import { formatLocalDate, formatLocalDateTime, formatLocalTime } from '../../utils/datetime';
+import styles from './lesson-detail.module.css';
 
 const getFileNameFromUrl = (url: string): string => {
   try {
@@ -40,12 +43,59 @@ const getFileNameFromUrl = (url: string): string => {
 
 const TERMINAL_BOOKING_STATUSES = ['completed', 'cancelled', 'cancelled_noshow'];
 
+const getApiErrorMessage = (error: unknown): string | undefined =>
+  (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+
+const SCHEDULE_CHANGE_STATUS_LABELS: Record<string, string> = {
+  applied: 'Đã áp dụng',
+  approved: 'Hai bên đã đồng ý',
+  rejected: 'Đã từ chối',
+  expired: 'Đã hết hạn',
+  pending: 'Đang chờ xác nhận',
+};
+
+// Dùng chung bộ format với trang khiếu nại: "HH:mm", "DD/MM/YYYY", "HH:mm DD/MM/YYYY".
+const formatTime = formatLocalTime;
+const formatDate = formatLocalDate;
+const formatDateTime = formatLocalDateTime;
+
+const InfoItem: React.FC<{ label: string; value: React.ReactNode; accent?: boolean }> = ({
+  label,
+  value,
+  accent,
+}) => (
+  <div className={styles.infoItem}>
+    <span className={styles.infoLabel}>{label}</span>
+    <span className={`${styles.infoValue} ${accent ? styles.infoAccent : ''}`}>{value}</span>
+  </div>
+);
+
+const ReportBlock: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+  <div className={styles.reportBlock}>
+    <p className={styles.reportLabel}>{label}</p>
+    {children}
+  </div>
+);
+
+const AttachmentList: React.FC<{ urls: string[] }> = ({ urls }) => (
+  <div className={styles.fileList}>
+    {urls.map((url, index) => (
+      <a key={`${url}-${index}`} className={styles.fileItem} href={url} target="_blank" rel="noopener noreferrer">
+        <Paperclip size={14} className={styles.fileIcon} aria-hidden="true" />
+        <span className={styles.fileName}>{getFileNameFromUrl(url)}</span>
+        <Download size={14} className={styles.fileIcon} aria-hidden="true" />
+      </a>
+    ))}
+  </div>
+);
+
 const ParentLessonDetail: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { lessonId } = useParams();
   const id = lessonId ? parseInt(lessonId) : 0;
 
-  const [lesson, setLesson] = useState<any | null>(null);
+  const [lesson, setLesson] = useState<ParentLessonDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [scheduleChange, setScheduleChange] = useState<SessionScheduleChangeResponse | null>(null);
   const [submittingScheduleDecision, setSubmittingScheduleDecision] = useState(false);
@@ -55,18 +105,27 @@ const ParentLessonDetail: React.FC = () => {
   const [showDisputeForm, setShowDisputeForm] = useState(false);
   const [showNoShowModal, setShowNoShowModal] = useState(false);
   const [showNoShowActionModal, setShowNoShowActionModal] = useState(false);
-  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [dispute, setDispute] = useState<DisputeDetailResponse | null>(null);
   const [thread, setThread] = useState<DisputeMessage[]>([]);
   const [threadInput, setThreadInput] = useState('');
   const [sendingThreadMessage, setSendingThreadMessage] = useState(false);
+
+  /**
+   * Quay lại đúng trang người dùng vừa rời (danh sách khiếu nại, lịch học, dashboard…).
+   * `location.key === 'default'` nghĩa là trang này là entry đầu tiên của history (mở thẳng link,
+   * F5, tab mới) — lúc đó `navigate(-1)` sẽ văng ra khỏi app nên phải rơi về dashboard.
+   */
+  const goBack = () => {
+    if (location.key !== 'default') navigate(-1);
+    else navigate('/parent-portal/dashboard');
+  };
 
   const fetchLesson = async () => {
     try {
       setLoading(true);
       const response = await getParentLessonDetail(id);
       setLesson(response.content);
-    } catch (error: any) {
+    } catch {
       toast.error('Không thể tải chi tiết buổi học.');
     } finally {
       setLoading(false);
@@ -110,8 +169,8 @@ const ParentLessonDetail: React.FC = () => {
       await sendClassSessionDisputeThreadMessage(id, threadInput.trim());
       setThreadInput('');
       await fetchThread();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Không thể gửi tin nhắn.', { toastId: 'dispute-thread-send-error' });
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error) || 'Không thể gửi tin nhắn.', { toastId: 'dispute-thread-send-error' });
     } finally {
       setSendingThreadMessage(false);
     }
@@ -122,6 +181,7 @@ const ParentLessonDetail: React.FC = () => {
       fetchLesson();
       fetchDispute();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useEffect(() => {
@@ -161,8 +221,8 @@ const ParentLessonDetail: React.FC = () => {
       } else {
         toast.success(confirmed ? 'Đã xác nhận đổi lịch học.' : 'Đã từ chối đổi lịch học.');
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Không thể xử lý yêu cầu đổi lịch.');
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error) || 'Không thể xử lý yêu cầu đổi lịch.');
       await fetchScheduleChange();
     } finally {
       setSubmittingScheduleDecision(false);
@@ -177,632 +237,437 @@ const ParentLessonDetail: React.FC = () => {
     fetchDispute();
   };
 
+  const pageClassName = `${styles.page} ${inMiniApp ? styles.miniApp : ''}`;
+
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '80px' }}>
-        <Spin size="large" />
-      </div>
+      <PageContainer className={pageClassName}>
+        <div className={styles.centerState}>
+          <Spin size="large" />
+        </div>
+      </PageContainer>
     );
   }
 
   if (!lesson) {
     return (
-      <div style={{ textAlign: 'center', padding: '80px', color: '#999' }}>
-        Không tìm thấy buổi học
-      </div>
+      <PageContainer className={pageClassName}>
+        <button type="button" className={styles.backButton} onClick={goBack}>
+          <ArrowLeft size={15} aria-hidden="true" />
+          Quay lại
+        </button>
+        <SectionCard>
+          <div className={styles.centerState}>Không tìm thấy buổi học.</div>
+        </SectionCard>
+      </PageContainer>
     );
   }
 
   const status = getClassSessionStatusMeta(lesson.status);
   const startTime = new Date(lesson.scheduledStart);
   const endTime = new Date(lesson.scheduledEnd);
+  const durationMinutes = Math.max(0, Math.round((endTime.getTime() - startTime.getTime()) / 60000));
   const reportContent = lesson.report?.contentCovered || lesson.lessonContent;
   const reportHomework = lesson.report?.homeworkAssigned || lesson.homework;
   const reportRating = typeof lesson.report?.studentPerformanceRating === 'number'
     ? Math.max(0, Math.min(5, Math.round(lesson.report.studentPerformanceRating)))
     : null;
-  const hasTutorReport = Boolean(
-    lesson.report
-    || reportContent
-    || reportHomework
-    || lesson.tutorNotes
-    || lesson.report?.attachments?.length,
-  );
+  const hasTutorReport = Boolean(lesson.report || reportContent || reportHomework || lesson.tutorNotes);
   const canCreateDispute = !TERMINAL_BOOKING_STATUSES.includes(
     String(lesson.bookingStatus || '').toLowerCase(),
   );
+  const disputeStatus = dispute ? getDisputeStatusMeta(dispute.status) : null;
+
+  const showConfirmAction = lesson.status === 'pending_confirmation';
+  const showNoShowAction = lesson.status === 'scheduled';
+  const showNoShowResolution = lesson.status === 'no_show' && dispute?.status === 'confirmed_no_show';
+  const showReportTutorAction = lesson.status === 'completed' && !dispute && canCreateDispute;
+  const hasActions = showConfirmAction || showNoShowAction || showNoShowResolution || showReportTutorAction;
 
   return (
-    <div style={{ padding: inMiniApp ? '12px' : '24px', maxWidth: inMiniApp ? 'none' : '900px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <button
-          onClick={() => navigate('/parent-portal/dashboard')}
-          style={{
-            width: '36px', height: '36px', borderRadius: '8px',
-            border: '1px solid #e8e8e8', background: '#fff',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-          }}
-        >
-          <ArrowLeft size={18} />
-        </button>
-        <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1a2238', margin: 0 }}>
-            Chi tiết buổi học
-          </h1>
-          <p style={{ fontSize: '13px', color: '#999', margin: 0 }}>
-            #{lesson.lessonId}
+    <PageContainer className={pageClassName}>
+      <button type="button" className={styles.backButton} onClick={goBack}>
+        <ArrowLeft size={15} aria-hidden="true" />
+        Quay lại
+      </button>
+
+      <header className={styles.header}>
+        <div className={styles.headerText}>
+          <span className={styles.eyebrow}>Buổi #{lesson.lessonId}</span>
+          <h1 className={styles.title}>{lesson.subjectName || lesson.subject?.subjectName || 'Chi tiết buổi học'}</h1>
+          <p className={styles.headerMeta}>
+            {startTime.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
+            {' · '}
+            {formatTime(lesson.scheduledStart)}–{formatTime(lesson.scheduledEnd)}
           </p>
         </div>
-        <Tag color={status.color} style={{ fontSize: '14px', padding: '4px 12px', borderRadius: '6px' }}>
-          {status.label}
-        </Tag>
-      </div>
+        <StatusBadge variant={status.variant}>{status.label}</StatusBadge>
+      </header>
 
-      {/* Countdown Timer */}
       {lesson.confirmDeadline && lesson.status === 'pending_confirmation' && (
-        <div style={{
-          background: '#fffbe6', border: '1px solid #ffe58f', borderRadius: '12px',
-          padding: '12px 16px', marginBottom: '20px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          <span style={{ fontSize: '13px', color: '#d48806' }}>
-            Hạn xác nhận buổi học:
+        <div className={`${styles.notice} ${styles.noticeWarning}`}>
+          <Clock3 size={16} aria-hidden="true" />
+          <span>Hạn xác nhận buổi học</span>
+          <span className={styles.noticeSpacer}>
+            <CountdownTimer deadline={lesson.confirmDeadline} />
           </span>
-          <CountdownTimer deadline={lesson.confirmDeadline} />
         </div>
       )}
 
-      {/* Parent confirms an off-schedule request here; parent never enters the lobby/call. */}
+      {/* Tóm tắt buổi học + hành động chính, đặt ngay đầu trang để không phải cuộn tìm. */}
+      <SectionCard>
+        <div className={styles.summaryCard}>
+          <div className={styles.infoGrid}>
+            <InfoItem label="Gia sư" value={lesson.tutorName || lesson.tutor?.fullName || 'Chưa cập nhật'} />
+            <InfoItem label="Học viên" value={lesson.student?.fullName || 'Chưa cập nhật'} />
+            <InfoItem label="Thời lượng" value={`${durationMinutes} phút`} />
+            <InfoItem label="Hình thức" value={lesson.meetingLink ? 'Học online' : 'Học trực tiếp'} />
+            {lesson.lessonPrice != null && (
+              <InfoItem label="Học phí buổi học" value={`${formatVNDNumber(lesson.lessonPrice)}đ`} accent />
+            )}
+            {lesson.checkInTime && (
+              <InfoItem
+                label="Điểm danh"
+                value={`Vào lúc ${formatTime(lesson.checkInTime)}${lesson.checkOutTime ? ` · Kết thúc ${formatTime(lesson.checkOutTime)}` : ''}`}
+              />
+            )}
+          </div>
+
+          {hasActions && (
+            <div className={styles.actionBar}>
+              {showConfirmAction && (
+                <>
+                  <Button type="primary" className={styles.primaryAction} onClick={() => setShowConfirmModal(true)}>
+                    Xác nhận buổi học
+                  </Button>
+                  {canCreateDispute && (
+                    <Button danger onClick={() => setShowDisputeForm(true)}>
+                      Khiếu nại
+                    </Button>
+                  )}
+                </>
+              )}
+
+              {showNoShowAction && (
+                <Button danger onClick={() => setShowNoShowModal(true)}>
+                  Báo gia sư vắng mặt
+                </Button>
+              )}
+
+              {showNoShowResolution && (
+                <Button type="primary" className={styles.primaryAction} onClick={() => setShowNoShowActionModal(true)}>
+                  Chọn hành động xử lý
+                </Button>
+              )}
+
+              {showReportTutorAction && (
+                <Button danger onClick={() => setShowDisputeForm(true)}>
+                  Báo cáo gia sư
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </SectionCard>
+
+      {lesson.status === 'no_show' && dispute?.status !== 'confirmed_no_show' && (
+        <div className={`${styles.notice} ${styles.noticeWarning}`}>
+          Báo cáo đang chờ quản trị viên xác nhận. Chưa có hoàn tiền hoặc cảnh báo nào được áp dụng.
+        </div>
+      )}
+
+      {/* Phụ huynh chỉ xác nhận đổi giờ ở đây; phụ huynh không vào phòng học. */}
       {scheduleChange?.requiresConfirmation && scheduleChange.requiredLearnerRole === 'Parent' && (
-        <div style={{
-          background: '#fff',
-          border: `1px solid ${scheduleChange.status === 'rejected' ? '#ffccc7' : '#ffe58f'}`,
-          borderRadius: 12,
-          padding: inMiniApp ? 16 : 22,
-          marginBottom: 20,
-          boxShadow: '0 6px 22px rgba(26,34,56,0.06)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 18 }}>
-            <div style={{
-              width: 42, height: 42, borderRadius: 10, flexShrink: 0,
-              background: '#fff7e6', color: '#d46b08',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <CalendarClock size={22} />
-            </div>
-            <div>
-              <div style={{ fontSize: 17, fontWeight: 700, color: '#1a2238' }}>
-                Xác nhận thay đổi giờ học
-              </div>
-              <div style={{ fontSize: 13, color: '#667085', marginTop: 4, lineHeight: 1.55 }}>
-                Gia sư và học viên đang muốn học ngoài thời gian mặc định. Phụ huynh chỉ xác nhận tại đây;
-                học viên và gia sư là hai người vào phòng học.
-              </div>
-            </div>
-          </div>
+        <SectionCard
+          title="Xác nhận thay đổi giờ học"
+          headerAction={<CalendarClock size={18} color="#8a6116" aria-hidden="true" />}
+        >
+          <div className={styles.sectionBody}>
+            <p className={styles.sectionLead}>
+              Gia sư và học viên đang muốn học ngoài thời gian mặc định. Phụ huynh chỉ xác nhận tại đây; học viên và
+              gia sư là hai người vào phòng học.
+            </p>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: inMiniApp ? '1fr' : 'repeat(2, minmax(0, 1fr))',
-            gap: 12,
-            marginBottom: 16,
-          }}>
-            <InfoRow
-              label="Học viên"
-              value={scheduleChange.studentName || lesson.student?.fullName || 'Học sinh'}
-            />
-            <InfoRow
-              label="Gia sư"
-              value={scheduleChange.tutorName || lesson.tutorName || lesson.tutor?.fullName || 'Gia sư'}
-            />
-            <InfoRow
-              label="Lịch học ban đầu"
-              value={`${new Date(scheduleChange.originalScheduledStart).toLocaleDateString('vi-VN')} · ${new Date(scheduleChange.originalScheduledStart).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(scheduleChange.originalScheduledEnd).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`}
-            />
-            <InfoRow label="Thời lượng giữ nguyên" value={`${scheduleChange.durationMinutes} phút`} />
-            {scheduleChange.requestedAt && (
-              <InfoRow
-                label="Yêu cầu được tạo lúc"
-                value={new Date(scheduleChange.requestedAt).toLocaleString('vi-VN')}
+            <div className={styles.infoGrid}>
+              <InfoItem label="Học viên" value={scheduleChange.studentName || lesson.student?.fullName || 'Học sinh'} />
+              <InfoItem
+                label="Gia sư"
+                value={scheduleChange.tutorName || lesson.tutorName || lesson.tutor?.fullName || 'Gia sư'}
               />
-            )}
-            {scheduleChange.expiresAt && (
-              <InfoRow
-                label="Hạn phản hồi"
-                value={new Date(scheduleChange.expiresAt).toLocaleString('vi-VN')}
+              <InfoItem
+                label="Lịch học ban đầu"
+                value={`${formatDate(scheduleChange.originalScheduledStart)} · ${formatTime(scheduleChange.originalScheduledStart)}–${formatTime(scheduleChange.originalScheduledEnd)}`}
               />
-            )}
-          </div>
-
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: inMiniApp ? '1fr' : '1fr 1fr',
-            gap: 10,
-            marginBottom: 16,
-          }}>
-            <div style={{
-              border: '1px solid #e8e8e8', borderRadius: 10, padding: '12px 14px',
-              display: 'flex', alignItems: 'center', gap: 10,
-            }}>
-              {scheduleChange.tutorConfirmedAt
-                ? <CheckCircle2 size={19} color="#16a34a" />
-                : <Clock3 size={19} color="#d97706" />}
-              <div>
-                <div style={{ fontSize: 12, color: '#8c8c8c' }}>Gia sư</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#1a2238' }}>
-                  {scheduleChange.tutorConfirmedAt ? 'Đã xác nhận' : 'Đang chờ xác nhận'}
-                </div>
-              </div>
-            </div>
-            <div style={{
-              border: '1px solid #e8e8e8', borderRadius: 10, padding: '12px 14px',
-              display: 'flex', alignItems: 'center', gap: 10,
-            }}>
-              {scheduleChange.learnerConfirmedAt
-                ? <CheckCircle2 size={19} color="#16a34a" />
-                : <Clock3 size={19} color="#d97706" />}
-              <div>
-                <div style={{ fontSize: 12, color: '#8c8c8c' }}>Phụ huynh</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#1a2238' }}>
-                  {scheduleChange.learnerConfirmedAt ? 'Đã xác nhận' : 'Đang chờ xác nhận'}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {scheduleChange.status === 'rejected' ? (
-            <div style={{ color: '#cf1322', background: '#fff2f0', borderRadius: 8, padding: '10px 12px', fontSize: 13 }}>
-              Yêu cầu đổi lịch đã bị từ chối. Học viên và gia sư chưa thể vào buổi học ngoài lịch này.
-            </div>
-          ) : scheduleChange.status === 'approved' && scheduleChange.scheduleConflict ? (
-            <div style={{ color: '#b45309', background: '#fffbeb', borderRadius: 8, padding: '10px 12px', fontSize: 13, lineHeight: 1.55 }}>
-              <strong>Đã đủ xác nhận nhưng chưa thể bắt đầu:</strong> {scheduleChange.scheduleConflict.message}
-              {' '}Hệ thống sẽ tự kiểm tra lại, phụ huynh không cần xác nhận lần nữa.
-            </div>
-          ) : scheduleChange.status === 'approved' ? (
-            <div style={{ color: '#15803d', background: '#f0fdf4', borderRadius: 8, padding: '10px 12px', fontSize: 13 }}>
-              Đã đủ xác nhận. Học viên và gia sư có thể vào học; thời gian buổi học sẽ được cập nhật khi họ bắt đầu.
-            </div>
-          ) : scheduleChange.currentUserConfirmed ? (
-            <div style={{ color: '#0958d9', background: '#e6f4ff', borderRadius: 8, padding: '10px 12px', fontSize: 13 }}>
-              Phụ huynh đã xác nhận. Đang chờ gia sư xác nhận.
-            </div>
-          ) : scheduleChange.canCurrentUserConfirm ? (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
-              <Button
-                danger
-                size="large"
-                icon={<XCircle size={17} />}
-                loading={submittingScheduleDecision}
-                onClick={() => void handleScheduleChangeDecision(false)}
-              >
-                Từ chối
-              </Button>
-              <Button
-                type="primary"
-                size="large"
-                icon={<CheckCircle2 size={17} />}
-                loading={submittingScheduleDecision}
-                onClick={() => void handleScheduleChangeDecision(true)}
-                style={{ background: '#3e2f28', borderColor: '#3e2f28' }}
-              >
-                Xác nhận đổi lịch
-              </Button>
-            </div>
-          ) : null}
-        </div>
-      )}
-      {/* Lesson Info Card */}
-      <div style={{
-        background: '#fff', borderRadius: '12px', padding: '24px',
-        border: '1px solid rgba(26,34,56,0.06)', marginBottom: '20px',
-      }}>
-        <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1a2238', marginBottom: '16px' }}>
-          Thông tin buổi học
-        </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: inMiniApp ? '1fr' : '1fr 1fr', gap: '16px' }}>
-          <InfoRow label="Môn học" value={lesson.subjectName || lesson.subject?.subjectName || 'N/A'} />
-          <InfoRow label="Gia sư" value={lesson.tutorName || lesson.tutor?.fullName || 'N/A'} />
-          <InfoRow
-
-            label="Thời gian"
-            value={`${startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${endTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`}
-          />
-          <InfoRow
-            label="Ngày"
-            value={startTime.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
-          />
-          {lesson.lessonPrice != null && (
-            <InfoRow
-              label="Giá buổi học"
-              value={`${formatVNDNumber(lesson.lessonPrice)}đ`}
-              highlight
-            />
-          )}
-          {lesson.meetingLink && (
-            <InfoRow label="Hình thức" value="Học online" />
-          )}
-        </div>
-      </div>
-
-      {/* Lịch sử dời lịch (nếu có) — bản tóm tắt cố định, khác với banner "cần xác nhận" ở trên (banner đó tự ẩn sau khi xử lý xong). */}
-      {Array.isArray(lesson.scheduleChanges) && lesson.scheduleChanges.length > 0 && (
-        <div style={{
-          background: '#fff', borderRadius: '12px', padding: '24px',
-          border: '1px solid rgba(26,34,56,0.06)', marginBottom: '20px',
-        }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1a2238', marginBottom: '16px' }}>
-            Lịch sử dời lịch
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {lesson.scheduleChanges.map((sc: any) => {
-              const statusLabel: Record<string, string> = {
-                applied: 'Đã áp dụng',
-                approved: 'Hai bên đã đồng ý',
-                rejected: 'Đã từ chối',
-                expired: 'Đã hết hạn',
-                pending: 'Đang chờ xác nhận',
-              };
-              return (
-                <div key={sc.scheduleChangeId} style={{ background: '#fafaf8', borderRadius: 10, padding: '12px 14px', border: '1px solid rgba(26,34,56,0.06)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: '#8c8c8c', textTransform: 'uppercase', letterSpacing: 0.4 }}>
-                      {statusLabel[sc.status] || sc.status}
-                    </span>
-                    {sc.appliedAt && (
-                      <span style={{ fontSize: 12, color: '#999' }}>
-                        Áp dụng lúc {new Date(sc.appliedAt).toLocaleString('vi-VN')}
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ fontSize: 14, color: '#1a2238' }}>
-                    {new Date(sc.originalScheduledStart).toLocaleDateString('vi-VN')}, {new Date(sc.originalScheduledStart).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}–{new Date(sc.originalScheduledEnd).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                    {sc.adjustedScheduledStart && (
-                      <> {'→'} {new Date(sc.adjustedScheduledStart).toLocaleDateString('vi-VN')}, {new Date(sc.adjustedScheduledStart).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}–{new Date(sc.adjustedScheduledEnd).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</>
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', gap: 20, marginTop: 8, fontSize: 12, color: '#666', flexWrap: 'wrap' }}>
-                    <span>Gia sư: {sc.tutorConfirmedByName ? `${sc.tutorConfirmedByName} đã xác nhận` : 'Chưa xác nhận'}</span>
-                    <span>
-                      {sc.learnerApproverRole === 'Student' ? 'Học sinh' : 'Phụ huynh'}: {sc.learnerConfirmedByName ? `${sc.learnerConfirmedByName} đã xác nhận` : 'Chưa xác nhận'}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Tutor Report (if available) */}
-      {hasTutorReport && (
-        <div style={{
-          background: '#fff', borderRadius: '12px', padding: '24px',
-          border: '1px solid rgba(26,34,56,0.06)', marginBottom: '20px',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: '18px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1a2238', margin: 0 }}>
-              Báo cáo gia sư
-            </h3>
-            {lesson.report?.createdAt && (
-              <span style={{ fontSize: '12px', color: '#999', textAlign: 'right' }}>
-                Gửi lúc {new Date(lesson.report.createdAt).toLocaleString('vi-VN')}
-              </span>
-            )}
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: inMiniApp ? '1fr' : '1fr 1fr', gap: '18px 24px' }}>
-            <div>
-              <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Nội dung đã dạy</div>
-              <div style={{ fontSize: '14px', color: '#1a2238', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-                {reportContent || 'Không có nội dung.'}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Bài tập về nhà</div>
-              <div style={{ fontSize: '14px', color: '#1a2238', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-                {reportHomework || 'Không giao bài tập.'}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Ghi chú gia sư</div>
-              <div style={{ fontSize: '14px', color: '#1a2238', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-                {lesson.tutorNotes || 'Không có ghi chú.'}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>
-                Mức độ tiếp thu của học viên
-              </div>
-              {reportRating != null && reportRating > 0 ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ color: '#faad14', fontSize: '18px', letterSpacing: 2 }}>
-                    {'★'.repeat(reportRating)}
-                    <span style={{ color: '#e8e8e8' }}>{'★'.repeat(5 - reportRating)}</span>
-                  </span>
-                  <span style={{ fontSize: '13px', color: '#666' }}>{reportRating}/5</span>
-                </div>
-              ) : (
-                <div style={{ fontSize: '14px', color: '#999' }}>Chưa đánh giá.</div>
+              <InfoItem label="Thời lượng giữ nguyên" value={`${scheduleChange.durationMinutes} phút`} />
+              {scheduleChange.requestedAt && (
+                <InfoItem label="Yêu cầu tạo lúc" value={formatDateTime(scheduleChange.requestedAt)} />
+              )}
+              {scheduleChange.expiresAt && (
+                <InfoItem label="Hạn phản hồi" value={formatDateTime(scheduleChange.expiresAt)} />
               )}
             </div>
-          </div>
 
-          {Array.isArray(lesson.report?.attachments) && lesson.report.attachments.length > 0 && (
-            <div style={{ marginTop: '20px' }}>
-              <div style={{ fontSize: '12px', color: '#999', marginBottom: '8px' }}>Tệp đính kèm</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {lesson.report.attachments.map((url: string, index: number) => (
-                  <a
-                    key={`${url}-${index}`}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      padding: '10px 14px',
-                      background: '#fafaf8',
-                      borderRadius: 10,
-                      border: '1px solid rgba(26,34,56,0.06)',
-                      textDecoration: 'none',
-                    }}
-                  >
-                    <Paperclip size={14} style={{ flexShrink: 0, color: '#6366F1' }} />
-                    <span
-                      style={{
-                        flex: 1,
-                        minWidth: 0,
-                        fontSize: '13px',
-                        color: '#1a2238',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {getFileNameFromUrl(url)}
-                    </span>
-                    <Download size={14} style={{ flexShrink: 0, color: '#9ca3af' }} />
-                  </a>
-                ))}
+            <div className={styles.confirmPair}>
+              <div className={styles.confirmTile}>
+                {scheduleChange.tutorConfirmedAt
+                  ? <CheckCircle2 size={19} color="#059669" />
+                  : <Clock3 size={19} color="#d97706" />}
+                <div>
+                  <div className={styles.confirmTileLabel}>Gia sư</div>
+                  <div className={styles.confirmTileValue}>
+                    {scheduleChange.tutorConfirmedAt ? 'Đã xác nhận' : 'Đang chờ xác nhận'}
+                  </div>
+                </div>
+              </div>
+              <div className={styles.confirmTile}>
+                {scheduleChange.learnerConfirmedAt
+                  ? <CheckCircle2 size={19} color="#059669" />
+                  : <Clock3 size={19} color="#d97706" />}
+                <div>
+                  <div className={styles.confirmTileLabel}>Phụ huynh</div>
+                  <div className={styles.confirmTileValue}>
+                    {scheduleChange.learnerConfirmedAt ? 'Đã xác nhận' : 'Đang chờ xác nhận'}
+                  </div>
+                </div>
               </div>
             </div>
-          )}
-        </div>
-      )}
-      {dispute && (
-        <div style={{
-          background: '#fff', borderRadius: '12px', padding: '20px', marginBottom: '16px',
-          border: '1px solid rgba(26,34,56,0.06)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <span style={{ fontSize: '15px', fontWeight: 700, color: '#1a2238' }}>Khiếu nại của bạn</span>
-            <Tag color={dispute.status === 'resolved' || dispute.status === 'confirmed_no_show' ? '#52c41a' : dispute.status === 'investigating' ? '#1890ff' : '#faad14'}>
-              {dispute.status === 'resolved'
-                ? 'Đã giải quyết'
-                : dispute.status === 'confirmed_no_show'
-                  ? 'Đã xác nhận vắng mặt'
-                  : dispute.status === 'investigating'
-                    ? 'Đang xem xét'
-                    : 'Chờ xử lý'}
-            </Tag>
-          </div>
-          <div style={{ fontSize: '13px', color: '#666', marginBottom: dispute.evidence?.length ? '12px' : 0 }}>
-            {dispute.reason || 'Không có mô tả.'}
-          </div>
-          {Array.isArray(dispute.evidence) && dispute.evidence.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {dispute.evidence.map((url: string, index: number) => (
-                <a
-                  key={`${url}-${index}`}
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '10px 14px', background: '#fafaf8', borderRadius: 10,
-                    border: '1px solid rgba(26,34,56,0.06)', textDecoration: 'none',
-                  }}
-                >
-                  <Paperclip size={14} style={{ flexShrink: 0, color: '#6366F1' }} />
-                  <span style={{ flex: 1, minWidth: 0, fontSize: '13px', color: '#1a2238', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {getFileNameFromUrl(url)}
-                  </span>
-                  <Download size={14} style={{ flexShrink: 0, color: '#9ca3af' }} />
-                </a>
-              ))}
-            </div>
-          )}
-          {Array.isArray(dispute.additionalEvidence) && dispute.additionalEvidence.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: dispute.evidence?.length ? 8 : 0 }}>
-              {dispute.additionalEvidence.map((item) => (
-                <a
-                  key={item.disputeEvidenceId}
-                  href={item.fileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '10px 14px', background: '#fafaf8', borderRadius: 10,
-                    border: '1px solid rgba(26,34,56,0.06)', textDecoration: 'none',
-                  }}
-                >
-                  <Paperclip size={14} style={{ flexShrink: 0, color: '#6366F1' }} />
-                  <span style={{ flex: 1, minWidth: 0, fontSize: '13px', color: '#1a2238', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {item.fileUrl ? getFileNameFromUrl(item.fileUrl) : 'Bằng chứng'}
-                  </span>
-                  <Download size={14} style={{ flexShrink: 0, color: '#9ca3af' }} />
-                </a>
-              ))}
-            </div>
-          )}
-          {dispute.status === 'resolved' && (
-            <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(26,34,56,0.06)' }}>
-              <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Kết quả xử lý</div>
-              <div style={{ fontSize: '14px', color: '#1a2238' }}>{dispute.resolutionNote || 'Không có ghi chú.'}</div>
-              {typeof dispute.refundPercentage === 'number' && (
-                <div style={{ fontSize: '14px', color: '#1a2238', marginTop: '6px' }}>
-                  Tỷ lệ hoàn tiền: {dispute.refundPercentage}%
-                </div>
-              )}
-            </div>
-          )}
-          {dispute.status !== 'resolved' && (
-            <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid rgba(26,34,56,0.06)' }}>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: '#1a2238', marginBottom: 8 }}>Chat riêng với admin</div>
-              {thread.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10, maxHeight: 220, overflowY: 'auto' }}>
-                  {thread.map((msg) => (
-                    <div
-                      key={msg.disputeMessageId}
-                      style={{
-                        alignSelf: msg.senderRole === 'admin' ? 'flex-start' : 'flex-end',
-                        maxWidth: '80%',
-                        padding: '8px 12px',
-                        borderRadius: 8,
-                        background: msg.senderRole === 'admin' ? '#eef2ff' : '#f1f5f9',
-                      }}
-                    >
-                      <p style={{ margin: '0 0 2px', fontSize: 11, fontWeight: 600, color: '#64748b' }}>
-                        {msg.senderRole === 'admin' ? 'Admin' : 'Bạn'}
-                      </p>
-                      <p style={{ margin: 0, fontSize: 13, whiteSpace: 'pre-wrap' }}>{msg.message}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  type="text"
-                  value={threadInput}
-                  onChange={(event) => setThreadInput(event.target.value)}
-                  placeholder="Nhắn cho admin..."
-                  style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid #d9dde3', fontSize: 13 }}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') void handleSendThreadMessage();
-                  }}
-                />
+
+            {scheduleChange.status === 'rejected' ? (
+              <div className={`${styles.notice} ${styles.noticeDanger} ${styles.blockGap}`}>
+                Yêu cầu đổi lịch đã bị từ chối. Học viên và gia sư chưa thể vào buổi học ngoài lịch này.
+              </div>
+            ) : scheduleChange.status === 'approved' && scheduleChange.scheduleConflict ? (
+              <div className={`${styles.notice} ${styles.noticeWarning} ${styles.blockGap}`}>
+                <span>
+                  <strong>Đã đủ xác nhận nhưng chưa thể bắt đầu:</strong> {scheduleChange.scheduleConflict.message}
+                  {' '}Hệ thống sẽ tự kiểm tra lại, phụ huynh không cần xác nhận lần nữa.
+                </span>
+              </div>
+            ) : scheduleChange.status === 'approved' ? (
+              <div className={`${styles.notice} ${styles.noticeSuccess} ${styles.blockGap}`}>
+                Đã đủ xác nhận. Học viên và gia sư có thể vào học; thời gian buổi học sẽ được cập nhật khi họ bắt đầu.
+              </div>
+            ) : scheduleChange.currentUserConfirmed ? (
+              <div className={`${styles.notice} ${styles.noticeInfo} ${styles.blockGap}`}>
+                Phụ huynh đã xác nhận. Đang chờ gia sư xác nhận.
+              </div>
+            ) : scheduleChange.canCurrentUserConfirm ? (
+              <div className={styles.decisionRow}>
                 <Button
-                  size="middle"
-                  loading={sendingThreadMessage}
-                  disabled={threadInput.trim().length === 0}
-                  onClick={() => void handleSendThreadMessage()}
+                  danger
+                  icon={<XCircle size={16} />}
+                  loading={submittingScheduleDecision}
+                  onClick={() => void handleScheduleChangeDecision(false)}
                 >
-                  Gửi
+                  Từ chối
+                </Button>
+                <Button
+                  type="primary"
+                  className={styles.primaryAction}
+                  icon={<CheckCircle2 size={16} />}
+                  loading={submittingScheduleDecision}
+                  onClick={() => void handleScheduleChangeDecision(true)}
+                >
+                  Xác nhận đổi lịch
                 </Button>
               </div>
-            </div>
-          )}
-        </div>
+            ) : null}
+          </div>
+        </SectionCard>
       )}
 
-      {/* Video buổi học */}
-      <div style={{
-        background: '#fff', borderRadius: '12px', padding: '24px',
-        border: '1px solid rgba(26,34,56,0.06)', marginBottom: '20px',
-      }}>
-        <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1a2238', marginBottom: '16px' }}>
-          Video buổi học
-        </h3>
-        <ClassSessionRecording classSessionId={id} />
-      </div>
+      {hasTutorReport && (
+        <SectionCard
+          title="Báo cáo gia sư"
+          headerAction={
+            lesson.report?.createdAt ? (
+              <span className={styles.historyTime}>Gửi lúc {formatDateTime(lesson.report.createdAt)}</span>
+            ) : undefined
+          }
+        >
+          <div className={styles.sectionBody}>
+            <div className={styles.reportGrid}>
+              <ReportBlock label="Nội dung đã dạy">
+                <p className={`${styles.reportText} ${reportContent ? '' : styles.reportMuted}`}>
+                  {reportContent || 'Không có nội dung.'}
+                </p>
+              </ReportBlock>
+              <ReportBlock label="Bài tập về nhà">
+                <p className={`${styles.reportText} ${reportHomework ? '' : styles.reportMuted}`}>
+                  {reportHomework || 'Không giao bài tập.'}
+                </p>
+              </ReportBlock>
+              <ReportBlock label="Ghi chú gia sư">
+                <p className={`${styles.reportText} ${lesson.tutorNotes ? '' : styles.reportMuted}`}>
+                  {lesson.tutorNotes || 'Không có ghi chú.'}
+                </p>
+              </ReportBlock>
+              <ReportBlock label="Mức độ tiếp thu của học viên">
+                {reportRating != null && reportRating > 0 ? (
+                  <span className={styles.rating}>
+                    <span className={styles.ratingStars}>
+                      {'★'.repeat(reportRating)}
+                      <span>{'★'.repeat(5 - reportRating)}</span>
+                    </span>
+                    <span className={styles.ratingValue}>{reportRating}/5</span>
+                  </span>
+                ) : (
+                  <p className={`${styles.reportText} ${styles.reportMuted}`}>Chưa đánh giá.</p>
+                )}
+              </ReportBlock>
+            </div>
 
-      {/* Action Buttons */}
-      <div style={{
-        background: '#fff', borderRadius: '12px', padding: '20px',
-        border: '1px solid rgba(26,34,56,0.06)',
-        display: 'flex', gap: '12px', flexWrap: 'wrap',
-      }}>
-        {lesson.status === 'pending_confirmation' && (
-          <>
-            <Button
-              type="primary"
-              size="large"
-              onClick={() => setShowConfirmModal(true)}
-              style={{ background: '#52c41a', borderColor: '#52c41a' }}
-            >
-              Xác nhận buổi học
-            </Button>
-            {canCreateDispute && (
-              <Button
-                size="large"
-                danger
-                onClick={() => setShowDisputeForm(true)}
-              >
-                Khiếu nại
-              </Button>
+            {Array.isArray(lesson.report?.attachments) && lesson.report.attachments.length > 0 && (
+              <div className={styles.blockGap}>
+                <p className={styles.reportLabel}>Tệp đính kèm</p>
+                <AttachmentList urls={lesson.report.attachments} />
+              </div>
             )}
-          </>
-        )}
-
-        {lesson.status === 'scheduled' && (
-          <Button
-            size="large"
-            danger
-            onClick={() => setShowNoShowModal(true)}
-          >
-            Báo gia sư vắng mặt
-          </Button>
-        )}
-
-        {lesson.status === 'no_show' && dispute?.status === 'confirmed_no_show' && (
-          <Button
-            type="primary"
-            size="large"
-            onClick={() => setShowNoShowActionModal(true)}
-            style={{ background: '#3e2f28', borderColor: '#3e2f28' }}
-          >
-            Chọn hành động xử lý
-          </Button>
-        )}
-
-        {lesson.status === 'no_show' && dispute?.status !== 'confirmed_no_show' && (
-          <div style={{ maxWidth: 420, color: '#8a6116', background: '#fff7e6', border: '1px solid #ffd591', borderRadius: 8, padding: '10px 14px' }}>
-            Báo cáo đang chờ quản trị viên xác nhận. Chưa có hoàn tiền hoặc cảnh báo nào được áp dụng.
           </div>
-        )}
+        </SectionCard>
+      )}
 
-        {lesson.status === 'completed' && (
-          <>
-            <Button
-              type="primary"
-              size="large"
-              onClick={() => setShowFeedbackModal(true)}
-              style={{ background: '#3e2f28', borderColor: '#3e2f28' }}
-            >
-              Đánh giá buổi học
-            </Button>
-            {!dispute && canCreateDispute && (
-              <Button
-                size="large"
-                danger
-                onClick={() => setShowDisputeForm(true)}
-              >
-                Báo cáo gia sư
-              </Button>
+      {dispute && (
+        <SectionCard
+          title="Khiếu nại của bạn"
+          headerAction={
+            disputeStatus ? <StatusBadge variant={disputeStatus.variant}>{disputeStatus.label}</StatusBadge> : undefined
+          }
+        >
+          <div className={styles.sectionBody}>
+            <div className={styles.reportGrid}>
+              <ReportBlock label="Loại khiếu nại">
+                <p className={styles.reportText}>{getDisputeTypeLabel(dispute.disputeType)}</p>
+              </ReportBlock>
+              {dispute.createdAt && (
+                <ReportBlock label="Ngày gửi">
+                  <p className={styles.reportText}>{formatDateTime(dispute.createdAt)}</p>
+                </ReportBlock>
+              )}
+            </div>
+
+            <div className={styles.blockGap}>
+              <p className={styles.reportLabel}>Nội dung</p>
+              <p className={styles.reportText}>{dispute.reason || 'Không có mô tả.'}</p>
+            </div>
+
+            {(Array.isArray(dispute.evidence) && dispute.evidence.length > 0) ||
+            (Array.isArray(dispute.additionalEvidence) && dispute.additionalEvidence.length > 0) ? (
+              <div className={styles.blockGap}>
+                <p className={styles.reportLabel}>Bằng chứng</p>
+                <AttachmentList
+                  urls={[
+                    ...(dispute.evidence ?? []),
+                    ...(dispute.additionalEvidence ?? []).map((item) => item.fileUrl).filter((url): url is string => Boolean(url)),
+                  ]}
+                />
+              </div>
+            ) : null}
+
+            {dispute.status === 'resolved' && (
+              <div className={`${styles.notice} ${styles.noticeSuccess} ${styles.blockGap}`}>
+                <span>
+                  <strong>Kết quả xử lý:</strong> {dispute.resolutionNote || 'Không có ghi chú.'}
+                  {typeof dispute.refundPercentage === 'number' && ` · Hoàn ${dispute.refundPercentage}%`}
+                </span>
+              </div>
             )}
-          </>
-        )}
 
-        <Button size="large" onClick={() => navigate('/parent-portal/dashboard')}>
-          Quay lại
-        </Button>
-      </div>
+            {dispute.status !== 'resolved' && (
+              <div className={styles.blockGap}>
+                <p className={styles.reportLabel}>Trao đổi riêng với quản trị viên</p>
+                {thread.length > 0 ? (
+                  <div className={styles.thread}>
+                    {thread.map((msg) => (
+                      <div
+                        key={msg.disputeMessageId}
+                        className={`${styles.threadBubble} ${msg.senderRole === 'admin' ? styles.threadAdmin : styles.threadMine}`}
+                      >
+                        <p className={styles.threadSender}>{msg.senderRole === 'admin' ? 'Quản trị viên' : 'Bạn'}</p>
+                        <p className={styles.threadText}>{msg.message}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className={styles.threadEmpty}>Chưa có tin nhắn nào. Gửi câu hỏi cho quản trị viên tại đây.</p>
+                )}
+                <div className={styles.threadForm}>
+                  <Input
+                    value={threadInput}
+                    placeholder="Nhắn cho quản trị viên..."
+                    onChange={(event) => setThreadInput(event.target.value)}
+                    onPressEnter={() => void handleSendThreadMessage()}
+                  />
+                  <Button
+                    loading={sendingThreadMessage}
+                    disabled={threadInput.trim().length === 0}
+                    onClick={() => void handleSendThreadMessage()}
+                  >
+                    Gửi
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </SectionCard>
+      )}
+
+      <SectionCard title="Video buổi học">
+        <div className={styles.sectionBody}>
+          <ClassSessionRecording classSessionId={id} />
+        </div>
+      </SectionCard>
+
+      {/* Bản tóm tắt cố định, khác với thẻ "cần xác nhận" ở trên (thẻ đó tự ẩn sau khi xử lý xong). */}
+      {Array.isArray(lesson.scheduleChanges) && lesson.scheduleChanges.length > 0 && (
+        <SectionCard title="Lịch sử dời lịch">
+          <div className={styles.sectionBody}>
+            <div className={styles.historyList}>
+              {lesson.scheduleChanges.map((sc: ScheduleChangeAuditDto) => (
+                <div key={sc.scheduleChangeId} className={styles.historyItem}>
+                  <div className={styles.historyTop}>
+                    <StatusBadge
+                      variant={
+                        sc.status === 'rejected' || sc.status === 'expired'
+                          ? 'neutral'
+                          : sc.status === 'pending'
+                            ? 'warning'
+                            : 'success'
+                      }
+                      shape="tag"
+                    >
+                      {SCHEDULE_CHANGE_STATUS_LABELS[sc.status] || sc.status}
+                    </StatusBadge>
+                    {sc.appliedAt && (
+                      <span className={styles.historyTime}>Áp dụng lúc {formatDateTime(sc.appliedAt)}</span>
+                    )}
+                  </div>
+                  <div className={styles.historyRange}>
+                    {formatDate(sc.originalScheduledStart)}, {formatTime(sc.originalScheduledStart)}–
+                    {formatTime(sc.originalScheduledEnd)}
+                    {sc.adjustedScheduledStart && sc.adjustedScheduledEnd && (
+                      <>
+                        {' → '}
+                        {formatDate(sc.adjustedScheduledStart)}, {formatTime(sc.adjustedScheduledStart)}–
+                        {formatTime(sc.adjustedScheduledEnd)}
+                      </>
+                    )}
+                  </div>
+                  <div className={styles.historyMeta}>
+                    <span>Gia sư: {sc.tutorConfirmedByName ? `${sc.tutorConfirmedByName} đã xác nhận` : 'Chưa xác nhận'}</span>
+                    <span>
+                      {sc.learnerApproverRole === 'Student' ? 'Học sinh' : 'Phụ huynh'}:{' '}
+                      {sc.learnerConfirmedByName ? `${sc.learnerConfirmedByName} đã xác nhận` : 'Chưa xác nhận'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </SectionCard>
+      )}
 
       {/* Modals */}
-      <CreateFeedbackModal
-        open={showFeedbackModal}
-        onClose={() => setShowFeedbackModal(false)}
-        onSuccess={handleActionSuccess}
-        lessonId={id}
-        bookingId={lesson.bookingId || 0}
-        tutorId={(lesson.tutorId || lesson.tutor?.tutorId) || ''}
-        tutorName={lesson.tutorName || lesson.tutor?.fullName}
-        subjectName={lesson.subjectName || lesson.subject?.subjectName}
-      />
-
       <ConfirmLessonModal
         open={showConfirmModal}
         lessonId={id}
@@ -833,21 +698,8 @@ const ParentLessonDetail: React.FC = () => {
         onSuccess={handleActionSuccess}
         onCancel={() => setShowNoShowActionModal(false)}
       />
-    </div>
+    </PageContainer>
   );
 };
-
-// Helper component
-const InfoRow: React.FC<{ label: string; value: string; highlight?: boolean }> = ({ label, value, highlight }) => (
-  <div>
-    <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>{label}</div>
-    <div style={{
-      fontSize: '14px', color: highlight ? '#52c41a' : '#1a2238',
-      fontWeight: highlight ? 600 : 400,
-    }}>
-      {value}
-    </div>
-  </div>
-);
 
 export default ParentLessonDetail;

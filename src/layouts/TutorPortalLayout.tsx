@@ -21,6 +21,9 @@ const NOTIFICATION_TYPES_BY_PATH: Record<string, string[]> = {
         'booking_declined',
         'booking_cancelled',
         'payment_remaining_required',
+        // Đánh giá gia sư nhận được hiển thị trong thẻ booking đã hoàn thành.
+        'feedback_received',
+        'feedback_moderated',
     ],
     '/tutor-portal/finance': ['payment_success'],
     '/tutor-portal/disputes': ['dispute_message'],

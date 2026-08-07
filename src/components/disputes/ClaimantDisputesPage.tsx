@@ -1,38 +1,43 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AlertCircle, ArrowUpRight, RefreshCw, Search, X } from 'lucide-react';
+import { AlertCircle, ArrowUpRight, Plus, RefreshCw, Search, X } from 'lucide-react';
 import { Button, ConfigProvider, Empty, Input, Select, Table, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { PageContainer, SectionCard, StatusBadge } from '../../components/shared';
+import { PageContainer, SectionCard, StatusBadge } from '../shared';
 import {
-  getTutorClassSessionDispute,
-  getTutorDisputesList,
+  getClassSessionDispute,
+  getParentDisputesList,
   type DisputeListResponse,
 } from '../../services/classSession.service';
+import { formatLocalDateTime } from '../../utils/datetime';
+import { formatCurrency } from '../../utils/formatters';
 import {
   DISPUTE_PAGE_THEME,
   DISPUTE_SORT_OPTIONS,
   DISPUTE_STATUS_TABS,
   DISPUTE_TYPE_OPTIONS,
-  getDisputePriorityMeta,
   getDisputeStatusMeta,
   getDisputeTypeLabel,
   type DisputeSortDirection,
   type DisputeStatusFilter,
   type DisputeTypeFilter,
-} from '../../components/disputes/disputePresentation';
-import { DisputeDetailModal } from '../../components/disputes';
-import { formatCurrency } from '../../utils/formatters';
-import { formatLocalDateTime } from '../../utils/datetime';
-import styles from '../../components/disputes/DisputesTable.module.css';
+} from './disputePresentation';
+import DisputeDetailModal from './DisputeDetailModal';
+import styles from './DisputesTable.module.css';
+
+export interface ClaimantDisputesPageProps {
+  reloadKey: number;
+  onCreate: () => void;
+  /** Bỏ qua nếu portal không có trang chi tiết buổi học để nhảy sang từ popup. */
+  onViewSession?: (dispute: DisputeListResponse) => void;
+}
 
 const SEARCH_DEBOUNCE_MS = 350;
 
-const fetchTutorDisputeDetail = async (classSessionId: number) =>
-  (await getTutorClassSessionDispute(classSessionId)).content ?? null;
+/** Parent và student dùng chung endpoint chi tiết khiếu nại theo buổi học. */
+const fetchClaimantDisputeDetail = async (classSessionId: number) =>
+  (await getClassSessionDispute(classSessionId)).content ?? null;
 
-const TutorPortalDisputes = () => {
-  const navigate = useNavigate();
+const ClaimantDisputesPage = ({ reloadKey, onCreate, onViewSession }: ClaimantDisputesPageProps) => {
   const latestRequest = useRef(0);
   const skipNextAutoFetch = useRef(false);
   const [disputes, setDisputes] = useState<DisputeListResponse[]>([]);
@@ -54,7 +59,7 @@ const TutorPortalDisputes = () => {
     try {
       setLoading(true);
       setHasError(false);
-      const response = await getTutorDisputesList({
+      const response = await getParentDisputesList({
         page: currentPage,
         pageSize,
         status: statusFilter || undefined,
@@ -67,7 +72,7 @@ const TutorPortalDisputes = () => {
 
       const content = response.content;
       if (Array.isArray(content)) {
-        // Backward-compatible fallback for older API deployments that serialized PagedList as an array.
+        // Compatibility with deployments where PagedList is still serialized as a bare array.
         setDisputes(content);
         setTotalItems(content.length);
         return;
@@ -100,7 +105,7 @@ const TutorPortalDisputes = () => {
       window.clearTimeout(timer);
       latestRequest.current += 1;
     };
-  }, [fetchDisputes]);
+  }, [fetchDisputes, reloadKey]);
 
   // Tìm kiếm chạy ngay khi ngừng gõ: không còn "chữ đã gõ nhưng chưa tìm" để rồi bị áp dụng
   // bất ngờ lúc người dùng bấm sang bộ lọc khác.
@@ -116,16 +121,6 @@ const TutorPortalDisputes = () => {
   }, [searchInput, searchQuery]);
 
   const openDispute = useCallback((dispute: DisputeListResponse) => setActiveDispute(dispute), []);
-
-  const viewSession = useCallback(
-    (dispute: DisputeListResponse) => {
-      setActiveDispute(null);
-      if (dispute.classSessionId) {
-        navigate(`/tutor-portal/class-sessions/${dispute.classSessionId}`);
-      }
-    },
-    [navigate],
-  );
 
   const applyFilterChange = (update: () => void) => {
     setCurrentPage(1);
@@ -152,7 +147,7 @@ const TutorPortalDisputes = () => {
       {
         title: 'Hồ sơ',
         key: 'case',
-        width: 130,
+        width: 128,
         render: (_, dispute) => (
           <div className={styles.caseCell}>
             <span className={styles.caseId}>#{dispute.disputeId}</span>
@@ -166,7 +161,7 @@ const TutorPortalDisputes = () => {
       {
         title: 'Nội dung khiếu nại',
         key: 'issue',
-        width: 330,
+        width: 320,
         render: (_, dispute) => {
           const reason = dispute.reason || 'Không có mô tả bổ sung';
           return (
@@ -182,9 +177,21 @@ const TutorPortalDisputes = () => {
         },
       },
       {
+        title: 'Gia sư',
+        key: 'tutor',
+        width: 180,
+        responsive: ['md'],
+        render: (_, dispute) => (
+          <div className={styles.tutorCell}>
+            <span className={styles.primaryText}>{dispute.tutorName || 'Chưa cập nhật'}</span>
+            <span className={styles.secondaryText}>Gia sư phụ trách</span>
+          </div>
+        ),
+      },
+      {
         title: 'Buổi học',
         key: 'lesson',
-        width: 170,
+        width: 165,
         responsive: ['md'],
         render: (_, dispute) => (
           <div className={styles.lessonCell}>
@@ -198,32 +205,6 @@ const TutorPortalDisputes = () => {
             </span>
           </div>
         ),
-      },
-      {
-        title: 'Mức độ',
-        key: 'priority',
-        width: 130,
-        responsive: ['lg'],
-        render: (_, dispute) => {
-          const priority = getDisputePriorityMeta(dispute.priority, dispute.priorityDisplay);
-          return (
-            <Tooltip title={dispute.priorityReason || undefined}>
-              <span
-                className={styles.priorityTooltipTrigger}
-                tabIndex={dispute.priorityReason ? 0 : undefined}
-                aria-label={
-                  dispute.priorityReason
-                    ? `${priority.label}. Lý do ưu tiên: ${dispute.priorityReason}`
-                    : priority.label
-                }
-              >
-                <StatusBadge variant={priority.variant} shape="tag" className={styles.priorityBadge}>
-                  {priority.label}
-                </StatusBadge>
-              </span>
-            </Tooltip>
-          );
-        },
       },
       {
         title: 'Ngày tạo',
@@ -285,14 +266,19 @@ const TutorPortalDisputes = () => {
         className={styles.page}
         title="Khiếu nại"
         headerAction={
-          <Button
-            className={styles.refreshButton}
-            icon={<RefreshCw size={15} />}
-            onClick={() => void fetchDisputes()}
-            loading={loading}
-          >
-            Làm mới
-          </Button>
+          <div className={styles.headerActions}>
+            <Button
+              className={styles.refreshButton}
+              icon={<RefreshCw size={15} />}
+              onClick={() => void fetchDisputes()}
+              loading={loading}
+            >
+              Làm mới
+            </Button>
+            <Button type="primary" className={styles.createButton} icon={<Plus size={16} />} onClick={onCreate}>
+              Tạo khiếu nại
+            </Button>
+          </div>
         }
       >
         <SectionCard className={styles.tableCard}>
@@ -308,7 +294,7 @@ const TutorPortalDisputes = () => {
               <Input
                 className={styles.searchInput}
                 aria-label="Tìm kiếm khiếu nại"
-                placeholder="Tìm mã, booking, người khiếu nại, nội dung..."
+                placeholder="Tìm mã, booking, gia sư, nội dung..."
                 prefix={<Search size={16} aria-hidden="true" />}
                 value={searchInput}
                 allowClear
@@ -385,7 +371,7 @@ const TutorPortalDisputes = () => {
                           ? 'Chọn “Thử lại” ở thông báo phía trên để tải lại dữ liệu.'
                           : filtersAreActive
                             ? 'Hãy thử thay đổi từ khóa hoặc bộ lọc đang chọn.'
-                            : 'Các khiếu nại liên quan đến buổi học sẽ xuất hiện tại đây.'}
+                            : 'Khi bạn gửi khiếu nại từ một buổi học, hồ sơ sẽ xuất hiện tại đây.'}
                       </span>
                       {filtersAreActive && (
                         <button type="button" onClick={clearFilters}>
@@ -425,13 +411,20 @@ const TutorPortalDisputes = () => {
       <DisputeDetailModal
         open={Boolean(activeDispute)}
         dispute={activeDispute}
-        fetchDetail={fetchTutorDisputeDetail}
-        viewerRole="tutor"
+        fetchDetail={fetchClaimantDisputeDetail}
+        viewerRole="claimant"
         onClose={() => setActiveDispute(null)}
-        onViewSession={viewSession}
+        onViewSession={
+          onViewSession
+            ? (dispute) => {
+                setActiveDispute(null);
+                onViewSession(dispute);
+              }
+            : undefined
+        }
       />
     </ConfigProvider>
   );
 };
 
-export default TutorPortalDisputes;
+export default ClaimantDisputesPage;

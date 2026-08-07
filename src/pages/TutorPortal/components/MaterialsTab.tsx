@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Upload, Button, Switch, Popconfirm } from 'antd';
+import { Upload, Button, Popconfirm } from 'antd';
 import { UploadOutlined, DeleteOutlined, FilePdfOutlined, FileWordOutlined, FileImageOutlined, FilePptOutlined, FileOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { toast } from 'react-toastify';
-import { getMaterials, uploadMaterial, updateMaterialVisibility, deleteMaterial, type LearningMaterialResponse } from '../../../services/materials.service';
+import { getMaterials, uploadMaterial, deleteMaterial, type LearningMaterialResponse } from '../../../services/materials.service';
 import styles from '../../../styles/pages/tutor-portal-homework.module.css';
 
 interface MaterialsTabProps {
@@ -89,16 +89,6 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({ bookingId }) => {
         }
     };
 
-    const handleTogglePublic = async (materialId: number, isPublic: boolean) => {
-        if (!bookingId) return;
-        try {
-            const response = await updateMaterialVisibility(bookingId, materialId, isPublic);
-            setMaterials((prev) => prev.map((m) => (m.materialId === materialId ? response.content : m)));
-        } catch (error: unknown) {
-            toast.error(errorMessage(error, 'Không thể cập nhật tài liệu.'));
-        }
-    };
-
     return (
         <div>
             <div className={styles.toolbar}>
@@ -141,25 +131,16 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({ bookingId }) => {
                                     {m.description ? ` · ${m.description}` : ''}
                                 </span>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <Switch
-                                    size="small"
-                                    checked={!!m.isPublic}
-                                    onChange={(checked) => handleTogglePublic(m.materialId, checked)}
-                                    checkedChildren="Công khai"
-                                    unCheckedChildren="Riêng tư"
-                                />
-                                <Popconfirm
-                                    title="Xóa tài liệu này?"
-                                    description={`"${m.title}" sẽ bị xóa khỏi lớp học và không thể khôi phục.`}
-                                    onConfirm={() => handleRemove(m.materialId)}
-                                    okText="Xóa"
-                                    cancelText="Hủy"
-                                    okButtonProps={{ danger: true }}
-                                >
-                                    <Button type="text" danger icon={<DeleteOutlined />} />
-                                </Popconfirm>
-                            </div>
+                            <Popconfirm
+                                title="Xóa tài liệu này?"
+                                description={`"${m.title}" sẽ bị xóa khỏi lớp học và không thể khôi phục.`}
+                                onConfirm={() => handleRemove(m.materialId)}
+                                okText="Xóa"
+                                cancelText="Hủy"
+                                okButtonProps={{ danger: true }}
+                            >
+                                <Button type="text" danger icon={<DeleteOutlined />} />
+                            </Popconfirm>
                         </div>
                     ))}
                 </div>

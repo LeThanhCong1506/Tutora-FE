@@ -1252,7 +1252,165 @@
   .primaryBtn,
   .cancelBtn,
   .backBtnPrimary,
+  .reviewEditBtn,
   .progressBar span {
     transition-duration: 0.01ms;
   }
+}
+
+/* ── Thẻ đánh giá khóa học ── */
+
+.reviewEditBtn {
+  padding: 8px 14px;
+  border: 1px solid var(--detail-line);
+  border-radius: 10px;
+  background: var(--detail-surface);
+  color: var(--detail-accent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.reviewEditBtn:hover {
+  background: var(--detail-accent-soft);
+}
+
+.reviewEmpty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.reviewEmpty p {
+  margin: 0;
+  max-width: 46ch;
+  color: var(--detail-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.reviewEmpty button {
+  width: auto;
+  flex: 0 0 auto;
+  padding-inline: 22px;
+}
+
+.reviewScore {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.reviewStars {
+  color: #e2a03f;
+  font-size: 19px;
+  letter-spacing: 2px;
+}
+
+.reviewScore strong {
+  color: var(--detail-ink);
+  font-size: 14px;
+}
+
+.reviewScore time {
+  color: var(--detail-faint);
+  font-size: 12px;
+}
+
+.reviewComment {
+  margin: 0 0 18px;
+  color: var(--detail-ink);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.reviewDiary {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border-radius: 13px;
+  background: var(--detail-bg);
+}
+
+.reviewDiary > div {
+  display: grid;
+  grid-template-columns: minmax(0, 150px) minmax(0, 1fr);
+  gap: 12px;
+  font-size: 13px;
+}
+
+.reviewDiary dt {
+  color: var(--detail-faint);
+  font-weight: 700;
+}
+
+.reviewDiary dd {
+  margin: 0;
+  color: var(--detail-ink);
+}
+
+.reviewReply {
+  padding: 14px 16px;
+  border-left: 3px solid var(--detail-accent);
+  border-radius: 0 13px 13px 0;
+  background: var(--detail-accent-soft);
+}
+
+.reviewReplyHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: var(--detail-accent);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.reviewReplyHead time {
+  color: var(--detail-faint);
+  font-weight: 600;
+}
+
+.reviewReply p {
+  margin: 0;
+  color: var(--detail-ink);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+@media (max-width: 640px) {
+  .reviewDiary > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+}
+
+.reviewHidden {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-left: 3px solid #b3373b;
+  border-radius: 0 12px 12px 0;
+  background: #fff3f3;
+}
+
+.reviewHidden strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #b3373b;
+  font-size: 12px;
+}
+
+.reviewHidden p {
+  margin: 0;
+  color: var(--detail-ink);
+  font-size: 13px;
+  line-height: 1.6;
 }

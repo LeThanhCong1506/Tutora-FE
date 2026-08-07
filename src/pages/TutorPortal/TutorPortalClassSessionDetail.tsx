@@ -34,7 +34,6 @@ import {
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 import { canJoinLiveSession } from '../../utils/liveSession';
 import { signalRService } from '../../services/signalr.service';
-import AttachmentUploader from './components/AttachmentUploader';
 import LessonReportForm from './components/LessonReportForm';
 import MaterialsTab from './components/MaterialsTab';
 import { ClassSessionRecording } from '../../components/shared';
@@ -126,7 +125,6 @@ const TutorPortalClassSessionDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [checkingOut, setCheckingOut] = useState(false);
-  const [showReportForm, setShowReportForm] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<string[]>([]);
   const [dispute, setDispute] = useState<DisputeDetailResponse | null>(null);
   const [responseText, setResponseText] = useState('');
@@ -282,12 +280,6 @@ const TutorPortalClassSessionDetail = () => {
   const handleReportSuccess = (updatedSession: ClassSessionDetailResponse) => {
     applySessionUpdate(updatedSession);
     setPendingAttachments([]);
-    setShowReportForm(false);
-  };
-
-  const handleReportCancel = () => {
-    setPendingAttachments([]);
-    setShowReportForm(false);
   };
 
   const handleOpenStudentProfile = () => {
@@ -453,10 +445,7 @@ const TutorPortalClassSessionDetail = () => {
                   <button
                     type="button"
                     className={styles.primaryButton}
-                    onClick={() => {
-                      setActiveTab('overview');
-                      setShowReportForm(true);
-                    }}
+                    onClick={() => setActiveTab('overview')}
                   >
                     <FileText size={16} />
                     Gửi báo cáo
@@ -789,23 +778,7 @@ const TutorPortalClassSessionDetail = () => {
                       )}
                     </div>
 
-                    {showReportForm || (canSubmitReport && !hasReport) ? (
-                      <div className={styles.reportComposer}>
-                        <AttachmentUploader
-                          classSessionId={session.classSessionId}
-                          onUploadComplete={(url) => setPendingAttachments((current) => [...current, url])}
-                          onRemoveComplete={(url) =>
-                            setPendingAttachments((current) => current.filter((item) => item !== url))
-                          }
-                        />
-                        <LessonReportForm
-                          classSessionId={session.classSessionId}
-                          attachmentUrls={pendingAttachments}
-                          onSubmitSuccess={handleReportSuccess}
-                          onCancel={handleReportCancel}
-                        />
-                      </div>
-                    ) : hasReport ? (
+                    {hasReport ? (
                       <div className={styles.reportGrid}>
                         <div className={`${styles.reportField} ${styles.reportFieldWide}`}>
                           <span>Nội dung đã dạy</span>
@@ -833,6 +806,18 @@ const TutorPortalClassSessionDetail = () => {
                             </div>
                           </div>
                         )}
+                      </div>
+                    ) : canSubmitReport ? (
+                      <div className={styles.reportComposer}>
+                        <LessonReportForm
+                          classSessionId={session.classSessionId}
+                          attachmentUrls={pendingAttachments}
+                          onUploadComplete={(url) => setPendingAttachments((current) => [...current, url])}
+                          onRemoveComplete={(url) =>
+                            setPendingAttachments((current) => current.filter((item) => item !== url))
+                          }
+                          onSubmitSuccess={handleReportSuccess}
+                        />
                       </div>
                     ) : (
                       <div className={styles.inlineEmpty}>

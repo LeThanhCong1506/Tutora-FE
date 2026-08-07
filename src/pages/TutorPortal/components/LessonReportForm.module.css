@@ -61,9 +61,8 @@
   box-shadow: 0 0 0 3px rgba(23, 33, 58, 0.055);
 }
 
-.form :global(.ant-checkbox-checked .ant-checkbox-inner) {
-  border-color: #17213a;
-  background: #17213a;
+.attachmentSection {
+  margin-bottom: 16px;
 }
 
 .actions {

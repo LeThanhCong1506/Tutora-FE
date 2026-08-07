@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { getStudentLessonDetail, confirmStudentLesson, type StudentLessonDetailDto } from '../../services/student-lesson.service';
+import { getMaterials, type LearningMaterialResponse } from '../../services/materials.service';
 import {
     getClassSessionDispute,
     getClassSessionDisputeThread,
@@ -22,7 +23,6 @@ import {
 import { signalRService } from '../../services/signalr.service';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
 import { message as antMessage, Spin, Modal } from 'antd';
-import CreateFeedbackModal from '../ParentLessons/components/CreateFeedbackModal';
 import { ClassSessionRecording } from '../../components/shared';
 import CreateDisputeForm from '../ParentLessons/components/CreateDisputeForm';
 import ReportNoShowModal from '../ParentLessons/components/ReportNoShowModal';
@@ -85,7 +85,6 @@ const StudentLessonDetail = () => {
     const [loading, setLoading] = useState(true);
     const [confirming, setConfirming] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const [showFeedbackModal, setShowFeedbackModal] = useState(false);
     const [showDisputeForm, setShowDisputeForm] = useState(false);
     const [showNoShowModal, setShowNoShowModal] = useState(false);
     const [showNoShowActionModal, setShowNoShowActionModal] = useState(false);
@@ -95,6 +94,7 @@ const StudentLessonDetail = () => {
     const [sendingThreadMessage, setSendingThreadMessage] = useState(false);
     const [scheduleChange, setScheduleChange] = useState<SessionScheduleChangeResponse | null>(null);
     const [submittingScheduleDecision, setSubmittingScheduleDecision] = useState(false);
+    const [materials, setMaterials] = useState<LearningMaterialResponse[]>([]);
 
     const fetchDetail = useCallback(async () => {
         if (!lessonId) return;
@@ -118,6 +118,15 @@ const StudentLessonDetail = () => {
             setDispute(null);
         }
     }, [lessonId]);
+
+    const fetchMaterials = useCallback(async (bookingId: number) => {
+        try {
+            const response = await getMaterials(bookingId);
+            setMaterials(Array.isArray(response.content) ? response.content : []);
+        } catch {
+            setMaterials([]);
+        }
+    }, []);
 
     const fetchScheduleChange = useCallback(async () => {
         if (!lessonId) return;
@@ -163,6 +172,10 @@ const StudentLessonDetail = () => {
     }, [fetchDetail, fetchDispute]);
 
     useEffect(() => {
+        if (lesson?.bookingId) void fetchMaterials(lesson.bookingId);
+    }, [lesson?.bookingId, fetchMaterials]);
+
+    useEffect(() => {
         if (!lessonId) return;
         void fetchScheduleChange();
         const timer = window.setInterval(() => void fetchScheduleChange(), 8000);
@@ -204,7 +217,6 @@ const StudentLessonDetail = () => {
 
     const handleActionSuccess = () => {
         setShowConfirmModal(false);
-        setShowFeedbackModal(false);
         setShowDisputeForm(false);
         setShowNoShowModal(false);
         setShowNoShowActionModal(false);
@@ -670,31 +682,23 @@ const StudentLessonDetail = () => {
                     </div>
                 )}
 
-                {lesson.status === 'completed' && (
+                {lesson.status === 'completed' && !dispute && canCreateDispute && (
                     <div style={actionCardFeedback}>
                         <div style={{ ...actionCardIconWrap, background: 'rgba(26,34,56,0.08)' }}>
                             <Star size={20} style={{ color: '#1a2238' }} />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={actionCardTitle}>Đánh giá buổi học</div>
+                            <div style={actionCardTitle}>Buổi học đã hoàn thành</div>
                             <div style={actionCardDesc}>
-                                Chia sẻ trải nghiệm giúp gia sư cải thiện chất lượng dạy.
+                                Nếu có vấn đề với buổi học này, bạn có thể báo cáo gia sư.
                             </div>
                         </div>
                         <button
-                            style={actionBtnFeedback}
-                            onClick={() => setShowFeedbackModal(true)}
+                            style={actionBtnDispute}
+                            onClick={() => setShowDisputeForm(true)}
                         >
-                            <Star size={15} /> Đánh giá
+                            Báo cáo gia sư
                         </button>
-                        {!dispute && canCreateDispute && (
-                            <button
-                                style={actionBtnDispute}
-                                onClick={() => setShowDisputeForm(true)}
-                            >
-                                Báo cáo gia sư
-                            </button>
-                        )}
                     </div>
                 )}
 
@@ -745,8 +749,8 @@ const StudentLessonDetail = () => {
                     </div>
                 )}
 
-                {/* ─── Content + Homework ─── */}
-                {(lesson.lessonContent || lesson.homework) && (
+                {/* ─── Content + Homework — cũng gồm tệp đính kèm của báo cáo (thường là bài tập) ─── */}
+                {(lesson.lessonContent || lesson.homework || (report && Array.isArray(report.attachments) && report.attachments.length > 0)) && (
                     <div style={sectionCard}>
                         <div style={sectionHeaderRow}>
                             <div style={sectionIconWrap}>
@@ -771,50 +775,9 @@ const StudentLessonDetail = () => {
                                     value={lesson.homework}
                                 />
                             )}
-                        </div>
-                    </div>
-                )}
-
-                {/* ─── Tutor Report ─── */}
-                {report && (
-                    <div style={sectionCard}>
-                        <div style={sectionHeaderRow}>
-                            <div style={{ ...sectionIconWrap, background: 'rgba(5,150,105,0.10)' }}>
-                                <ClipboardCheck size={16} style={{ color: '#059669' }} />
-                            </div>
-                            <div style={sectionTitleText}>Báo cáo gia sư</div>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                            {report.contentCovered && (
-                                <ReportRow label="Nội dung đã dạy" value={report.contentCovered} />
-                            )}
-                            {report.homeworkAssigned && (
-                                <ReportRow label="Bài tập giao" value={report.homeworkAssigned} />
-                            )}
-                            <div style={ratingRow}>
-                                <span style={reportLabelStyle}>Đánh giá học sinh</span>
-                                {report.studentPerformanceRating > 0 ? (
-                                    <div style={ratingStars}>
-                                        {[1, 2, 3, 4, 5].map(i => (
-                                            <Star
-                                                key={i}
-                                                size={16}
-                                                fill={i <= report.studentPerformanceRating ? '#fbbf24' : '#e5e7eb'}
-                                                color={i <= report.studentPerformanceRating ? '#f59e0b' : '#d1d5db'}
-                                                strokeWidth={1.5}
-                                            />
-                                        ))}
-                                        <span style={ratingNumber}>
-                                            {report.studentPerformanceRating}/5
-                                        </span>
-                                    </div>
-                                ) : (
-                                    <span style={{ fontSize: 13, color: '#999' }}>Chưa đánh giá</span>
-                                )}
-                            </div>
-                            {Array.isArray(report.attachments) && report.attachments.length > 0 && (
+                            {report && Array.isArray(report.attachments) && report.attachments.length > 0 && (
                                 <div>
-                                    <span style={reportLabelStyle}>Tệp đính kèm</span>
+                                    <span style={reportLabelStyle}>Bài tập được giao</span>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
                                         {report.attachments.map((url: string, index: number) => (
                                             <a
@@ -826,6 +789,72 @@ const StudentLessonDetail = () => {
                                             >
                                                 <Paperclip size={14} style={{ flexShrink: 0, color: '#6366F1' }} />
                                                 <span style={attachmentNameStyle}>{getFileNameFromUrl(url)}</span>
+                                                <Download size={14} style={{ flexShrink: 0, color: '#9ca3af' }} />
+                                            </a>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* ─── Tutor Report — cũng gồm tài liệu lớp học (cùng chỗ gia sư chia sẻ cho học sinh) ─── */}
+                {(report || materials.length > 0) && (
+                    <div style={sectionCard}>
+                        <div style={sectionHeaderRow}>
+                            <div style={{ ...sectionIconWrap, background: 'rgba(5,150,105,0.10)' }}>
+                                <ClipboardCheck size={16} style={{ color: '#059669' }} />
+                            </div>
+                            <div style={sectionTitleText}>Báo cáo gia sư</div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                            {report?.contentCovered && (
+                                <ReportRow label="Nội dung đã dạy" value={report.contentCovered} />
+                            )}
+                            {report?.homeworkAssigned && (
+                                <ReportRow label="Bài tập giao" value={report.homeworkAssigned} />
+                            )}
+                            {report && (
+                                <div style={ratingRow}>
+                                    <span style={reportLabelStyle}>Đánh giá học sinh</span>
+                                    {report.studentPerformanceRating > 0 ? (
+                                        <div style={ratingStars}>
+                                            {[1, 2, 3, 4, 5].map(i => (
+                                                <Star
+                                                    key={i}
+                                                    size={16}
+                                                    fill={i <= report.studentPerformanceRating ? '#fbbf24' : '#e5e7eb'}
+                                                    color={i <= report.studentPerformanceRating ? '#f59e0b' : '#d1d5db'}
+                                                    strokeWidth={1.5}
+                                                />
+                                            ))}
+                                            <span style={ratingNumber}>
+                                                {report.studentPerformanceRating}/5
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <span style={{ fontSize: 13, color: '#999' }}>Chưa đánh giá</span>
+                                    )}
+                                </div>
+                            )}
+                            {materials.length > 0 && (
+                                <div>
+                                    <span style={reportLabelStyle}>Tài liệu lớp học</span>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                                        {materials.map((m) => (
+                                            <a
+                                                key={m.materialId}
+                                                href={m.fileUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={attachmentLinkStyle}
+                                            >
+                                                <Paperclip size={14} style={{ flexShrink: 0, color: '#6366F1' }} />
+                                                <span style={attachmentNameStyle}>
+                                                    {m.title}
+                                                    {m.description ? ` · ${m.description}` : ''}
+                                                </span>
                                                 <Download size={14} style={{ flexShrink: 0, color: '#9ca3af' }} />
                                             </a>
                                         ))}
@@ -860,17 +889,6 @@ const StudentLessonDetail = () => {
                     <p>Bạn có chắc chắn muốn xác nhận buổi học #{lesson.lessonId}?</p>
                     <p>Tiền sẽ được chuyển cho gia sư sau khi xác nhận.</p>
                 </Modal>
-
-                <CreateFeedbackModal
-                    open={showFeedbackModal}
-                    onClose={() => setShowFeedbackModal(false)}
-                    onSuccess={handleActionSuccess}
-                    lessonId={lesson.lessonId}
-                    bookingId={lesson.bookingId || 0}
-                    tutorId={(lesson as any).tutorId || (lesson as any).tutor?.tutorId}
-                    tutorName={tutorName}
-                    subjectName={subjectName}
-                />
 
                 <CreateDisputeForm
                     open={showDisputeForm}
@@ -1347,12 +1365,6 @@ const actionBtnDispute: React.CSSProperties = {
     ...actionBtnBase,
     background: 'linear-gradient(135deg, #dc2626, #ef4444)',
     boxShadow: '0 2px 8px rgba(220,38,38,0.25)',
-};
-
-const actionBtnFeedback: React.CSSProperties = {
-    ...actionBtnBase,
-    background: 'linear-gradient(135deg, #1a2238, #374151)',
-    boxShadow: '0 2px 8px rgba(26,34,56,0.2)',
 };
 
 // ── Section card ──

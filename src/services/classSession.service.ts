@@ -744,23 +744,49 @@ export const confirmStudentClassSession = async (id: number): Promise<ApiRespons
 
 export interface DisputeListResponse {
     disputeId: number;
-    classSessionId: number;
-    bookingId?: number;
-    disputeType?: string;
-    status: string;
-    reason: string;
-    tutorName?: string;
-    classSessionPrice?: number;
-    createdAt?: string;
+    classSessionId?: number | null;
+    bookingId?: number | null;
+    disputeType?: string | null;
+    status?: string | null;
+    reason?: string | null;
+    createdByName?: string | null;
+    tutorName?: string | null;
+    classSessionPrice?: number | null;
+    createdAt?: string | null;
+    priority?: string | null;
+    priorityReason?: string | null;
+    disputeTypeDisplay?: string | null;
+    statusDisplay?: string | null;
+    statusColor?: string | null;
+    priorityDisplay?: string | null;
 }
 
+export interface PortalDisputeListParams {
+    page?: number;
+    pageSize?: number;
+    status?: 'pending' | 'investigating' | 'confirmed_no_show' | 'resolved' | 'closed';
+    disputeType?: 'no_show' | 'quality' | 'payment' | 'other';
+    search?: string;
+    sortDirection?: 'asc' | 'desc';
+}
+
+export interface PortalDisputeListContent {
+    items: DisputeListResponse[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+}
+
+export type TutorDisputeListParams = PortalDisputeListParams;
+export type TutorDisputeListContent = PortalDisputeListContent;
+
 export const getParentDisputesList = async (
-    page: number = 1,
-    pageSize: number = 10,
-): Promise<ApiResponse<{ items: DisputeListResponse[]; totalCount: number; page: number; pageSize: number }>> => {
+    params: PortalDisputeListParams = {},
+): Promise<ApiResponse<PortalDisputeListContent | DisputeListResponse[]>> => {
+    const { page = 1, pageSize = 10, status, disputeType, search, sortDirection = 'desc' } = params;
     const response = await api.get('/parent/disputes', {
         headers: getAuthHeaders(),
-        params: { page, pageSize },
+        params: { page, pageSize, status, disputeType, search, sortDirection },
     });
     return response.data;
 };
@@ -797,12 +823,12 @@ export const uploadTutorDisputeEvidence = async (id: number, file: File): Promis
 };
 
 export const getTutorDisputesList = async (
-    page: number = 1,
-    pageSize: number = 10,
-): Promise<ApiResponse<{ items: DisputeListResponse[]; totalCount: number; page: number; pageSize: number }>> => {
+    params: PortalDisputeListParams = {},
+): Promise<ApiResponse<PortalDisputeListContent | DisputeListResponse[]>> => {
+    const { page = 1, pageSize = 10, status, disputeType, search, sortDirection = 'desc' } = params;
     const response = await api.get('/tutor/disputes', {
         headers: getAuthHeaders(),
-        params: { page, pageSize },
+        params: { page, pageSize, status, disputeType, search, sortDirection },
     });
     return response.data;
 };

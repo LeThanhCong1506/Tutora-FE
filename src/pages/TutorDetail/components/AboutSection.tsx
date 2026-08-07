@@ -122,9 +122,6 @@ const buildSubjectGroups = (profile: TutorFullProfile) => {
 const AboutSection = ({ profile }: { profile: TutorFullProfile }) => {
     const subjectGroups = buildSubjectGroups(profile);
     const firstName = profile.fullName?.split(' ').pop();
-    const rating = profile.averageRating || 0;
-    const totalReviews = profile.totalFeedbacks || 0;
-    const totalLessons = profile.totalLessons || 0;
     const bioText = profile.bio?.trim() || '';
     const experienceText = profile.experience?.trim() || '';
     const shouldShowBio = !!bioText;
@@ -132,31 +129,8 @@ const AboutSection = ({ profile }: { profile: TutorFullProfile }) => {
 
     return (
         <section className="about-section">
-            {/* Thông tin mentor — tách từ phần video sang để video chỉ còn hiển thị video. */}
-            <div className="mentor-header">
-                <div className="mentor-avatar">
-                    <img
-                        src={profile.avatarUrl || 'https://randomuser.me/api/portraits/lego/1.jpg'}
-                        alt={profile.fullName || ''}
-                    />
-                </div>
-                <div className="mentor-identity">
-                    <h1 className="mentor-name">{profile.fullName || 'Chưa cập nhật tên'}</h1>
-                    {profile.headline && <p className="mentor-headline">{profile.headline}</p>}
-                    <div className="mentor-rating-row">
-                        <span className="mentor-rating-star" aria-hidden="true">★</span>
-                        <span className="mentor-rating-value">{rating.toFixed(1)}</span>
-                        <span className="mentor-rating-count">
-                            ({totalReviews.toLocaleString('vi-VN')} đánh giá)
-                        </span>
-                        <span className="mentor-rating-dot" aria-hidden="true">•</span>
-                        <span className="mentor-lessons-count">
-                            {totalLessons.toLocaleString('vi-VN')} buổi học
-                        </span>
-                    </div>
-                </div>
-            </div>
-
+            {/* Avatar/tên/rating/buổi học hiển thị đè lên video ở VideoIntroSection.tutor-info-card
+                + rating-card, AboutSection không lặp lại nữa. */}
             {/* Môn học & cấp lớp giảng dạy */}
             <div className="subject-grade-tags">
                 {subjectGroups.length > 0 ? subjectGroups.map((group, index) => (

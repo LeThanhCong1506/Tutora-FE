@@ -26,6 +26,15 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isOpen, onC
     const dropdownRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
 
+    // Mỗi lần mở lại phải quay về tab "Chưa đọc". PortalLayout mount sẵn dropdown và chỉ
+    // ẩn/hiện bằng `isOpen` chứ không unmount, nên nếu không reset thì tab người dùng chọn
+    // lần trước sẽ dính lại suốt phiên — mở ra thấy "Tất cả" dù chưa bấm gì.
+    /* eslint-disable react-hooks/set-state-in-effect */
+    useEffect(() => {
+        if (isOpen) setActiveTab('unread');
+    }, [isOpen]);
+    /* eslint-enable react-hooks/set-state-in-effect */
+
     // Fetch khi dropdown mở hoặc đổi tab
     useEffect(() => {
         if (!isOpen) return;

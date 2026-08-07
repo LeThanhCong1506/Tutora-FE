@@ -93,6 +93,9 @@ const StudentProfile = lazy(() => import('./pages/StudentProfile'));
 
 // Payment callback
 const PaymentCallback = lazy(() => import('./pages/PaymentCallback/PaymentCallback'));
+// Route trung gian cho nút CTA trong tin ZNS — tự đưa người bấm về đúng cổng theo vai trò đang
+// đăng nhập, vì 1 template có thể gửi cho phụ huynh HOẶC học sinh tự quản lý HOẶC gia sư.
+const GoRedirect = lazy(() => import('./pages/GoRedirect/GoRedirect'));
 const NotificationsPage = lazy(() => import('./pages/Notifications/NotificationsPage'));
 
 // Live video-call session (full-screen, no portal chrome)
@@ -111,6 +114,7 @@ const ASSISTANT_HIDDEN_PREFIXES = [
   '/student-portal',
   '/live-session',
   '/session-lobby',
+  '/go',
 ];
 
 // Trang "Tổng quan" của mỗi portal — ngoại lệ vẫn hiện bong bóng Trợ lý Tutora dù nằm
@@ -361,6 +365,10 @@ function App() {
             {/* PayOS callback - loaded inside iframe after payment */}
             <Route path="/payment/success" element={<PaymentCallback />} />
             <Route path="/payment/cancel" element={<PaymentCallback />} />
+            <Route path="/go/:target" element={<GoRedirect />} />
+            {/* Dạng path cho id — nút ZNS đang dùng dạng query `?b=`, giữ cả hai để không phụ thuộc
+                việc công cụ Zalo có chấp nhận tham số nằm trong đường dẫn hay không. */}
+            <Route path="/go/:target/:id" element={<GoRedirect />} />
 
             {/* Live video-call session — full-screen, không có portal chrome */}
             <Route
