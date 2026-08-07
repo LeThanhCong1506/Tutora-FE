@@ -104,6 +104,12 @@ const TutorProfilePreview: React.FC<TutorProfilePreviewProps> = ({ formData }) =
     });
   };
 
+  const handlePreviewMessage = () => {
+    toast.info('Đây là bản xem trước. Phụ huynh/học sinh sẽ dùng nút này để nhắn tin với bạn trước khi đặt lịch.', {
+      toastId: 'profile-preview-message',
+    });
+  };
+
   return (
     <div
       className="tutor-detail-page"
@@ -128,7 +134,11 @@ const TutorProfilePreview: React.FC<TutorProfilePreviewProps> = ({ formData }) =
             />
           </div>
 
-          <BookingSidebar availabilities={profile.availabilities} onBooking={handlePreviewBooking} />
+          <BookingSidebar
+            availabilities={profile.availabilities}
+            onBooking={handlePreviewBooking}
+            onMessage={handlePreviewMessage}
+          />
         </div>
       </main>
     </div>
