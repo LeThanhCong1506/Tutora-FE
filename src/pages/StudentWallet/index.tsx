@@ -1,28 +1,46 @@
 import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import {
   getWalletBalance,
   getTransactions,
+  getWithdrawals,
   type WalletBalanceResponse,
   type TransactionHistory,
+  type WithdrawalItem,
 } from '../../services/wallet.service';
 import { formatCurrency, formatDateTime } from '../../utils/formatters';
 import TransactionsCard from '../ParentWallet/TransactionsCard';
+import WithdrawalRequestsCard from '../ParentWallet/WithdrawalRequestsCard';
 import parentStyles from '../ParentWallet/styles.module.css';
 
 const TransactionDetailModal = lazy(() => import('../ParentWallet/TransactionDetailModal'));
+const WithdrawModal = lazy(() => import('../ParentWallet/WithdrawModal'));
+const WithdrawalDetailModal = lazy(() => import('../ParentWallet/WithdrawalDetailModal'));
 
 const PREVIEW_SIZE = 20;
 
 /**
- * Ví học sinh — KHÁC ví phụ huynh: không nạp tiền, thực hiện rút tiền sau.
+ * Ví học sinh — KHÁC ví phụ huynh: không nạp tiền, chỉ rút tiền đã được hoàn.
+ * WithdrawModal/WithdrawalRequestsCard/WithdrawalDetailModal dùng lại nguyên component của
+ * ParentWallet — BE chấp nhận cả role Parent lẫn Student cho POST /api/wallet/withdrawals
+ * (WalletController.CreateWithdrawal, [Authorize(Roles = UserRole.ParentOrStudent)]) và các
+ * component đó vốn đã tự resolve portalBase từ pathname, không hardcode gì theo parent.
  */
 const StudentWallet = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const portalBase = location.pathname.startsWith('/student-portal') ? '/student-portal' : '/parent-portal';
+
   const [balance, setBalance] = useState<WalletBalanceResponse | null>(null);
   const [balanceLoading, setBalanceLoading] = useState(true);
   const [transactions, setTransactions] = useState<TransactionHistory[]>([]);
   const [txLoading, setTxLoading] = useState(true);
+  const [withdrawals, setWithdrawals] = useState<WithdrawalItem[]>([]);
+  const [withdrawalsLoading, setWithdrawalsLoading] = useState(true);
   const [selectedTxId, setSelectedTxId] = useState<number | null>(null);
+  const [selectedWithdrawalId, setSelectedWithdrawalId] = useState<number | null>(null);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
 
   const loadBalance = useCallback(async () => {
     setBalanceLoading(true);
@@ -48,10 +66,23 @@ const StudentWallet = () => {
     }
   }, []);
 
+  const loadWithdrawals = useCallback(async () => {
+    setWithdrawalsLoading(true);
+    try {
+      const res = await getWithdrawals(1, PREVIEW_SIZE);
+      setWithdrawals(res.content.items);
+    } catch {
+      toast.error('Không thể tải danh sách yêu cầu rút tiền');
+    } finally {
+      setWithdrawalsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadBalance();
     loadTransactions();
-  }, [loadBalance, loadTransactions]);
+    void loadWithdrawals();
+  }, [loadBalance, loadTransactions, loadWithdrawals]);
 
   const available = balance?.balance ?? 0;
   const frozen = balance?.frozenBalance ?? 0;
@@ -63,6 +94,14 @@ const StudentWallet = () => {
         <p className={parentStyles.pageSubtitle}>
           Số dư được hoàn khi buổi học bị hủy. Ví học sinh không nạp tiền.
         </p>
+        <button
+          className={parentStyles.withdrawBtn}
+          type="button"
+          onClick={() => setWithdrawOpen(true)}
+          disabled={balanceLoading || available <= 0}
+        >
+          Rút tiền
+        </button>
       </div>
 
       <div className={parentStyles.summaryRow}>
@@ -96,6 +135,14 @@ const StudentWallet = () => {
         </section>
       </div>
 
+      <WithdrawalRequestsCard
+        variant="preview"
+        withdrawals={withdrawals}
+        loading={withdrawalsLoading}
+        onSelect={(item) => setSelectedWithdrawalId(item.withdrawalId)}
+        onViewAll={() => navigate(`${portalBase}/wallet/withdrawals`)}
+      />
+
       <TransactionsCard
         variant="full"
         transactions={transactions}
@@ -111,6 +158,30 @@ const StudentWallet = () => {
           <TransactionDetailModal
             transactionId={selectedTxId}
             onClose={() => setSelectedTxId(null)}
+          />
+        </Suspense>
+      )}
+
+      {selectedWithdrawalId != null && (
+        <Suspense fallback={null}>
+          <WithdrawalDetailModal
+            withdrawalId={selectedWithdrawalId}
+            onClose={() => setSelectedWithdrawalId(null)}
+          />
+        </Suspense>
+      )}
+
+      {withdrawOpen && (
+        <Suspense fallback={null}>
+          <WithdrawModal
+            availableBalance={available}
+            onClose={() => setWithdrawOpen(false)}
+            onSuccess={() => {
+              setWithdrawOpen(false);
+              void loadBalance();
+              void loadTransactions();
+              void loadWithdrawals();
+            }}
           />
         </Suspense>
       )}
