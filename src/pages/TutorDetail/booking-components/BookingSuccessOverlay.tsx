@@ -25,7 +25,7 @@ const BookingSuccessOverlay: React.FC<Props> = ({ tutorName, bookingId, onClose 
             </p>
             {bookingId && (
                 <div className="bm-success-booking-id">
-                    <span>Mã booking</span>
+                    <span>Mã đặt lịch</span>
                     <strong>#{bookingId}</strong>
                 </div>
             )}

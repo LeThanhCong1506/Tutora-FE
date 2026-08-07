@@ -19,9 +19,16 @@ import {
   setParentPhone,
   type StudentBookingEligibility,
 } from '../../services/student.service';
+import { getUserProfile } from '../../services/user.service';
 import { getGradeLevels, type GradeLevelLookup } from '../../services/lookup.service';
 import { useStudentProfile } from '../../contexts/StudentProfileContext';
 import styles from './styles.module.css';
+
+/** So khớp không phân biệt "0xxxxxxxxx" với "+84xxxxxxxxx" — cùng một số thật. */
+const normalizePhone = (raw: string): string => {
+  const digits = raw.replace(/\D/g, '');
+  return digits.startsWith('84') ? `0${digits.slice(2)}` : digits;
+};
 
 interface FormState {
   fullname: string;
@@ -62,6 +69,9 @@ const StudentProfile = () => {
   const [phoneDraft, setPhoneDraft] = useState('');
   const [phoneEditing, setPhoneEditing] = useState(false);
   const [savingPhone, setSavingPhone] = useState(false);
+  // Số điện thoại của chính tài khoản — chỉ để so khớp tức thì, chặn gõ trùng số của mình
+  // trước khi gọi API. BE vẫn là nguồn xác thực cuối (còn kiểm trùng với tài khoản khác nữa).
+  const [ownPhone, setOwnPhone] = useState('');
   const frontRef = useRef<HTMLInputElement>(null);
   const backRef = useRef<HTMLInputElement>(null);
 
@@ -86,6 +96,13 @@ const StudentProfile = () => {
 
   useEffect(() => {
     void refreshEligibility();
+  }, []);
+
+  // SĐT của chính tài khoản — chỉ dùng để so khớp tức thì trước khi gọi API lưu SĐT phụ huynh.
+  useEffect(() => {
+    getUserProfile()
+      .then((res) => setOwnPhone(res?.content?.phone ?? res?.phone ?? ''))
+      .catch(() => setOwnPhone(''));
   }, []);
 
   // Prefill khi có hồ sơ.
@@ -215,6 +232,15 @@ const StudentProfile = () => {
   const handleSaveParentPhone = async (ev: React.FormEvent) => {
     ev.preventDefault();
     const valueToSave = phoneEditing ? phoneDraft.trim() : savedParentPhone;
+
+    // Chặn tức thì nếu trùng số của chính mình — đỡ một vòng round-trip cho trường hợp phổ biến
+    // nhất. Trùng với số của TÀI KHOẢN KHÁC thì không thể kiểm ở FE (sẽ lộ chuyện số đó có đang
+    // được dùng hay không cho bất kỳ ai gõ thử), nên phần đó luôn phải qua BE.
+    if (valueToSave && ownPhone && normalizePhone(valueToSave) === normalizePhone(ownPhone)) {
+      toast.error('Số điện thoại phụ huynh không được trùng với số điện thoại của chính bạn.');
+      return;
+    }
+
     setSavingPhone(true);
     try {
       const res = await setParentPhone(valueToSave || null);
