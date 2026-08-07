@@ -420,13 +420,18 @@
 .cardHeader h2,
 .cardHeaderCompact h2,
 .studentCard h2 {
-  margin: 5px 0 0;
+  margin: 0;
   color: var(--ink);
   font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.015em;
   line-height: 1.25;
+}
+
+/* Chỉ những khối còn giữ nhãn nhỏ mới cần khoảng thở dưới nhãn. */
+.sectionLabel + h2 {
+  margin-top: 5px;
 }
 
 .scheduleCopy h2 {
@@ -532,6 +537,7 @@
 
 .cardHeader {
   padding-bottom: 16px;
+  align-items: center;
   border-bottom: 1px solid #edf0f3;
 }
 
@@ -578,9 +584,9 @@
 
 .reportField > span {
   display: block;
-  margin-bottom: 7px;
-  color: #848c9c;
-  font-size: 9.5px;
+  margin-bottom: 8px;
+  color: #6a7386;
+  font-size: 10.5px;
   font-weight: 750;
   letter-spacing: 0.055em;
   text-transform: uppercase;
@@ -588,10 +594,331 @@
 
 .reportField p {
   margin: 0;
-  color: #3d475a;
+  color: #2f3a4e;
+  font-size: 13.5px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+/* ————— Tranh chấp ————— */
+.disputeHeadRight {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.disputeBadge {
+  display: inline-flex;
+  min-height: 26px;
+  padding: 0 11px;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.disputeBadge i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.badgePending {
+  background: #faf3e7;
+  color: #96630f;
+}
+
+.badgeInvestigating {
+  background: #eaf3ff;
+  color: #1f6ed4;
+}
+
+.badgeResolved {
+  background: #e9f6f2;
+  color: #0a6f61;
+}
+
+.disputeBody {
+  display: flex;
+  padding-top: 18px;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.disputeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.disputeAlert {
+  display: flex;
+  padding: 12px 14px;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid #f2dda6;
+  border-radius: 12px;
+  background: #fffaef;
+  color: #7d5410;
   font-size: 12.5px;
   line-height: 1.6;
+}
+
+.disputeAlert > svg {
+  margin-top: 1px;
+  flex: 0 0 auto;
+}
+
+.disputeAlertDanger {
+  border-color: #f3c9c5;
+  background: #fdf4f3;
+  color: #92352e;
+}
+
+.resolutionPanel {
+  padding: 16px;
+  border: 1px solid #cde7e0;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f2fbf8, #fff 62%);
+}
+
+.resolutionHead {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.resolutionIcon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 12px;
+  background: #dff2ec;
+  color: #0a6f61;
+}
+
+.resolutionTitle {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.resolutionTitle strong {
+  color: var(--ink);
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.resolutionTitle small {
+  color: #6c7688;
+  font-size: 11px;
+}
+
+.refundBadge {
+  display: flex;
+  margin-left: auto;
+  padding: 7px 13px;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  border-radius: 12px;
+  background: #0a6f61;
+  color: #fff;
+}
+
+.refundBadge small {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  opacity: 0.85;
+  text-transform: uppercase;
+}
+
+.refundBadge strong {
+  font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
+  font-size: 19px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.resolutionNote {
+  margin: 14px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid #d9ebe5;
+  color: #2f3a4e;
+  font-size: 13.5px;
+  line-height: 1.7;
   white-space: pre-wrap;
+}
+
+.resolutionAmount {
+  margin: 10px 0 0;
+  color: #4d5768;
+  font-size: 12.5px;
+}
+
+.resolutionAmount strong {
+  color: #0a6f61;
+  font-weight: 700;
+}
+
+.disputeTextarea {
+  width: 100%;
+  padding: 11px 13px;
+  box-sizing: border-box;
+  border: 1px solid #dbe0e7;
+  border-radius: 11px;
+  background: #fff;
+  color: #2f3a4e;
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.disputeTextarea:focus {
+  border-color: #9db8dd;
+  outline: 3px solid rgba(36, 120, 229, 0.14);
+  outline-offset: 0;
+}
+
+.disputeComposerFoot {
+  display: flex;
+  margin-top: 10px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.disputeHint {
+  color: #b04a42;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.disputeHintOk {
+  color: #0a6f61;
+}
+
+.disputeActions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.uploadLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+}
+
+.threadBlock {
+  padding: 16px;
+  border: 1px solid #e6e9ee;
+  border-radius: 14px;
+  background: #fafbfc;
+}
+
+.threadHead {
+  display: flex;
+  margin-bottom: 12px;
+  align-items: center;
+  gap: 7px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.threadHead svg {
+  color: #7a8497;
+}
+
+.threadList {
+  display: flex;
+  max-height: 260px;
+  margin-bottom: 12px;
+  flex-direction: column;
+  gap: 9px;
+  overflow-y: auto;
+}
+
+.threadBubble {
+  max-width: 80%;
+  padding: 9px 13px;
+  border-radius: 13px;
+}
+
+.threadAdmin {
+  align-self: flex-start;
+  border: 1px solid #dde6f7;
+  background: #eef3fd;
+  border-bottom-left-radius: 5px;
+}
+
+.threadMine {
+  align-self: flex-end;
+  border: 1px solid #e4e8ee;
+  background: #fff;
+  border-bottom-right-radius: 5px;
+}
+
+.threadSender {
+  margin: 0 0 3px;
+  color: #6b7484;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.threadText {
+  margin: 0;
+  color: #2f3a4e;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.threadEmpty {
+  margin: 0 0 12px;
+  color: #7b8395;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.threadComposer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.threadInput {
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 13px;
+  flex: 1;
+  border: 1px solid #dbe0e7;
+  border-radius: 11px;
+  background: #fff;
+  color: #2f3a4e;
+  font: inherit;
+  font-size: 13px;
+}
+
+.threadInput:focus {
+  border-color: #9db8dd;
+  outline: 3px solid rgba(36, 120, 229, 0.14);
+  outline-offset: 0;
 }
 
 .attachmentList {
@@ -1067,9 +1394,14 @@
   }
 
   .reportGrid,
+  .disputeGrid,
   .sidebar {
     display: flex;
     flex-direction: column;
+  }
+
+  .threadBubble {
+    max-width: 92%;
   }
 
   .studentCard {
@@ -1120,6 +1452,18 @@
   .cardHeader {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .disputeHeadRight {
+    align-items: flex-start;
+  }
+
+  .resolutionHead {
+    flex-wrap: wrap;
+  }
+
+  .refundBadge {
+    margin-left: 0;
   }
 
   .errorActions {
