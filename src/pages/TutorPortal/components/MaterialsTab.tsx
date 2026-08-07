@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Upload, Button } from 'antd';
+import { Upload, Button, Popconfirm } from 'antd';
 import { UploadOutlined, DeleteOutlined, FilePdfOutlined, FileWordOutlined, FileImageOutlined, FilePptOutlined, FileOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { toast } from 'react-toastify';
@@ -131,7 +131,16 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({ bookingId }) => {
                                     {m.description ? ` · ${m.description}` : ''}
                                 </span>
                             </div>
-                            <Button type="text" danger icon={<DeleteOutlined />} onClick={() => handleRemove(m.materialId)} />
+                            <Popconfirm
+                                title="Xóa tài liệu này?"
+                                description={`"${m.title}" sẽ bị xóa khỏi lớp học và không thể khôi phục.`}
+                                onConfirm={() => handleRemove(m.materialId)}
+                                okText="Xóa"
+                                cancelText="Hủy"
+                                okButtonProps={{ danger: true }}
+                            >
+                                <Button type="text" danger icon={<DeleteOutlined />} />
+                            </Popconfirm>
                         </div>
                     ))}
                 </div>

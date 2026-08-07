@@ -7,18 +7,31 @@ import type { FixedCombo } from './types';
 
 interface StepCombosProps {
   onboarding: UseOnboardingState;
+  inactiveCombos?: FixedCombo[];
   onCreatePackage?: (combo: FixedCombo) => Promise<FixedCombo | null>;
   onUpdatePackage?: (comboId: string, combo: FixedCombo) => Promise<FixedCombo | null>;
   onDeactivatePackage?: (comboId: string) => Promise<boolean>;
+  onActivatePackage?: (comboId: string) => Promise<FixedCombo | null>;
 }
 
 const StepCombos: React.FC<StepCombosProps> = ({
   onboarding,
+  inactiveCombos,
   onCreatePackage,
   onUpdatePackage,
   onDeactivatePackage,
+  onActivatePackage,
 }) => {
   const { state, addCombo, updateCombo, removeCombo } = onboarding;
+
+  // Sau khi hiện lại thành công, đưa gói trở lại danh sách đang hiển thị/sửa được.
+  const handleActivate = onActivatePackage
+    ? async (comboId: string) => {
+        const reactivated = await onActivatePackage(comboId);
+        if (reactivated) addCombo(reactivated);
+        return reactivated;
+      }
+    : undefined;
 
   return (
     <div className={styles.comboStep}>
@@ -41,6 +54,7 @@ const StepCombos: React.FC<StepCombosProps> = ({
 
       <ComboManager
         combos={state.combos}
+        inactiveCombos={inactiveCombos}
         availability={state.availability}
         subjectRecords={state.subjectRecords}
         onAdd={addCombo}
@@ -49,6 +63,7 @@ const StepCombos: React.FC<StepCombosProps> = ({
         onCreatePackage={onCreatePackage}
         onUpdatePackage={onUpdatePackage}
         onDeactivatePackage={onDeactivatePackage}
+        onActivatePackage={handleActivate}
       />
     </div>
   );

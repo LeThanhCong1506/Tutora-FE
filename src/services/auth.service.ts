@@ -458,7 +458,8 @@ export const resendPhoneOtp = async (phone: string) => {
 
 /**
  * Quên mật khẩu: gửi mã OTP đặt lại mật khẩu tới số điện thoại.
- * BE luôn trả success (tránh dò số điện thoại tồn tại).
+ * BE trả lỗi 400 rõ ràng nếu SĐT chưa đăng ký (đánh đổi có chủ đích, chấp nhận
+ * mất lớp chống dò số điện thoại — xem SimpleAuthService.ForgotPasswordAsync).
  */
 export const forgotPasswordPhone = async (phone: string) => {
   try {

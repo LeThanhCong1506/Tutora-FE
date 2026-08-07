@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { AutoComplete } from 'antd';
 import EditModal from './EditModal';
@@ -43,12 +44,18 @@ const ProfileHeroModal: React.FC<ProfileHeroModalProps> = ({
     onSave,
     initialData
 }) => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState<ProfileHeroData>(initialData);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = useState(false);
     const [citySearch, setCitySearch] = useState<string>('');
     const [districtSearch, setDistrictSearch] = useState<string>('');
     const { saveDraft, loadDraft, clearDraft } = useFormDraft<ProfileHeroData>('draft_hero');
+
+    const goToOnboardingForSubjects = () => {
+        onClose();
+        navigate('/tutor-portal/onboarding');
+    };
 
     // Địa danh từ API v2 (provinces.open-api.vn). teachingAreaCity giờ lưu TÊN tỉnh
     // (vd "Thành phố Hồ Chí Minh") nên suy ngược ra mã để nạp danh sách phường/xã.
@@ -259,9 +266,13 @@ const ProfileHeroModal: React.FC<ProfileHeroModalProps> = ({
                     {errors.teachingMode && <span className={styles.error}>{errors.teachingMode}</span>}
                 </div>
 
-                {/* Gợi ý: môn học, cấp độ & giá được thiết lập ở trang Onboarding. */}
+                {/* Môn học, cấp độ & giá được thiết lập ở trang Onboarding — không sửa được ở modal này. */}
                 <p style={{ fontSize: 13, color: 'rgba(62, 47, 40, 0.6)', marginTop: 4 }}>
-                    Môn học, cấp độ &amp; giá được thiết lập ở trang Onboarding.
+                    Môn học, cấp độ &amp; giá được thiết lập ở{' '}
+                    <button type="button" className={styles.onboardingLink} onClick={goToOnboardingForSubjects}>
+                        trang Onboarding
+                    </button>
+                    .
                 </p>
             </div>
         </EditModal>

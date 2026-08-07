@@ -282,7 +282,7 @@ const mapDisputeListResponse = (r: DisputeListResponse): DisputeListDto => ({
   status: r.status ?? '',
   reason: r.reason ?? '',
   createdAt: r.createdAt ?? '',
-  tutorName: r.tutorName,
+  tutorName: r.tutorName ?? undefined,
   subjectName: undefined,
 });
 
@@ -290,24 +290,26 @@ export const getParentDisputes = async (
   page: number = 1,
   pageSize: number = 10,
 ): Promise<ApiResponse<PagedList<DisputeListDto>>> => {
-  const response = await getParentDisputesList(page, pageSize);
-  // BE's PagedList<T> extends List<T>, so System.Text.Json serializes it as a bare array —
-  // CurrentPage/TotalPages/TotalCount never actually reach the client. Handle both shapes
-  // defensively rather than assume the {items, totalCount} object this was written against.
+  const response = await getParentDisputesList({ page, pageSize });
+  // Keep the legacy adapter compatible with both the new stable page envelope and older
+  // deployments that serialized PagedList<T> as a bare array.
   const raw = response.content as unknown;
-  const rawItems: DisputeListResponse[] = Array.isArray(raw)
-    ? raw
-    : (raw as { items?: DisputeListResponse[] })?.items ?? [];
-  const totalCount = Array.isArray(raw) ? raw.length : (raw as { totalCount?: number })?.totalCount ?? rawItems.length;
+  const paged = Array.isArray(raw)
+    ? undefined
+    : (raw as { items?: DisputeListResponse[]; totalCount?: number; page?: number; pageSize?: number });
+  const rawItems: DisputeListResponse[] = Array.isArray(raw) ? raw : (paged?.items ?? []);
+  const totalCount = Array.isArray(raw) ? raw.length : (paged?.totalCount ?? rawItems.length);
+  const responsePage = paged?.page ?? page;
+  const responsePageSize = paged?.pageSize ?? pageSize;
 
   return {
     ...response,
     content: {
       items: rawItems.map(mapDisputeListResponse),
       totalCount,
-      page,
-      pageSize,
-      totalPages: Math.ceil(totalCount / pageSize),
+      page: responsePage,
+      pageSize: responsePageSize,
+      totalPages: Math.ceil(totalCount / responsePageSize),
     } as unknown as PagedList<DisputeListDto>,
   };
 };

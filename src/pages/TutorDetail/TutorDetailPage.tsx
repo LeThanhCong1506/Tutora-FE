@@ -3,7 +3,8 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-import { getCurrentUser, hasAnyRole } from '../../services/auth.service';
+import { getCurrentUser, getCurrentUserRole, hasAnyRole } from '../../services/auth.service';
+import { createChannel } from '../../services/chat.service';
 import { isZaloMiniApp } from '../../services/zalo-env';
 import { loginWithZalo } from '../../services/zalo-auth.service';
 import ZaloRoleSelectModal from '../../components/ZaloRoleSelectModal/ZaloRoleSelectModal';
@@ -35,6 +36,7 @@ const TutorDetailPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showBooking, setShowBooking] = useState(false);
+    const [sendingMessage, setSendingMessage] = useState(false);
     const [showRoleSelect, setShowRoleSelect] = useState(false);
     const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
     const autoBookingTriggered = useRef(false);
@@ -63,6 +65,47 @@ const TutorDetailPage = () => {
         }
 
         setShowBooking(true);
+    };
+
+    // Nhắn tin với gia sư trước khi đặt lịch: tạo/lấy kênh chat rồi mở thẳng cuộc trò chuyện
+    // ở trang Tin nhắn — cùng cơ chế với nút "Nhắn tin" trên TutorCard (trang tìm kiếm).
+    const openMessage = async () => {
+        if (!hasAnyRole(['Parent', 'Student'])) {
+            toast.warning('Chỉ phụ huynh hoặc học sinh mới có thể nhắn tin với gia sư.', {
+                toastId: 'message-role-forbidden',
+            });
+            return;
+        }
+        if (sendingMessage || !id || !profile) return;
+
+        setSendingMessage(true);
+        try {
+            const res = await createChannel(id);
+            const channelId = res.content?.channelId;
+            if (!channelId) throw new Error('Thiếu channelId');
+
+            const role = (getCurrentUserRole() || '').toLowerCase();
+            const messagesPath = role === 'student' ? '/student-portal/messages' : '/parent-portal/messages';
+
+            navigate(messagesPath, {
+                state: {
+                    openChannel: {
+                        channelId,
+                        bookingId: 0,
+                        otherUserId: id,
+                        otherUserName: profile.fullName,
+                        otherUserAvatarUrl: profile.avatarUrl,
+                        status: 'active',
+                        lastMessageAt: '',
+                        lastMessagePreview: '',
+                    },
+                },
+            });
+        } catch {
+            toast.error('Không mở được cuộc trò chuyện. Vui lòng thử lại.', { toastId: 'tutor-detail-message-error' });
+        } finally {
+            setSendingMessage(false);
+        }
     };
 
     const handleRoleSelect = async (role: 'Parent' | 'Student' | 'Tutor') => {
@@ -197,6 +240,8 @@ const TutorDetailPage = () => {
                         <BookingSidebar
                             availabilities={profile.availabilities}
                             onBooking={() => requireLogin(openBooking)}
+                            onMessage={() => requireLogin(openMessage)}
+                            messaging={sendingMessage}
                         />
                     )}
                 </div>

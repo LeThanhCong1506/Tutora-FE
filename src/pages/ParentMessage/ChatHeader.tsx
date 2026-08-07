@@ -4,6 +4,7 @@ import type { ChatChannel } from '../../services/chat.service';
 import type { BookingResponseDTO } from '../../services/booking.service';
 import { useUserPresence, formatLastSeen } from '../../hooks/useUserPresence';
 import UserAvatar from './UserAvatar';
+import { getOtherUserRoleLabel } from './chatRole';
 
 interface ChatHeaderProps {
   selectedChannelId: number | null;
@@ -15,7 +16,6 @@ interface ChatHeaderProps {
   onSearchToggle?: () => void;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
-  isTutor?: boolean;
 }
 
 const ChatHeader = ({
@@ -25,7 +25,6 @@ const ChatHeader = ({
   onSearchToggle,
   searchQuery,
   onSearchChange,
-  isTutor = false,
 }: ChatHeaderProps) => {
   // Hook phải gọi TRƯỚC mọi early-return để không vi phạm rules-of-hooks.
   const presence = useUserPresence(channel?.otherUserId);
@@ -33,7 +32,7 @@ const ChatHeader = ({
   if (!channel) return null;
 
   const isBookingRequest = channel.status === 'pending_tutor';
-  const counterpartRole = isTutor ? 'Phụ huynh / Học sinh' : 'Gia sư';
+  const counterpartRole = getOtherUserRoleLabel(channel);
   const presenceLabel =
     presence.status === 'online'
       ? 'Đang hoạt động'
