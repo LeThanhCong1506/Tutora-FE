@@ -27,7 +27,7 @@ export type { IdentityVerificationData };
 export interface SubjectSelection {
     subjectId: number;
     subjectName: string;
-    gradeLevels: string[];  // ['grade_10', 'grade_11', ...]
+    gradeLevels: string[];  // Tên lớp thật từ BE, vd ['Lớp 10', 'Lớp 11', ...] — dùng để hiển thị.
     tags: string[];  // Tags for this subject (max 5, required)
 }
 
@@ -261,8 +261,10 @@ function mapPricingToForm(items: SubjectGradePriceItem[]): {
         const cur =
             bySubject.get(it.subjectId) ??
             { subjectId: it.subjectId, subjectName: it.subjectName || '', gradeLevels: [], tags: [] };
-        const key = `grade_${it.gradeLevelId}`;
-        if (!cur.gradeLevels.includes(key)) cur.gradeLevels.push(key);
+        // Dùng tên lớp thật từ BE (vd "Lớp 9") để hiển thị — KHÔNG dùng gradeLevelId (khoá DB nội
+        // bộ, không phải số lớp thật) như trước, gây hiển thị sai kiểu "Lớp 57".
+        const gradeLabel = it.gradeLevelName;
+        if (gradeLabel && !cur.gradeLevels.includes(gradeLabel)) cur.gradeLevels.push(gradeLabel);
         bySubject.set(it.subjectId, cur);
     }
     return { subjects: Array.from(bySubject.values()), pricingItems: items };
