@@ -321,6 +321,30 @@ export const getParentBookings = async (params: { page?: number; pageSize?: numb
     }
 };
 
+/**
+ * GET /api/student/bookings — Get list of the current student's bookings (self-registered or
+ * parent-managed). Hits the same backend action as getParentBookings (BE differentiates by JWT
+ * role), so kept as a sibling function here rather than reusing getParentBookings directly —
+ * this file's convention is one typed function per portal (see getTutorBookings below).
+ *
+ * There is also a `getStudentBookings` in student-lesson.service.ts used by StudentDashboard;
+ * that one skips bookingToLocal (no schedule/lessons normalization), so it isn't a drop-in
+ * replacement for pages that need booking.lessons / booking.schedule, like this one.
+ */
+export const getStudentBookings = async (params: { page?: number; pageSize?: number; status?: string }): Promise<ApiResponse<{ items: BookingResponseDTO[], totalCount: number }>> => {
+    try {
+        const response = await api.get('/student/bookings', {
+            headers: getAuthHeaders(),
+            params,
+        });
+        const data = response.data as ApiResponse<{ items: BookingResponseDTO[]; totalCount: number }>;
+        if (data.content?.items) data.content.items = data.content.items.map(bookingToLocal);
+        return data;
+    } catch (error: any) {
+        throw error;
+    }
+};
+
 /** GET /api/tutors/bookings — Get list of tutor booking requests */
 export const getTutorBookings = async (params: { page?: number; pageSize?: number; status?: string }): Promise<ApiResponse<{ items: BookingResponseDTO[], totalCount: number }>> => {
     try {
