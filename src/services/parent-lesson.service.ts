@@ -197,6 +197,7 @@ const mapDetail = (d: ClassSessionDetailResponse): ParentLessonDetailDto => ({
         homeworkAssigned: d.report.homeworkAssigned ?? '',
         studentPerformanceRating: d.report.studentPerformanceRating ?? 0,
         attachments: d.report.attachments ?? [],
+        attachmentDetails: d.report.attachmentDetails,
         createdAt: d.report.createdAt ?? '',
       }
     : undefined,

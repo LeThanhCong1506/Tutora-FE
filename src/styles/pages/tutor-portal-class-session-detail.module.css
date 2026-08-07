@@ -559,6 +559,11 @@
   gap: 12px;
 }
 
+/* `.item` của SessionTimeline đã có padding 9px nên chỉ bù thêm cho đủ nhịp 18px như .reportGrid. */
+.timelineBody {
+  padding-top: 9px;
+}
+
 .reportField {
   min-width: 0;
   padding: 14px;
