@@ -178,6 +178,19 @@ const TestimonialsSection = ({ feedbacks, totalFeedbacks, tutorId }: Testimonial
                                 </div>
                             </div>
                         </div>
+                        {(testimonial as any).reply && (
+                            <div className="testimonial-reply">
+                                <div className="testimonial-reply-head">
+                                    <span>Phản hồi từ gia sư</span>
+                                    {(testimonial as any).repliedAt && (
+                                        <time dateTime={(testimonial as any).repliedAt}>
+                                            {new Date((testimonial as any).repliedAt).toLocaleDateString('vi-VN')}
+                                        </time>
+                                    )}
+                                </div>
+                                <p>{(testimonial as any).reply}</p>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <p className="empty-message-center" style={{ width: '100%', textAlign: 'center', padding: '40px', color: 'rgba(62, 47, 40, 0.5)', fontStyle: 'italic' }}>

@@ -31,12 +31,6 @@ export function useUnreadBadgesByTab(
     const [countsByType, setCountsByType] = useState<Record<string, number>>({});
     const location = useLocation();
 
-    // Ref để callback SignalR luôn đọc pathname mới nhất mà không phải resubscribe.
-    const pathnameRef = useRef(location.pathname);
-    useEffect(() => {
-        pathnameRef.current = location.pathname;
-    });
-
     // 1. Initial fetch — dict { type → count }
     useEffect(() => {
         let cancelled = false;
@@ -52,22 +46,21 @@ export function useUnreadBadgesByTab(
         };
     }, []);
 
-    // 2. SignalR realtime
+    // 2. SignalR realtime — luôn bump badge.
+    //
+    // Trước đây nếu user đang đứng sẵn trên tab tương ứng thì thông báo bị mark-read ngay lập
+    // tức. Kết quả: chuông nhấp nháy số rồi về 0, và tab "Chưa đọc" hiện item xong biến mất —
+    // vì `markAsReadByType` xoá TOÀN BỘ thông báo cùng type chứ không riêng cái vừa tới, rồi
+    // BE push NotificationCountUpdated kéo chuông về 0. Giờ để badge lên, dọn khi điều hướng.
     useEffect(() => {
         const unsubscribe = signalRService.subscribeToNotifications((noti: NotificationDTO) => {
             // Noti chưa có `type` (legacy BE) → bỏ qua, vẫn được đếm ở bell global.
             if (!noti.type) return;
 
-            const matchedPath = Object.entries(typesByPath).find(([, types]) =>
+            const matched = Object.values(typesByPath).some((types) =>
                 types.includes(noti.type as string),
-            )?.[0];
-            if (!matchedPath) return;
-
-            // Nếu user đang ở chính tab đó → coi như đã thấy: BE mark-read luôn, không bump badge.
-            if (pathnameRef.current.startsWith(matchedPath)) {
-                markAsReadByType(noti.type as string).catch(() => {});
-                return;
-            }
+            );
+            if (!matched) return;
 
             setCountsByType((prev) => ({
                 ...prev,
@@ -77,7 +70,14 @@ export function useUnreadBadgesByTab(
         return unsubscribe;
     }, [typesByPath]);
 
-    // 3. Auto-clear khi navigate vào tab matching
+    // Đọc count mới nhất trong effect dọn badge mà không phải đưa vào deps — nếu đưa vào thì
+    // mỗi lần badge tăng lúc đang đứng trên tab sẽ tự dọn ngay, đúng cái lỗi ở trên.
+    const countsRef = useRef(countsByType);
+    useEffect(() => {
+        countsRef.current = countsByType;
+    });
+
+    // 3. Auto-clear khi ĐIỀU HƯỚNG vào tab matching (không phải mỗi lần count đổi).
     useEffect(() => {
         const matchedPath = Object.keys(typesByPath).find((p) =>
             location.pathname.startsWith(p),
@@ -85,7 +85,7 @@ export function useUnreadBadgesByTab(
         if (!matchedPath) return;
 
         const dirtyTypes = typesByPath[matchedPath].filter(
-            (t) => (countsByType[t] || 0) > 0,
+            (t) => (countsRef.current[t] || 0) > 0,
         );
         if (dirtyTypes.length === 0) return;
 
@@ -100,7 +100,7 @@ export function useUnreadBadgesByTab(
         dirtyTypes.forEach((t) => {
             markAsReadByType(t).catch(() => {});
         });
-    }, [location.pathname, countsByType, typesByPath]);
+    }, [location.pathname, typesByPath]);
 
     // 4. Tính badge map (sum của các type thuộc cùng 1 tab)
     return useMemo(() => {

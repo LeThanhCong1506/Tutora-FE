@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Rate, Input, Spin } from 'antd';
 import { toast } from 'react-toastify';
-import { createFeedback, type CreateFeedbackRequest } from '../../../services/feedback.service';
+import {
+    createFeedback,
+    updateFeedback,
+    type CreateFeedbackRequest,
+    type FeedbackDto,
+} from '../../../services/feedback.service';
 import { useFormDraft } from '../../../hooks/useFormDraft';
 
 const { TextArea } = Input;
@@ -13,11 +18,14 @@ interface CreateFeedbackModalProps {
     bookingId: number;
     tutorName?: string;
     subjectName?: string;
+    /** Có thì modal chuyển sang chế độ sửa: đổ sẵn giá trị cũ và gọi updateFeedback. */
+    existingFeedback?: FeedbackDto | null;
 }
 
 const CreateFeedbackModal: React.FC<CreateFeedbackModalProps> = ({
-    open, onClose, onSuccess, bookingId, tutorName, subjectName,
+    open, onClose, onSuccess, bookingId, tutorName, subjectName, existingFeedback,
 }) => {
+    const isEditing = !!existingFeedback;
     const [rating, setRating] = useState(0);
     const [comment, setComment] = useState('');
     const [initialGoal, setInitialGoal] = useState('');
@@ -28,26 +36,35 @@ const CreateFeedbackModal: React.FC<CreateFeedbackModalProps> = ({
         rating: number; comment: string; initialGoal: string; actualResult: string; courseDuration: string;
     }>(`draft_feedback_${bookingId}`);
 
-    // Load draft on open
+    // Sửa thì đổ giá trị đã lưu; tạo mới thì khôi phục bản nháp.
     useEffect(() => {
-        if (open) {
-            const draft = loadDraft();
-            if (draft) {
-                setRating(draft.rating || 0);
-                setComment(draft.comment || '');
-                setInitialGoal(draft.initialGoal || '');
-                setActualResult(draft.actualResult || '');
-                setCourseDuration(draft.courseDuration || '');
-            }
-        }
-    }, [open, loadDraft]);
+        if (!open) return;
 
-    // Auto-save draft on field changes
+        if (existingFeedback) {
+            setRating(existingFeedback.rating || 0);
+            setComment(existingFeedback.comment || '');
+            setInitialGoal(existingFeedback.initialGoal || '');
+            setActualResult(existingFeedback.actualResult || '');
+            setCourseDuration(existingFeedback.courseDuration || '');
+            return;
+        }
+
+        const draft = loadDraft();
+        if (draft) {
+            setRating(draft.rating || 0);
+            setComment(draft.comment || '');
+            setInitialGoal(draft.initialGoal || '');
+            setActualResult(draft.actualResult || '');
+            setCourseDuration(draft.courseDuration || '');
+        }
+    }, [open, loadDraft, existingFeedback]);
+
+    // Auto-save draft on field changes. Không lưu nháp khi đang sửa — bản đã gửi mới là nguồn thật.
     useEffect(() => {
-        if (open) {
+        if (open && !isEditing) {
             saveDraft({ rating, comment, initialGoal, actualResult, courseDuration });
         }
-    }, [rating, comment, initialGoal, actualResult, courseDuration, open, saveDraft]);
+    }, [rating, comment, initialGoal, actualResult, courseDuration, open, isEditing, saveDraft]);
 
     const handleSubmit = async () => {
         if (rating === 0) {
@@ -65,13 +82,26 @@ const CreateFeedbackModal: React.FC<CreateFeedbackModalProps> = ({
                 actualResult: actualResult.trim() || undefined,
                 courseDuration: courseDuration.trim() || undefined,
             };
-            await createFeedback(request);
-            toast.success('Đã gửi đánh giá thành công!');
-            clearDraft();
+
+            if (existingFeedback) {
+                const { bookingId: _ignored, ...updates } = request;
+                await updateFeedback(existingFeedback.feedbackId, updates);
+                toast.success('Đã cập nhật đánh giá!');
+            } else {
+                await createFeedback(request);
+                toast.success('Đã gửi đánh giá thành công!');
+                clearDraft();
+            }
+
             handleReset();
             onSuccess();
-        } catch (error) {
-            toast.error('Không thể gửi đánh giá. Vui lòng thử lại.');
+        } catch (error: any) {
+            // BE trả message tiếng Việt cho các trường hợp từ chối (vd gia sư đã phản hồi),
+            // hiện lại đúng câu đó thay vì nuốt mất lý do.
+            const apiMessage = error?.response?.data?.message;
+            toast.error(apiMessage || (existingFeedback
+                ? 'Không thể cập nhật đánh giá. Vui lòng thử lại.'
+                : 'Không thể gửi đánh giá. Vui lòng thử lại.'));
         } finally {
             setSubmitting(false);
         }
@@ -105,7 +135,7 @@ const CreateFeedbackModal: React.FC<CreateFeedbackModalProps> = ({
                 {/* Header */}
                 <div style={{ textAlign: 'center', marginBottom: '24px' }}>
                     <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1a2238', margin: '0 0 4px 0' }}>
-                        Đánh giá khóa học
+                        {isEditing ? 'Sửa đánh giá' : 'Đánh giá khóa học'}
                     </h2>
                     {tutorName && (
                         <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>
@@ -207,7 +237,7 @@ const CreateFeedbackModal: React.FC<CreateFeedbackModalProps> = ({
                             opacity: submitting ? 0.7 : 1,
                         }}
                     >
-                        {submitting ? <Spin size="small" /> : 'Gửi đánh giá'}
+                        {submitting ? <Spin size="small" /> : (isEditing ? 'Lưu thay đổi' : 'Gửi đánh giá')}
                     </button>
                 </div>
             </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Calendar, Check, ChevronRight, Clock, MessageCircle, Search, User, Wallet, X } from 'lucide-react';
+import { BookOpen, Calendar, Check, ChevronRight, Clock, MessageCircle, Search, Star, User, Wallet, X } from 'lucide-react';
 import { Input, Modal, Pagination } from 'antd';
 import { toast } from 'react-toastify';
 import BookingMonthCalendar from '../../components/BookingMonthCalendar/BookingMonthCalendar';
@@ -13,6 +13,8 @@ import {
   type BookingResponseDTO,
 } from '../../services/booking.service';
 import { getChats, getOrCreateBookingChannel, type ChatChannel } from '../../services/chat.service';
+import { getBookingFeedback, type FeedbackDto } from '../../services/feedback.service';
+import ReplyFeedbackModal from './components/ReplyFeedbackModal';
 import { getBookingResponseDeadlineState } from '../../utils/bookingDeadline';
 import { formatVNDNumber } from '../../utils/formatters';
 
@@ -140,8 +142,43 @@ const TutorPortalBookings = () => {
     action: 'accept' | 'decline';
   } | null>(null);
   const [openingChatId, setOpeningChatId] = useState<number | null>(null);
+  const [feedbacks, setFeedbacks] = useState<Record<number, FeedbackDto>>({});
+  const [replyModal, setReplyModal] = useState<{ open: boolean; feedback: FeedbackDto | null }>({
+    open: false,
+    feedback: null,
+  });
   const currentTime = useCurrentTime();
   const navigate = useNavigate();
+
+  /**
+   * Nạp đánh giá cho các booking đã hoàn thành trên trang hiện tại. Gọi theo từng booking
+   * thay vì lấy cả danh sách đánh giá của gia sư rồi ghép: danh sách đó phân trang riêng nên
+   * gia sư nhiều đánh giá sẽ bị thiếu. Tối đa `pageSize` request, chạy song song.
+   */
+  const fetchFeedbacksFor = async (items: BookingResponseDTO[]) => {
+    const completed = items.filter((b) => b.status === 'completed');
+    if (completed.length === 0) {
+      setFeedbacks({});
+      return;
+    }
+
+    const results = await Promise.all(
+      completed.map(async (b) => {
+        try {
+          const response = await getBookingFeedback(b.bookingId);
+          return [b.bookingId, response.content] as const;
+        } catch {
+          return [b.bookingId, null] as const;
+        }
+      }),
+    );
+
+    const map: Record<number, FeedbackDto> = {};
+    for (const [bookingId, feedback] of results) {
+      if (feedback) map[bookingId] = feedback;
+    }
+    setFeedbacks(map);
+  };
 
   const fetchBookings = async () => {
     try {
@@ -173,6 +210,7 @@ const TutorPortalBookings = () => {
 
       setBookings(items);
       setTotalCount(total);
+      await fetchFeedbacksFor(items);
     } catch (error: unknown) {
       console.error('Fetch bookings error:', error);
       const apiError = error as { response?: { status?: number }; message?: string };
@@ -339,6 +377,7 @@ const TutorPortalBookings = () => {
                 booking.status === 'pending_tutor'
                   ? getBookingResponseDeadlineState(booking.responseDeadline, currentTime)
                   : null;
+              const bookingFeedback = feedbacks[booking.bookingId];
               const responseHintTone = responseDeadline ? styles[`responseHint_${responseDeadline.urgency}`] : '';
               const deadlineBadgeTone =
                 responseDeadline?.urgency === 'critical'
@@ -523,6 +562,54 @@ const TutorPortalBookings = () => {
                     </aside>
                   </div>
 
+                  {bookingFeedback && (
+                    <section className={styles.feedbackBlock}>
+                      <div className={styles.feedbackHead}>
+                        <Star size={16} />
+                        <strong>
+                          {bookingFeedback.reviewerRole === 'student'
+                            ? 'Đánh giá của học viên'
+                            : 'Đánh giá của phụ huynh'}
+                        </strong>
+                        <span className={styles.feedbackStars} aria-hidden="true">
+                          {'★'.repeat(bookingFeedback.rating)}
+                          <span className={styles.feedbackStarsDim}>
+                            {'★'.repeat(Math.max(0, 5 - bookingFeedback.rating))}
+                          </span>
+                        </span>
+                        <span className={styles.feedbackMeta}>{bookingFeedback.rating}/5</span>
+                        {bookingFeedback.isVisible === false && (
+                          <span className={styles.feedbackHidden}>Đang bị ẩn bởi quản trị viên</span>
+                        )}
+                      </div>
+
+                      {bookingFeedback.isVisible === false && bookingFeedback.hiddenReason && (
+                        <p className={styles.feedbackHiddenReason}>
+                          Lý do ẩn: {bookingFeedback.hiddenReason}
+                        </p>
+                      )}
+
+                      {bookingFeedback.comment && (
+                        <p className={styles.feedbackComment}>“{bookingFeedback.comment}”</p>
+                      )}
+
+                      {bookingFeedback.reply ? (
+                        <div className={styles.feedbackReply}>
+                          <strong>Phản hồi của bạn</strong>
+                          <p>{bookingFeedback.reply}</p>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className={styles.feedbackReplyBtn}
+                          onClick={() => setReplyModal({ open: true, feedback: bookingFeedback })}
+                        >
+                          <MessageCircle size={15} /> Phản hồi đánh giá
+                        </button>
+                      )}
+                    </section>
+                  )}
+
                   <footer className={styles.cardFooter}>
                     <div className={`${styles.responseHint} ${responseHintTone}`}>
                       <Clock size={16} />
@@ -637,6 +724,22 @@ const TutorPortalBookings = () => {
           )}
         </div>
       </Modal>
+
+      <ReplyFeedbackModal
+        open={replyModal.open}
+        onClose={() => setReplyModal({ open: false, feedback: null })}
+        onSuccess={() => {
+          setReplyModal({ open: false, feedback: null });
+          // Nạp lại để thẻ đổi từ nút "Phản hồi" sang nội dung đã trả lời.
+          void fetchFeedbacksFor(bookings);
+        }}
+        feedbackId={replyModal.feedback?.feedbackId || 0}
+        parentName={replyModal.feedback?.parentName}
+        reviewerRole={replyModal.feedback?.reviewerRole}
+        rating={replyModal.feedback?.rating}
+        comment={replyModal.feedback?.comment}
+        createdAt={replyModal.feedback?.createdAt}
+      />
     </div>
   );
 };

@@ -13,14 +13,17 @@ interface ReplyFeedbackModalProps {
     feedbackId: number;
     // Original feedback info
     parentName?: string;
+    /** Người viết là phụ huynh hay học sinh tự đăng ký — quyết định nhãn hiển thị. */
+    reviewerRole?: 'parent' | 'student';
     rating?: number;
     comment?: string;
     createdAt?: string;
 }
 
 const ReplyFeedbackModal: React.FC<ReplyFeedbackModalProps> = ({
-    open, onClose, onSuccess, feedbackId, parentName, rating, comment, createdAt,
+    open, onClose, onSuccess, feedbackId, parentName, reviewerRole, rating, comment, createdAt,
 }) => {
+    const reviewerLabel = reviewerRole === 'student' ? 'Học viên' : 'Phụ huynh';
     const [replyText, setReplyText] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const { saveDraft, loadDraft, clearDraft } = useFormDraft<{ replyText: string }>(`draft_reply_${feedbackId}`);
@@ -99,7 +102,7 @@ const ReplyFeedbackModal: React.FC<ReplyFeedbackModalProps> = ({
                         </div>
                         <div>
                             <span style={{ fontWeight: 600, fontSize: '13px', color: '#1a2238' }}>
-                                {parentName || 'Phụ huynh'}
+                                {parentName || reviewerLabel}
                             </span>
                             {createdAt && (
                                 <span style={{ fontSize: '11px', color: '#999', marginLeft: '8px' }}>
@@ -126,7 +129,7 @@ const ReplyFeedbackModal: React.FC<ReplyFeedbackModalProps> = ({
                     <TextArea
                         value={replyText}
                         onChange={(e) => setReplyText(e.target.value)}
-                        placeholder="Cảm ơn phụ huynh đã đánh giá. Tôi sẽ tiếp tục cố gắng..."
+                        placeholder={`Cảm ơn ${reviewerLabel.toLowerCase()} đã đánh giá. Tôi sẽ tiếp tục cố gắng...`}
                         rows={3}
                         maxLength={500}
                         showCount
