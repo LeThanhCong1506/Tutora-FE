@@ -81,12 +81,21 @@ export interface ClassSessionSubject {
     subjectName?: string;
 }
 
+/** Một tệp đính kèm của báo cáo buổi học — mirror BE `ReportAttachment`. */
+export interface ReportAttachment {
+    url: string;
+    /** Nhãn gia sư đặt cho tệp; rỗng thì FE hiển thị tên file. */
+    description?: string | null;
+}
+
 export interface ClassSessionReport {
     reportId: number;
     contentCovered?: string;
     homeworkAssigned?: string;
     studentPerformanceRating?: number;
+    /** Chỉ có URL — giữ lại cho code cũ; ưu tiên đọc `attachmentDetails`. */
     attachments?: string[];
+    attachmentDetails?: ReportAttachment[];
     createdAt?: string;
 }
 
@@ -160,7 +169,9 @@ export interface SubmitReportRequest {
     isTutorPresent?: boolean;
     isStudentPresent?: boolean;
     attendanceNote?: string;
+    /** @deprecated Gửi `attachmentDetails` để kèm được mô tả từng tệp. */
     attachments?: string[];
+    attachmentDetails?: ReportAttachment[];
 }
 
 // ── Calendar / dashboard DTOs ──
