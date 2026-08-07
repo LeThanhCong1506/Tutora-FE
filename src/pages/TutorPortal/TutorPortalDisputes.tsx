@@ -1,185 +1,436 @@
-import React, { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Spin, Tag, Empty } from 'antd';
-import { getTutorDisputesList, type DisputeListResponse } from '../../services/classSession.service';
-import { formatLocalDate } from '../../utils/datetime';
+import { AlertCircle, ArrowUpRight, RefreshCw, Search, X } from 'lucide-react';
+import { Button, ConfigProvider, Empty, Input, Select, Table, Tooltip } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import { PageContainer, SectionCard, StatusBadge } from '../../components/shared';
+import {
+  getTutorClassSessionDispute,
+  getTutorDisputesList,
+  type DisputeListResponse,
+} from '../../services/classSession.service';
+import {
+  DISPUTE_PAGE_THEME,
+  DISPUTE_SORT_OPTIONS,
+  DISPUTE_STATUS_TABS,
+  DISPUTE_TYPE_OPTIONS,
+  getDisputePriorityMeta,
+  getDisputeStatusMeta,
+  getDisputeTypeLabel,
+  type DisputeSortDirection,
+  type DisputeStatusFilter,
+  type DisputeTypeFilter,
+} from '../../components/disputes/disputePresentation';
+import { DisputeDetailModal } from '../../components/disputes';
+import { formatCurrency } from '../../utils/formatters';
+import { formatLocalDateTime } from '../../utils/datetime';
+import styles from '../../components/disputes/DisputesTable.module.css';
 
-const DISPUTE_STATUS: Record<string, { label: string; color: string }> = {
-  pending: { label: 'Chờ xử lý', color: '#faad14' },
-  investigating: { label: 'Đang xem xét', color: '#1890ff' },
-  resolved: { label: 'Đã giải quyết', color: '#52c41a' },
-  closed: { label: 'Đã đóng', color: '#999' },
-};
+const SEARCH_DEBOUNCE_MS = 350;
 
-const DISPUTE_TYPE: Record<string, string> = {
-  no_show: 'Vắng mặt',
-  quality: 'Chất lượng',
-  payment: 'Thanh toán',
-  other: 'Khác',
-};
+const fetchTutorDisputeDetail = async (classSessionId: number) =>
+  (await getTutorClassSessionDispute(classSessionId)).content ?? null;
 
-const TutorPortalDisputes: React.FC = () => {
+const TutorPortalDisputes = () => {
   const navigate = useNavigate();
+  const latestRequest = useRef(0);
+  const skipNextAutoFetch = useRef(false);
   const [disputes, setDisputes] = useState<DisputeListResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
-  const pageSize = 10;
+  const [statusFilter, setStatusFilter] = useState<DisputeStatusFilter>('');
+  const [typeFilter, setTypeFilter] = useState<DisputeTypeFilter>('');
+  const [sortDirection, setSortDirection] = useState<DisputeSortDirection>('desc');
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeDispute, setActiveDispute] = useState<DisputeListResponse | null>(null);
+
+  const fetchDisputes = useCallback(async () => {
+    const requestId = ++latestRequest.current;
+
+    try {
+      setLoading(true);
+      setHasError(false);
+      const response = await getTutorDisputesList({
+        page: currentPage,
+        pageSize,
+        status: statusFilter || undefined,
+        disputeType: typeFilter || undefined,
+        search: searchQuery || undefined,
+        sortDirection,
+      });
+
+      if (requestId !== latestRequest.current) return;
+
+      const content = response.content;
+      if (Array.isArray(content)) {
+        // Backward-compatible fallback for older API deployments that serialized PagedList as an array.
+        setDisputes(content);
+        setTotalItems(content.length);
+        return;
+      }
+
+      setDisputes(content?.items ?? []);
+      setTotalItems(content?.totalCount ?? 0);
+      if (content?.page && content.page !== currentPage) {
+        skipNextAutoFetch.current = true;
+        setCurrentPage(content.page);
+      }
+    } catch {
+      if (requestId !== latestRequest.current) return;
+      setDisputes([]);
+      setTotalItems(0);
+      setHasError(true);
+    } finally {
+      if (requestId === latestRequest.current) setLoading(false);
+    }
+  }, [currentPage, pageSize, searchQuery, sortDirection, statusFilter, typeFilter]);
 
   useEffect(() => {
-    const fetchDisputes = async () => {
-      try {
-        setLoading(true);
-        const response = await getTutorDisputesList(currentPage, pageSize);
-        const data = response.content as unknown;
-        if (Array.isArray(data)) {
-          setDisputes(data);
-          setTotalItems(data.length);
-        } else if (data && typeof data === 'object' && 'items' in data) {
-          const paged = data as { items: DisputeListResponse[]; totalCount: number };
-          setDisputes(paged.items);
-          setTotalItems(paged.totalCount || paged.items.length);
-        } else {
-          setDisputes([]);
-          setTotalItems(0);
-        }
-      } catch {
-        setDisputes([]);
-        setTotalItems(0);
-      } finally {
-        setLoading(false);
-      }
+    if (skipNextAutoFetch.current) {
+      skipNextAutoFetch.current = false;
+      return;
+    }
+
+    const timer = window.setTimeout(() => void fetchDisputes(), 0);
+    return () => {
+      window.clearTimeout(timer);
+      latestRequest.current += 1;
     };
+  }, [fetchDisputes]);
 
-    void fetchDisputes();
-  }, [currentPage]);
+  // Tìm kiếm chạy ngay khi ngừng gõ: không còn "chữ đã gõ nhưng chưa tìm" để rồi bị áp dụng
+  // bất ngờ lúc người dùng bấm sang bộ lọc khác.
+  useEffect(() => {
+    const normalized = searchInput.trim();
+    if (normalized === searchQuery) return;
 
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+    const timer = window.setTimeout(() => {
+      setCurrentPage(1);
+      setSearchQuery(normalized);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [searchInput, searchQuery]);
+
+  const openDispute = useCallback((dispute: DisputeListResponse) => setActiveDispute(dispute), []);
+
+  const viewSession = useCallback(
+    (dispute: DisputeListResponse) => {
+      setActiveDispute(null);
+      if (dispute.classSessionId) {
+        navigate(`/tutor-portal/class-sessions/${dispute.classSessionId}`);
+      }
+    },
+    [navigate],
+  );
+
+  const applyFilterChange = (update: () => void) => {
+    setCurrentPage(1);
+    update();
+  };
+
+  /** Enter = tìm ngay, không đợi hết debounce. */
+  const submitSearch = () => applyFilterChange(() => setSearchQuery(searchInput.trim()));
+
+  const clearFilters = () => {
+    setCurrentPage(1);
+    setStatusFilter('');
+    setTypeFilter('');
+    setSortDirection('desc');
+    setSearchInput('');
+    setSearchQuery('');
+  };
+
+  const filtersAreActive = Boolean(statusFilter || typeFilter || searchQuery);
+  const controlsAreModified = filtersAreActive || sortDirection !== 'desc';
+
+  const columns = useMemo<ColumnsType<DisputeListResponse>>(
+    () => [
+      {
+        title: 'Hồ sơ',
+        key: 'case',
+        width: 130,
+        render: (_, dispute) => (
+          <div className={styles.caseCell}>
+            <span className={styles.caseId}>#{dispute.disputeId}</span>
+            <span className={styles.secondaryText}>
+              {dispute.bookingId ? `Booking #${dispute.bookingId}` : 'Chưa có booking'}
+            </span>
+            {dispute.createdAt && <span className={styles.mobileDate}>{formatLocalDateTime(dispute.createdAt)}</span>}
+          </div>
+        ),
+      },
+      {
+        title: 'Nội dung khiếu nại',
+        key: 'issue',
+        width: 330,
+        render: (_, dispute) => {
+          const reason = dispute.reason || 'Không có mô tả bổ sung';
+          return (
+            <div className={styles.issueCell}>
+              <span className={styles.typeLabel}>
+                {getDisputeTypeLabel(dispute.disputeType, dispute.disputeTypeDisplay)}
+              </span>
+              <Tooltip title={reason} placement="topLeft">
+                <span className={styles.reasonText}>{reason}</span>
+              </Tooltip>
+            </div>
+          );
+        },
+      },
+      {
+        title: 'Buổi học',
+        key: 'lesson',
+        width: 170,
+        responsive: ['md'],
+        render: (_, dispute) => (
+          <div className={styles.lessonCell}>
+            <span className={styles.primaryText}>
+              {dispute.classSessionId ? `Buổi #${dispute.classSessionId}` : 'Chưa xác định'}
+            </span>
+            <span className={styles.secondaryText}>
+              {typeof dispute.classSessionPrice === 'number'
+                ? formatCurrency(dispute.classSessionPrice)
+                : 'Chưa có học phí'}
+            </span>
+          </div>
+        ),
+      },
+      {
+        title: 'Mức độ',
+        key: 'priority',
+        width: 130,
+        responsive: ['lg'],
+        render: (_, dispute) => {
+          const priority = getDisputePriorityMeta(dispute.priority, dispute.priorityDisplay);
+          return (
+            <Tooltip title={dispute.priorityReason || undefined}>
+              <span
+                className={styles.priorityTooltipTrigger}
+                tabIndex={dispute.priorityReason ? 0 : undefined}
+                aria-label={
+                  dispute.priorityReason
+                    ? `${priority.label}. Lý do ưu tiên: ${dispute.priorityReason}`
+                    : priority.label
+                }
+              >
+                <StatusBadge variant={priority.variant} shape="tag" className={styles.priorityBadge}>
+                  {priority.label}
+                </StatusBadge>
+              </span>
+            </Tooltip>
+          );
+        },
+      },
+      {
+        title: 'Ngày tạo',
+        dataIndex: 'createdAt',
+        key: 'createdAt',
+        width: 170,
+        responsive: ['lg'],
+        render: (createdAt: string | null | undefined) => (
+          <span className={styles.dateText}>{createdAt ? formatLocalDateTime(createdAt) : 'Chưa có thời gian'}</span>
+        ),
+      },
+      {
+        title: 'Trạng thái',
+        key: 'status',
+        width: 170,
+        render: (_, dispute) => {
+          const status = getDisputeStatusMeta(dispute.status, dispute.statusDisplay);
+          return (
+            <StatusBadge variant={status.variant} className={styles.statusBadge}>
+              {status.label}
+            </StatusBadge>
+          );
+        },
+      },
+      {
+        title: '',
+        key: 'action',
+        width: 62,
+        align: 'right',
+        render: (_, dispute) => (
+          <Tooltip title="Xem chi tiết khiếu nại">
+            <button
+              type="button"
+              className={styles.openButton}
+              aria-label={`Xem chi tiết khiếu nại ${dispute.disputeId}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                openDispute(dispute);
+              }}
+            >
+              <ArrowUpRight size={16} aria-hidden="true" />
+            </button>
+          </Tooltip>
+        ),
+      },
+    ],
+    [openDispute],
+  );
+
+  const emptyDescription = hasError
+    ? 'Không thể tải danh sách khiếu nại'
+    : filtersAreActive
+      ? 'Không tìm thấy khiếu nại phù hợp'
+      : 'Bạn chưa có khiếu nại nào';
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-      <header style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#1a2238', marginBottom: '4px' }}>
-          Khiếu nại của tôi
-        </h1>
-        <p style={{ fontSize: '14px', color: '#666' }}>
-          Theo dõi và phản hồi các khiếu nại liên quan đến buổi học của bạn
-        </p>
-      </header>
+    <ConfigProvider theme={DISPUTE_PAGE_THEME}>
+      <PageContainer
+        className={styles.page}
+        title="Khiếu nại"
+        headerAction={
+          <Button
+            className={styles.refreshButton}
+            icon={<RefreshCw size={15} />}
+            onClick={() => void fetchDisputes()}
+            loading={loading}
+          >
+            Làm mới
+          </Button>
+        }
+      >
+        <SectionCard className={styles.tableCard}>
+          <div className={styles.cardHeader}>
+            <div className={styles.cardHeading}>
+              <h2 className={styles.cardTitle}>Danh sách khiếu nại</h2>
+              <p className={styles.cardSubtitle} aria-live="polite">
+                {loading ? 'Đang cập nhật dữ liệu...' : `${totalItems.toLocaleString('vi-VN')} hồ sơ`}
+              </p>
+            </div>
 
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px' }}>
-          <Spin size="large" />
-        </div>
-      ) : disputes.length === 0 ? (
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '60px',
-            color: '#999',
-            background: '#fff',
-            borderRadius: '12px',
-            border: '1px solid rgba(26,34,56,0.06)',
-          }}
-        >
-          <Empty
-            description={
-              <div>
-                <p style={{ fontSize: '15px', color: '#666', margin: '0 0 4px' }}>Bạn chưa có khiếu nại nào</p>
-                <p style={{ fontSize: '13px', color: '#999', margin: 0 }}>
-                  Khiếu nại liên quan đến buổi học của bạn sẽ xuất hiện ở đây.
-                </p>
-              </div>
-            }
-          />
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {disputes.map((dispute) => {
-            const statusInfo = DISPUTE_STATUS[dispute.status] || { label: dispute.status, color: '#999' };
+            <div className={styles.toolbar}>
+              <Input
+                className={styles.searchInput}
+                aria-label="Tìm kiếm khiếu nại"
+                placeholder="Tìm mã, booking, người khiếu nại, nội dung..."
+                prefix={<Search size={16} aria-hidden="true" />}
+                value={searchInput}
+                allowClear
+                onChange={(event) => setSearchInput(event.target.value)}
+                onPressEnter={submitSearch}
+              />
 
-            return (
-              <div
-                key={dispute.disputeId}
-                role="button"
-                tabIndex={0}
-                onClick={() => navigate(`/tutor-portal/class-sessions/${dispute.classSessionId}`)}
-                style={{
-                  background: '#fff',
-                  borderRadius: '12px',
-                  padding: '16px 20px',
-                  border: '1px solid rgba(26,34,56,0.06)',
-                  cursor: 'pointer',
-                  transition: 'box-shadow 0.2s',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)')}
-                onMouseLeave={(e) => (e.currentTarget.style.boxShadow = 'none')}
+              <Select
+                className={styles.typeSelect}
+                aria-label="Lọc theo loại khiếu nại"
+                value={typeFilter}
+                options={DISPUTE_TYPE_OPTIONS}
+                onChange={(value: DisputeTypeFilter) => applyFilterChange(() => setTypeFilter(value))}
+              />
+
+              <Select
+                className={styles.sortSelect}
+                aria-label="Sắp xếp khiếu nại"
+                value={sortDirection}
+                options={DISPUTE_SORT_OPTIONS}
+                onChange={(value: DisputeSortDirection) => applyFilterChange(() => setSortDirection(value))}
+              />
+            </div>
+          </div>
+
+          <div className={styles.statusTabs} role="group" aria-label="Lọc khiếu nại theo trạng thái">
+            {DISPUTE_STATUS_TABS.map((tab) => (
+              <button
+                key={tab.key || 'all'}
+                type="button"
+                aria-pressed={statusFilter === tab.key}
+                className={statusFilter === tab.key ? styles.activeStatusTab : undefined}
+                onClick={() => applyFilterChange(() => setStatusFilter(tab.key))}
               >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontWeight: 600, fontSize: '14px', color: '#1a2238' }}>
-                      Khiếu nại #{dispute.disputeId}
-                    </span>
-                    <Tag color={statusInfo.color} style={{ margin: 0, borderRadius: '6px' }}>
-                      {statusInfo.label}
-                    </Tag>
-                  </div>
-                  <span style={{ fontSize: '12px', color: '#999' }}>
-                    {dispute.disputeType && (DISPUTE_TYPE[dispute.disputeType] || dispute.disputeType)}
-                  </span>
-                </div>
+                {tab.label}
+              </button>
+            ))}
 
-                <p style={{ fontSize: '13px', color: '#666', margin: '0 0 8px 0', lineHeight: 1.5 }}>
-                  {dispute.reason || 'Không có lý do'}
-                </p>
+            {controlsAreModified && (
+              <button type="button" className={styles.clearButton} onClick={clearFilters}>
+                <X size={13} aria-hidden="true" />
+                Xóa bộ lọc
+              </button>
+            )}
+          </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12px', color: '#999' }}>
-                  {dispute.createdAt && <span>Ngày tạo: {formatLocalDate(dispute.createdAt)}</span>}
-                  {dispute.bookingId && <span>Booking #{dispute.bookingId}</span>}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+          {hasError && (
+            <div className={styles.errorBanner} role="alert">
+              <AlertCircle size={18} aria-hidden="true" />
+              <span>Dữ liệu chưa tải được. Vui lòng kiểm tra kết nối và thử lại.</span>
+              <button type="button" onClick={() => void fetchDisputes()}>
+                Thử lại
+              </button>
+            </div>
+          )}
 
-      {totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '24px' }}>
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            style={{
-              padding: '6px 12px',
-              borderRadius: '8px',
-              border: '1px solid #e8e8e8',
-              background: '#fff',
-              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-              opacity: currentPage === 1 ? 0.5 : 1,
+          <Table<DisputeListResponse>
+            className={styles.disputeTable}
+            columns={columns}
+            dataSource={disputes}
+            rowKey="disputeId"
+            loading={loading}
+            size="middle"
+            scroll={{ x: 'max-content' }}
+            locale={{
+              emptyText: (
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description={
+                    <div className={styles.emptyState}>
+                      <strong>{emptyDescription}</strong>
+                      <span>
+                        {hasError
+                          ? 'Chọn “Thử lại” ở thông báo phía trên để tải lại dữ liệu.'
+                          : filtersAreActive
+                            ? 'Hãy thử thay đổi từ khóa hoặc bộ lọc đang chọn.'
+                            : 'Các khiếu nại liên quan đến buổi học sẽ xuất hiện tại đây.'}
+                      </span>
+                      {filtersAreActive && (
+                        <button type="button" onClick={clearFilters}>
+                          Xóa bộ lọc
+                        </button>
+                      )}
+                    </div>
+                  }
+                />
+              ),
             }}
-          >
-            <ChevronLeft size={16} />
-          </button>
-          <span style={{ fontSize: '13px', color: '#666' }}>
-            Trang {currentPage} / {totalPages}
-          </span>
-          <button
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-            style={{
-              padding: '6px 12px',
-              borderRadius: '8px',
-              border: '1px solid #e8e8e8',
-              background: '#fff',
-              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-              opacity: currentPage === totalPages ? 0.5 : 1,
+            pagination={{
+              current: currentPage,
+              pageSize,
+              total: totalItems,
+              showSizeChanger: totalItems > 10,
+              pageSizeOptions: ['10', '20', '50'],
+              showLessItems: true,
+              showTotal: (total, range) => `Hiển thị ${range[0]}–${range[1]} trong ${total} hồ sơ`,
+              onChange: (page, nextPageSize) => {
+                if (nextPageSize !== pageSize) {
+                  setPageSize(nextPageSize);
+                  setCurrentPage(1);
+                  return;
+                }
+                setCurrentPage(page);
+              },
             }}
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      )}
-    </div>
+            onRow={(dispute) => ({
+              className: styles.clickableRow,
+              onClick: () => openDispute(dispute),
+            })}
+          />
+        </SectionCard>
+      </PageContainer>
+
+      <DisputeDetailModal
+        open={Boolean(activeDispute)}
+        dispute={activeDispute}
+        fetchDetail={fetchTutorDisputeDetail}
+        viewerRole="tutor"
+        onClose={() => setActiveDispute(null)}
+        onViewSession={viewSession}
+      />
+    </ConfigProvider>
   );
 };
 
