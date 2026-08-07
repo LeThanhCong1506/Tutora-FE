@@ -4,6 +4,8 @@ import { CalendarIcon } from './icons';
 interface BookingSidebarProps {
     availabilities: AvailabilitySlot[] | null;
     onBooking: () => void;
+    onMessage: () => void;
+    messaging?: boolean;
 }
 
 const DAY_LABELS: Record<number, string> = {
@@ -104,7 +106,7 @@ const buildWeekSchedule = (availabilities: AvailabilitySlot[] | null) => {
     });
 };
 
-const BookingSidebar = ({ availabilities, onBooking }: BookingSidebarProps) => {
+const BookingSidebar = ({ availabilities, onBooking, onMessage, messaging = false }: BookingSidebarProps) => {
     const weekSchedule = buildWeekSchedule(availabilities);
     const hasAvailability = weekSchedule.some((day) => day.times.length > 0);
 
@@ -164,6 +166,9 @@ const BookingSidebar = ({ availabilities, onBooking }: BookingSidebarProps) => {
                 <div className="booking-actions">
                     <button className="btn-start" onClick={onBooking}>
                         <b>Đặt lịch ngay</b>
+                    </button>
+                    <button className="btn-chat" onClick={onMessage} disabled={messaging}>
+                        {messaging ? 'Đang mở...' : 'Nhắn tin với gia sư'}
                     </button>
                 </div>
             </div>
