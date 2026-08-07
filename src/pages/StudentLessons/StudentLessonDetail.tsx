@@ -230,6 +230,11 @@ const StudentLessonDetail = () => {
         try {
             const response = await respondStudentScheduleChange(parseInt(lessonId), confirmed);
             setScheduleChange(response.content);
+            // Khi cả hai bên đã chốt, BE dời luôn giờ của buổi học — phải nạp lại, không thì
+            // trang vẫn hiển thị giờ cũ cho tới khi người dùng tự F5.
+            if (response.content.status === 'approved') {
+                await fetchDetail();
+            }
             if (confirmed && response.content.scheduleConflict) {
                 antMessage.warning(`Đã lưu xác nhận. ${response.content.scheduleConflict.message}`);
             } else {
