@@ -789,7 +789,7 @@ const TutorPortalClassSessionDetail = () => {
                       )}
                     </div>
 
-                    {showReportForm ? (
+                    {showReportForm || (canSubmitReport && !hasReport) ? (
                       <div className={styles.reportComposer}>
                         <AttachmentUploader
                           classSessionId={session.classSessionId}
@@ -840,21 +840,7 @@ const TutorPortalClassSessionDetail = () => {
                           <FileText size={23} />
                         </span>
                         <h3>Chưa có báo cáo buổi học</h3>
-                        <p>
-                          {canSubmitReport
-                            ? 'Hoàn thiện nội dung đã dạy, bài tập và ghi chú để gửi cho học sinh.'
-                            : 'Báo cáo sẽ được mở sau khi buổi học kết thúc và hoàn tất điểm danh.'}
-                        </p>
-                        {canSubmitReport && (
-                          <button
-                            type="button"
-                            className={styles.primaryButton}
-                            onClick={() => setShowReportForm(true)}
-                          >
-                            <FileText size={16} />
-                            Viết báo cáo
-                          </button>
-                        )}
+                        <p>Báo cáo sẽ được mở sau khi buổi học kết thúc và hoàn tất điểm danh.</p>
                       </div>
                     )}
                   </section>
