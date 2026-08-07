@@ -157,7 +157,7 @@ export const updatePackage = async (
   }
 };
 
-/** DELETE /api/tutors/{id}/profile/packages/{packageId} — tắt (deactivate) package. */
+/** DELETE /api/tutors/{id}/profile/packages/{packageId} — tắt (deactivate) package, tức ẩn khỏi marketplace. */
 export const deactivatePackage = async (userId: string, packageId: number): Promise<ApiResponse> => {
   try {
     const response = await api.delete(`/tutors/${userId}/profile/packages/${packageId}`, {
@@ -166,6 +166,25 @@ export const deactivatePackage = async (userId: string, packageId: number): Prom
     return response.data;
   } catch (error: any) {
     console.error('❌ Error deactivating package:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
+    throw error;
+  }
+};
+
+/** PUT /api/tutors/{id}/profile/packages/{packageId}/activate — bật lại (hiện lại trên marketplace) package đã ẩn. */
+export const activatePackage = async (userId: string, packageId: number): Promise<ApiResponse> => {
+  try {
+    const response = await api.put(
+      `/tutors/${userId}/profile/packages/${packageId}/activate`,
+      {},
+      { headers: getAuthHeaders() },
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ Error activating package:', {
       status: error.response?.status,
       data: error.response?.data,
       message: error.message,
