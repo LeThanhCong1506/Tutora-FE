@@ -91,10 +91,9 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({ bookingId }) => {
 
     return (
         <div>
-            <div className={styles.toolbar}>
+            <div className={`${styles.toolbar} ${styles.toolbarCenter}`}>
                 <div>
                     <h3 className={styles.heading}>Tài liệu</h3>
-                    <p className={styles.subheading}>Tài liệu học tập chia sẻ cho lớp</p>
                 </div>
                 <Upload beforeUpload={handleUpload} showUploadList={false} accept="image/*,.pdf,.doc,.docx,.ppt,.pptx" multiple>
                     <Button
@@ -115,7 +114,6 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({ bookingId }) => {
                 <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>📁</div>
                     <h4>Chưa có tài liệu nào</h4>
-                    <p>Tải lên tài liệu học tập đầu tiên cho lớp này.</p>
                 </div>
             ) : (
                 <div className={styles.fileList}>
