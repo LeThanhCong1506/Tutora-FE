@@ -346,7 +346,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                     </p>
                                     {successBookingId != null && (
                                         <div className={styles.bookingCode}>
-                                            <span>Mã booking</span>
+                                            <span>Mã đặt lịch</span>
                                             <strong>#{successBookingId}</strong>
                                         </div>
                                     )}
@@ -377,7 +377,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                     </p>
                                     {successBookingId != null && (
                                         <div className={styles.bookingCode}>
-                                            <span>Mã booking</span>
+                                            <span>Mã đặt lịch</span>
                                             <strong>#{successBookingId}</strong>
                                         </div>
                                     )}
