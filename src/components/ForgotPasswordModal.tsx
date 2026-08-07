@@ -88,11 +88,12 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
         try {
             setIsLoading(true);
             await forgotPasswordPhone(phone.trim());
-            // BE luôn trả success (kể cả số không tồn tại) để tránh dò số điện thoại.
+            // BE báo lỗi rõ ràng nếu SĐT chưa đăng ký (xem SimpleAuthService.ForgotPasswordAsync) —
+            // nên tới được đây nghĩa là SĐT hợp lệ và OTP đã thực sự được gửi.
             setStep("reset");
             setCooldown(COOLDOWN_SECONDS);
             if (isResend) setResendCount((prev) => prev + 1);
-            toast.success("Nếu số điện thoại tồn tại, mã OTP đã được gửi qua SMS.");
+            toast.success("Mã OTP đã được gửi qua SMS.");
         } catch (error: any) {
             toast.error(error.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại.");
         } finally {
