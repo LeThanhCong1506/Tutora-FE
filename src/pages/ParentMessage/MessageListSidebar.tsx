@@ -3,6 +3,7 @@ import styles from './styles.module.css';
 import MessageInfoItem from './MessageInfoItem';
 import MessageSearch from './MessageSearch';
 import { getChats, type ChatChannel } from '../../services/chat.service';
+import { getOtherUserRoleLabel } from './chatRole';
 import { signalRService } from '../../services/signalr.service';
 import { useUsersPresence } from '../../hooks/useUserPresence';
 import { normalizePresenceUserId } from '../../utils/presence';
@@ -12,7 +13,6 @@ interface MessageListSidebarProps {
   onChannelObjectSelect?: (channel: ChatChannel | null) => void;
   selectedChannelId: number | null;
   currentUserId?: string | null;
-  isTutor?: boolean;
 }
 
 // Helper function to format date/time
@@ -49,7 +49,6 @@ const MessageListSidebar = ({
   onChannelObjectSelect,
   selectedChannelId,
   currentUserId,
-  isTutor = false,
 }: MessageListSidebarProps) => {
   const [channels, setChannels] = useState<ChatChannel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -186,7 +185,7 @@ const MessageListSidebar = ({
               avatar={channel.otherUserAvatarUrl || ''}
               name={channel.otherUserName || 'Người dùng'}
               preview={formatPreview(channel.lastMessagePreview)}
-              role={isTutor ? 'Phụ huynh / Học sinh' : 'Gia sư'}
+              role={getOtherUserRoleLabel(channel)}
               session={channel.bookingId ? `Buổi #${channel.bookingId}` : 'Tư vấn'}
               status={channel.status}
               timestamp={formatTimestamp(channel.lastMessageAt)}

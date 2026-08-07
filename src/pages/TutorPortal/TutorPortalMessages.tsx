@@ -50,7 +50,6 @@ const TutorPortalMessages = () => {
             onChannelObjectSelect={setSelectedChannel}
             selectedChannelId={selectedChannel?.channelId ?? null}
             currentUserId={userId}
-            isTutor={true}
           />
         )}
         {showChatArea && (
