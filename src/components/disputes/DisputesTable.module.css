@@ -1,0 +1,523 @@
+.page {
+  width: 100%;
+  max-width: 1480px;
+  margin-inline: auto;
+  box-sizing: border-box;
+}
+
+.tableCard {
+  min-width: 0;
+}
+
+.cardHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 18px;
+  padding: 15px 22px 14px;
+}
+
+.cardHeading {
+  flex: 0 0 auto;
+}
+
+.cardTitle {
+  margin: 0;
+  color: #1a2238;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 24px;
+}
+
+.cardSubtitle {
+  margin: 3px 0 0;
+  color: rgba(62, 47, 40, 0.72);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+/* Bộ lọc trạng thái là chip chứ không phải tab điều hướng — chip gọn hơn và nói rõ
+   "đang lọc", cùng ngôn ngữ với chip trạng thái trong bảng. */
+.statusTabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 22px 11px;
+  border-top: 1px solid rgba(62, 47, 40, 0.07);
+  border-bottom: 1px solid rgba(62, 47, 40, 0.09);
+  background: rgba(250, 249, 246, 0.55);
+}
+
+.statusTabs button {
+  flex: 0 0 auto;
+  padding: 6px 13px;
+  border: 1px solid rgba(62, 47, 40, 0.13);
+  border-radius: 999px;
+  background: #fff;
+  color: rgba(62, 47, 40, 0.78);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    color 0.16s ease;
+}
+
+.statusTabs button:hover {
+  border-color: rgba(26, 34, 56, 0.34);
+  color: #1a2238;
+}
+
+.statusTabs button:focus-visible {
+  outline: 2px solid #d4b483;
+  outline-offset: 2px;
+}
+
+.statusTabs .activeStatusTab {
+  border-color: #1a2238;
+  background: #1a2238;
+  color: #fff;
+}
+
+.statusTabs .activeStatusTab:hover {
+  border-color: #303a54;
+  background: #303a54;
+  color: #fff;
+}
+
+.toolbar {
+  display: flex;
+  flex: 1 1 520px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.searchInput {
+  flex: 1 1 220px;
+  max-width: 320px;
+}
+
+/* antd v6 bỏ `.ant-select-selector` — hộp select giờ chính là `.ant-select`. Cả 3 control
+   phải cùng chiều cao thì thanh lọc mới thẳng hàng. */
+.searchInput,
+.typeSelect,
+.sortSelect {
+  min-height: 38px !important;
+  border-color: rgba(62, 47, 40, 0.13) !important;
+  box-shadow: none !important;
+}
+
+.typeSelect,
+.sortSelect {
+  align-items: center !important;
+}
+
+.searchInput :global(.ant-input-prefix) {
+  margin-right: 8px;
+  color: rgba(26, 34, 56, 0.46);
+}
+
+.typeSelect {
+  flex: 0 0 auto;
+  width: 176px;
+}
+
+.sortSelect {
+  flex: 0 0 auto;
+  width: 148px;
+}
+
+.errorBanner button,
+.emptyState button {
+  border: 0;
+  background: transparent;
+  color: #631b1b;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.errorBanner button:hover,
+.emptyState button:hover {
+  text-decoration: underline;
+}
+
+/* Nằm cuối hàng chip, tách hẳn khỏi nhóm chip trạng thái. */
+.statusTabs .clearButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  border-color: transparent;
+  background: transparent;
+  color: #631b1b;
+  font-weight: 700;
+}
+
+.statusTabs .clearButton:hover {
+  border-color: rgba(99, 27, 27, 0.28);
+  background: rgba(99, 27, 27, 0.06);
+  color: #631b1b;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.refreshButton,
+.createButton {
+  height: 38px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.refreshButton {
+  border-color: rgba(26, 34, 56, 0.16);
+  background: rgba(255, 255, 255, 0.68);
+  color: #1a2238;
+}
+
+.refreshButton:hover {
+  border-color: #1a2238 !important;
+  background: #fff !important;
+  color: #1a2238 !important;
+}
+
+.createButton {
+  min-width: 132px;
+  border-color: #1a2238;
+  background: #1a2238;
+  box-shadow: 0 6px 14px rgba(26, 34, 56, 0.14);
+}
+
+.createButton:hover {
+  border-color: #303a54 !important;
+  background: #303a54 !important;
+}
+
+.createButton:focus-visible {
+  outline: 2px solid #d4b483;
+  outline-offset: 2px;
+}
+
+.errorBanner {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 22px;
+  border-bottom: 1px solid rgba(99, 27, 27, 0.11);
+  background: rgba(99, 27, 27, 0.055);
+  color: #631b1b;
+  font-size: 12px;
+}
+
+.errorBanner span {
+  flex: 1;
+}
+
+.disputeTable :global(.ant-table) {
+  color: #1a2238;
+  background: transparent;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+}
+
+.disputeTable :global(.ant-table-container) {
+  border: 0;
+}
+
+.disputeTable :global(.ant-table-thead > tr > th) {
+  height: 48px;
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(62, 47, 40, 0.09);
+  background: rgba(242, 240, 228, 0.55);
+  color: rgba(26, 34, 56, 0.72);
+  font-size: 10.5px;
+  font-weight: 750;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.disputeTable :global(.ant-table-tbody > tr > td) {
+  height: 68px;
+  padding: 13px 18px;
+  border-bottom-color: rgba(62, 47, 40, 0.07);
+  vertical-align: middle;
+}
+
+.disputeTable :global(.ant-table-tbody > tr:last-child > td) {
+  border-bottom: 0;
+}
+
+.disputeTable :global(.ant-table-tbody > tr:hover > td) {
+  background: rgba(242, 240, 228, 0.38) !important;
+}
+
+.disputeTable :global(.ant-table-tbody > tr:focus-visible) {
+  outline: 2px solid #d4b483;
+  outline-offset: -2px;
+}
+
+.disputeTable :global(.ant-pagination) {
+  margin: 17px 20px !important;
+}
+
+.disputeTable :global(.ant-pagination-total-text) {
+  margin-right: auto;
+  color: rgba(62, 47, 40, 0.72);
+  font-size: 12px;
+}
+
+.disputeTable :global(.ant-pagination-item),
+.disputeTable :global(.ant-pagination-prev .ant-pagination-item-link),
+.disputeTable :global(.ant-pagination-next .ant-pagination-item-link),
+.disputeTable :global(.ant-select-selector) {
+  border-radius: 8px !important;
+}
+
+.disputeTable :global(.ant-pagination-item-active) {
+  border-color: #1a2238;
+  background: #1a2238;
+}
+
+.disputeTable :global(.ant-pagination-item-active a) {
+  color: #fff;
+}
+
+.clickableRow {
+  cursor: pointer;
+}
+
+.caseCell,
+.issueCell,
+.tutorCell,
+.lessonCell {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.caseId {
+  color: #1a2238;
+  font-family: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.primaryText,
+.typeLabel {
+  overflow: hidden;
+  color: #1a2238;
+  font-size: 12.5px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.typeLabel {
+  color: #3d4a3e;
+}
+
+.secondaryText,
+.dateText,
+.reasonText {
+  color: rgba(62, 47, 40, 0.72);
+  font-size: 11.5px;
+  line-height: 17px;
+}
+
+.reasonText {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.dateText {
+  white-space: nowrap;
+}
+
+.mobileDate {
+  display: none;
+  color: rgba(62, 47, 40, 0.72);
+  font-size: 10.5px;
+  line-height: 15px;
+  white-space: nowrap;
+}
+
+.statusBadge,
+.priorityBadge {
+  padding: 4px 9px !important;
+  font-size: 10.5px !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.priorityTooltipTrigger {
+  display: inline-flex;
+  border-radius: 7px;
+}
+
+.priorityTooltipTrigger:focus-visible {
+  outline: 2px solid #d4b483;
+  outline-offset: 2px;
+}
+
+.openButton {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(26, 34, 56, 0.12);
+  border-radius: 9px;
+  background: #fff;
+  color: #1a2238;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.openButton:hover:not(:disabled) {
+  border-color: rgba(26, 34, 56, 0.32);
+  background: #f2f0e4;
+  transform: translateY(-1px);
+}
+
+.openButton:focus-visible {
+  outline: 2px solid #d4b483;
+  outline-offset: 2px;
+}
+
+.openButton:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0;
+}
+
+.emptyState strong {
+  color: #1a2238;
+  font-size: 13px;
+}
+
+.emptyState span {
+  max-width: 390px;
+  color: rgba(62, 47, 40, 0.72);
+  font-size: 12px;
+}
+
+.emptyState button {
+  margin-top: 5px;
+}
+
+@media (max-width: 1100px) {
+  .cardHeading {
+    flex: 1 1 100%;
+  }
+
+  .toolbar {
+    justify-content: flex-start;
+  }
+
+  .searchInput {
+    max-width: none;
+  }
+}
+
+@media (max-width: 991px) {
+  .mobileDate {
+    display: block;
+  }
+}
+
+@media (max-width: 768px) {
+  .cardHeader {
+    padding: 14px 16px;
+  }
+
+  .statusTabs {
+    padding-inline: 16px;
+  }
+
+  .searchInput {
+    flex: 1 1 100%;
+  }
+
+  .typeSelect,
+  .sortSelect {
+    flex: 1 1 140px;
+    width: auto;
+  }
+
+  .errorBanner {
+    align-items: flex-start;
+    padding-inline: 16px;
+  }
+
+  .disputeTable :global(.ant-pagination) {
+    justify-content: center;
+    margin-inline: 12px !important;
+  }
+
+  .disputeTable :global(.ant-pagination-total-text) {
+    width: 100%;
+    margin: 0 0 4px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 520px) {
+  .headerActions {
+    width: 100%;
+  }
+
+  /* Hết chỗ để đẩy sang phải — cho xuống dòng riêng, canh trái cùng nhóm chip. */
+  .statusTabs .clearButton {
+    margin-left: 0;
+  }
+
+  .headerActions :global(.ant-btn) {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .typeSelect,
+  .sortSelect {
+    flex: 1 1 100%;
+  }
+
+  .cardTitle {
+    font-size: 16px;
+  }
+
+  .disputeTable :global(.ant-table-thead > tr > th),
+  .disputeTable :global(.ant-table-tbody > tr > td) {
+    padding-inline: 14px;
+  }
+
+  .disputeTable :global(.ant-pagination-options) {
+    display: none;
+  }
+}
