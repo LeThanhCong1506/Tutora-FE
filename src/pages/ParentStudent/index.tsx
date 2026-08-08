@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Popconfirm } from 'antd';
 import { toast } from 'react-toastify';
 import styles from './styles.module.css';
@@ -17,6 +16,45 @@ import StatCard from '../../components/shared/StatCard/StatCard';
 import AddStudentModal from './components/AddStudentModal';
 import EditStudentModal from './components/EditStudentModal';
 import CredentialsModal from './components/CredentialsModal';
+
+// BE cố tình giữ nguyên các message validate học sinh bằng tiếng Anh — FE tự dịch sang tiếng
+// Việt trước khi hiển thị. Dùng "includes" (không so khớp tuyệt đối) vì có message BE gửi kèm
+// tiền tố tiếng Việt có sẵn (vd "Dữ liệu không hợp lệ: Birthdate must be today or in past.").
+const ENGLISH_TO_VIETNAMESE_MESSAGES: Array<[string, string]> = [
+  ['Birthdate must be today or in past.', 'Ngày sinh không được ở tương lai.'],
+  ['Birthdate must be a valid date in yyyy-MM-dd format.', 'Ngày sinh không đúng định dạng.'],
+  ['Full name must not be empty.', 'Họ và tên không được để trống.'],
+  ['Full name must contain between 2 and 100 characters.', 'Họ và tên phải có từ 2 đến 100 ký tự.'],
+  ['School name must not exceed 255 characters.', 'Tên trường không được vượt quá 255 ký tự.'],
+  ['Learning goals must not exceed 1000 characters.', 'Mục tiêu học tập không được vượt quá 1000 ký tự.'],
+  ['Gender must be a valid value.', 'Giới tính không hợp lệ.'],
+  ['Request body is required.', 'Vui lòng nhập đầy đủ thông tin.'],
+  ['Invalid value format.', 'Định dạng dữ liệu không hợp lệ.'],
+];
+
+const translateApiMessage = (message: string): string => {
+  const match = ENGLISH_TO_VIETNAMESE_MESSAGES.find(([en]) => message.includes(en));
+  return match ? message.replace(match[0], match[1]) : message;
+};
+
+// Bóc chi tiết lỗi từ envelope APIResponse của BE: ưu tiên field `error` — dict lỗi theo từng
+// trường do [ApiController] tự validate DataAnnotations (vd { fullName: [...], birthdate: [...] }) —
+// gộp lại thành 1 chuỗi để người dùng biết chính xác trường nào sai, thay vì chỉ hiện `message`
+// chung chung "Dữ liệu đầu vào không hợp lệ." không nói rõ sai ở đâu. Mỗi message được dịch
+// sang tiếng Việt qua translateApiMessage trước khi hiển thị.
+const extractApiErrorMessage = (err: unknown, fallback: string): string => {
+  const data = (err as { response?: { data?: { message?: string; title?: string; error?: unknown } } })?.response
+    ?.data;
+  if (!data) return fallback;
+
+  if (data.error && typeof data.error === 'object') {
+    const fieldMessages = Object.values(data.error as Record<string, string[]>).flat();
+    if (fieldMessages.length > 0) return fieldMessages.map(translateApiMessage).join(' ');
+  }
+
+  const message = data.message || data.title;
+  return message ? translateApiMessage(message) : fallback;
+};
 
 // ── Icons ──
 
@@ -39,13 +77,6 @@ const MoreHorizIcon = () => (
     <circle cx="4" cy="9" r="1.5" />
     <circle cx="9" cy="9" r="1.5" />
     <circle cx="14" cy="9" r="1.5" />
-  </svg>
-);
-
-// Chat bubble icon (single, matching Figma card action)
-const ChatIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
-    <path d="M2 3a1 1 0 011-1h10a1 1 0 011 1v7a1 1 0 01-1 1H5l-3 3V3z" strokeLinejoin="round" />
   </svg>
 );
 
@@ -125,7 +156,6 @@ const KeyIcon = () => (
 );
 
 const ParentStudent = () => {
-  const navigate = useNavigate();
   const [students, setStudents] = useState<StudentType[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -176,10 +206,9 @@ const ParentStudent = () => {
       if (result.content) {
         setNewCredentials(result.content);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error adding student:', err);
-      const detail = err.response?.data?.message || err.response?.data?.title;
-      toast.error(detail || 'Thêm học sinh thất bại');
+      toast.error(extractApiErrorMessage(err, 'Thêm học sinh thất bại'));
       throw err;
     }
   };
@@ -202,10 +231,9 @@ const ParentStudent = () => {
       const response = await getStudents();
       if (response.statusCode === 200) setStudents(response.content);
       handleEditModalClose();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error updating student:', err);
-      const detail = err.response?.data?.message || err.response?.data?.title;
-      toast.error(detail || 'Cập nhật thất bại');
+      toast.error(extractApiErrorMessage(err, 'Cập nhật thất bại'));
       throw err;
     }
   };
@@ -452,14 +480,6 @@ const ParentStudent = () => {
                   <div className={styles.cardActions}>
                     <button className={styles.viewDetailsBtn} type="button" onClick={() => handleEditClick(student)}>
                       Xem chi tiết
-                    </button>
-                    <button
-                      className={styles.chatBtn}
-                      type="button"
-                      title="Tin nhắn"
-                      onClick={() => navigate('/parent-portal/messages')}
-                    >
-                      <ChatIcon />
                     </button>
                   </div>
                 </div>

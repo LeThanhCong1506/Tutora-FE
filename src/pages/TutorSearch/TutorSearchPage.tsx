@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { searchTutors } from "../../services/tutorSearch.service";
 import type { TutorSearchParams } from "../../services/tutorSearch.service";
 import { useProvinces } from "../../hooks/useVietnamLocations";
@@ -20,9 +21,50 @@ import "../../styles/pages/tutor-search.css";
 
 const CLIENT_FILTER_PAGE_SIZE = 500;
 
+// Ánh xạ field filter -> tên param trên URL. Toàn bộ điều kiện tìm kiếm (môn học,
+// khu vực, ngân sách,...) và trang hiện tại sống trong URL — để "xem hồ sơ gia sư"
+// rồi back trả về đúng trang + điều kiện lọc đang dùng, thay vì luôn reset về mặc định.
+const FILTER_PARAM_KEYS: Record<keyof SearchFilters, string> = {
+    searchTerm: "q",
+    subjectIds: "subjects",
+    gradeLevels: "grades",
+    budgetRange: "budget",
+    teachingMode: "mode",
+    city: "city",
+    sortBy: "sort",
+    pageNumber: "page",
+    pageSize: "pageSize",
+};
+
+const parseFiltersFromParams = (params: URLSearchParams): SearchFilters => {
+    const subjectsParam = params.get(FILTER_PARAM_KEYS.subjectIds);
+    const gradesParam = params.get(FILTER_PARAM_KEYS.gradeLevels);
+    const pageParam = Number(params.get(FILTER_PARAM_KEYS.pageNumber));
+
+    return {
+        searchTerm: params.get(FILTER_PARAM_KEYS.searchTerm) || defaultFilters.searchTerm,
+        subjectIds: subjectsParam
+            ? subjectsParam
+                  .split(",")
+                  .map(Number)
+                  .filter((id) => !Number.isNaN(id))
+            : defaultFilters.subjectIds,
+        gradeLevels: gradesParam ? gradesParam.split(",") : defaultFilters.gradeLevels,
+        budgetRange: params.get(FILTER_PARAM_KEYS.budgetRange) || defaultFilters.budgetRange,
+        teachingMode: params.get(FILTER_PARAM_KEYS.teachingMode) || defaultFilters.teachingMode,
+        city: params.get(FILTER_PARAM_KEYS.city) || defaultFilters.city,
+        sortBy: params.get(FILTER_PARAM_KEYS.sortBy) || defaultFilters.sortBy,
+        pageNumber: pageParam > 0 ? pageParam : defaultFilters.pageNumber,
+        pageSize: defaultFilters.pageSize,
+    };
+};
+
 const TutorSearchPage = () => {
-    const [filters, setFilters] = useState<SearchFilters>(defaultFilters);
-    const [inputSearchTerm, setInputSearchTerm] = useState("");
+    const [searchParams, setSearchParams] = useSearchParams();
+    const filters = useMemo(() => parseFiltersFromParams(searchParams), [searchParams]);
+    const [inputSearchTerm, setInputSearchTerm] = useState(
+        () => searchParams.get(FILTER_PARAM_KEYS.searchTerm) || ""
+    );
 
     const [tutors, setTutors] = useState<Tutor[]>([]);
     const [loading, setLoading] = useState(true);
@@ -141,9 +183,24 @@ const TutorSearchPage = () => {
         fetchTutors();
     }, [filters, buildApiParams, applyClientSideFilters]);
 
+    const updateSearchParams = useCallback((updates: Record<string, string | null>) => {
+        const next = new URLSearchParams(searchParams);
+        Object.entries(updates).forEach(([key, value]) => {
+            if (value === null || value === "") next.delete(key);
+            else next.set(key, value);
+        });
+        setSearchParams(next);
+    }, [searchParams, setSearchParams]);
+
     const updateFilter = useCallback(<K extends keyof SearchFilters>(key: K, value: SearchFilters[K]) => {
-        setFilters((prev) => ({ ...prev, [key]: value, pageNumber: 1 }));
-    }, []);
+        const paramKey = FILTER_PARAM_KEYS[key];
+        const isDefault = JSON.stringify(value) === JSON.stringify(defaultFilters[key]);
+        const stringValue = Array.isArray(value) ? value.join(",") : String(value);
+        updateSearchParams({
+            [paramKey]: isDefault ? null : stringValue,
+            [FILTER_PARAM_KEYS.pageNumber]: null,
+        });
+    }, [updateSearchParams]);
 
     const handleSearchSubmit = useCallback(() => {
         updateFilter("searchTerm", inputSearchTerm);
@@ -155,13 +212,11 @@ const TutorSearchPage = () => {
     }, [updateFilter]);
 
     const handleSubjectToggle = useCallback((subjectId: number) => {
-        setFilters(prev => {
-            const next = prev.subjectIds.includes(subjectId)
-                ? prev.subjectIds.filter(id => id !== subjectId)
-                : [...prev.subjectIds, subjectId];
-            return { ...prev, subjectIds: next, pageNumber: 1 };
-        });
-    }, []);
+        const next = filters.subjectIds.includes(subjectId)
+            ? filters.subjectIds.filter(id => id !== subjectId)
+            : [...filters.subjectIds, subjectId];
+        updateFilter("subjectIds", next);
+    }, [filters.subjectIds, updateFilter]);
 
     const handleClearSubjects = useCallback(() => {
         updateFilter("subjectIds", []);
@@ -171,26 +226,23 @@ const TutorSearchPage = () => {
         if (value === "all") {
             updateFilter("gradeLevels", []);
         } else {
-            setFilters(prev => {
-                const next = prev.gradeLevels.includes(value)
-                    ? prev.gradeLevels.filter(g => g !== value)
-                    : [...prev.gradeLevels, value];
-                return { ...prev, gradeLevels: next, pageNumber: 1 };
-            });
+            const next = filters.gradeLevels.includes(value)
+                ? filters.gradeLevels.filter(g => g !== value)
+                : [...filters.gradeLevels, value];
+            updateFilter("gradeLevels", next);
         }
-    }, [updateFilter]);
+    }, [filters.gradeLevels, updateFilter]);
 
     const handleResetFilters = useCallback(() => {
         setInputSearchTerm("");
-        setFilters({ ...defaultFilters });
-    }, []);
+        setSearchParams(new URLSearchParams());
+    }, [setSearchParams]);
 
     const handlePageChange = useCallback((page: number) => {
         const nextPage = Math.max(1, Math.min(page, totalPages));
-        setFilters((prev) => {
-            if (prev.pageNumber === nextPage) return prev;
-            return { ...prev, pageNumber: nextPage };
-        });
+        if (nextPage !== filters.pageNumber) {
+            updateSearchParams({ [FILTER_PARAM_KEYS.pageNumber]: nextPage <= 1 ? null : String(nextPage) });
+        }
 
         window.setTimeout(() => {
             document.querySelector(".results-section")?.scrollIntoView({
@@ -198,7 +250,7 @@ const TutorSearchPage = () => {
                 block: "start",
             });
         }, 0);
-    }, [totalPages]);
+    }, [totalPages, filters.pageNumber, updateSearchParams]);
 
     const inMiniApp = isZaloMiniApp();
 
@@ -240,7 +292,11 @@ const TutorSearchPage = () => {
                     onRemoveSubject={handleSubjectToggle}
                     onRemoveGradeLevel={handleGradeLevelToggle}
                     onClearAll={() => {
-                        setFilters(prev => ({ ...prev, subjectIds: [], gradeLevels: [], pageNumber: 1 }));
+                        updateSearchParams({
+                            [FILTER_PARAM_KEYS.subjectIds]: null,
+                            [FILTER_PARAM_KEYS.gradeLevels]: null,
+                            [FILTER_PARAM_KEYS.pageNumber]: null,
+                        });
                     }}
                 />
                 <ResultsSection

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { BookOpen, ChevronRight, Clock } from 'lucide-react';
 import { toast } from 'react-toastify';
 import dayjs from 'dayjs';
@@ -17,9 +17,19 @@ const TABS = [
 
 const ParentLessons: React.FC = () => {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState('');
+    // Tab sống trong URL — để "xem chi tiết buổi học" rồi back trả về đúng tab đang lọc
+    // (vd "Hoàn thành"), thay vì luôn reset về "Tất cả".
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeTab = searchParams.get('status') || '';
     const [sessions, setSessions] = useState<ClassSessionResponse[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const handleTabChange = (tabKey: string) => {
+        const next = new URLSearchParams(searchParams);
+        if (tabKey) next.set('status', tabKey);
+        else next.delete('status');
+        setSearchParams(next);
+    };
 
     useEffect(() => {
         fetchSessions();
@@ -54,7 +64,7 @@ const ParentLessons: React.FC = () => {
             </div>
 
             <div className={styles.filterSection}>
-                <FilterTabs tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />
+                <FilterTabs tabs={TABS} activeKey={activeTab} onChange={handleTabChange} />
             </div>
 
             {!loading && sorted.length === 0 ? (
