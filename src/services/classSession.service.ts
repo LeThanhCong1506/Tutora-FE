@@ -643,8 +643,11 @@ export const getClassSessionById = async (id: number): Promise<ApiResponse<Class
     return response.data;
 };
 
-/** available (đã ghi xong, xem được) | processing (đang đẩy lên lưu trữ) | recording (đang ghi) | none. */
-export type RecordingStatus = 'available' | 'processing' | 'recording' | 'none';
+/**
+ * available (đã ghi xong, xem được) | processing (đang đẩy lên lưu trữ) | recording (đang ghi) |
+ * failed (buổi đã đóng phòng nhưng Agora không trả về file nào — bản ghi hỏng, không có gì để xem) | none.
+ */
+export type RecordingStatus = 'available' | 'processing' | 'recording' | 'failed' | 'none';
 
 export interface ClassSessionRecordingResponse {
     classSessionId: number;

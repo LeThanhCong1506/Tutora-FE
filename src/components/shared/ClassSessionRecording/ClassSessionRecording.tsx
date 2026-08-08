@@ -88,6 +88,19 @@ const ClassSessionRecording: React.FC<ClassSessionRecordingProps> = ({ classSess
         );
     }
 
+    // Phòng đã đóng nhưng không có file nào: bản ghi hỏng, không có gì để chờ nữa — khác hẳn
+    // "chưa có bản ghi" (không hề ghi hình) nên không được gộp chung, và cũng không cho "thử lại".
+    if (state === 'failed') {
+        return (
+            <div className={styles.stateBox}>
+                <span className={`${styles.stateIcon} ${styles.errorIcon}`}>
+                    <VideoOff size={22} />
+                </span>
+                <strong>Ghi hình không thành công</strong>
+            </div>
+        );
+    }
+
     if (state === 'recording') {
         return (
             <div className={styles.stateBox}>
@@ -95,7 +108,6 @@ const ClassSessionRecording: React.FC<ClassSessionRecordingProps> = ({ classSess
                     <Clock size={22} />
                 </span>
                 <strong>Đang ghi hình</strong>
-                <p>Buổi học đang diễn ra — video sẽ có sau khi kết thúc.</p>
                 <button type="button" onClick={() => void fetchRecording()}>
                     <RefreshCw size={14} /> Kiểm tra lại
                 </button>
@@ -125,7 +137,6 @@ const ClassSessionRecording: React.FC<ClassSessionRecordingProps> = ({ classSess
                 <VideoOff size={22} />
             </span>
             <strong>Chưa có bản ghi</strong>
-            <p>Buổi học này chưa được ghi hình.</p>
         </div>
     );
 };

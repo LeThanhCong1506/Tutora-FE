@@ -6,6 +6,11 @@
   margin-bottom: 20px;
 }
 
+/* Khối tiêu đề chỉ còn một dòng thì canh giữa theo nút hành động cho cân. */
+.toolbarCenter {
+  align-items: center;
+}
+
 .heading {
   margin: 0;
   font-family: 'Bricolage Grotesque', sans-serif;
