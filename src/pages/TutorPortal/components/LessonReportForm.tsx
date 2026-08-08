@@ -86,11 +86,6 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
 
   return (
     <div className={styles.card}>
-      <div className={styles.header}>
-        <span>Nội dung buổi học</span>
-        <h3>Báo cáo buổi học</h3>
-        <p>Báo cáo sẽ được gửi tới học sinh và phụ huynh để xác nhận.</p>
-      </div>
       <Form
         form={form}
         layout="vertical"
