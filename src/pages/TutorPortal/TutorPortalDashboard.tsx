@@ -15,6 +15,7 @@ import ReplyFeedbackModal from './components/ReplyFeedbackModal';
 import { useTutorProfileForm } from './hooks/useTutorProfileForm';
 import { getProfileCompletionItems } from './profileCompletion';
 import { formatVNDNumber } from '../../utils/formatters';
+import { isWithinJoinWindow } from '../../utils/liveSession';
 
 // Icons
 const ClockIcon = () => (
@@ -615,13 +616,14 @@ const TutorPortalDashboard: React.FC = () => {
                                             </div>
                                         </div>
                                         <div className={styles.lessonActions}>
-                                            {/* Scheduled & online → nút Vào lớp (phòng mở 24/7) */}
-                                            {lesson.status === 'scheduled' && lesson.meetingLink && (
+                                            {/* Scheduled & online: chỉ hiện nút khi đã gần giờ học (trong 15 phút) — còn xa thì ẩn
+                                                hẳn, tránh rối mắt trên danh sách buổi học sắp tới. */}
+                                            {lesson.status === 'scheduled' && lesson.meetingLink && isWithinJoinWindow(lesson.scheduledStart) && (
                                                 <button
                                                     className={styles.primaryBtn}
                                                     onClick={() => handleEnterLesson(lesson)}
                                                 >
-                                                    ▶ Vào lớp
+                                                    ▶ Vào nhanh
                                                 </button>
                                             )}
                                             {/* In-progress & đã có link → nút Vào lại lớp (re-open) */}

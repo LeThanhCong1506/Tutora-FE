@@ -16,6 +16,8 @@ import {
     sendClassSessionDisputeThreadMessage,
     getStudentScheduleChange,
     respondStudentScheduleChange,
+    proposeStudentReschedule,
+    respondStudentReschedule,
     type DisputeDetailResponse,
     type DisputeMessage,
     type SessionScheduleChangeResponse,
@@ -23,14 +25,14 @@ import {
 import { signalRService } from '../../services/signalr.service';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
 import { message as antMessage, Spin, Modal } from 'antd';
-import { ClassSessionRecording } from '../../components/shared';
+import { ClassSessionRecording, RescheduleProposalModal } from '../../components/shared';
 import CreateDisputeForm from '../ParentLessons/components/CreateDisputeForm';
 import ReportNoShowModal from '../ParentLessons/components/ReportNoShowModal';
 import NoShowActionModal from '../ParentLessons/components/NoShowActionModal';
 import { useStudentProfile } from '../../contexts/StudentProfileContext';
 import s from '../StudentPages.module.css';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
-import { canJoinLiveSession } from '../../utils/liveSession';
+import { canJoinLiveSession, isWithinJoinWindow } from '../../utils/liveSession';
 
 // ── Status definitions — nguồn duy nhất là classSessionStatus.ts (khớp BE ClassSessionStatus) ──
 type StatusInfo = { label: string; color: string; bg: string; icon: string };
@@ -95,6 +97,8 @@ const StudentLessonDetail = () => {
     const [scheduleChange, setScheduleChange] = useState<SessionScheduleChangeResponse | null>(null);
     const [submittingScheduleDecision, setSubmittingScheduleDecision] = useState(false);
     const [materials, setMaterials] = useState<LearningMaterialResponse[]>([]);
+    const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+    const [respondingReschedule, setRespondingReschedule] = useState(false);
 
     const fetchDetail = useCallback(async () => {
         if (!lessonId) return;
@@ -248,6 +252,27 @@ const StudentLessonDetail = () => {
         }
     };
 
+    const handleProposeReschedule = async (proposedScheduledStart: string, reason?: string) => {
+        if (!lessonId) return;
+        await proposeStudentReschedule(parseInt(lessonId), proposedScheduledStart, reason);
+        setRescheduleModalOpen(false);
+        await fetchDetail();
+    };
+
+    const handleRespondReschedule = async (accepted: boolean) => {
+        if (!lessonId) return;
+        setRespondingReschedule(true);
+        try {
+            await respondStudentReschedule(parseInt(lessonId), accepted);
+            await fetchDetail();
+            antMessage.success(accepted ? 'Đã đồng ý đổi lịch học.' : 'Đã từ chối đề xuất đổi lịch.');
+        } catch (error: any) {
+            antMessage.error(error.response?.data?.message || 'Không thể xử lý yêu cầu đổi lịch.');
+        } finally {
+            setRespondingReschedule(false);
+        }
+    };
+
     // ── Loading ──
     if (loading) {
         return (
@@ -288,11 +313,16 @@ const StudentLessonDetail = () => {
     const isInProgress = lesson.status === 'in_progress';
     // Phòng Agora mở từ 30ph trước giờ học — không cần đợi gia sư vào trước (khớp BE AgoraController)
     const canJoin = canJoinLiveSession(lesson);
+    const nearJoinWindow = isWithinJoinWindow(lesson.scheduledStart);
     const tutorName = (lesson as any).tutorName ?? (lesson as any).tutor?.fullName ?? 'Gia sư';
     const subjectName = (lesson as any).subjectName ?? (lesson as any).subject?.subjectName ?? 'Buổi học';
     const report = (lesson as any).report;
     const canCreateDispute = !isParentManaged
         && !TERMINAL_BOOKING_STATUSES.includes(String(lesson.bookingStatus || '').toLowerCase());
+    const pendingReschedule = lesson.pendingRescheduleProposal;
+    const canProposeReschedule = lesson.status === 'scheduled' && !isParentManaged && !pendingReschedule;
+    const isRescheduleCounterpart = pendingReschedule?.counterpartRole === 'Student';
+    const isRescheduleProposer = pendingReschedule?.proposedByRole === 'Student';
 
     return (
         <div className={s.page}>
@@ -313,7 +343,9 @@ const StudentLessonDetail = () => {
                     </button>
                 </div>
 
-                {/* Hero Join Banner — hiện khi phòng Agora đã mở (in_progress hoặc sắp tới giờ học) */}
+                {/* Hero Join Banner — nút luôn hiện khi canJoin, badge "đã bắt đầu/đã mở" chỉ hiện
+                    trong khung ±15 phút quanh giờ học (isWithinJoinWindow, khớp BE EarlyJoinToleranceMinutes).
+                    Còn xa giờ học, nút vẫn bấm được — dẫn vào cổng xác nhận vào học ngoài giờ như cũ. */}
                 {canJoin && (
                     <div style={heroCard}>
                         {/* Animated background circles */}
@@ -321,23 +353,31 @@ const StudentLessonDetail = () => {
                         <div style={heroBgCircle2} />
                         <div style={heroInner}>
                             <div style={heroLeft}>
-                                <div style={heroLiveDot}>
-                                    <span style={heroPulseRing} />
-                                    <span style={heroSolidDot} />
-                                </div>
-                                <div>
-                                    <div style={heroBadgeText}>
-                                        {isInProgress ? 'BUỔI HỌC ĐÃ BẮT ĐẦU' : 'PHÒNG HỌC ĐÃ MỞ'}
-                                    </div>
+                                {nearJoinWindow ? (
+                                    <>
+                                        <div style={heroLiveDot}>
+                                            <span style={heroPulseRing} />
+                                            <span style={heroSolidDot} />
+                                        </div>
+                                        <div>
+                                            <div style={heroBadgeText}>
+                                                {isInProgress ? 'BUỔI HỌC ĐÃ BẮT ĐẦU' : 'PHÒNG HỌC ĐÃ MỞ'}
+                                            </div>
+                                            <div style={heroSubtext}>
+                                                {isInProgress
+                                                    ? 'Gia sư đang chờ bạn trong lớp'
+                                                    : 'Phòng học đã sẵn sàng — bạn có thể vào lớp bất cứ lúc nào'}
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
                                     <div style={heroSubtext}>
-                                        {isInProgress
-                                            ? 'Gia sư đang chờ bạn trong lớp'
-                                            : 'Phòng học đã sẵn sàng — bạn có thể vào lớp bất cứ lúc nào'}
+                                        Bạn có thể vào lớp sớm để kiểm tra thiết bị trước giờ học.
                                     </div>
-                                </div>
+                                )}
                             </div>
                             <Link to={`/session-lobby/${lesson.lessonId}`} style={heroJoinBtn}>
-                                <Video size={16} /> Tham gia ngay
+                                <Video size={16} /> {nearJoinWindow ? 'Vào học' : 'Vào học nhanh'}
                             </Link>
                         </div>
                     </div>
@@ -425,6 +465,73 @@ const StudentLessonDetail = () => {
                         ) : null}
                     </div>
                 )}
+
+                {/* ─── Đề xuất đổi lịch học (khác với cổng xác nhận vào học ngoài giờ ở trên) ─── */}
+                {canProposeReschedule && (
+                    <div style={sectionCard}>
+                        <div style={sectionHeaderRow}>
+                            <div style={{ ...sectionIconWrap, background: 'rgba(99,102,241,0.10)' }}>
+                                <CalendarClock size={16} style={{ color: '#6366F1' }} />
+                            </div>
+                            <div style={sectionTitleText}>Đổi lịch học</div>
+                        </div>
+                        <div style={{ fontSize: 13, color: '#667085', marginBottom: 16, lineHeight: 1.55 }}>
+                            Muốn dời buổi học này sang giờ khác? Gửi đề xuất cho gia sư, buổi học chỉ đổi giờ khi gia sư đồng ý.
+                        </div>
+                        <button
+                            style={{ ...actionBtnBase, background: 'linear-gradient(135deg, #6366F1, #818cf8)', boxShadow: '0 2px 8px rgba(99,102,241,0.25)' }}
+                            onClick={() => setRescheduleModalOpen(true)}
+                        >
+                            <CalendarClock size={16} /> Đề xuất đổi lịch
+                        </button>
+                    </div>
+                )}
+
+                {pendingReschedule && (
+                    <div style={sectionCard}>
+                        <div style={sectionHeaderRow}>
+                            <div style={{ ...sectionIconWrap, background: 'rgba(99,102,241,0.10)' }}>
+                                <CalendarClock size={16} style={{ color: '#6366F1' }} />
+                            </div>
+                            <div style={sectionTitleText}>Đề xuất đổi lịch học</div>
+                        </div>
+                        <div style={reportValueStyle}>
+                            {pendingReschedule.proposedByName ?? 'Người đề xuất'} muốn dời sang{' '}
+                            {formatLongDate(pendingReschedule.proposedScheduledStart)}, {formatTime(pendingReschedule.proposedScheduledStart)}
+                            {pendingReschedule.reason ? ` — Lý do: ${pendingReschedule.reason}` : ''}
+                        </div>
+                        {isRescheduleCounterpart ? (
+                            <div style={{ marginTop: 14, display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
+                                <button
+                                    style={{ ...actionBtnBase, background: '#fff', color: '#cf1322', border: '1px solid #ffccc7', boxShadow: 'none' }}
+                                    disabled={respondingReschedule}
+                                    onClick={() => void handleRespondReschedule(false)}
+                                >
+                                    <XCircle size={16} /> Từ chối
+                                </button>
+                                <button
+                                    style={{ ...actionBtnBase, background: '#3e2f28' }}
+                                    disabled={respondingReschedule}
+                                    onClick={() => void handleRespondReschedule(true)}
+                                >
+                                    <CheckCircle2 size={16} /> Đồng ý đổi lịch
+                                </button>
+                            </div>
+                        ) : isRescheduleProposer ? (
+                            <div style={{ marginTop: 14, color: '#0958d9', background: '#e6f4ff', borderRadius: 8, padding: '10px 12px', fontSize: 13 }}>
+                                Đang chờ {pendingReschedule.counterpartName ?? 'phía còn lại'} phản hồi (hạn {formatLongDate(pendingReschedule.expiresAt)} {formatTime(pendingReschedule.expiresAt)}).
+                            </div>
+                        ) : null}
+                    </div>
+                )}
+
+                <RescheduleProposalModal
+                    open={rescheduleModalOpen}
+                    currentScheduledStart={lesson.scheduledStart}
+                    onSubmit={handleProposeReschedule}
+                    onCancel={() => setRescheduleModalOpen(false)}
+                    accentColor="#6366F1"
+                />
 
                 {/* ─── Subject Header Card ─── */}
                 <div style={subjectCard}>
@@ -714,7 +821,7 @@ const StudentLessonDetail = () => {
                             <div style={{ ...sectionIconWrap, background: 'rgba(217,119,6,0.10)' }}>
                                 <CalendarClock size={16} style={{ color: '#d97706' }} />
                             </div>
-                            <div style={sectionTitleText}>Lịch sử dời lịch</div>
+                            <div style={sectionTitleText}>Lịch sử vào học ngoài giờ</div>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                             {lesson.scheduleChanges.map((sc: any) => {
@@ -746,6 +853,45 @@ const StudentLessonDetail = () => {
                                             <span>
                                                 {sc.learnerApproverRole === 'Student' ? 'Học sinh' : 'Phụ huynh'}: {sc.learnerConfirmedByName ? `${sc.learnerConfirmedByName} đã xác nhận` : 'Chưa xác nhận'}
                                             </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                {/* ─── Lịch sử đổi lịch học (tính năng mới — khác cổng xác nhận vào học ngoài giờ ở trên) ─── */}
+                {Array.isArray(lesson.rescheduleProposals) && lesson.rescheduleProposals.length > 0 && (
+                    <div style={sectionCard}>
+                        <div style={sectionHeaderRow}>
+                            <div style={{ ...sectionIconWrap, background: 'rgba(99,102,241,0.10)' }}>
+                                <CalendarClock size={16} style={{ color: '#6366F1' }} />
+                            </div>
+                            <div style={sectionTitleText}>Lịch sử đổi lịch học</div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            {lesson.rescheduleProposals.map((proposal) => {
+                                const statusLabel: Record<string, string> = {
+                                    pending: 'Đang chờ phản hồi',
+                                    accepted: 'Đã đồng ý',
+                                    rejected: 'Đã từ chối',
+                                    expired: 'Đã hết hạn',
+                                };
+                                return (
+                                    <div key={proposal.rescheduleProposalId} style={reportRowBlock}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
+                                            <span style={reportLabelStyle}>{statusLabel[proposal.status] || proposal.status}</span>
+                                            {proposal.respondedAt && (
+                                                <span style={{ fontSize: 12, color: '#9ca3af' }}>
+                                                    Phản hồi lúc {formatLongDate(proposal.respondedAt)} {formatTime(proposal.respondedAt)}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div style={reportValueStyle}>
+                                            {proposal.proposedByName ?? 'Người đề xuất'} đề xuất dời sang{' '}
+                                            {formatLongDate(proposal.proposedScheduledStart)}, {formatTime(proposal.proposedScheduledStart)}
+                                            {proposal.reason ? ` — Lý do: ${proposal.reason}` : ''}
                                         </div>
                                     </div>
                                 );

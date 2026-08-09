@@ -45,6 +45,9 @@ export type { ConfirmDialogProps, ConfirmType } from './ConfirmDialog';
 export { AttachmentGallery, getAttachmentDisplayName, getAttachmentKind } from './AttachmentGallery';
 export type { AttachmentGalleryProps, AttachmentItem, AttachmentKind } from './AttachmentGallery';
 
+export { RescheduleProposalModal } from './RescheduleProposalModal';
+export type { RescheduleProposalModalProps } from './RescheduleProposalModal';
+
 export { SessionTimeline, buildSessionTimeline } from './SessionTimeline';
 export type {
     SessionTimelineEvent,

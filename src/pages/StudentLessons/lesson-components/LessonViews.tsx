@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { Tooltip } from 'antd';
 import { CalendarClock, CalendarDays, ChevronRight, Clapperboard, ClipboardList, Clock3, UserRound, Video } from 'lucide-react';
 import { getClassSessionStatusMeta } from '../../../utils/classSessionStatus';
+import { isWithinJoinWindow } from '../../../utils/liveSession';
 import styles from '../styles.module.css';
 import type { LessonSummary, LessonViewProps } from './types';
 import {
@@ -72,7 +73,11 @@ const getCounterpart = (lesson: LessonSummary) => ({
 const canShowJoinButton = (lesson: LessonSummary) => {
   if (isAwaitingReport(lesson)) return false; // phòng đã đóng sau check-out
   const status = lesson.status.trim().toLowerCase();
-  return ['scheduled', 'in_progress'].includes(status) && Boolean(lesson.meetingLink?.trim());
+  if (!['scheduled', 'in_progress'].includes(status) || !lesson.meetingLink?.trim()) return false;
+  // Trên lịch/danh sách (khác 2 trang chi tiết buổi học — nơi nút luôn hiện, chỉ đổi nhãn), nút
+  // chỉ hiện khi đã gần giờ học (trong vòng 15 phút, khớp BE EarlyJoinToleranceMinutes) hoặc buổi
+  // đang diễn ra — còn xa giờ học thì ẩn hẳn, tránh rối mắt trên lịch tuần/tháng.
+  return status === 'in_progress' || isWithinJoinWindow(lesson.scheduledStart);
 };
 
 const getAttentionClass = (lesson: LessonSummary): string => {
@@ -111,8 +116,8 @@ const MeetLink = ({ lesson, compact = false }: { lesson: LessonSummary; compact?
     );
   }
 
+  // Chỉ hiện khi đã gần giờ học/đang diễn ra (xem canShowJoinButton) nên nhãn cố định "vào nhanh".
   if (!canShowJoinButton(lesson)) return null;
-  const isAttentionNeeded = Boolean(getLessonLiveState(lesson));
 
   return (
     <Link
@@ -121,7 +126,7 @@ const MeetLink = ({ lesson, compact = false }: { lesson: LessonSummary; compact?
       aria-label={`Vào lớp học ${getSubject(lesson)}`}
     >
       <Video size={compact ? 12 : 14} strokeWidth={2.1} aria-hidden="true" />
-      <span>{isAttentionNeeded ? (compact ? 'Vào ngay' : 'Vào lớp ngay') : 'Vào lớp'}</span>
+      <span>{compact ? 'Vào nhanh' : 'Vào học nhanh'}</span>
     </Link>
   );
 };
@@ -148,6 +153,17 @@ const ScheduleChangeBadge = ({ lesson, compact = false }: { lesson: LessonSummar
     </span>
   );
 };
+
+/**
+ * Badge cho đề xuất đổi lịch (tính năng chủ động chọn giờ mới trên trang chi tiết) đang chờ phản
+ * hồi — KHÁC hoàn toàn ScheduleChangeBadge (đổi giờ ngoài lịch đã đặt qua RTC).
+ */
+const ReschedulePendingBadge = ({ compact = false }: { compact?: boolean }) => (
+  <span className={styles.scheduleChangeBadge}>
+    <CalendarClock size={compact ? 11 : 12} strokeWidth={2.3} aria-hidden="true" />
+    <span>Có đề xuất đổi lịch</span>
+  </span>
+);
 
 const LessonHoverDetails = ({ lesson }: { lesson: LessonSummary }) => {
   const status = getLessonDisplayMeta(lesson);
@@ -179,6 +195,7 @@ const LessonHoverDetails = ({ lesson }: { lesson: LessonSummary }) => {
         </span>
         {lesson.hasRecording && <RecordingBadge />}
         <ScheduleChangeBadge lesson={lesson} />
+        {lesson.hasPendingReschedule && <ReschedulePendingBadge />}
       </div>
     </div>
   );
@@ -218,6 +235,7 @@ const CalendarEvent = ({ lesson, onOpen }: { lesson: LessonSummary; onOpen: () =
         <StatusPill lesson={lesson} />
         {lesson.hasRecording && <RecordingBadge compact />}
         <ScheduleChangeBadge lesson={lesson} compact />
+        {lesson.hasPendingReschedule && <ReschedulePendingBadge compact />}
         <MeetLink lesson={lesson} compact />
       </div>
     </article>
@@ -249,6 +267,7 @@ const ListLessonRow = ({ lesson, onOpen }: { lesson: LessonSummary; onOpen: () =
         <MeetLink lesson={lesson} />
         {lesson.hasRecording && <RecordingBadge compact />}
         <ScheduleChangeBadge lesson={lesson} compact />
+        {lesson.hasPendingReschedule && <ReschedulePendingBadge compact />}
         <StatusPill lesson={lesson} />
         <button type="button" className={styles.detailIconButton} onClick={onOpen} aria-label="Xem chi tiết buổi học">
           <ChevronRight size={18} className={styles.rowChevron} aria-hidden="true" />
@@ -396,6 +415,7 @@ export const GridLessonView = ({ lessons, onOpenLesson }: LessonViewProps) => (
               <MeetLink lesson={lesson} />
               {lesson.hasRecording && <RecordingBadge compact />}
               <ScheduleChangeBadge lesson={lesson} compact />
+              {lesson.hasPendingReschedule && <ReschedulePendingBadge compact />}
               <button type="button" className={styles.openCard} style={{ color: status.color }} onClick={openLesson}>
                 Chi tiết <ChevronRight size={16} />
               </button>
