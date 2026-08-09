@@ -253,6 +253,13 @@ const TutorPortalBookings = () => {
   };
 
   const handleContactParent = async (booking: BookingResponseDTO) => {
+    // booking.parentId chỉ có giá trị khi khóa học do phụ huynh quản lý (kể cả khi chính con
+    // họ là người bấm đặt lịch — BE luôn gán Parentid trong trường hợp đó, xem
+    // BookingPayerResolver ở backend). Booking do học sinh tự đăng ký đặt thì parentId null,
+    // và booking.student.studentId chính là user id của học sinh đó (Studentid == user_id
+    // với tài khoản tự đăng ký).
+    const isParentBooking = !!booking.parentId;
+
     try {
       setOpeningChatId(booking.bookingId);
       const channelResponse = await getOrCreateBookingChannel(booking.bookingId);
@@ -266,11 +273,13 @@ const TutorPortalBookings = () => {
         : {
             channelId,
             bookingId: booking.bookingId,
-            otherUserId: booking.parentId ?? '',
-            otherUserName: `Phụ huynh của ${booking.student?.fullName || 'học sinh'}`,
+            otherUserId: (isParentBooking ? booking.parentId : booking.student?.studentId) ?? '',
+            otherUserName: isParentBooking
+              ? `Phụ huynh của ${booking.student?.fullName || 'học sinh'}`
+              : booking.student?.fullName || 'Học viên',
             otherUserAvatarUrl: '',
-            otherUserRole: 'Parent',
-            isOtherUserParentManaged: null,
+            otherUserRole: isParentBooking ? 'Parent' : 'Student',
+            isOtherUserParentManaged: isParentBooking ? null : false,
             status: 'active',
             lastMessageAt: '',
             lastMessagePreview: '',
@@ -278,7 +287,11 @@ const TutorPortalBookings = () => {
 
       navigate('/tutor-portal/messages', { state: { openChannel } });
     } catch {
-      toast.error('Không mở được cuộc trò chuyện với phụ huynh. Vui lòng thử lại.');
+      toast.error(
+        isParentBooking
+          ? 'Không mở được cuộc trò chuyện với phụ huynh. Vui lòng thử lại.'
+          : 'Không mở được cuộc trò chuyện với học viên. Vui lòng thử lại.',
+      );
     } finally {
       setOpeningChatId(null);
     }
@@ -644,7 +657,11 @@ const TutorPortalBookings = () => {
                           onClick={() => handleContactParent(booking)}
                         >
                           <MessageCircle size={16} />
-                          {openingChatId === booking.bookingId ? 'Đang mở...' : 'Liên hệ phụ huynh'}
+                          {openingChatId === booking.bookingId
+                            ? 'Đang mở...'
+                            : booking.parentId
+                              ? 'Liên hệ phụ huynh'
+                              : 'Liên hệ học viên'}
                           <ChevronRight size={16} />
                         </button>
                       )}
