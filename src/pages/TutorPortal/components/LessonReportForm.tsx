@@ -5,6 +5,7 @@ import {
   submitClassSessionReport,
   type SubmitReportRequest,
   type ClassSessionDetailResponse,
+  type ReportAttachment,
 } from '../../../services/classSession.service';
 import { useFormDraft } from '../../../hooks/useFormDraft';
 import AttachmentUploader from './AttachmentUploader';
@@ -14,9 +15,10 @@ const { TextArea } = Input;
 
 interface LessonReportFormProps {
   classSessionId: number;
-  attachmentUrls?: string[];
-  onUploadComplete?: (url: string) => void;
+  attachments?: ReportAttachment[];
+  onUploadComplete?: (attachment: ReportAttachment) => void;
   onRemoveComplete?: (url: string) => void;
+  onDescriptionChange?: (url: string, description: string) => void;
   onSubmitSuccess: (detail: ClassSessionDetailResponse) => void;
   onCancel?: () => void;
 }
@@ -29,9 +31,10 @@ interface ReportFormValues {
 
 const LessonReportForm: React.FC<LessonReportFormProps> = ({
   classSessionId,
-  attachmentUrls,
+  attachments,
   onUploadComplete,
   onRemoveComplete,
+  onDescriptionChange,
   onSubmitSuccess,
   onCancel,
 }) => {
@@ -67,7 +70,7 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
         // Nộp được báo cáo nghĩa là buổi học đã diễn ra với học sinh — không cần hỏi lại điểm danh.
         isStudentPresent: true,
         attendanceNote: '',
-        attachments: attachmentUrls && attachmentUrls.length > 0 ? attachmentUrls : undefined,
+        attachmentDetails: attachments && attachments.length > 0 ? attachments : undefined,
       };
       const response = await submitClassSessionReport(classSessionId, request);
       toast.success('Nộp báo cáo buổi học thành công!');
@@ -83,11 +86,6 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
 
   return (
     <div className={styles.card}>
-      <div className={styles.header}>
-        <span>Nội dung buổi học</span>
-        <h3>Báo cáo buổi học</h3>
-        <p>Báo cáo sẽ được gửi tới học sinh và phụ huynh để xác nhận.</p>
-      </div>
       <Form
         form={form}
         layout="vertical"
@@ -112,6 +110,7 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
             classSessionId={classSessionId}
             onUploadComplete={onUploadComplete}
             onRemoveComplete={onRemoveComplete}
+            onDescriptionChange={onDescriptionChange}
           />
         </div>
 

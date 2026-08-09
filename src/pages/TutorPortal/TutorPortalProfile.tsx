@@ -1,6 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Modal, Popconfirm } from 'antd';
+import { Modal, Popconfirm, Switch } from 'antd';
 import { ArrowRight, Award, BookOpenText, Clock, IdCard, ShieldCheck, UserRoundPen } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useTutorProfileForm, type CredentialData } from './hooks/useTutorProfileForm';
@@ -18,6 +18,7 @@ import BookingModal from './components/BookingModal';
 import TutorProfilePreview from './components/TutorProfilePreview';
 import { deleteCertificate } from '../../services/certificate.service';
 import { getUserIdFromToken } from '../../services/auth.service';
+import { getAcceptingBookings, setAcceptingBookings } from '../../services/tutorProfile.service';
 import { validateAvatar } from './utils/validation';
 import { getCertificateImageUrl, isPdfUrl } from '../../utils/certificateImage';
 import { formatGradeLevelRanges } from '../TutorSearch/components/utils';
@@ -329,6 +330,38 @@ const TutorPortalProfile: React.FC = () => {
   const [avatarCropFileName, setAvatarCropFileName] = useState('avatar.jpg');
   const [videoGuidanceSignal, setVideoGuidanceSignal] = useState(0);
 
+  // Trạng thái "nhận học viên mới" — tắt thì ẩn khỏi Marketplace + chặn booking mới.
+  const [isAcceptingBookings, setIsAcceptingBookings] = useState<boolean | null>(null);
+  const [togglingBookings, setTogglingBookings] = useState(false);
+
+  useEffect(() => {
+    const tutorUserId = getUserIdFromToken();
+    if (!tutorUserId) return;
+
+    getAcceptingBookings(tutorUserId)
+      .then((response) => setIsAcceptingBookings(response.content.accepting))
+      .catch(() => {
+        /* non-blocking — toggle just stays hidden if this fails */
+      });
+  }, []);
+
+  const handleToggleAcceptingBookings = async (accepting: boolean) => {
+    const tutorUserId = getUserIdFromToken();
+    if (!tutorUserId || togglingBookings) return;
+
+    setTogglingBookings(true);
+    try {
+      const response = await setAcceptingBookings(tutorUserId, accepting);
+      setIsAcceptingBookings(response.content.accepting);
+      toast.success(accepting ? 'Đã mở nhận học viên mới.' : 'Đã tạm dừng nhận booking mới.');
+    } catch (err) {
+      console.error('Error toggling accepting bookings:', err);
+      toast.error('Không thể cập nhật trạng thái nhận booking. Vui lòng thử lại.');
+    } finally {
+      setTogglingBookings(false);
+    }
+  };
+
   // Form hook
   const {
     formData,
@@ -615,11 +648,35 @@ const TutorPortalProfile: React.FC = () => {
               <div className={styles.sectionCard} data-tour="profile-hero">
                 <div className={styles.sectionHeader}>
                   <h2 className={styles.sectionTitle}>Thông tin cơ bản</h2>
-                  {isEditMode && missingBasicFields.length === 0 && (
-                    <button className={styles.editIconBtn} onClick={() => setIsHeroModalOpen(true)}>
-                      <EditPencilIcon />
-                    </button>
-                  )}
+                  <div className={styles.sectionHeaderActions}>
+                    {isAcceptingBookings !== null && (
+                      <div
+                        className={`${styles.acceptingPill} ${isAcceptingBookings ? styles.acceptingPillOn : styles.acceptingPillOff}`}
+                        title={
+                          isAcceptingBookings
+                            ? 'Hồ sơ đang hiển thị công khai trên Marketplace và có thể nhận booking mới.'
+                            : 'Hồ sơ đang tạm ẩn khỏi Marketplace và không nhận booking mới.'
+                        }
+                      >
+                        <span className={styles.acceptingDot} />
+                        <span className={styles.acceptingLabel}>
+                          {isAcceptingBookings ? 'Đang mở nhận học viên' : 'Tạm dừng nhận booking'}
+                        </span>
+                        <Switch
+                          size="small"
+                          checked={isAcceptingBookings}
+                          loading={togglingBookings}
+                          onChange={handleToggleAcceptingBookings}
+                          className={styles.acceptingSwitch}
+                        />
+                      </div>
+                    )}
+                    {isEditMode && missingBasicFields.length === 0 && (
+                      <button className={styles.editIconBtn} onClick={() => setIsHeroModalOpen(true)}>
+                        <EditPencilIcon />
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className={styles.heroContent}>
                   {/* Avatar — click để chọn ảnh ngay, sau đó crop và gọi API riêng updateAvatar */}

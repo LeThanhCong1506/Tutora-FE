@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getAuthHeaders, type ApiResponse } from './tutorProfile.service';
 import { setupAuthInterceptor } from './apiClient';
+import type { ReportAttachment } from './classSession.service';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -61,7 +62,9 @@ export interface LessonDetailDto extends LessonResponse {
     contentCovered: string;
     homeworkAssigned: string;
     studentPerformanceRating: number;
+    /** Chỉ URL — giữ cho code cũ; ưu tiên `attachmentDetails` khi có. */
     attachments: string[];
+    attachmentDetails?: ReportAttachment[];
     createdAt: string;
   };
 }

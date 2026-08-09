@@ -832,7 +832,7 @@ const ParentBookingDemo = () => {
                 <h2>Yêu cầu đặt lịch đã được gửi</h2>
                 <p>Gia sư sẽ xem lịch học và phản hồi cho phụ huynh trong thời gian sớm nhất.</p>
                 <div className={styles.bookingCode}>
-                  <span>Mã booking</span>
+                  <span>Mã đặt lịch</span>
                   <strong>{createdBookingId}</strong>
                 </div>
                 {bookingWindowStart && bookingWindowEnd && (

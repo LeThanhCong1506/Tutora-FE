@@ -1,16 +1,11 @@
 import { useEffect, useState } from 'react';
-import { AlertCircle, Download, ExternalLink, Paperclip } from 'lucide-react';
-import { Button, Image, Modal, Skeleton } from 'antd';
-import { StatusBadge } from '../shared';
+import { AlertCircle, ExternalLink } from 'lucide-react';
+import { Button, Modal, Skeleton } from 'antd';
+import { AttachmentGallery, StatusBadge, type AttachmentItem } from '../shared';
 import type { DisputeDetailResponse, DisputeListResponse } from '../../services/classSession.service';
 import { formatLocalDateTime } from '../../utils/datetime';
 import { formatCurrency } from '../../utils/formatters';
-import {
-  getDisputeEvidenceKind,
-  getDisputePriorityMeta,
-  getDisputeStatusMeta,
-  getDisputeTypeLabel,
-} from './disputePresentation';
+import { getDisputePriorityMeta, getDisputeStatusMeta, getDisputeTypeLabel } from './disputePresentation';
 import styles from './DisputeDetailModal.module.css';
 
 export interface DisputeDetailModalProps {
@@ -28,71 +23,6 @@ export interface DisputeDetailModalProps {
   /** Bỏ qua nếu không muốn hiện nút "Xem buổi học" ở chân popup. */
   onViewSession?: (dispute: DisputeListResponse) => void;
 }
-
-const getFileNameFromUrl = (url: string): string => {
-  try {
-    const pathname = new URL(url, window.location.origin).pathname;
-    return decodeURIComponent(pathname.split('/').pop() || url);
-  } catch {
-    return url.split('/').pop() || url;
-  }
-};
-
-interface EvidenceFile {
-  key: string;
-  url: string;
-  label: string;
-  mimeType?: string | null;
-}
-
-/** Link mở tab mới — dùng cho tài liệu, và cho ảnh/video khi URL hỏng hoặc token đã hết hạn. */
-const EvidenceLink = ({ file, note }: { file: EvidenceFile; note?: string }) => (
-  <a className={styles.fileItem} href={file.url} target="_blank" rel="noopener noreferrer">
-    <Paperclip size={14} className={styles.fileIcon} aria-hidden="true" />
-    <span className={styles.fileName}>
-      {file.label}
-      {note && <small> · {note}</small>}
-    </span>
-    <Download size={14} className={styles.fileIcon} aria-hidden="true" />
-  </a>
-);
-
-/** Ảnh xem phóng to ngay trong popup (Image.PreviewGroup), video phát tại chỗ — không rời trang. */
-const EvidenceTile = ({ file }: { file: EvidenceFile }) => {
-  const [failed, setFailed] = useState(false);
-  const kind = getDisputeEvidenceKind(file.url, file.mimeType);
-
-  if (failed || kind === 'file') {
-    return (
-      <div className={styles.mediaFile}>
-        <EvidenceLink file={file} note={failed ? 'không tải được, mở ở tab mới' : undefined} />
-      </div>
-    );
-  }
-
-  if (kind === 'video') {
-    return (
-      <figure className={styles.mediaVideo}>
-        <video src={file.url} controls preload="metadata" playsInline onError={() => setFailed(true)} />
-        <figcaption className={styles.mediaCaption}>{file.label}</figcaption>
-      </figure>
-    );
-  }
-
-  return (
-    <figure className={styles.mediaImage}>
-      <Image
-        src={file.url}
-        alt={file.label}
-        onError={() => setFailed(true)}
-        // antd v6: nhãn hover là `cover` (`mask` giờ là cấu hình lớp nền của lightbox).
-        preview={{ cover: 'Xem ảnh' }}
-        rootClassName={styles.imageRoot}
-      />
-      <figcaption className={styles.mediaCaption}>{file.label}</figcaption>
-    </figure>
-  );
-};
 
 /** Chi tiết được gắn kèm `sessionId` để dữ liệu của hồ sơ trước không rò rỉ sang hồ sơ vừa mở. */
 interface DisputeDetailState {
@@ -153,20 +83,15 @@ const DisputeDetailModal = ({
     ? `${formatLocalDateTime(session.scheduledStart)}${session.scheduledEnd ? ` – ${formatLocalDateTime(session.scheduledEnd)}` : ''}`
     : null;
 
-  const attachments: EvidenceFile[] = [
-    ...(detail?.evidence ?? []).map((url, index) => ({
-      key: `evidence-${index}`,
-      url,
-      label: getFileNameFromUrl(url),
-      mimeType: null,
-    })),
+  const attachments: AttachmentItem[] = [
+    ...(detail?.evidence ?? []).map((url, index) => ({ key: `evidence-${index}`, url })),
     ...(detail?.additionalEvidence ?? []).map((item) => ({
       key: `additional-${item.disputeEvidenceId}`,
-      url: item.fileUrl,
-      label: item.description || (item.fileUrl ? getFileNameFromUrl(item.fileUrl) : 'Bằng chứng'),
+      url: item.fileUrl ?? '',
+      label: item.description,
       mimeType: item.fileType,
     })),
-  ].filter((file): file is EvidenceFile => Boolean(file.url));
+  ];
 
   const isResolved = ['resolved', 'closed', 'confirmed_no_show'].includes(detail?.status ?? dispute.status ?? '');
   const hasResolution =
@@ -259,17 +184,7 @@ const DisputeDetailModal = ({
         <>
           <section className={styles.block}>
             <h3 className={styles.blockTitle}>Bằng chứng đính kèm</h3>
-            {attachments.length > 0 ? (
-              <Image.PreviewGroup>
-                <div className={styles.mediaGrid}>
-                  {attachments.map((file) => (
-                    <EvidenceTile key={file.key} file={file} />
-                  ))}
-                </div>
-              </Image.PreviewGroup>
-            ) : (
-              <p className={styles.emptyHint}>Khiếu nại này không có tệp đính kèm.</p>
-            )}
+            <AttachmentGallery items={attachments} emptyText="Khiếu nại này không có tệp đính kèm." />
           </section>
 
           {detail?.tutorResponse && (

@@ -1,0 +1,112 @@
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 9px;
+}
+
+/* Video và tài liệu chiếm trọn hàng; chỉ ảnh mới xếp lưới thumbnail. */
+.video,
+.fileRow {
+    grid-column: 1 / -1;
+}
+
+.image,
+.video {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 5px;
+    margin: 0;
+}
+
+.image .imageRoot {
+    display: block;
+    overflow: hidden;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border: 1px solid rgba(62, 47, 40, 0.09);
+    border-radius: 10px;
+    background: rgba(242, 240, 228, 0.5);
+    cursor: zoom-in;
+}
+
+.image .imageRoot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.image .imageRoot :global(.ant-image-cover) {
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.video video {
+    width: 100%;
+    max-height: 280px;
+    border: 1px solid rgba(62, 47, 40, 0.09);
+    border-radius: 10px;
+    background: #000;
+}
+
+.caption {
+    overflow: hidden;
+    color: rgba(62, 47, 40, 0.66);
+    font-size: 11px;
+    line-height: 16px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fileItem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border: 1px solid rgba(62, 47, 40, 0.09);
+    border-radius: 10px;
+    background: rgba(250, 249, 246, 0.85);
+    color: #1a2238;
+    text-decoration: none;
+    transition:
+        border-color 0.15s ease,
+        background 0.15s ease;
+}
+
+.fileItem:hover {
+    border-color: rgba(26, 34, 56, 0.26);
+    background: #fff;
+}
+
+.fileItem:focus-visible {
+    outline: 2px solid #d4b483;
+    outline-offset: 2px;
+}
+
+.fileName {
+    overflow: hidden;
+    flex: 1;
+    min-width: 0;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fileName small {
+    color: rgba(62, 47, 40, 0.6);
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.icon {
+    flex-shrink: 0;
+    color: rgba(26, 34, 56, 0.5);
+}
+
+.empty {
+    margin: 0;
+    color: rgba(62, 47, 40, 0.6);
+    font-size: 12px;
+}

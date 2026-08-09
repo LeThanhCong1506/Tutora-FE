@@ -41,3 +41,14 @@ export type { ClassSessionRecordingProps } from './ClassSessionRecording';
 
 export { ConfirmDialog } from './ConfirmDialog';
 export type { ConfirmDialogProps, ConfirmType } from './ConfirmDialog';
+
+export { AttachmentGallery, getAttachmentDisplayName, getAttachmentKind } from './AttachmentGallery';
+export type { AttachmentGalleryProps, AttachmentItem, AttachmentKind } from './AttachmentGallery';
+
+export { SessionTimeline, buildSessionTimeline } from './SessionTimeline';
+export type {
+    SessionTimelineEvent,
+    SessionTimelineProps,
+    SessionTimelineSource,
+    SessionTimelineTone,
+} from './SessionTimeline';
