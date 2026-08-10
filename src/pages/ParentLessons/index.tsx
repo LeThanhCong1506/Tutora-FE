@@ -11,9 +11,18 @@ import styles from './styles.module.css';
 const TABS = [
     { key: '', label: 'Tất cả' },
     { key: 'scheduled', label: 'Đã lên lịch' },
-    { key: 'pending_confirmation', label: 'Chờ xác nhận' },
+    { key: 'pending_reschedule', label: 'Chờ đổi lịch' },
     { key: 'completed', label: 'Hoàn thành' },
 ];
+
+/**
+ * "Chờ đổi lịch" không phải trạng thái buổi học (BE không hiểu key này) — nó gộp cả 2 cơ chế
+ * đổi lịch: đề xuất mới (hasPendingReschedule) và xác nhận vào học ngoài giờ cũ qua RTC
+ * (scheduleChangeStatus === 'pending'). Lọc phía FE trên tập buổi "Đã lên lịch" trả về từ BE,
+ * vì chỉ buổi scheduled mới có thể có 1 trong 2 loại yêu cầu này.
+ */
+const isPendingReschedule = (session: ClassSessionResponse) =>
+    Boolean(session.hasPendingReschedule) || session.scheduleChangeStatus === 'pending';
 
 const ParentLessons: React.FC = () => {
     const navigate = useNavigate();
@@ -39,8 +48,12 @@ const ParentLessons: React.FC = () => {
     const fetchSessions = async () => {
         try {
             setLoading(true);
-            const response = await getParentClassSessions(1, 100, undefined, activeTab || undefined);
-            setSessions(Array.isArray(response.content) ? response.content : []);
+            // "pending_reschedule" là filter riêng của FE, BE không biết key này — gửi status=scheduled
+            // (chỉ buổi scheduled mới có thể đang chờ đổi lịch) rồi lọc tiếp ở fetchSessions.
+            const backendStatus = activeTab === 'pending_reschedule' ? 'scheduled' : activeTab || undefined;
+            const response = await getParentClassSessions(1, 100, undefined, backendStatus);
+            const items = Array.isArray(response.content) ? response.content : [];
+            setSessions(activeTab === 'pending_reschedule' ? items.filter(isPendingReschedule) : items);
         } catch (error: unknown) {
             const e = error as { response?: { data?: { message?: string } } };
             toast.error(e.response?.data?.message || 'Không thể tải danh sách buổi học.');
@@ -115,6 +128,9 @@ const ParentLessons: React.FC = () => {
                                                 ? 'Đã xác nhận dời lịch'
                                                 : 'Chờ xác nhận dời lịch'}
                                         </span>
+                                    )}
+                                    {session.hasPendingReschedule && (
+                                        <span className={styles.scheduleChangeBadge}>Có đề xuất đổi lịch</span>
                                     )}
                                     <span className={styles.statusBadge} style={{ background: meta.bg, color: meta.color }}>
                                         <span className={styles.statusDot} />

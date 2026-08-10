@@ -11,6 +11,7 @@ import {
     type StudentClassSessionSummaryResponse,
     type StudentClassSessionDetailResponse,
     type ScheduleChangeAuditDto,
+    type RescheduleProposalDto,
 } from './classSession.service';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -54,6 +55,8 @@ export interface StudentLessonDetailDto extends Omit<LessonDetailDto, 'lessonId'
     bookingStatus?: string;
     isSettled?: boolean;
     scheduleChanges?: ScheduleChangeAuditDto[];
+    pendingRescheduleProposal?: RescheduleProposalDto | null;
+    rescheduleProposals?: RescheduleProposalDto[];
 }
 
 const mapDetail = (d: StudentClassSessionDetailResponse): StudentLessonDetailDto => ({
@@ -90,6 +93,8 @@ const mapDetail = (d: StudentClassSessionDetailResponse): StudentLessonDetailDto
     subjectName: d.subjectName,
     tutorName: d.tutorName,
     scheduleChanges: d.scheduleChanges,
+    pendingRescheduleProposal: d.pendingRescheduleProposal,
+    rescheduleProposals: d.rescheduleProposals,
 });
 
 // ============================================
@@ -113,6 +118,8 @@ export interface StudentCalendarLessonDto {
     hasRecording?: boolean;
     /** Yêu cầu dời lịch đang hiệu lực cho buổi này — "pending"/"approved", null nếu không có. */
     scheduleChangeStatus?: 'pending' | 'approved' | null;
+    /** True nếu buổi này đang có đề xuất đổi lịch (tính năng chủ động chọn giờ mới) chờ phản hồi. */
+    hasPendingReschedule?: boolean;
 }
 
 export interface StudentCalendarDayDto {
@@ -171,6 +178,7 @@ export const getStudentCalendar = async (
                 checkOutTime: c.checkOutTime,
                 hasRecording: c.hasRecording,
                 scheduleChangeStatus: c.scheduleChangeStatus,
+                hasPendingReschedule: c.hasPendingReschedule,
             })),
         })),
     };

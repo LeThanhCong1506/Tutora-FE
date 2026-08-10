@@ -112,6 +112,7 @@ const SessionLobby = () => {
   const canEnter =
     (phase === 'ready' &&
       !scheduleConflict &&
+      !scheduleChangeState?.rescheduleProposalPending &&
       (!scheduleChangeState?.requiresConfirmation || scheduleChangeState.admissionAllowed)) ||
     isMock;
   const admission = useLiveSessionAdmission(isMock ? null : sessionIdNum);
@@ -228,6 +229,14 @@ const SessionLobby = () => {
                 <strong>Chưa thể bắt đầu vì trùng lịch</strong>
                 <span>{scheduleConflict.message}</span>
                 <small>Hệ thống sẽ tự kiểm tra lại. Hai bên không cần xác nhận đổi lịch lại.</small>
+              </div>
+            )}
+
+            {scheduleChangeState?.rescheduleProposalPending && (
+              <div className={styles.scheduleConflictBanner} role="alert">
+                <strong>Chưa thể vào học ngoài giờ lúc này</strong>
+                <span>Buổi học đang có đề xuất đổi lịch chờ phản hồi.</span>
+                <small>Vui lòng vào trang chi tiết buổi học để đồng ý/từ chối đề xuất trước khi vào học ngoài giờ đã đặt.</small>
               </div>
             )}
 

@@ -18,6 +18,11 @@ const NOTIFICATION_TYPE = {
     LessonNoShow: 'lesson_no_show',
     LessonScheduleChange: 'lesson_schedule_change',
     LessonConfirmed: 'lesson_confirmed',
+    LessonReminder: 'lesson_reminder',
+    RescheduleProposed: 'reschedule_proposed',
+    RescheduleAccepted: 'reschedule_accepted',
+    RescheduleRejected: 'reschedule_rejected',
+    RescheduleExpired: 'reschedule_expired',
     BookingNew: 'booking_new',
     BookingAccepted: 'booking_accepted',
     BookingDeclined: 'booking_declined',
@@ -52,7 +57,9 @@ export function getNotificationTargetPath(notification: NotificationDTO): string
     const lessonDetailPath = (lessonId: string) =>
         prefix === '/student-portal'
             ? `${prefix}/calendar/${lessonId}`
-            : `${prefix}/lessons/${lessonId}`;
+            : prefix === '/tutor-portal'
+                ? `${prefix}/class-sessions/${lessonId}`
+                : `${prefix}/lessons/${lessonId}`;
     const lessonListPath =
         prefix === '/student-portal'
             ? `${prefix}/calendar`
@@ -77,6 +84,19 @@ export function getNotificationTargetPath(notification: NotificationDTO): string
     }
     if (type === NOTIFICATION_TYPE.LessonNoShow && refId) {
         return lessonDetailPath(refId);
+    }
+    if ((type === NOTIFICATION_TYPE.RescheduleProposed
+        || type === NOTIFICATION_TYPE.RescheduleAccepted
+        || type === NOTIFICATION_TYPE.RescheduleRejected
+        || type === NOTIFICATION_TYPE.RescheduleExpired) && refId) {
+        return lessonDetailPath(refId);
+    }
+    // Nhắc sắp tới giờ học: tutor/student bấm vào là vào thẳng phòng học; phụ huynh không có
+    // UI vào học nên vẫn dẫn về trang chi tiết như LessonScheduleChange.
+    if (type === NOTIFICATION_TYPE.LessonReminder && refId) {
+        return prefix === '/parent-portal'
+            ? lessonDetailPath(refId)
+            : `/session-lobby/${refId}`;
     }
     if ((type === NOTIFICATION_TYPE.BookingNew
         || type === NOTIFICATION_TYPE.BookingAccepted
