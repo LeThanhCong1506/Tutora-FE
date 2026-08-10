@@ -7,7 +7,7 @@ import {
   SyncOutlined,
   StopOutlined,
 } from '@ant-design/icons';
-import { formatWithdrawalStatusV2 } from '../../../../utils/formatters';
+import { formatWithdrawalStatusV2 } from '../../utils/formatters';
 
 interface Props {
   status: string;
