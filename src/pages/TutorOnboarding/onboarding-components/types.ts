@@ -27,9 +27,9 @@ export interface TutorAvailabilitySlot {
   endTime: string; // HH:mm
 }
 
+// Bước đang xem không nằm trong state này — xem `?step=` ở pages/TutorOnboarding/index.tsx.
 export interface OnboardingState {
   subjectRecords: SubjectRecord[];
   availability: TutorAvailabilitySlot[];
   combos: FixedCombo[];
-  currentStep: OnboardingStep;
 }
