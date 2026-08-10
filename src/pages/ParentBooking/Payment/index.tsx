@@ -286,7 +286,9 @@ const PaymentPage = () => {
               </div>
               <div>
                 <span>Khoản thanh toán</span>
-                <strong>{summary?.paymentPhase === 'remaining' ? 'Các buổi còn lại' : 'Buổi học đầu tiên'}</strong>
+                <strong>
+                  {summary?.paymentPhase === 'remaining' ? 'Đợt 2 · Các buổi còn lại' : 'Đợt 1 · Buổi học đầu tiên'}
+                </strong>
               </div>
               <div>
                 <span>Số tiền</span>
@@ -337,7 +339,12 @@ const PaymentPage = () => {
         <button onClick={() => navigate('/parent-portal/booking', { replace: true })} className={styles.backBtn}>
           <ChevronLeft size={20} /> Quay lại
         </button>
-        <h1>Thanh toán khóa học</h1>
+        <div className={styles.titleGroup}>
+          <h1>Thanh toán khóa học</h1>
+          <span className={styles.phaseBadge}>
+            {summary?.paymentPhase === 'remaining' ? 'Đợt 2 · Các buổi còn lại' : 'Đợt 1 · Buổi học đầu tiên'}
+          </span>
+        </div>
       </div>
 
       <div className={styles.layout}>
@@ -367,8 +374,9 @@ const PaymentPage = () => {
             </div>
 
             <div className={styles.priceBreakdown}>
+              <p className={styles.breakdownSectionLabel}>Chi phí toàn khóa học ({booking?.sessionCount ?? 0} buổi)</p>
               <div className={styles.priceRow}>
-                <span>Học phí:</span>
+                <span>Học phí ({booking?.sessionCount ?? 0} buổi):</span>
                 <span>{formatPrice(booking?.price || 0)}</span>
               </div>
               {booking?.discountApplied && booking.discountApplied > 0 ? (
@@ -382,23 +390,39 @@ const PaymentPage = () => {
                   (booking?.finalPrice || 0) - ((booking?.price || 0) - (booking?.discountApplied || 0));
                 return parentFee > 0 ? (
                   <div className={styles.priceRow}>
-                    <span>Phí dịch vụ (5%):</span>
+                    <span className={styles.feeLabelStack}>
+                      Phí dịch vụ TUTORA (5%)
+                      <small>Phí duy trì &amp; bảo vệ giao dịch trên nền tảng</small>
+                    </span>
                     <span>+{formatPrice(parentFee)}</span>
                   </div>
                 ) : null;
               })()}
-              <div className={styles.priceRow}>
-                <span>Tổng:</span>
+              <div className={`${styles.priceRow} ${styles.grandTotalRow}`}>
+                <span>Tổng học phí toàn khóa:</span>
                 <span>{formatPrice(booking?.finalPrice || 0)}</span>
               </div>
-              <div className={`${styles.priceRow} ${styles.totalRow}`}>
-                <span>
-                  {summary?.paymentPhase === 'remaining'
-                    ? 'Thanh toán lần này (các buổi còn lại):'
-                    : 'Thanh toán lần này (buổi học đầu tiên):'}
-                </span>
-                <span className={styles.totalPrice}>{formatPrice(summary?.amount || 0)}</span>
-              </div>
+
+              {(() => {
+                const totalSessions = booking?.sessionCount ?? 0;
+                const remainingSessions = Math.max(totalSessions - 1, 0);
+                const isRemaining = summary?.paymentPhase === 'remaining';
+                return (
+                  <div className={styles.dueNowBox}>
+                    <span className={styles.dueNowLabel}>
+                      {isRemaining
+                        ? `Cần thanh toán hôm nay — Đợt 2 (${remainingSessions}/${totalSessions} buổi còn lại)`
+                        : `Cần thanh toán hôm nay — Đợt 1 (1/${totalSessions} buổi đầu tiên)`}
+                    </span>
+                    <span className={styles.totalPrice}>{formatPrice(summary?.amount || 0)}</span>
+                    <p className={styles.dueNowCaption}>
+                      {isRemaining
+                        ? 'Buổi học đầu tiên (Đợt 1) đã được thanh toán trước đó — số tiền trên chỉ là phần còn lại.'
+                        : `Đây là số tiền cho buổi học đầu tiên, KHÔNG phải tổng học phí toàn khóa ở trên. ${remainingSessions} buổi còn lại sẽ thanh toán riêng ở Đợt 2, sau khi buổi học đầu tiên kết thúc.`}
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
 
             <div className={styles.securityNote}>

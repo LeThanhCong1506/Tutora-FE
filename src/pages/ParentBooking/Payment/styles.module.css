@@ -28,11 +28,10 @@
   max-width: 1280px;
   margin: 0 auto;
   padding: 28px 20px 36px;
-  font-family:
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif;
+  /* 'Inter' không được load ở đâu trong app (index.html chỉ có Bricolage Grotesque/IBM Plex/
+     Noto) — dùng đúng font chữ chung của app để đồng bộ với các trang khác (vd trang "Đặt lịch"
+     liền kề), thay vì rơi về font hệ điều hành mặc định. */
+  font-family: var(--font-primary, system-ui, sans-serif);
 }
 
 /* Header & Navigation */
@@ -66,11 +65,35 @@
 }
 
 .topNav h1 {
-  font-size: clamp(32px, 4vw, 48px);
-  font-weight: 800;
-  color: #0f172a;
-  letter-spacing: -0.02em;
+  /* Cùng thang chữ với trang "Đặt lịch" liền kề (.header h1 ở ParentBooking/styles.module.css)
+     — trước đây to hơn hẳn (32-48px, weight 800) nên đứng cạnh badge nhỏ bị lệch cân. */
+  font-size: clamp(26px, 2vw, 32px);
+  font-weight: 700;
+  color: #172033;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
   margin: 0;
+}
+
+/* Nhóm tiêu đề + badge "Đợt 1 / Đợt 2" — cho phụ huynh biết ngay đây là lần thanh toán nào. */
+.titleGroup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.phaseBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #4f46e5;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 999px;
+  white-space: nowrap;
 }
 
 /* Main Layout Grid */
@@ -214,6 +237,29 @@
   font-weight: 600;
 }
 
+/* Tiêu đề nhỏ mở đầu phần chi phí — nói rõ các dòng dưới đây là của TOÀN KHÓA, không phải
+   riêng đợt đang thanh toán, để không bị hiểu lầm với khối "Cần thanh toán hôm nay". */
+.breakdownSectionLabel {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.feeLabelStack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.feeLabelStack small {
+  font-size: 11.5px;
+  font-weight: 400;
+  color: #94a3b8;
+}
+
 .discount {
   color: #ef4444 !important;
   background: #fef2f2;
@@ -222,16 +268,20 @@
   font-size: 14px;
 }
 
-.totalRow {
+.grandTotalRow {
   margin-top: 4px;
   padding-top: 18px;
   border-top: 1px dashed #e2e8f0;
 }
 
-.totalRow span:first-child {
-  font-size: 16px;
+.grandTotalRow span:first-child {
+  font-size: 15px;
   color: #0f172a;
   font-weight: 700;
+}
+
+.grandTotalRow span:last-child {
+  font-size: 15px;
 }
 
 .totalPrice {
@@ -239,6 +289,32 @@
   font-weight: 800 !important;
   color: #4f46e5 !important;
   letter-spacing: -0.03em;
+}
+
+/* Khối nổi bật riêng cho số tiền THẬT SỰ phải trả hôm nay — tách hẳn khỏi phần "chi phí toàn
+   khóa" phía trên bằng màu nền + viền, để không bị nhầm là cùng một con số. */
+.dueNowBox {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%);
+  border: 1.5px solid #c7d2fe;
+  border-radius: 14px;
+}
+
+.dueNowLabel {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #3730a3;
+}
+
+.dueNowCaption {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #6366a3;
 }
 
 /* Security / Trust Note */
