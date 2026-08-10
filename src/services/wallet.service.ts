@@ -146,12 +146,15 @@ export interface TransactionHistoryPagedResponse {
  */
 export const getTransactions = async (
   page: number = 1,
-  pageSize: number = 20
+  pageSize: number = 20,
+  type?: string,
+  from?: string,
+  to?: string
 ): Promise<ApiResponse<TransactionHistoryPagedResponse>> => {
   try {
     const response = await api.get('/wallet/transactions', {
       headers: getAuthHeaders(),
-      params: { page, pageSize },
+      params: { page, pageSize, type, from, to },
     });
 
     return response.data;

@@ -8,7 +8,7 @@ import { getWithdrawals } from '../../../services/tutorFinance.service';
 import type { WithdrawalItem } from '../../../types/finance.types';
 import { formatCurrency, formatDateTime } from '../../../utils/formatters';
 import FinancePageShell from '../components/FinancePageShell';
-import WithdrawalStatusBadge from './components/WithdrawalStatusBadge';
+import WithdrawalStatusBadge from '../../../components/Finance/WithdrawalStatusBadge';
 import '../../../styles/pages/tutor-finance.css';
 
 const WithdrawalListPage: React.FC = () => {

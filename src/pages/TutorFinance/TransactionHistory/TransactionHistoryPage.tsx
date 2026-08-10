@@ -6,7 +6,7 @@ import dayjs, { type Dayjs } from 'dayjs';
 import { getTransactions } from '../../../services/tutorFinance.service';
 import type { TutorTransaction } from '../../../types/finance.types';
 import FinancePageShell from '../components/FinancePageShell';
-import TransactionTable from './components/TransactionTable';
+import TransactionTable from '../../../components/Finance/TransactionTable';
 import '../../../styles/pages/tutor-finance.css';
 
 const { RangePicker } = DatePicker;

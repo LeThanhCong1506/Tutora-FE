@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Button, Empty, Spin, Steps, Timeline } from 'antd';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   BankOutlined,
   CheckCircleOutlined,
@@ -11,17 +11,22 @@ import {
   WalletOutlined,
 } from '@ant-design/icons';
 import { toast } from 'react-toastify';
-import { getWithdrawalDetail } from '../../../services/tutorFinance.service';
-import type { WithdrawalDetail } from '../../../types/finance.types';
-import { formatCurrency, formatDateTime } from '../../../utils/formatters';
-import FinancePageShell from '../components/FinancePageShell';
-import WithdrawalStatusBadge from '../../../components/Finance/WithdrawalStatusBadge';
-import '../../../styles/pages/tutor-finance.css';
+import { getWithdrawalDetail, type WithdrawalDetail } from '../../services/wallet.service';
+import { formatCurrency, formatDateTime } from '../../utils/formatters';
+import FinanceShell from './components/FinanceShell';
+import WithdrawalStatusBadge from '../../components/Finance/WithdrawalStatusBadge';
+import '../../styles/pages/tutor-finance.css';
 
-const WithdrawalDetailPage: React.FC = () => {
+const WithdrawalDetailPage = () => {
   const { id: idString } = useParams<{ id: string }>();
   const id = idString ? Number.parseInt(idString, 10) : 0;
   const navigate = useNavigate();
+  const location = useLocation();
+  const portalBase = useMemo(
+    () => (location.pathname.startsWith('/student-portal') ? '/student-portal' : '/parent-portal'),
+    [location.pathname],
+  );
+
   const [loading, setLoading] = useState(true);
   const [withdrawal, setWithdrawal] = useState<WithdrawalDetail | null>(null);
 
@@ -33,16 +38,16 @@ const WithdrawalDetailPage: React.FC = () => {
 
     setLoading(true);
     try {
-      const data = await getWithdrawalDetail(id);
-      setWithdrawal(data);
+      const res = await getWithdrawalDetail(id);
+      setWithdrawal(res.content);
     } catch (error) {
       console.error('Failed to fetch withdrawal detail:', error);
       toast.error('Không thể tải thông tin chi tiết yêu cầu rút tiền');
-      navigate('/tutor-portal/finance/withdrawals');
+      navigate(`${portalBase}/wallet/withdrawals`);
     } finally {
       setLoading(false);
     }
-  }, [id, navigate]);
+  }, [id, navigate, portalBase]);
 
   useEffect(() => {
     fetchDetail();
@@ -108,10 +113,10 @@ const WithdrawalDetailPage: React.FC = () => {
     : [];
 
   return (
-    <FinancePageShell
+    <FinanceShell
       title={id ? `Yêu cầu rút tiền #${id}` : 'Chi tiết yêu cầu rút tiền'}
       subtitle="Kiểm tra tiến độ xử lý, thông tin giao dịch và tài khoản nhận tiền."
-      backLink={{ label: 'Về lịch sử rút tiền', to: '/tutor-portal/finance/withdrawals' }}
+      backLink={{ label: 'Về lịch sử rút tiền', to: `${portalBase}/wallet/withdrawals` }}
       actions={
         <>
           {withdrawal && <WithdrawalStatusBadge status={withdrawal.status} />}
@@ -340,7 +345,7 @@ const WithdrawalDetailPage: React.FC = () => {
           </aside>
         </div>
       )}
-    </FinancePageShell>
+    </FinanceShell>
   );
 };
 

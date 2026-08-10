@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { NavLink } from 'react-router-dom';
-import { ArrowLeftOutlined, BankOutlined, DashboardOutlined, HistoryOutlined, SwapOutlined } from '@ant-design/icons';
+import { BankOutlined, DashboardOutlined, HistoryOutlined, SwapOutlined } from '@ant-design/icons';
+import SharedFinancePageShell, { type FinanceNavItem } from '../../../components/Finance/FinancePageShell';
 
 interface FinancePageShellProps {
   title: string;
@@ -16,7 +16,7 @@ interface FinancePageShellProps {
   };
 }
 
-const financeNavItems = [
+const financeNavItems: FinanceNavItem[] = [
   {
     to: '/tutor-portal/finance',
     label: 'Tổng quan',
@@ -43,56 +43,8 @@ const financeNavItems = [
   },
 ];
 
-const FinancePageShell = ({
-  title,
-  subtitle,
-  children,
-  actions,
-  eyebrow = 'Trung tâm tài chính',
-  headerClassName = '',
-  contentClassName = '',
-  backLink,
-}: FinancePageShellProps) => {
-  return (
-    <div className="tutor-finance-container">
-      <div className="finance-page-shell">
-        <header className={`finance-page-header ${headerClassName}`.trim()}>
-          {backLink && (
-            <NavLink className="finance-back-link" to={backLink.to}>
-              <ArrowLeftOutlined aria-hidden="true" />
-              <span>{backLink.label}</span>
-            </NavLink>
-          )}
-
-          <span className="finance-eyebrow">{eyebrow}</span>
-
-          <div className="finance-title-row">
-            <div className="finance-title-block">
-              <h1>{title}</h1>
-              {subtitle && <p>{subtitle}</p>}
-            </div>
-            {actions && <div className="finance-header-actions">{actions}</div>}
-          </div>
-
-          <nav className="finance-nav" aria-label="Điều hướng tài chính">
-            {financeNavItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) => `finance-nav-link${isActive ? ' finance-nav-link--active' : ''}`}
-              >
-                {item.icon}
-                <span>{item.label}</span>
-              </NavLink>
-            ))}
-          </nav>
-        </header>
-
-        <main className={`finance-page-content ${contentClassName}`.trim()}>{children}</main>
-      </div>
-    </div>
-  );
-};
+const FinancePageShell = (props: FinancePageShellProps) => (
+  <SharedFinancePageShell {...props} navItems={financeNavItems} />
+);
 
 export default FinancePageShell;
