@@ -9,8 +9,9 @@ import {
   SafetyCertificateOutlined,
   WalletOutlined,
 } from '@ant-design/icons';
-import { createWithdrawal, getBankInfo, getFinanceSummary } from '../../../services/tutorFinance.service';
-import type { BankInfo, FinanceSummary } from '../../../types/finance.types';
+import { createWithdrawal, getFinanceSummary } from '../../../services/tutorFinance.service';
+import { getBankAccount, type BankAccount } from '../../../services/bankAccount.service';
+import type { FinanceSummary } from '../../../types/finance.types';
 import FinancePageShell from '../components/FinancePageShell';
 import WithdrawConfirmModal from './components/WithdrawConfirmModal';
 import WithdrawForm from './components/WithdrawForm';
@@ -24,7 +25,7 @@ const CreateWithdrawalPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [summary, setSummary] = useState<FinanceSummary | null>(null);
-  const [bankInfo, setBankInfo] = useState<BankInfo | null>(null);
+  const [bankInfo, setBankInfo] = useState<BankAccount | null>(null);
   const [withdrawAmount, setWithdrawAmount] = useState(0);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [resultStatus, setResultStatus] = useState<'success' | 'error' | 'warning' | null>(null);
@@ -33,7 +34,7 @@ const CreateWithdrawalPage: React.FC = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [sum, info] = await Promise.all([getFinanceSummary(), getBankInfo()]);
+        const [sum, info] = await Promise.all([getFinanceSummary(), getBankAccount()]);
         setSummary(sum);
         setBankInfo(info);
 

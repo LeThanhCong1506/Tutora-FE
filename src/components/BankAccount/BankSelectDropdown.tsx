@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Select } from 'antd';
-import { getBankList } from '../../../../services/bankVerification.service';
-import type { BankListItem } from '../../../../types/finance.types';
+import { getBankList } from '../../services/bankVerification.service';
+import type { BankListItem } from '../../types/finance.types';
 
 interface Props {
   value?: string;

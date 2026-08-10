@@ -19,6 +19,7 @@ import {
   type DisputeListResponse,
   type ReportNoShowRequest,
   type ScheduleChangeAuditDto,
+  type RescheduleProposalDto,
 } from './classSession.service';
 
 /**
@@ -165,6 +166,8 @@ export interface ParentLessonDetailDto extends Omit<LessonDetailDto, 'lessonId' 
   isSettled?: boolean;
   bookingStatus?: string;
   scheduleChanges?: ScheduleChangeAuditDto[];
+  pendingRescheduleProposal?: RescheduleProposalDto | null;
+  rescheduleProposals?: RescheduleProposalDto[];
 }
 
 const mapDetail = (d: ClassSessionDetailResponse): ParentLessonDetailDto => ({
@@ -206,6 +209,8 @@ const mapDetail = (d: ClassSessionDetailResponse): ParentLessonDetailDto => ({
   tutorName: d.tutor?.fullName,
   tutorId: d.tutor?.tutorId,
   scheduleChanges: d.scheduleChanges,
+  pendingRescheduleProposal: d.pendingRescheduleProposal,
+  rescheduleProposals: d.rescheduleProposals,
 });
 
 const mapSettlement = (r: SettlementResultResponse): SettlementResultDto => ({

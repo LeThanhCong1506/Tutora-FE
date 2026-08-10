@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'r
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
+  CalendarClock,
   CalendarDays,
   Check,
   CircleAlert,
@@ -17,6 +18,7 @@ import {
   UserRound,
   Video,
   WalletCards,
+  X,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { formatVNDNumber } from '../../utils/formatters';
@@ -28,13 +30,15 @@ import {
   uploadTutorDisputeEvidence,
   getTutorDisputeThread,
   sendTutorDisputeThreadMessage,
+  proposeTutorReschedule,
+  respondTutorReschedule,
   type ClassSessionDetailResponse,
   type DisputeDetailResponse,
   type DisputeMessage,
   type ReportAttachment,
 } from '../../services/classSession.service';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
-import { canJoinLiveSession } from '../../utils/liveSession';
+import { canJoinLiveSession, isWithinJoinWindow } from '../../utils/liveSession';
 import { signalRService } from '../../services/signalr.service';
 import LessonReportForm from './components/LessonReportForm';
 import MaterialsTab from './components/MaterialsTab';
@@ -42,6 +46,7 @@ import {
   AttachmentGallery,
   buildSessionTimeline,
   ClassSessionRecording,
+  RescheduleProposalModal,
   SessionTimeline,
 } from '../../components/shared';
 import styles from '../../styles/pages/tutor-portal-class-session-detail.module.css';
@@ -146,6 +151,8 @@ const TutorPortalClassSessionDetail = () => {
   const [thread, setThread] = useState<DisputeMessage[]>([]);
   const [threadInput, setThreadInput] = useState('');
   const [sendingThreadMessage, setSendingThreadMessage] = useState(false);
+  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+  const [respondingReschedule, setRespondingReschedule] = useState(false);
 
   const loadSession = useCallback(async () => {
     if (!classSessionId) {
@@ -290,6 +297,31 @@ const TutorPortalClassSessionDetail = () => {
     }
   };
 
+  const handleProposeReschedule = async (proposedScheduledStart: string, reason?: string) => {
+    if (!session) return;
+    const response = await proposeTutorReschedule(session.classSessionId, proposedScheduledStart, reason);
+    setSession({
+      ...session,
+      pendingRescheduleProposal: response.content,
+      rescheduleProposals: [response.content, ...(session.rescheduleProposals ?? [])],
+    });
+    setRescheduleModalOpen(false);
+  };
+
+  const handleRespondReschedule = async (accepted: boolean) => {
+    if (!session) return;
+    setRespondingReschedule(true);
+    try {
+      await respondTutorReschedule(session.classSessionId, accepted);
+      await loadSession();
+      toast.success(accepted ? 'Đã đồng ý đổi lịch học.' : 'Đã từ chối đề xuất đổi lịch.');
+    } catch (requestError: unknown) {
+      toast.error(getErrorMessage(requestError));
+    } finally {
+      setRespondingReschedule(false);
+    }
+  };
+
   const handleReportSuccess = (updatedSession: ClassSessionDetailResponse) => {
     applySessionUpdate(updatedSession);
     setPendingAttachments([]);
@@ -383,7 +415,13 @@ const TutorPortalClassSessionDetail = () => {
   const studentName = session.student?.fullName || 'Học sinh chưa cập nhật';
   const status = session.status?.toLowerCase() ?? '';
   const canJoin = canJoinLiveSession(session);
+  const joinButtonLabel =
+    status === 'in_progress' ? 'Vào lại lớp' : isWithinJoinWindow(session.scheduledStart) ? 'Vào học' : 'Vào học nhanh';
   const canCheckOut = status === 'in_progress' && !session.checkOutTime;
+  const pendingReschedule = session.pendingRescheduleProposal;
+  const canProposeReschedule = status === 'scheduled' && !pendingReschedule;
+  const isRescheduleCounterpart = pendingReschedule?.counterpartRole === 'Tutor';
+  const isRescheduleProposer = pendingReschedule?.proposedByRole === 'Tutor';
   const canSubmitReport =
     !session.report && (session.canSubmitReport || (status === 'in_progress' && Boolean(session.checkOutTime)));
   const reportContent = session.report?.contentCovered || session.classSessionContent;
@@ -504,12 +542,73 @@ const TutorPortalClassSessionDetail = () => {
                     onClick={() => navigate(`/session-lobby/${session.classSessionId}`)}
                   >
                     <Video size={16} />
-                    {status === 'in_progress' ? 'Vào lại lớp' : 'Vào lớp'}
+                    {joinButtonLabel}
+                  </button>
+                )}
+                {canProposeReschedule && (
+                  <button
+                    type="button"
+                    className={styles.secondaryButton}
+                    onClick={() => setRescheduleModalOpen(true)}
+                  >
+                    <CalendarClock size={16} />
+                    Đề xuất đổi lịch
                   </button>
                 )}
               </div>
             </div>
+
+            {pendingReschedule && (
+              <div className={styles.infoBanner}>
+                <CalendarClock size={18} />
+                <div>
+                  <strong>
+                    Đề xuất dời sang {formatDateTime(pendingReschedule.proposedScheduledStart)}
+                  </strong>
+                  <span>
+                    {isRescheduleCounterpart
+                      ? `${pendingReschedule.proposedByName ?? 'Đối phương'} đang chờ bạn phản hồi.`
+                      : `Đang chờ ${pendingReschedule.counterpartName ?? 'phía học sinh/phụ huynh'} phản hồi.`}
+                  </span>
+                </div>
+                {isRescheduleCounterpart && (
+                  <div className={styles.heroActions}>
+                    <button
+                      type="button"
+                      className={styles.secondaryButton}
+                      disabled={respondingReschedule}
+                      onClick={() => void handleRespondReschedule(false)}
+                    >
+                      <X size={16} />
+                      Từ chối
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.primaryButton}
+                      disabled={respondingReschedule}
+                      onClick={() => void handleRespondReschedule(true)}
+                    >
+                      <Check size={16} />
+                      Đồng ý đổi lịch
+                    </button>
+                  </div>
+                )}
+                {isRescheduleProposer && !isRescheduleCounterpart && (
+                  <span className={styles.submittedAt}>
+                    Hết hạn phản hồi lúc {formatDateTime(pendingReschedule.expiresAt)}
+                  </span>
+                )}
+              </div>
+            )}
           </header>
+
+          <RescheduleProposalModal
+            open={rescheduleModalOpen}
+            currentScheduledStart={session.scheduledStart}
+            onSubmit={handleProposeReschedule}
+            onCancel={() => setRescheduleModalOpen(false)}
+            accentColor="#1a2238"
+          />
 
           <nav className={styles.tabs} aria-label="Nội dung chi tiết buổi học">
             <button
@@ -609,6 +708,33 @@ const TutorPortalClassSessionDetail = () => {
                         </div>
                       </div>
                       <SessionTimeline events={timelineEvents} className={styles.timelineBody} />
+                    </section>
+                  )}
+
+                  {session.rescheduleProposals && session.rescheduleProposals.length > 0 && (
+                    <section className={styles.card}>
+                      <div className={styles.cardHeader}>
+                        <div>
+                          <h2>Lịch sử đổi lịch học</h2>
+                        </div>
+                      </div>
+                      <div className={styles.reportGrid}>
+                        {session.rescheduleProposals.map((proposal) => (
+                          <div key={proposal.rescheduleProposalId} className={`${styles.reportField} ${styles.reportFieldWide}`}>
+                            <span>
+                              {proposal.proposedByName ?? 'Người đề xuất'} đề xuất dời sang{' '}
+                              {formatDateTime(proposal.proposedScheduledStart)}
+                            </span>
+                            <p>
+                              {proposal.status === 'pending' && 'Đang chờ phản hồi'}
+                              {proposal.status === 'accepted' && `Đã đồng ý${proposal.respondedAt ? ` · ${formatDateTime(proposal.respondedAt)}` : ''}`}
+                              {proposal.status === 'rejected' && `Đã từ chối${proposal.respondedAt ? ` · ${formatDateTime(proposal.respondedAt)}` : ''}`}
+                              {proposal.status === 'expired' && 'Đã hết hạn'}
+                              {proposal.reason ? ` — Lý do: ${proposal.reason}` : ''}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </section>
                   )}
 
@@ -889,7 +1015,13 @@ const TutorPortalClassSessionDetail = () => {
                       {session.student?.school && <span>{session.student.school}</span>}
                     </div>
                     {session.student?.studentId && session.bookingId && (
-                      <button type="button" className={styles.profileButton} onClick={handleOpenStudentProfile}>
+                      <button
+                        type="button"
+                        className={styles.profileButton}
+                        onClick={handleOpenStudentProfile}
+                        disabled
+                        title="Tính năng đang được phát triển"
+                      >
                         <GraduationCap size={16} />
                         Xem hồ sơ học tập
                       </button>

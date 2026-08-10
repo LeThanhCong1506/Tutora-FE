@@ -57,6 +57,8 @@ export interface ClassSessionResponse {
     tutor?: TutorMini;
     /** Yêu cầu dời lịch đang hiệu lực cho buổi này — "pending"/"approved", null nếu không có. */
     scheduleChangeStatus?: 'pending' | 'approved' | null;
+    /** True nếu buổi này đang có đề xuất đổi lịch (tính năng chủ động chọn giờ mới) chờ phản hồi. */
+    hasPendingReschedule?: boolean;
 }
 
 // ── ClassSessionDetailResponse (rich detail — tutor actions, check-in/out/report) ──
@@ -117,6 +119,27 @@ export interface ScheduleChangeAuditDto {
     appliedAt?: string;
 }
 
+/** Đề xuất dời giờ học — mirror BE `ClassSessionRescheduleProposalResponse`. */
+export interface RescheduleProposalDto {
+    rescheduleProposalId: number;
+    classSessionId: number;
+    proposedByUserId: string;
+    proposedByRole: 'Tutor' | 'Student' | 'Parent' | string;
+    proposedByName?: string;
+    counterpartUserId: string;
+    counterpartRole: 'Tutor' | 'Student' | 'Parent' | string;
+    counterpartName?: string;
+    originalScheduledStart: string;
+    originalScheduledEnd: string;
+    proposedScheduledStart: string;
+    proposedScheduledEnd: string;
+    reason?: string;
+    status: 'pending' | 'accepted' | 'rejected' | 'expired' | string;
+    requestedAt: string;
+    expiresAt: string;
+    respondedAt?: string;
+}
+
 export interface ClassSessionDetailResponse {
     classSessionId: number;
     bookingId?: number;
@@ -153,6 +176,10 @@ export interface ClassSessionDetailResponse {
     canCheckIn: boolean;
     canSubmitReport: boolean;
     scheduleChanges?: ScheduleChangeAuditDto[];
+    /** Đề xuất đổi lịch đang chờ phản hồi, null nếu không có. */
+    pendingRescheduleProposal?: RescheduleProposalDto | null;
+    /** Toàn bộ lịch sử đề xuất đổi lịch, mới nhất trước. */
+    rescheduleProposals?: RescheduleProposalDto[];
 }
 
 // ── Request DTOs ──
@@ -195,6 +222,8 @@ export interface CalendarClassSessionResponse {
     statusColor: string;
     /** Yêu cầu dời lịch đang hiệu lực cho buổi này — "pending"/"approved", null nếu không có. */
     scheduleChangeStatus?: 'pending' | 'approved' | null;
+    /** True nếu buổi này đang có đề xuất đổi lịch (tính năng chủ động chọn giờ mới) chờ phản hồi. */
+    hasPendingReschedule?: boolean;
 }
 
 export interface CalendarDayResponse {
@@ -333,6 +362,31 @@ export const submitClassSessionReport = async (
     return response.data;
 };
 
+export const proposeTutorReschedule = async (
+    id: number,
+    proposedScheduledStart: string,
+    reason?: string,
+): Promise<ApiResponse<RescheduleProposalDto>> => {
+    const response = await api.post(
+        `/tutor/class-sessions/${id}/reschedule-proposal`,
+        { proposedScheduledStart, reason },
+        { headers: getAuthHeaders() },
+    );
+    return response.data;
+};
+
+export const respondTutorReschedule = async (
+    id: number,
+    accepted: boolean,
+): Promise<ApiResponse<RescheduleProposalDto>> => {
+    const response = await api.post(
+        `/tutor/class-sessions/${id}/reschedule-proposal/respond`,
+        { accepted },
+        { headers: getAuthHeaders() },
+    );
+    return response.data;
+};
+
 export const uploadClassSessionAttachment = async (id: number, file: File): Promise<ApiResponse<string>> => {
     const formData = new FormData();
     formData.append('file', file);
@@ -398,6 +452,12 @@ export interface SessionScheduleChangeResponse {
     canCurrentUserConfirm: boolean;
     currentUserConfirmed: boolean;
     admissionAllowed: boolean;
+    /**
+     * True nếu buổi học đang có đề xuất đổi lịch (tính năng chủ động chọn giờ mới) chờ phản hồi —
+     * cổng xác nhận vào học ngoài giờ bị khoá hoàn toàn cho tới khi đề xuất đó được xử lý xong.
+     * Khi true, KHÔNG được cho vào phòng dù `requiresConfirmation` là false.
+     */
+    rescheduleProposalPending?: boolean;
     status?: string;
     tutorUserId?: string;
     learnerApproverUserId?: string;
@@ -446,6 +506,31 @@ export const respondParentScheduleChange = async (
     return response.data;
 };
 
+export const proposeParentReschedule = async (
+    id: number,
+    proposedScheduledStart: string,
+    reason?: string,
+): Promise<ApiResponse<RescheduleProposalDto>> => {
+    const response = await api.post(
+        `/parent/class-sessions/${id}/reschedule-proposal`,
+        { proposedScheduledStart, reason },
+        { headers: getAuthHeaders() },
+    );
+    return response.data;
+};
+
+export const respondParentReschedule = async (
+    id: number,
+    accepted: boolean,
+): Promise<ApiResponse<RescheduleProposalDto>> => {
+    const response = await api.post(
+        `/parent/class-sessions/${id}/reschedule-proposal/respond`,
+        { accepted },
+        { headers: getAuthHeaders() },
+    );
+    return response.data;
+};
+
 /** Học sinh tự quản lý (>16, không có phụ huynh) — cùng luồng xác nhận dời lịch, khác route. */
 export const getStudentScheduleChange = async (
     id: number,
@@ -463,6 +548,31 @@ export const respondStudentScheduleChange = async (
     const response = await api.post(
         `/student/class-sessions/${id}/schedule-change/respond`,
         { confirmed },
+        { headers: getAuthHeaders() },
+    );
+    return response.data;
+};
+
+export const proposeStudentReschedule = async (
+    id: number,
+    proposedScheduledStart: string,
+    reason?: string,
+): Promise<ApiResponse<RescheduleProposalDto>> => {
+    const response = await api.post(
+        `/student/class-sessions/${id}/reschedule-proposal`,
+        { proposedScheduledStart, reason },
+        { headers: getAuthHeaders() },
+    );
+    return response.data;
+};
+
+export const respondStudentReschedule = async (
+    id: number,
+    accepted: boolean,
+): Promise<ApiResponse<RescheduleProposalDto>> => {
+    const response = await api.post(
+        `/student/class-sessions/${id}/reschedule-proposal/respond`,
+        { accepted },
         { headers: getAuthHeaders() },
     );
     return response.data;
@@ -712,6 +822,10 @@ export interface StudentClassSessionDetailResponse extends StudentClassSessionSu
     tutorAvatar?: string;
     report?: StudentClassSessionReport;
     scheduleChanges?: ScheduleChangeAuditDto[];
+    /** Đề xuất đổi lịch đang chờ phản hồi, null nếu không có. */
+    pendingRescheduleProposal?: RescheduleProposalDto | null;
+    /** Toàn bộ lịch sử đề xuất đổi lịch, mới nhất trước. */
+    rescheduleProposals?: RescheduleProposalDto[];
 }
 
 export const getStudentClassSessions = async (

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     X,
     Wallet,
@@ -31,12 +32,22 @@ import {
 import { toast } from 'react-toastify';
 import { useBookingTopup } from '../../hooks/useBookingTopup';
 import TopupQRView from '../TopupQR/TopupQRView';
+import { useLargeTransactionOtp } from '../../hooks/useLargeTransactionOtp';
+import { setBookingOtpResume } from '../../utils/bookingOtpResume';
+import { setPendingRedirect } from '../../services/auth.service';
+import PaymentOtpStep from '../PaymentOtpStep/PaymentOtpStep';
 
 interface PaymentModalProps {
     bookingId: number;
     isOpen: boolean;
     onClose: () => void;
     onPaymentSuccess: () => void;
+    /**
+     * ID gia sư — cần để nếu phải điều hướng sang trang hồ sơ nhập SĐT phụ huynh (giao dịch lớn
+     * chưa có SĐT), hệ thống biết đường quay lại đúng popup đặt lịch này. Không có thì fallback
+     * sang trang thanh toán riêng /student-portal/booking/{id}/payment sau khi lưu SĐT.
+     */
+    tutorId?: string;
 }
 
 type PaymentApiError = {
@@ -69,7 +80,8 @@ const BANK_MAP: Record<string, { name: string; logo?: string }> = {
     '970426': { name: 'MSB' },
 };
 
-const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentModalProps) => {
+const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess, tutorId }: PaymentModalProps) => {
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [paying, setPaying] = useState(false);
     // Màn chọn phương thức chỉ cần summary (KHÔNG tạo link PayOS).
@@ -143,6 +155,26 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
             setPaymentInfo(null);
         }
     }, [isOpen, bookingId, fetchSummary]);
+
+    // Giao dịch lớn (≥ ngưỡng) của học sinh tự đăng ký → chặn bằng OTP qua Zalo ZNS tới SĐT
+    // phụ huynh. Chạy TỰ ĐỘNG ngay khi summary vừa tải xong (= ngay khi màn thanh toán mở ra,
+    // trước cả khi người dùng chọn phương thức) — không đợi bấm "Thanh toán ngay".
+    const otpGate = useLargeTransactionOtp({
+        bookingId,
+        amount: summary?.amount ?? 0,
+        phase: summary?.paymentPhase ?? null,
+        ready: isOpen && !!summary,
+        onNeedParentPhone: () => {
+            if (tutorId) {
+                setBookingOtpResume({ bookingId, tutorId });
+            } else {
+                // Không có tutorId (VD: mở PaymentModal từ khung chat) → không dựng lại được popup,
+                // fallback về trang thanh toán riêng sau khi lưu SĐT.
+                setPendingRedirect(`/student-portal/booking/${bookingId}/payment`);
+            }
+            navigate('/student-portal/profile?highlight=parent-phone');
+        },
+    });
 
     // Countdown timer for QR view. Khi hết giờ → đánh dấu isExpired để che QR + dừng poll.
     useEffect(() => {
@@ -223,7 +255,13 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
         } catch (err: unknown) {
             const apiError = err as PaymentApiError;
             console.error('Wallet payment failed:', err);
-            toast.error(apiError.response?.data?.message || 'Thanh toán thất bại.');
+            if (apiError.response?.data?.errorCode === 'OTP_REQUIRED') {
+                // Lưới an toàn: hook đã cho qua trước đó nhưng BE vẫn từ chối (race condition) →
+                // quay lại luồng OTP thay vì chỉ báo lỗi chung chung.
+                otpGate.handlePaymentOtpRequired();
+            } else {
+                toast.error(apiError.response?.data?.message || 'Thanh toán thất bại.');
+            }
         } finally {
             setPaying(false);
         }
@@ -257,6 +295,8 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                 onClose();
             } else if (errorCode === 'BOOKING_EXPIRED') {
                 setError('BOOKING_EXPIRED');
+            } else if (errorCode === 'OTP_REQUIRED') {
+                otpGate.handlePaymentOtpRequired();
             } else {
                 toast.error(apiError.response?.data?.message || 'Không thể tạo liên kết thanh toán. Vui lòng thử lại.');
             }
@@ -617,6 +657,32 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                                 )}
                             </div>
 
+                            {otpGate.status === 'checking' || otpGate.status === 'need_parent_phone' ? (
+                                <div className={styles.loaderContainer}>
+                                    <Loader2 className={styles.spinner} />
+                                    <p>
+                                        {otpGate.status === 'need_parent_phone'
+                                            ? 'Đang chuyển sang trang hồ sơ để nhập số điện thoại phụ huynh...'
+                                            : 'Đang kiểm tra bảo mật giao dịch...'}
+                                    </p>
+                                </div>
+                            ) : otpGate.status === 'blocked' ? (
+                                <div className={styles.errorContainer}>
+                                    <AlertTriangle className={styles.errorIcon} />
+                                    <p>{otpGate.errorMessage}</p>
+                                </div>
+                            ) : otpGate.status === 'awaiting_otp' ? (
+                                <PaymentOtpStep
+                                    amount={summary.amount}
+                                    phase={summary.paymentPhase}
+                                    verifying={otpGate.verifying}
+                                    initialCooldownSeconds={otpGate.initialCooldownSeconds}
+                                    onVerify={otpGate.verify}
+                                    onResend={otpGate.resend}
+                                    onVerified={() => {}}
+                                />
+                            ) : (
+                            <>
                             <div className={styles.sectionTitle}>Chọn phương thức thanh toán</div>
 
                             <div className={styles.paymentOptions}>
@@ -686,6 +752,8 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess }: PaymentM
                                     </div>
                                 </div>
                             </div>
+                            </>
+                            )}
                         </>
                     ) : null}
                 </div>

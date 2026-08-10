@@ -85,14 +85,24 @@ const ParentWallet = () => {
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>Tài chính của tôi</h1>
         <p className={styles.pageSubtitle}>Quản lý số dư, rút tiền và xem lịch sử giao dịch của bạn.</p>
-        <button
-          className={styles.withdrawBtn}
-          type="button"
-          onClick={() => setWithdrawOpen(true)}
-          disabled={balanceLoading || (balance?.balance ?? 0) <= 0}
-        >
-          Rút tiền
-        </button>
+        <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
+          <button
+            className={styles.withdrawBtn}
+            type="button"
+            style={{ marginTop: 0 }}
+            onClick={() => setWithdrawOpen(true)}
+            disabled={balanceLoading || (balance?.balance ?? 0) <= 0}
+          >
+            Rút tiền
+          </button>
+          <button
+            className={styles.secondaryBtn}
+            type="button"
+            onClick={() => navigate(`${portalBase}/wallet/bank-account`)}
+          >
+            Tài khoản ngân hàng
+          </button>
+        </div>
       </div>
 
       <WalletSummaryCards balance={balance} loading={balanceLoading} />

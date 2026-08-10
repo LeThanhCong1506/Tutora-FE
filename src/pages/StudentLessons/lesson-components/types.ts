@@ -33,6 +33,8 @@ export interface LessonSummary {
   hasRecording?: boolean;
   /** Yêu cầu dời lịch đang hiệu lực cho buổi này — "pending"/"approved", null nếu không có. */
   scheduleChangeStatus?: 'pending' | 'approved' | null;
+  /** True nếu buổi này đang có đề xuất đổi lịch (tính năng chủ động chọn giờ mới) chờ phản hồi. */
+  hasPendingReschedule?: boolean;
 }
 
 export interface LessonGroup {

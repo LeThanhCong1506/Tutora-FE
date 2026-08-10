@@ -1303,6 +1303,43 @@
   font-weight: 600;
 }
 
+/* Bank account OTP (save + delete) */
+.finance-bank-otp-wrap {
+  padding: 8px 0 4px;
+}
+
+.finance-otp-loading {
+  text-align: center;
+  padding: 32px 0;
+  color: rgba(48, 43, 40, 0.6);
+  font-size: 14px;
+}
+
+.finance-otp-error {
+  text-align: center;
+  color: #d4380d;
+  font-size: 14px;
+  margin: 12px 0 18px;
+}
+
+.finance-bank-delete-confirm {
+  text-align: center;
+  padding: 8px 0 4px;
+}
+
+.finance-bank-delete-confirm__icon {
+  font-size: 26px;
+  color: #d4380d;
+  margin-bottom: 10px;
+}
+
+.finance-bank-delete-confirm p {
+  color: var(--finance-navy);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+
 /* Create withdrawal */
 .finance-withdraw-flow {
   width: min(100%, 1120px);

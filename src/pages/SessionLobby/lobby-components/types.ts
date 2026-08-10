@@ -37,6 +37,12 @@ export interface ScheduleChangeState {
   canCurrentUserConfirm: boolean;
   currentUserConfirmed: boolean;
   admissionAllowed: boolean;
+  /**
+   * True nếu buổi học đang có đề xuất đổi lịch (tính năng chủ động chọn giờ mới) chờ phản hồi —
+   * cổng xác nhận vào học ngoài giờ bị khoá hoàn toàn, KHÔNG được cho vào phòng qua đường này
+   * dù `requiresConfirmation` là false.
+   */
+  rescheduleProposalPending?: boolean;
   status: 'pending' | 'approved' | 'applied' | 'rejected' | 'expired' | null;
   tutorUserId: string | null;
   learnerApproverUserId: string | null;

@@ -32,6 +32,9 @@ import {
   ListChecks,
 } from 'lucide-react';
 import { message as antMessage, Button, Radio } from 'antd';
+import { useLargeTransactionOtp } from '../../../hooks/useLargeTransactionOtp';
+import { setPendingRedirect } from '../../../services/auth.service';
+import PaymentOtpStep from '../../../components/PaymentOtpStep/PaymentOtpStep';
 
 const PaymentPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -56,6 +59,21 @@ const PaymentPage = () => {
   // nên nếu chỉ ẩn nút ở danh sách/chi tiết thì vào thẳng URL này vẫn trả được.
   const remainingLocked =
     !!summary && summary.paymentPhase === 'remaining' && !!booking && !isFirstLessonFinished(booking);
+
+  // Giao dịch lớn (≥ ngưỡng) của học sinh tự đăng ký → chặn bằng OTP qua Zalo ZNS tới SĐT phụ
+  // huynh. Chạy TỰ ĐỘNG ngay khi trang load xong (không đợi bấm "Thanh toán"). Với vai trò Parent,
+  // hook luôn trả về 'not_required' ngay lập tức — trang này KHÔNG BAO GIỜ hiện OTP cho phụ huynh.
+  const otpGate = useLargeTransactionOtp({
+    bookingId,
+    amount: summary?.amount ?? 0,
+    phase: summary?.paymentPhase ?? null,
+    ready: !loading && !!summary && !remainingLocked,
+    onNeedParentPhone: () => {
+      setPendingRedirect(`/student-portal/booking/${bookingId}/payment`);
+      navigate('/student-portal/profile?highlight=parent-phone');
+    },
+  });
+  const otpSettled = otpGate.status === 'not_required' || otpGate.status === 'verified';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -97,9 +115,11 @@ const PaymentPage = () => {
     if (bookingId) fetchData();
   }, [bookingId, navigate, inMiniApp]);
 
-  // Tạo link PayOS (lazy) chỉ khi user thực sự chọn "chuyển khoản ngân hàng".
+  // Tạo link PayOS (lazy) chỉ khi user thực sự chọn "chuyển khoản ngân hàng" — và (nếu là giao
+  // dịch lớn của học sinh tự đăng ký) chỉ sau khi đã xác thực OTP xong, tránh tạo link trước khi
+  // được phép trả.
   useEffect(() => {
-    if (paymentMethod !== 'payos' || paymentInfo || loading || remainingLocked) return;
+    if (paymentMethod !== 'payos' || paymentInfo || loading || remainingLocked || !otpSettled) return;
 
     let cancelled = false;
     (async () => {
@@ -116,6 +136,10 @@ const PaymentPage = () => {
           navigate(`/parent-portal/booking/${bookingId}`, { replace: true });
           return;
         }
+        if (isAxiosError(err) && err.response?.data?.errorCode === 'OTP_REQUIRED') {
+          otpGate.handlePaymentOtpRequired();
+          return;
+        }
         antMessage.error(
           (isAxiosError(err) ? err.response?.data?.message : null) || 'Không thể tạo liên kết thanh toán.',
         );
@@ -127,7 +151,8 @@ const PaymentPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [paymentMethod, paymentInfo, loading, remainingLocked, bookingId, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentMethod, paymentInfo, loading, remainingLocked, otpSettled, bookingId, navigate]);
 
   // Polling payment status for PayOS
   useEffect(() => {
@@ -171,7 +196,11 @@ const PaymentPage = () => {
       setPaymentSuccess(true);
       antMessage.success('Thanh toán bằng ví thành công!');
     } catch (error: unknown) {
-      antMessage.error((isAxiosError(error) ? error.response?.data?.message : null) || 'Có lỗi xảy ra khi thanh toán.');
+      if (isAxiosError(error) && error.response?.data?.errorCode === 'OTP_REQUIRED') {
+        otpGate.handlePaymentOtpRequired();
+      } else {
+        antMessage.error((isAxiosError(error) ? error.response?.data?.message : null) || 'Có lỗi xảy ra khi thanh toán.');
+      }
     } finally {
       setIsPaying(false);
     }
@@ -286,7 +315,9 @@ const PaymentPage = () => {
               </div>
               <div>
                 <span>Khoản thanh toán</span>
-                <strong>{summary?.paymentPhase === 'remaining' ? 'Các buổi còn lại' : 'Buổi học đầu tiên'}</strong>
+                <strong>
+                  {summary?.paymentPhase === 'remaining' ? 'Đợt 2 · Các buổi còn lại' : 'Đợt 1 · Buổi học đầu tiên'}
+                </strong>
               </div>
               <div>
                 <span>Số tiền</span>
@@ -337,7 +368,12 @@ const PaymentPage = () => {
         <button onClick={() => navigate('/parent-portal/booking', { replace: true })} className={styles.backBtn}>
           <ChevronLeft size={20} /> Quay lại
         </button>
-        <h1>Thanh toán khóa học</h1>
+        <div className={styles.titleGroup}>
+          <h1>Thanh toán khóa học</h1>
+          <span className={styles.phaseBadge}>
+            {summary?.paymentPhase === 'remaining' ? 'Đợt 2 · Các buổi còn lại' : 'Đợt 1 · Buổi học đầu tiên'}
+          </span>
+        </div>
       </div>
 
       <div className={styles.layout}>
@@ -367,8 +403,9 @@ const PaymentPage = () => {
             </div>
 
             <div className={styles.priceBreakdown}>
+              <p className={styles.breakdownSectionLabel}>Chi phí toàn khóa học ({booking?.sessionCount ?? 0} buổi)</p>
               <div className={styles.priceRow}>
-                <span>Học phí:</span>
+                <span>Học phí ({booking?.sessionCount ?? 0} buổi):</span>
                 <span>{formatPrice(booking?.price || 0)}</span>
               </div>
               {booking?.discountApplied && booking.discountApplied > 0 ? (
@@ -382,23 +419,39 @@ const PaymentPage = () => {
                   (booking?.finalPrice || 0) - ((booking?.price || 0) - (booking?.discountApplied || 0));
                 return parentFee > 0 ? (
                   <div className={styles.priceRow}>
-                    <span>Phí dịch vụ (5%):</span>
+                    <span className={styles.feeLabelStack}>
+                      Phí dịch vụ TUTORA (5%)
+                      <small>Phí duy trì &amp; bảo vệ giao dịch trên nền tảng</small>
+                    </span>
                     <span>+{formatPrice(parentFee)}</span>
                   </div>
                 ) : null;
               })()}
-              <div className={styles.priceRow}>
-                <span>Tổng:</span>
+              <div className={`${styles.priceRow} ${styles.grandTotalRow}`}>
+                <span>Tổng học phí toàn khóa:</span>
                 <span>{formatPrice(booking?.finalPrice || 0)}</span>
               </div>
-              <div className={`${styles.priceRow} ${styles.totalRow}`}>
-                <span>
-                  {summary?.paymentPhase === 'remaining'
-                    ? 'Thanh toán lần này (các buổi còn lại):'
-                    : 'Thanh toán lần này (buổi học đầu tiên):'}
-                </span>
-                <span className={styles.totalPrice}>{formatPrice(summary?.amount || 0)}</span>
-              </div>
+
+              {(() => {
+                const totalSessions = booking?.sessionCount ?? 0;
+                const remainingSessions = Math.max(totalSessions - 1, 0);
+                const isRemaining = summary?.paymentPhase === 'remaining';
+                return (
+                  <div className={styles.dueNowBox}>
+                    <span className={styles.dueNowLabel}>
+                      {isRemaining
+                        ? `Cần thanh toán hôm nay — Đợt 2 (${remainingSessions}/${totalSessions} buổi còn lại)`
+                        : `Cần thanh toán hôm nay — Đợt 1 (1/${totalSessions} buổi đầu tiên)`}
+                    </span>
+                    <span className={styles.totalPrice}>{formatPrice(summary?.amount || 0)}</span>
+                    <p className={styles.dueNowCaption}>
+                      {isRemaining
+                        ? 'Buổi học đầu tiên (Đợt 1) đã được thanh toán trước đó — số tiền trên chỉ là phần còn lại.'
+                        : `Đây là số tiền cho buổi học đầu tiên, KHÔNG phải tổng học phí toàn khóa ở trên. ${remainingSessions} buổi còn lại sẽ thanh toán riêng ở Đợt 2, sau khi buổi học đầu tiên kết thúc.`}
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
 
             <div className={styles.securityNote}>
@@ -411,6 +464,47 @@ const PaymentPage = () => {
         {/* Right Column: Payment Methods */}
         <main className={styles.main}>
           <div className={styles.card}>
+            {!otpSettled ? (
+              <>
+                <h2 className={styles.cardTitle}>Xác thực giao dịch</h2>
+                <div className={styles.checkoutSection}>
+                  {otpGate.status === 'checking' || otpGate.status === 'need_parent_phone' ? (
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '32px 0',
+                      }}
+                    >
+                      <div className={styles.spinner} aria-hidden="true" />
+                      <p style={{ color: '#6b7280', textAlign: 'center', margin: 0 }}>
+                        {otpGate.status === 'need_parent_phone'
+                          ? 'Đang chuyển sang trang hồ sơ để nhập số điện thoại phụ huynh...'
+                          : 'Đang kiểm tra bảo mật giao dịch...'}
+                      </p>
+                    </div>
+                  ) : otpGate.status === 'blocked' ? (
+                    <div className={styles.insufficientFunds}>
+                      <AlertCircle size={20} />
+                      <p>{otpGate.errorMessage}</p>
+                    </div>
+                  ) : otpGate.status === 'awaiting_otp' && summary ? (
+                    <PaymentOtpStep
+                      amount={summary.amount}
+                      phase={summary.paymentPhase}
+                      verifying={otpGate.verifying}
+                      initialCooldownSeconds={otpGate.initialCooldownSeconds}
+                      onVerify={otpGate.verify}
+                      onResend={otpGate.resend}
+                      onVerified={() => {}}
+                    />
+                  ) : null}
+                </div>
+              </>
+            ) : (
+            <>
             <h2 className={styles.cardTitle}>Chọn phương thức thanh toán</h2>
 
             <div className={styles.checkoutSection}>
@@ -632,6 +726,8 @@ const PaymentPage = () => {
                 )}
               </div>
             </div>
+            </>
+            )}
           </div>
         </main>
       </div>

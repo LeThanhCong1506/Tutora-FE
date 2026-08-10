@@ -6,8 +6,6 @@ import type {
     EarningsResponse,
     TransactionPagedResponse,
     TutorTransaction,
-    BankInfo,
-    UpdateBankInfoRequest,
     WithdrawalListResponse,
     WithdrawalDetail,
     CreateWithdrawalRequest
@@ -103,34 +101,8 @@ export const getTransactionDetail = async (id: number): Promise<TutorTransaction
     }
 };
 
-/**
- * Get current bank info
- */
-export const getBankInfo = async (): Promise<BankInfo> => {
-    try {
-        const { data } = await api.get('/tutor/bank');
-        return data.content;
-    } catch (error) {
-        throw error;
-    }
-};
-
-/**
- * Update bank info
- */
-export const updateBankInfo = async (request: UpdateBankInfoRequest): Promise<BankInfo> => {
-    const { data } = await api.put('/tutor/bank', request);
-    return data.content;
-};
-
-/**
- * Delete the tutor's saved bank account. Idempotent on the backend — deleting when
- * no account exists still succeeds (no 404). Past withdrawals keep their own bank
- * snapshot, so this never affects withdrawal history.
- */
-export const deleteBankInfo = async (): Promise<void> => {
-    await api.delete('/tutor/bank');
-};
+// Bank account get/save/delete moved to bankAccount.service.ts (api/bank-account) — shared with
+// Parent/Student, now OTP-gated. See getBankAccount/saveBankAccount/deleteBankAccount there.
 
 /**
  * Create a withdrawal request

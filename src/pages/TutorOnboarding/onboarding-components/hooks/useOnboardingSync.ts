@@ -227,6 +227,10 @@ export function useOnboardingSync(hydrate: HydrateFn) {
   );
 
   // ── Bước 2: Môn học & giá ──────────────────────────────────────
+  // Tự hiện toast dựa trên message thật của BE (không phải toast cố định ở nơi gọi) — vì khi hồ
+  // sơ đã active, BE không lưu thẳng vào DB mà chỉ đưa vào hàng chờ Admin duyệt (vẫn trả 200).
+  // Nếu nơi gọi tự hiện "Đã lưu thành công" mà không nhìn vào response, gia sư sẽ tưởng đã lưu
+  // xong trong khi thực ra đang chờ duyệt — đúng bug đã gặp phải.
   const savePricing = useCallback(async (subjectRecords: SubjectRecord[]): Promise<boolean> => {
     const userId = userIdRef.current;
     if (!userId) {
@@ -235,7 +239,13 @@ export function useOnboardingSync(hydrate: HydrateFn) {
     }
     setSaving(true);
     try {
-      await updatePricing(userId, recordsToPricingPayload(subjectRecords));
+      const response = await updatePricing(userId, recordsToPricingPayload(subjectRecords));
+      const pendingApproval = (response.content as { pendingApproval?: boolean } | null)?.pendingApproval === true;
+      if (pendingApproval) {
+        toast.info(response.message || 'Hồ sơ của bạn đã được duyệt trước đó nên thay đổi này cần Admin xác nhận lại.');
+      } else {
+        toast.success(response.message || 'Đã lưu môn học & giá');
+      }
       return true;
     } catch (err) {
       console.error('[Onboarding] savePricing:', err);

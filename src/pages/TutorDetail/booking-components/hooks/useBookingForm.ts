@@ -16,6 +16,11 @@ interface Args {
      * Used to lock the booking flow's mode when the tutor only supports one.
      */
     tutorTeachingMode?: string | null;
+    /**
+     * Booking đã tồn tại rồi (vừa quay lại từ /student-portal/profile sau khi lưu SĐT phụ huynh
+     * cho luồng OTP giao dịch lớn) — bỏ qua hẳn wizard 4 bước, mở thẳng bước thanh toán.
+     */
+    resumeBookingId?: number | null;
 }
 
 /**
@@ -52,7 +57,7 @@ const slotToUtcDateTimes = (slot: BookingSlot): FlexibleBookingSlotPayload => {
  * student fetching, and the submit flow. The orchestrator consumes this
  * hook and stays focused on rendering.
  */
-export function useBookingForm({ isOpen, tutorId, tutorTeachingMode }: Args) {
+export function useBookingForm({ isOpen, tutorId, tutorTeachingMode, resumeBookingId }: Args) {
     const userRole = getCurrentUserRole();
     const currentUserId = getUserIdFromToken();
     const lockedMode = resolveLockedMode(tutorTeachingMode);
@@ -187,6 +192,14 @@ export function useBookingForm({ isOpen, tutorId, tutorTeachingMode }: Args) {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen]);
+
+    // Booking đã tồn tại rồi (quay lại từ trang hồ sơ sau khi lưu SĐT phụ huynh cho luồng OTP
+    // giao dịch lớn) → bỏ qua wizard, mở thẳng bước thanh toán cho đúng booking đó.
+    useEffect(() => {
+        if (!isOpen || resumeBookingId == null) return;
+        setSuccessBookingId(resumeBookingId);
+        setBookingPhase('payment');
+    }, [isOpen, resumeBookingId]);
 
     // Auto-save draft on form data changes
     useEffect(() => {

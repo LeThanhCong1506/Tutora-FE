@@ -1,18 +1,18 @@
 import React from 'react';
-import { Button, Card, Empty, Popconfirm } from 'antd';
+import { Button, Card, Empty } from 'antd';
 import { BankOutlined, CalendarOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
-import { maskBankAccount } from '../../../../utils/formatters';
-import type { BankInfo } from '../../../../types/finance.types';
+import { maskBankAccount } from '../../utils/formatters';
+import type { BankAccount } from '../../services/bankAccount.service';
 
 interface Props {
-  bankInfo: BankInfo | null;
+  bankInfo: BankAccount | null;
   loading: boolean;
-  deleting?: boolean;
   onEdit: () => void;
-  onDelete?: () => void;
+  /** Mở modal xác nhận xoá (xác thực OTP trước khi xoá thật) — xem BankAccountDeleteModal. */
+  onDeleteClick?: () => void;
 }
 
-const BankInfoCard: React.FC<Props> = ({ bankInfo, loading, deleting, onEdit, onDelete }) => {
+const BankAccountCard: React.FC<Props> = ({ bankInfo, loading, onEdit, onDeleteClick }) => {
   const hasBankInfo = Boolean(bankInfo?.bankName && bankInfo?.accountNumber && bankInfo?.accountHolderName);
 
   if (loading) {
@@ -65,19 +65,10 @@ const BankInfoCard: React.FC<Props> = ({ bankInfo, loading, deleting, onEdit, on
           <Button icon={<EditOutlined />} onClick={onEdit}>
             Thay đổi
           </Button>
-          {onDelete && (
-            <Popconfirm
-              title="Xoá tài khoản ngân hàng?"
-              description="Bạn sẽ cần thêm lại tài khoản mới trước khi rút tiền lần sau."
-              okText="Xoá"
-              cancelText="Huỷ"
-              okButtonProps={{ danger: true, loading: deleting }}
-              onConfirm={onDelete}
-            >
-              <Button danger icon={<DeleteOutlined />} loading={deleting}>
-                Xoá
-              </Button>
-            </Popconfirm>
+          {onDeleteClick && (
+            <Button danger icon={<DeleteOutlined />} onClick={onDeleteClick}>
+              Xoá
+            </Button>
           )}
         </div>
       </div>
@@ -104,4 +95,4 @@ const BankInfoCard: React.FC<Props> = ({ bankInfo, loading, deleting, onEdit, on
   );
 };
 
-export default BankInfoCard;
+export default BankAccountCard;

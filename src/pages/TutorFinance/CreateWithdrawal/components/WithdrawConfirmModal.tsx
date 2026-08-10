@@ -2,12 +2,12 @@ import React from 'react';
 import { Alert, Descriptions, Divider, Modal } from 'antd';
 import { InfoCircleOutlined } from '@ant-design/icons';
 import { formatCurrency } from '../../../../utils/formatters';
-import type { BankInfo } from '../../../../types/finance.types';
+import type { BankAccount } from '../../../../services/bankAccount.service';
 
 interface Props {
   open: boolean;
   amount: number;
-  bankInfo: BankInfo | null;
+  bankInfo: BankAccount | null;
   onConfirm: () => void;
   onCancel: () => void;
   loading: boolean;

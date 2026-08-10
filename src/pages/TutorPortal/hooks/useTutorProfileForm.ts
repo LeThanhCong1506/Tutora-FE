@@ -595,6 +595,15 @@ export function useTutorProfileForm() {
             if (response.statusCode === 200) {
                 toast.success(response.message || 'Cập nhật giới thiệu thành công!');
 
+                // Hồ sơ đã active → BE chỉ lưu tạm chờ Admin duyệt, CHƯA áp dụng vào DB thật.
+                // Không refetch progress ở đây: dữ liệu trên server vẫn là bản CŨ, refetch sẽ
+                // ghi đè form về giá trị cũ ngay sau khi vừa "lưu" — trông như vừa nhập bị mất.
+                const pendingApproval = (response.content as { pendingApproval?: boolean } | null)?.pendingApproval === true;
+                if (pendingApproval) {
+                    setLastSaved(new Date());
+                    return true;
+                }
+
                 // Refetch progress to get updated data
                 const progressResponse = await getVerificationProgress(userId);
 
@@ -774,6 +783,15 @@ export function useTutorProfileForm() {
 
             if (response.statusCode === 200) {
                 toast.success(response.message || 'Cập nhật thông tin thành công!');
+
+                // Hồ sơ đã active → BE chỉ lưu tạm chờ Admin duyệt, CHƯA áp dụng vào DB thật.
+                // Không refetch progress ở đây: dữ liệu trên server vẫn là bản CŨ, refetch sẽ
+                // ghi đè form về giá trị cũ ngay sau khi vừa "lưu" — trông như vừa nhập bị mất.
+                const pendingApproval = (response.content as { pendingApproval?: boolean } | null)?.pendingApproval === true;
+                if (pendingApproval) {
+                    setLastSaved(new Date());
+                    return true;
+                }
 
                 // Refetch progress to get updated data
                 const progressResponse = await getVerificationProgress(userId);

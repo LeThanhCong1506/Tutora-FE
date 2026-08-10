@@ -11,7 +11,7 @@ import {
   getStudentLessons,
 } from '../../services/student-lesson.service';
 import { getUserInfoFromToken } from '../../services/auth.service';
-import { canJoinLiveSession } from '../../utils/liveSession';
+import { canJoinLiveSession, isWithinJoinWindow } from '../../utils/liveSession';
 import { isZaloMiniApp } from '../../services/zalo-env';
 import { StatCard } from '../../components/shared';
 import styles from './styles.module.css';
@@ -325,14 +325,15 @@ const StudentDashboard = () => {
                           {startTime ? dayjs(startTime).format('HH:mm') : ''} -{' '}
                           {endTime ? dayjs(endTime).format('HH:mm') : ''}
                         </div>
-                        {canJoin && (
+                        {/* Chỉ hiện khi đã gần giờ học (trong 15 phút) hoặc đang diễn ra — còn xa thì ẩn hẳn. */}
+                        {canJoin && (isInProgress || isWithinJoinWindow(startTime)) && (
                           <Link
                             to={`/session-lobby/${lesson.lessonId}`}
                             className={styles.joinBtn}
                             onClick={(e) => e.stopPropagation()}
                           >
                             <Video size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
-                            Tham gia ngay
+                            Vào nhanh
                           </Link>
                         )}
                       </div>

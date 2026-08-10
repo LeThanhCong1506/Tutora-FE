@@ -40,6 +40,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
     availabilities,
     tutorTeachingMode,
     combos = [],
+    resumeBookingId,
 }) => {
     const navigate = useNavigate();
     const {
@@ -62,7 +63,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         handlePaymentSuccess,
         deferPayment,
         resumePayment,
-    } = useBookingForm({ isOpen, tutorId, tutorTeachingMode });
+    } = useBookingForm({ isOpen, tutorId, tutorTeachingMode, resumeBookingId });
 
     const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
     const subjectGradePrices = useMemo(() => rawSubjectGradePrices ?? [], [rawSubjectGradePrices]);
@@ -209,6 +210,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 isOpen
                 onClose={deferPayment}
                 onPaymentSuccess={handlePaymentSuccess}
+                tutorId={tutorId}
             />
         );
     }

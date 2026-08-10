@@ -23,6 +23,7 @@ export const parentProfileMenuItems: ProfileMenuItem[] = [
     { key: '/parent-portal/messages', label: 'Tin nhắn', materialIcon: 'chat' },
     { key: '/parent-portal/wallet', label: 'Ví của tôi', materialIcon: 'account_balance_wallet' },
     { key: '/parent-portal/wallet/transactions', label: 'Lịch sử giao dịch', materialIcon: 'receipt_long' },
+    { key: '/parent-portal/wallet/bank-account', label: 'Tài khoản ngân hàng', materialIcon: 'account_balance' },
     { key: '/parent-portal/notifications', label: 'Thông báo', materialIcon: 'notifications', startsGroup: true },
     { key: '/parent-portal/disputes', label: 'Khiếu nại', materialIcon: 'gavel' },
 ];
@@ -32,6 +33,12 @@ export const studentWalletMenuItem: ProfileMenuItem = {
     key: '/student-portal/wallet',
     label: 'Ví của tôi',
     materialIcon: 'account_balance_wallet',
+};
+
+export const studentBankAccountMenuItem: ProfileMenuItem = {
+    key: '/student-portal/wallet/bank-account',
+    label: 'Tài khoản ngân hàng',
+    materialIcon: 'account_balance',
 };
 
 export const studentDisputesMenuItem: ProfileMenuItem = {
@@ -56,7 +63,7 @@ export const buildStudentProfileMenuItems = (
         { key: '/student-portal/calendar', label: 'Thời khóa biểu', materialIcon: 'calendar_month', startsGroup: true },
         { key: '/student-portal/booking', label: 'Đặt lịch học', materialIcon: 'event_available' },
         { key: '/student-portal/messages', label: 'Tin nhắn', materialIcon: 'chat' },
-        ...(showWallet ? [studentWalletMenuItem] : []),
+        ...(showWallet ? [studentWalletMenuItem, studentBankAccountMenuItem] : []),
         { key: '/student-portal/notifications', label: 'Thông báo', materialIcon: 'notifications', startsGroup: true },
         ...(showDisputes ? [studentDisputesMenuItem] : []),
     ];

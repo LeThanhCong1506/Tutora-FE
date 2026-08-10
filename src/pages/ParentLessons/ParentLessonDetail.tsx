@@ -13,6 +13,8 @@ import {
   type DisputeMessage,
   getParentScheduleChange,
   respondParentScheduleChange,
+  proposeParentReschedule,
+  respondParentReschedule,
   type ReportAttachment,
   type ScheduleChangeAuditDto,
   type SessionScheduleChangeResponse,
@@ -32,6 +34,7 @@ import {
   buildSessionTimeline,
   ClassSessionRecording,
   PageContainer,
+  RescheduleProposalModal,
   SectionCard,
   SessionTimeline,
   StatusBadge,
@@ -58,6 +61,13 @@ const SCHEDULE_CHANGE_STATUS_LABELS: Record<string, string> = {
   rejected: 'Đã từ chối',
   expired: 'Đã hết hạn',
   pending: 'Đang chờ xác nhận',
+};
+
+const RESCHEDULE_PROPOSAL_STATUS_LABELS: Record<string, string> = {
+  pending: 'Đang chờ phản hồi',
+  accepted: 'Đã đồng ý',
+  rejected: 'Đã từ chối',
+  expired: 'Đã hết hạn',
 };
 
 // Dùng chung bộ format với trang khiếu nại: "HH:mm", "DD/MM/YYYY", "HH:mm DD/MM/YYYY".
@@ -89,6 +99,8 @@ const ParentLessonDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [scheduleChange, setScheduleChange] = useState<SessionScheduleChangeResponse | null>(null);
   const [submittingScheduleDecision, setSubmittingScheduleDecision] = useState(false);
+  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+  const [respondingReschedule, setRespondingReschedule] = useState(false);
 
   // Modal states
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -227,6 +239,27 @@ const ParentLessonDetail: React.FC = () => {
       setSubmittingScheduleDecision(false);
     }
   };
+  const handleProposeReschedule = async (proposedScheduledStart: string, reason?: string) => {
+    if (!id) return;
+    await proposeParentReschedule(id, proposedScheduledStart, reason);
+    setRescheduleModalOpen(false);
+    await fetchLesson();
+  };
+
+  const handleRespondReschedule = async (accepted: boolean) => {
+    if (!id) return;
+    setRespondingReschedule(true);
+    try {
+      await respondParentReschedule(id, accepted);
+      await fetchLesson();
+      toast.success(accepted ? 'Đã đồng ý đổi lịch học.' : 'Đã từ chối đề xuất đổi lịch.');
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error) || 'Không thể xử lý yêu cầu đổi lịch.');
+    } finally {
+      setRespondingReschedule(false);
+    }
+  };
+
   const handleActionSuccess = () => {
     setShowConfirmModal(false);
     setShowDisputeForm(false);
@@ -295,6 +328,10 @@ const ParentLessonDetail: React.FC = () => {
   const showNoShowAction = lesson.status === 'scheduled';
   const showNoShowResolution = lesson.status === 'no_show' && dispute?.status === 'confirmed_no_show';
   const showReportTutorAction = lesson.status === 'completed' && !dispute && canCreateDispute;
+  const pendingReschedule = lesson.pendingRescheduleProposal;
+  const canProposeReschedule = lesson.status === 'scheduled' && !pendingReschedule;
+  const isRescheduleCounterpart = pendingReschedule?.counterpartRole === 'Parent';
+  const isRescheduleProposer = pendingReschedule?.proposedByRole === 'Parent';
 
   return (
     <PageContainer className={pageClassName}>
@@ -347,6 +384,11 @@ const ParentLessonDetail: React.FC = () => {
           {showReportTutorAction && (
             <Button danger onClick={() => setShowDisputeForm(true)}>
               Báo cáo gia sư
+            </Button>
+          )}
+          {canProposeReschedule && (
+            <Button icon={<CalendarClock size={16} />} onClick={() => setRescheduleModalOpen(true)}>
+              Đề xuất đổi lịch
             </Button>
           )}
         </div>
@@ -471,6 +513,55 @@ const ParentLessonDetail: React.FC = () => {
           </div>
         </SectionCard>
       )}
+
+      {pendingReschedule && (
+        <SectionCard
+          title="Đề xuất đổi lịch học"
+          headerAction={<CalendarClock size={18} color="#8a6116" aria-hidden="true" />}
+        >
+          <div className={styles.sectionBody}>
+            <p className={styles.sectionLead}>
+              {pendingReschedule.proposedByName ?? 'Người đề xuất'} muốn dời buổi học sang{' '}
+              {formatDate(pendingReschedule.proposedScheduledStart)} · {formatTime(pendingReschedule.proposedScheduledStart)}
+              {pendingReschedule.reason ? ` — Lý do: ${pendingReschedule.reason}` : ''}
+            </p>
+            {isRescheduleCounterpart ? (
+              <div className={styles.decisionRow}>
+                <Button
+                  danger
+                  icon={<XCircle size={16} />}
+                  loading={respondingReschedule}
+                  onClick={() => void handleRespondReschedule(false)}
+                >
+                  Từ chối
+                </Button>
+                <Button
+                  type="primary"
+                  className={styles.primaryAction}
+                  icon={<CheckCircle2 size={16} />}
+                  loading={respondingReschedule}
+                  onClick={() => void handleRespondReschedule(true)}
+                >
+                  Đồng ý đổi lịch
+                </Button>
+              </div>
+            ) : isRescheduleProposer ? (
+              <div className={`${styles.notice} ${styles.noticeInfo} ${styles.blockGap}`}>
+                Đang chờ {pendingReschedule.counterpartName ?? 'phía còn lại'} phản hồi (hạn{' '}
+                {formatDateTime(pendingReschedule.expiresAt)}).
+              </div>
+            ) : null}
+          </div>
+        </SectionCard>
+      )}
+
+      <RescheduleProposalModal
+        open={rescheduleModalOpen}
+        currentScheduledStart={lesson.scheduledStart}
+        onSubmit={handleProposeReschedule}
+        onCancel={() => setRescheduleModalOpen(false)}
+        accentColor="#3e2f28"
+      />
 
       <div className={styles.contentGrid}>
         <div className={styles.primaryColumn}>
@@ -709,8 +800,43 @@ const ParentLessonDetail: React.FC = () => {
           </SectionCard>
 
           {/* Bản tóm tắt cố định, khác với thẻ "cần xác nhận" ở trên (thẻ đó tự ẩn sau khi xử lý xong). */}
+          {Array.isArray(lesson.rescheduleProposals) && lesson.rescheduleProposals.length > 0 && (
+            <SectionCard title="Lịch sử đổi lịch học">
+              <div className={styles.sectionBody}>
+                <div className={styles.historyList}>
+                  {lesson.rescheduleProposals.map((proposal) => (
+                    <div key={proposal.rescheduleProposalId} className={styles.historyItem}>
+                      <div className={styles.historyTop}>
+                        <StatusBadge
+                          variant={
+                            proposal.status === 'rejected' || proposal.status === 'expired'
+                              ? 'neutral'
+                              : proposal.status === 'pending'
+                                ? 'warning'
+                                : 'success'
+                          }
+                          shape="tag"
+                        >
+                          {RESCHEDULE_PROPOSAL_STATUS_LABELS[proposal.status] || proposal.status}
+                        </StatusBadge>
+                        {proposal.respondedAt && (
+                          <span className={styles.historyTime}>Phản hồi lúc {formatDateTime(proposal.respondedAt)}</span>
+                        )}
+                      </div>
+                      <div className={styles.historyRange}>
+                        {proposal.proposedByName ?? 'Người đề xuất'} đề xuất dời sang{' '}
+                        {formatDate(proposal.proposedScheduledStart)}, {formatTime(proposal.proposedScheduledStart)}
+                      </div>
+                      {proposal.reason && <div className={styles.historyMeta}><span>Lý do: {proposal.reason}</span></div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </SectionCard>
+          )}
+
           {Array.isArray(lesson.scheduleChanges) && lesson.scheduleChanges.length > 0 && (
-            <SectionCard title="Lịch sử dời lịch">
+            <SectionCard title="Lịch sử vào học ngoài giờ">
               <div className={styles.sectionBody}>
                 <div className={styles.historyList}>
                   {lesson.scheduleChanges.map((sc: ScheduleChangeAuditDto) => (
