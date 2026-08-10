@@ -1,24 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { Modal } from 'antd';
 import { CheckCircleFilled, InfoCircleOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
-import { toast } from 'react-toastify';
-import { getBankInfo, deleteBankInfo } from '../../../services/tutorFinance.service';
-import type { BankInfo } from '../../../types/finance.types';
+import { getBankAccount, type BankAccount } from '../../../services/bankAccount.service';
 import FinancePageShell from '../components/FinancePageShell';
-import BankInfoCard from './components/BankInfoCard';
-import BankInfoForm from './components/BankInfoForm';
+import BankAccountCard from '../../../components/BankAccount/BankAccountCard';
+import BankAccountForm from '../../../components/BankAccount/BankAccountForm';
+import BankAccountDeleteModal from '../../../components/BankAccount/BankAccountDeleteModal';
 import '../../../styles/pages/tutor-finance.css';
 
 const BankInfoManagementPage: React.FC = () => {
-  const [bankInfo, setBankInfo] = useState<BankInfo | null>(null);
+  const [bankInfo, setBankInfo] = useState<BankAccount | null>(null);
   const [loading, setLoading] = useState(true);
-  const [deleting, setDeleting] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const info = await getBankInfo();
+      const info = await getBankAccount();
       setBankInfo(info);
     } catch (error) {
       console.error('Failed to fetch bank info:', error);
@@ -36,18 +35,9 @@ const BankInfoManagementPage: React.FC = () => {
     fetchData();
   };
 
-  const handleDelete = async () => {
-    setDeleting(true);
-    try {
-      await deleteBankInfo();
-      toast.success('Đã xoá tài khoản ngân hàng.');
-      await fetchData();
-    } catch (error) {
-      console.error('Failed to delete bank info:', error);
-      toast.error('Không thể xoá tài khoản ngân hàng. Vui lòng thử lại.');
-    } finally {
-      setDeleting(false);
-    }
+  const handleDeleteSuccess = () => {
+    setIsDeleteModalOpen(false);
+    fetchData();
   };
 
   return (
@@ -56,12 +46,11 @@ const BankInfoManagementPage: React.FC = () => {
       subtitle="Quản lý tài khoản nhận tiền khi yêu cầu rút thu nhập từ TUTORA."
     >
       <div className="finance-bank-layout">
-        <BankInfoCard
+        <BankAccountCard
           bankInfo={bankInfo}
           loading={loading}
-          deleting={deleting}
           onEdit={() => setIsEditModalOpen(true)}
-          onDelete={handleDelete}
+          onDeleteClick={() => setIsDeleteModalOpen(true)}
         />
 
         <aside className="finance-surface finance-policy-card">
@@ -97,8 +86,8 @@ const BankInfoManagementPage: React.FC = () => {
           <div className="finance-security-note">
             <SafetyCertificateOutlined aria-hidden="true" />
             <div>
-              <strong>Kiểm tra kỹ trước khi lưu</strong>
-              <span>Thông tin sai có thể khiến giao dịch bị chậm hoặc chuyển nhầm tài khoản.</span>
+              <strong>Mọi thay đổi đều cần xác thực OTP</strong>
+              <span>Bảo vệ bạn khỏi bị đổi tài khoản nhận tiền nếu chẳng may lộ tài khoản đăng nhập.</span>
             </div>
           </div>
         </aside>
@@ -114,8 +103,14 @@ const BankInfoManagementPage: React.FC = () => {
         centered
         width={620}
       >
-        <BankInfoForm bankInfo={bankInfo} onSuccess={handleUpdateSuccess} onCancel={() => setIsEditModalOpen(false)} />
+        <BankAccountForm bankInfo={bankInfo} onSuccess={handleUpdateSuccess} onCancel={() => setIsEditModalOpen(false)} />
       </Modal>
+
+      <BankAccountDeleteModal
+        open={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onSuccess={handleDeleteSuccess}
+      />
     </FinancePageShell>
   );
 };

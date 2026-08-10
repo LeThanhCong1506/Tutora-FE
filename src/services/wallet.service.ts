@@ -245,11 +245,13 @@ export const getTransactionDetail = async (
 
 // Rút tiền (phụ huynh)
 
+/**
+ * Tài khoản nhận tiền không còn gõ tay ở đây nữa — luôn là BankAccount đã lưu của người dùng
+ * (xem bankAccount.service.ts). BE ném BankInfoRequiredException (errorCode BANK_ACCOUNT_REQUIRED)
+ * nếu chưa lưu tài khoản nào.
+ */
 export interface CreateWithdrawalRequest {
   amount: number;
-  bankName: string;
-  accountNumber: string;
-  accountHolderName: string;
 }
 
 export interface WithdrawalDetail {

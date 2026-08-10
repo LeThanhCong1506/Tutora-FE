@@ -45,15 +45,8 @@ export interface TransactionPagedResponse {
     pageSize: number;
 }
 
-/**
- * Tutor bank information
- */
-export interface BankInfo {
-    bankName: string | null;
-    accountNumber: string | null;
-    accountHolderName: string | null;
-    bankChangedAt: string | null;
-}
+// Bank account types moved to services/bankAccount.service.ts (BankAccount, SaveBankAccountRequest)
+// — now shared across Tutor/Parent/Student, not tutor-specific.
 
 /**
  * List of supported banks
@@ -113,13 +106,4 @@ export interface WithdrawalDetail {
  */
 export interface CreateWithdrawalRequest {
     amount: number;
-}
-
-/**
- * Request model for updating bank info
- */
-export interface UpdateBankInfoRequest {
-    bankName: string;
-    accountNumber: string;
-    accountHolderName: string;
 }

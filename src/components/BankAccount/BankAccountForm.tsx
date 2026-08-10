@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Alert, Button, Form, Input } from 'antd';
 import { InfoCircleOutlined } from '@ant-design/icons';
-import { updateBankInfo } from '../../../../services/tutorFinance.service';
-import BankSelectDropdown from './BankSelectDropdown';
-import type { BankInfo } from '../../../../types/finance.types';
 import { toast } from 'react-toastify';
+import BankSelectDropdown from './BankSelectDropdown';
+import PaymentOtpStep from '../PaymentOtpStep/PaymentOtpStep';
+import { useBankAccountOtp } from '../../hooks/useBankAccountOtp';
+import { saveBankAccount, type BankAccount, type SaveBankAccountRequest } from '../../services/bankAccount.service';
 
 interface Props {
-  bankInfo: BankInfo | null;
+  bankInfo: BankAccount | null;
   onSuccess: () => void;
   onCancel: () => void;
 }
@@ -16,18 +17,31 @@ interface Props {
 const normalizeHolderName = (value: string): string =>
   value.normalize('NFD').replace(/\p{M}/gu, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toUpperCase();
 
-const BankInfoForm: React.FC<Props> = ({ bankInfo, onSuccess, onCancel }) => {
+/**
+ * Form lưu tài khoản ngân hàng — dùng chung Tutor/Parent/Student. Bấm "Lưu thông tin" KHÔNG lưu
+ * ngay: gửi OTP tới SĐT riêng của chính người dùng trước, form ẩn đi và thay bằng màn nhập OTP;
+ * xác thực xong mới thực sự gọi lưu (tự động, không cần bấm thêm lần nữa).
+ */
+const BankAccountForm: React.FC<Props> = ({ bankInfo, onSuccess, onCancel }) => {
   const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [pendingValues, setPendingValues] = useState<SaveBankAccountRequest | null>(null);
+  const otp = useBankAccountOtp();
 
   const handleFinish = async (values: { bankName: string; accountNumber: string; accountHolderName: string }) => {
-    setLoading(true);
+    setPendingValues({
+      bankName: values.bankName,
+      accountNumber: values.accountNumber.trim(),
+      accountHolderName: values.accountHolderName.trim(),
+    });
+    await otp.start();
+  };
+
+  const handleVerified = async () => {
+    if (!pendingValues) return;
+    setSaving(true);
     try {
-      await updateBankInfo({
-        bankName: values.bankName,
-        accountNumber: values.accountNumber.trim(),
-        accountHolderName: values.accountHolderName.trim(),
-      });
+      await saveBankAccount(pendingValues);
       toast.success('Cập nhật thông tin ngân hàng thành công.');
       onSuccess();
     } catch (error: unknown) {
@@ -35,10 +49,45 @@ const BankInfoForm: React.FC<Props> = ({ bankInfo, onSuccess, onCancel }) => {
         (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
         'Không thể cập nhật thông tin ngân hàng. Vui lòng thử lại.';
       toast.error(message);
+      otp.reset();
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  if (otp.status === 'blocked') {
+    return (
+      <div className="finance-bank-otp-wrap">
+        <p className="finance-otp-error">{otp.errorMessage}</p>
+        <Button onClick={onCancel}>Đóng</Button>
+      </div>
+    );
+  }
+
+  if (otp.status !== 'idle') {
+    return (
+      <div className="finance-bank-otp-wrap">
+        {otp.status === 'sending' ? (
+          <div className="finance-otp-loading">Đang gửi mã OTP...</div>
+        ) : (
+          <PaymentOtpStep
+            title="Xác thực tài khoản ngân hàng"
+            description={
+              <>
+                Để bảo vệ tài khoản của bạn, vui lòng nhập mã OTP đã được gửi qua Zalo tới{' '}
+                <strong>số điện thoại của bạn</strong>.
+              </>
+            }
+            verifying={otp.verifying || saving}
+            initialCooldownSeconds={otp.initialCooldownSeconds}
+            onVerify={otp.verify}
+            onResend={otp.resend}
+            onVerified={handleVerified}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <Form
@@ -54,7 +103,7 @@ const BankInfoForm: React.FC<Props> = ({ bankInfo, onSuccess, onCancel }) => {
     >
       <Alert
         message="Tài khoản nhận tiền rút"
-        description="Đây là tài khoản ngân hàng nhận tiền khi bạn tạo yêu cầu rút tiền. Vui lòng kiểm tra kỹ thông tin — chuyển khoản sai do thông tin không chính xác sẽ khó thu hồi."
+        description="Đây là tài khoản ngân hàng nhận tiền khi bạn tạo yêu cầu rút tiền. Vui lòng kiểm tra kỹ thông tin — chuyển khoản sai do thông tin không chính xác sẽ khó thu hồi. Mọi thay đổi đều cần xác thực OTP."
         type="info"
         showIcon
         icon={<InfoCircleOutlined />}
@@ -102,10 +151,10 @@ const BankInfoForm: React.FC<Props> = ({ bankInfo, onSuccess, onCancel }) => {
       </Form.Item>
 
       <div className="finance-form-actions">
-        <Button size="large" onClick={onCancel} disabled={loading}>
+        <Button size="large" onClick={onCancel}>
           Hủy bỏ
         </Button>
-        <Button type="primary" htmlType="submit" loading={loading} size="large" className="finance-primary-action">
+        <Button type="primary" htmlType="submit" size="large" className="finance-primary-action">
           Lưu thông tin
         </Button>
       </div>
@@ -113,4 +162,4 @@ const BankInfoForm: React.FC<Props> = ({ bankInfo, onSuccess, onCancel }) => {
   );
 };
 
-export default BankInfoForm;
+export default BankAccountForm;

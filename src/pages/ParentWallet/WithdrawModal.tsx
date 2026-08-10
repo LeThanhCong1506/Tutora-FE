@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, maskBankAccount } from '../../utils/formatters';
 import { createWithdrawal } from '../../services/wallet.service';
-import { getBankList } from '../../services/bankVerification.service';
-import type { BankListItem } from '../../types/finance.types';
+import { getBankAccount, type BankAccount } from '../../services/bankAccount.service';
+import { setPendingRedirect } from '../../services/auth.service';
 import styles from './styles.module.css';
 
 interface Props {
@@ -14,53 +15,71 @@ interface Props {
 
 const MIN_WITHDRAWAL = 10000;
 
-const normalizeHolderName = (value: string): string =>
-  value.normalize('NFD').replace(/\p{M}/gu, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toUpperCase();
-
+/**
+ * Tài khoản nhận tiền giờ LUÔN là tài khoản ngân hàng đã lưu (giống Tutor) — không còn gõ tay mỗi
+ * lần rút tiền, vì mọi thay đổi tài khoản ngân hàng giờ bắt buộc qua OTP (xem BankAccountForm).
+ * Chưa lưu tài khoản nào → chặn rút tiền, dẫn đi lưu tài khoản trước.
+ */
 const WithdrawModal = ({ availableBalance, onClose, onSuccess }: Props) => {
-  const [banks, setBanks] = useState<BankListItem[]>([]);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const portalBase = location.pathname.startsWith('/student-portal') ? '/student-portal' : '/parent-portal';
+
+  const [bankAccount, setBankAccount] = useState<BankAccount | null>(null);
+  const [loadingAccount, setLoadingAccount] = useState(true);
   const [amount, setAmount] = useState('');
-  const [bankName, setBankName] = useState('');
-  const [accountNumber, setAccountNumber] = useState('');
-  const [accountHolderName, setAccountHolderName] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    getBankList()
-      .then(setBanks)
+    let mounted = true;
+    getBankAccount()
+      .then((info) => {
+        if (mounted) setBankAccount(info);
+      })
       .catch(() => {
-        /* dropdown vẫn dùng được ở chế độ nhập tay nếu list lỗi */
+        if (mounted) setBankAccount(null);
+      })
+      .finally(() => {
+        if (mounted) setLoadingAccount(false);
       });
+    return () => {
+      mounted = false;
+    };
   }, []);
+
+  const hasBankAccount = Boolean(
+    bankAccount?.bankName && bankAccount?.accountNumber && bankAccount?.accountHolderName,
+  );
 
   const amountNumber = Number(amount);
   const amountValid =
     !Number.isNaN(amountNumber) &&
     amountNumber >= MIN_WITHDRAWAL &&
     amountNumber <= availableBalance;
-  const formValid =
-    amountValid &&
-    bankName.trim() &&
-    /^\d{8,19}$/.test(accountNumber.trim()) &&
-    /^[A-Z\s]+$/.test(accountHolderName.trim());
+  const formValid = amountValid && hasBankAccount;
+
+  // Lưu lại đúng chỗ đang đứng (trang ví) để có thể quay lại sau khi lưu tài khoản ngân hàng —
+  // KHÔNG tự mở lại modal này (không có URL riêng để resume), người dùng tự bấm "Rút tiền" lại.
+  const goAddBankAccount = () => {
+    setPendingRedirect(location.pathname);
+    navigate(`${portalBase}/wallet/bank-account`);
+  };
 
   const handleSubmit = async () => {
     if (!formValid || submitting) return;
     setSubmitting(true);
     try {
-      await createWithdrawal({
-        amount: amountNumber,
-        bankName: bankName.trim(),
-        accountNumber: accountNumber.trim(),
-        accountHolderName: accountHolderName.trim(),
-      });
+      await createWithdrawal({ amount: amountNumber });
       toast.success('Đã gửi yêu cầu rút tiền, đang chờ xét duyệt.');
       onSuccess();
     } catch (error: unknown) {
-      const message =
-        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Không thể gửi yêu cầu rút tiền. Vui lòng thử lại.';
-      toast.error(message);
+      const apiError = error as { response?: { data?: { errorCode?: string; message?: string } } };
+      if (apiError.response?.data?.errorCode === 'BANK_ACCOUNT_REQUIRED') {
+        toast.error('Bạn chưa có tài khoản ngân hàng đã lưu.');
+        goAddBankAccount();
+        return;
+      }
+      toast.error(apiError.response?.data?.message || 'Không thể gửi yêu cầu rút tiền. Vui lòng thử lại.');
     } finally {
       setSubmitting(false);
     }
@@ -102,48 +121,26 @@ const WithdrawModal = ({ availableBalance, onClose, onSuccess }: Props) => {
           </label>
 
           <label className={styles.field}>
-            <span className={styles.fieldLabel}>Ngân hàng</span>
-            <select
-              className={styles.input}
-              value={bankName}
-              onChange={(e) => setBankName(e.target.value)}
-            >
-              <option value="">-- Chọn ngân hàng --</option>
-              {banks.map((b) => (
-                <option key={b.code} value={b.shortName || b.fullName}>
-                  {b.shortName ? `${b.shortName} — ${b.fullName}` : b.fullName}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className={styles.field}>
-            <span className={styles.fieldLabel}>Số tài khoản</span>
-            <input
-              className={styles.input}
-              type="text"
-              inputMode="numeric"
-              placeholder="Nhập số tài khoản nhận tiền"
-              value={accountNumber}
-              onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 19))}
-            />
-            {accountNumber !== '' && !/^\d{8,19}$/.test(accountNumber) && (
-              <span className={styles.fieldError}>Số tài khoản gồm 8-19 chữ số.</span>
-            )}
-          </label>
-
-          <label className={styles.field}>
-            <span className={styles.fieldLabel}>Tên chủ tài khoản</span>
-            <input
-              className={styles.input}
-              type="text"
-              placeholder="VD: NGUYEN VAN A"
-              value={accountHolderName}
-              onChange={(e) => setAccountHolderName(normalizeHolderName(e.target.value))}
-            />
-            {accountHolderName !== '' && !/^[A-Z\s]+$/.test(accountHolderName) && (
+            <span className={styles.fieldLabel}>Tài khoản nhận tiền</span>
+            {loadingAccount ? (
+              <div className={styles.input}>Đang tải...</div>
+            ) : hasBankAccount ? (
+              <div className={styles.input}>
+                <strong>{bankAccount!.bankName}</strong>
+                <span style={{ display: 'block' }}>
+                  {maskBankAccount(bankAccount!.accountNumber || '')} — {bankAccount!.accountHolderName}
+                </span>
+              </div>
+            ) : (
               <span className={styles.fieldError}>
-                Tên chủ tài khoản chỉ gồm chữ cái không dấu và khoảng trắng.
+                Bạn chưa có tài khoản ngân hàng đã lưu.{' '}
+                <button
+                  type="button"
+                  onClick={goAddBankAccount}
+                  style={{ textDecoration: 'underline', background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'inherit' }}
+                >
+                  Thêm tài khoản ngân hàng
+                </button>
               </span>
             )}
           </label>
