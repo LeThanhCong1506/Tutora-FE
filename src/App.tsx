@@ -74,6 +74,7 @@ const BookingDetail = lazy(() => import('./pages/ParentBooking/Details'));
 const ParentWallet = lazy(() => import('./pages/ParentWallet'));
 const ParentWalletTransactions = lazy(() => import('./pages/ParentWallet/AllTransactionsPage'));
 const ParentWalletWithdrawals = lazy(() => import('./pages/ParentWallet/WithdrawalRequestsPage'));
+const ParentWalletWithdrawalDetail = lazy(() => import('./pages/ParentWallet/WithdrawalDetailPage'));
 // Dùng chung Parent/Student — xem BankAccountPage.tsx (tương tự StudentWallet tái dùng ParentWallet).
 const BankAccountPage = lazy(() => import('./pages/ParentWallet/BankAccountPage'));
 const ParentMessage = lazy(() => import('./pages/ParentMessage'));
@@ -321,6 +322,7 @@ function App() {
               <Route path="wallet" element={<ParentWallet />} />
               <Route path="wallet/transactions" element={<ParentWalletTransactions />} />
               <Route path="wallet/withdrawals" element={<ParentWalletWithdrawals />} />
+              <Route path="wallet/withdrawals/:id" element={<ParentWalletWithdrawalDetail />} />
               <Route path="wallet/bank-account" element={<BankAccountPage />} />
               <Route path="messages" element={<ParentMessage />} />
               <Route path="lessons" element={<ParentLessons />} />
@@ -356,6 +358,7 @@ function App() {
                   <Route path="wallet" element={<StudentWallet />} />
                   <Route path="wallet/transactions" element={<ParentWalletTransactions />} />
                   <Route path="wallet/withdrawals" element={<ParentWalletWithdrawals />} />
+                  <Route path="wallet/withdrawals/:id" element={<ParentWalletWithdrawalDetail />} />
                   <Route path="wallet/bank-account" element={<BankAccountPage />} />
                   <Route path="disputes" element={<StudentDisputes />} />
                 </Route>
