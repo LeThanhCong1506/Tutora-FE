@@ -94,14 +94,24 @@ const StudentWallet = () => {
         <p className={parentStyles.pageSubtitle}>
           Số dư được hoàn khi buổi học bị hủy. Ví học sinh không nạp tiền.
         </p>
-        <button
-          className={parentStyles.withdrawBtn}
-          type="button"
-          onClick={() => setWithdrawOpen(true)}
-          disabled={balanceLoading || available <= 0}
-        >
-          Rút tiền
-        </button>
+        <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
+          <button
+            className={parentStyles.withdrawBtn}
+            type="button"
+            style={{ marginTop: 0 }}
+            onClick={() => setWithdrawOpen(true)}
+            disabled={balanceLoading || available <= 0}
+          >
+            Rút tiền
+          </button>
+          <button
+            className={parentStyles.secondaryBtn}
+            type="button"
+            onClick={() => navigate(`${portalBase}/wallet/bank-account`)}
+          >
+            Tài khoản ngân hàng
+          </button>
+        </div>
       </div>
 
       <div className={parentStyles.summaryRow}>

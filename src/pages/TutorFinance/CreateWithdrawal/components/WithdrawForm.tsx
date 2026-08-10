@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { Button, Card, Form, InputNumber } from 'antd';
 import { ArrowRightOutlined, BankOutlined, WalletOutlined } from '@ant-design/icons';
 import { formatCurrency, formatVNDNumber, maskBankAccount } from '../../../../utils/formatters';
-import type { BankInfo } from '../../../../types/finance.types';
+import type { BankAccount } from '../../../../services/bankAccount.service';
 
 interface Props {
   balance: number;
-  bankInfo: BankInfo | null;
+  bankInfo: BankAccount | null;
   onSubmit: (amount: number) => void;
   loading: boolean;
 }
