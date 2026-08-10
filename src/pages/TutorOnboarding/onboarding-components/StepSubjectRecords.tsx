@@ -180,6 +180,9 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
       return;
     }
 
+    // `onSaveSubjectRecords` (savePricing) đã tự hiện toast đúng với message thật của BE — kể cả
+    // khi hồ sơ đã active và thay đổi chỉ được đưa vào hàng chờ Admin duyệt (không toast cố định
+    // ở đây nữa để tránh báo "đã lưu" nhầm trong trường hợp đó).
     if (editingRecordId) {
       const nextRecords = state.subjectRecords.map((record) =>
         record.id === editingRecordId ? { ...record, ...input } : record,
@@ -188,7 +191,6 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
       if (!ok) return;
 
       updateSubjectRecord(editingRecordId, input);
-      toast.success('Đã cập nhật cấu hình');
       resetForm();
       return;
     }
@@ -202,7 +204,6 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
 
     addSubjectRecord(input);
     resetForm();
-    toast.success('Đã thêm cấu hình');
   };
 
   const handleRemoveRecord = async (record: SubjectRecord) => {
@@ -212,7 +213,6 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
 
     removeSubjectRecord(record.id);
     if (editingRecordId === record.id) resetForm();
-    toast.success('Đã xoá cấu hình');
   };
 
   return (
