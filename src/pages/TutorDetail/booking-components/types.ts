@@ -141,4 +141,9 @@ export interface BookingModalProps {
     tutorTeachingMode?: string | null;
     // Danh sách combo (gói học) — hiển thị ở Step 2 (BookingMode) + Step 3 (Schedule).
     combos?: Combo[];
+    /**
+     * Booking đã tồn tại rồi (quay lại từ /student-portal/profile sau khi lưu SĐT phụ huynh cho
+     * luồng OTP giao dịch lớn) — bỏ qua wizard, mở thẳng bước thanh toán cho đúng booking đó.
+     */
+    resumeBookingId?: number | null;
 }

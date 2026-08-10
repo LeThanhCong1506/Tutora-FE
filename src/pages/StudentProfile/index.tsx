@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import {
   GraduationCap,
@@ -22,6 +22,8 @@ import {
 import { getUserProfile } from '../../services/user.service';
 import { getGradeLevels, type GradeLevelLookup } from '../../services/lookup.service';
 import { useStudentProfile } from '../../contexts/StudentProfileContext';
+import { takeBookingOtpResume } from '../../utils/bookingOtpResume';
+import { takePendingRedirect } from '../../services/auth.service';
 import styles from './styles.module.css';
 
 /** So khớp không phân biệt "0xxxxxxxxx" với "+84xxxxxxxxx" — cùng một số thật. */
@@ -50,7 +52,11 @@ const validateIdImage = (file: File): string | null => {
 
 const StudentProfile = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { profile, loading, isComplete, isParentManaged, refresh } = useStudentProfile();
+  // Được điều hướng tới đây từ luồng xác thực OTP giao dịch lớn (thiếu SĐT phụ huynh) —
+  // cuộn tới + focus ô SĐT phụ huynh và giải thích lý do.
+  const highlightParentPhone = searchParams.get('highlight') === 'parent-phone';
   const [grades, setGrades] = useState<GradeLevelLookup[]>([]);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
@@ -97,6 +103,18 @@ const StudentProfile = () => {
   useEffect(() => {
     void refreshEligibility();
   }, []);
+
+  // Cuộn tới + focus ô SĐT phụ huynh khi được điều hướng tới đây từ luồng xác thực OTP giao
+  // dịch lớn. Đợi `loading` xong (context tải profile async) để đảm bảo card đã render.
+  useEffect(() => {
+    if (loading || !highlightParentPhone) return;
+    const timer = setTimeout(() => {
+      const el = document.getElementById('parent-phone');
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el?.focus();
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [loading, highlightParentPhone]);
 
   // SĐT của chính tài khoản — chỉ dùng để so khớp tức thì trước khi gọi API lưu SĐT phụ huynh.
   useEffect(() => {
@@ -248,6 +266,21 @@ const StudentProfile = () => {
       setPhoneEditing(false);
       setPhoneDraft('');
       toast.success('Cập nhật số điện thoại phụ huynh thành công.');
+
+      // Vừa nhập một SĐT thật (không phải xoá số cũ) → nếu đang dở luồng xác thực OTP giao dịch
+      // lớn (thiếu SĐT phụ huynh), tự động quay lại đúng chỗ đang thanh toán dở.
+      if (valueToSave) {
+        const resume = takeBookingOtpResume();
+        if (resume) {
+          navigate(`/tutor-detail/${resume.tutorId}`, { state: { resumeBookingOtp: resume.bookingId } });
+          return;
+        }
+        const pendingRedirect = await takePendingRedirect();
+        if (pendingRedirect) {
+          navigate(pendingRedirect);
+          return;
+        }
+      }
     } catch (err) {
       const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
@@ -499,6 +532,15 @@ const StudentProfile = () => {
               <h2 className={styles.cardTitle}>
                 <Phone size={18} /> Số điện thoại phụ huynh
               </h2>
+              {highlightParentPhone && (
+                <div className={styles.mandatoryBanner}>
+                  <Info size={18} />
+                  <span>
+                    Đây là giao dịch lớn nên cần xác thực qua SĐT phụ huynh. Vui lòng nhập số điện thoại
+                    phụ huynh và lưu lại để tiếp tục thanh toán.
+                  </span>
+                </div>
+              )}
               <form onSubmit={handleSaveParentPhone}>
                 <div className={styles.field}>
                   <input
