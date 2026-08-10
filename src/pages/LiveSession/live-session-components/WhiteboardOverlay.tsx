@@ -35,7 +35,13 @@ const WhiteboardOverlay = ({ classSessionId, participationId, leaseId, onClose }
         const res = await getWhiteboardRoom(classSessionId, { participationId, leaseId });
         if (cancelled) return;
         const room = res.content;
-        const uid = getUserIdFromToken() ?? `guest-${classSessionId}`;
+        // Gắn thêm leaseId (mới hoàn toàn mỗi lần join lại buổi học) vào uid, không dùng thẳng
+        // userId cố định. Rời buổi học rồi vào lại vẫn là CÙNG userId join lại CÙNG roomUuid —
+        // Netless coi đó là cùng một "thành viên" quay lại, và trong một số trường hợp không đồng
+        // bộ lại đúng nét vẽ cho các thành viên đã ở sẵn trong phòng (chỉ mới với bản thân bị lỗi,
+        // "ai nấy vẽ"). Mỗi lượt vào lớp là một leaseId khác nhau nên uid cũng khác nhau, buộc
+        // Netless coi đây là một thành viên mới thay vì một phiên cũ quay lại.
+        const uid = `${getUserIdFromToken() ?? `guest-${classSessionId}`}-${leaseId}`;
 
         app = await createFastboard({
           sdkConfig: {
