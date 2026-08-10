@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
@@ -30,6 +30,7 @@ import '../../styles/pages/tutor-detail.css';
 const TutorDetailPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
     const [searchParams] = useSearchParams();
     const inMiniApp = isZaloMiniApp();
     const [profile, setProfile] = useState<TutorFullProfile | null>(null);
@@ -40,6 +41,13 @@ const TutorDetailPage = () => {
     const [showRoleSelect, setShowRoleSelect] = useState(false);
     const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
     const autoBookingTriggered = useRef(false);
+    // Quay lại từ /student-portal/profile sau khi lưu SĐT phụ huynh cho luồng OTP giao dịch lớn —
+    // tự mở lại popup đặt lịch, thẳng vào bước thanh toán của đúng booking đang thanh toán dở.
+    // Chốt lại thành state cục bộ (không đọc trực tiếp từ location.state ở mọi lần render) vì
+    // effect bên dưới sẽ xoá location.state ngay sau khi đọc — nếu đọc trực tiếp, giá trị sẽ
+    // biến mất trước khi BookingModal kịp nhận prop này.
+    const [resumeBookingId, setResumeBookingId] = useState<number | null>(null);
+    const autoResumeTriggered = useRef(false);
 
     const requireLogin = async (onSuccess: () => void): Promise<void> => {
         const user = getCurrentUser();
@@ -133,6 +141,20 @@ const TutorDetailPage = () => {
         void requireLogin(openBooking);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [profile, searchParams]);
+
+    // Tương tự ?openBooking=1 ở trên, nhưng cho luồng resume OTP giao dịch lớn: quay lại từ trang
+    // hồ sơ (state.resumeBookingOtp), tự mở popup thẳng vào bước thanh toán, không qua wizard.
+    useEffect(() => {
+        if (autoResumeTriggered.current || !profile) return;
+        const fromState = (location.state as { resumeBookingOtp?: number } | null)?.resumeBookingOtp;
+        if (fromState == null) return;
+        autoResumeTriggered.current = true;
+        setResumeBookingId(fromState);
+        setShowBooking(true);
+        // Xoá state khỏi history để refresh/back không mở lại popup lần nữa.
+        navigate(location.pathname + location.search, { replace: true, state: null });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [profile, location.state]);
 
     useEffect(() => {
         let mounted = true;
@@ -266,6 +288,7 @@ const TutorDetailPage = () => {
                 availabilities={profile.availabilities}
                 tutorTeachingMode={profile.teachingMode}
                 combos={profile.combos || []}
+                resumeBookingId={resumeBookingId}
             />
 
             {showRoleSelect && (

@@ -1,0 +1,119 @@
+.wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 8px 4px 4px;
+}
+
+.iconWrap {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #eff6ff;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+}
+
+.title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 6px;
+}
+
+.desc {
+    font-size: 13.5px;
+    color: #6b7280;
+    line-height: 1.5;
+    margin: 0 0 4px;
+    max-width: 360px;
+}
+
+.phone {
+    color: #111827;
+    font-weight: 600;
+}
+
+.amount {
+    font-size: 13.5px;
+    color: #2563eb;
+    font-weight: 700;
+    margin: 4px 0 18px;
+}
+
+.input {
+    width: 100%;
+    max-width: 220px;
+    padding: 12px 16px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 10px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.5em;
+    text-align: center;
+    color: #111827;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.input:focus {
+    border-color: #2563eb;
+}
+
+.error {
+    color: #dc2626;
+    font-size: 13px;
+    margin-top: 10px;
+    max-width: 340px;
+}
+
+.verifyBtn {
+    margin-top: 18px;
+    width: 100%;
+    max-width: 260px;
+    padding: 11px 20px;
+    border: none;
+    border-radius: 10px;
+    background: #2563eb;
+    color: #fff;
+    font-size: 14.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.verifyBtn:hover:not(:disabled) {
+    background: #1d4ed8;
+}
+
+.verifyBtn:disabled {
+    background: #93c5fd;
+    cursor: not-allowed;
+}
+
+.resendRow {
+    margin-top: 14px;
+}
+
+.resendBtn {
+    background: none;
+    border: none;
+    color: #2563eb;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.resendBtn:disabled {
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.blockedIcon {
+    color: #dc2626;
+}

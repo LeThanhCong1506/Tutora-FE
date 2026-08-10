@@ -32,6 +32,9 @@ import {
   ListChecks,
 } from 'lucide-react';
 import { message as antMessage, Button, Radio } from 'antd';
+import { useLargeTransactionOtp } from '../../../hooks/useLargeTransactionOtp';
+import { setPendingRedirect } from '../../../services/auth.service';
+import PaymentOtpStep from '../../../components/PaymentOtpStep/PaymentOtpStep';
 
 const PaymentPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -56,6 +59,21 @@ const PaymentPage = () => {
   // nên nếu chỉ ẩn nút ở danh sách/chi tiết thì vào thẳng URL này vẫn trả được.
   const remainingLocked =
     !!summary && summary.paymentPhase === 'remaining' && !!booking && !isFirstLessonFinished(booking);
+
+  // Giao dịch lớn (≥ ngưỡng) của học sinh tự đăng ký → chặn bằng OTP qua Zalo ZNS tới SĐT phụ
+  // huynh. Chạy TỰ ĐỘNG ngay khi trang load xong (không đợi bấm "Thanh toán"). Với vai trò Parent,
+  // hook luôn trả về 'not_required' ngay lập tức — trang này KHÔNG BAO GIỜ hiện OTP cho phụ huynh.
+  const otpGate = useLargeTransactionOtp({
+    bookingId,
+    amount: summary?.amount ?? 0,
+    phase: summary?.paymentPhase ?? null,
+    ready: !loading && !!summary && !remainingLocked,
+    onNeedParentPhone: () => {
+      setPendingRedirect(`/student-portal/booking/${bookingId}/payment`);
+      navigate('/student-portal/profile?highlight=parent-phone');
+    },
+  });
+  const otpSettled = otpGate.status === 'not_required' || otpGate.status === 'verified';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -97,9 +115,11 @@ const PaymentPage = () => {
     if (bookingId) fetchData();
   }, [bookingId, navigate, inMiniApp]);
 
-  // Tạo link PayOS (lazy) chỉ khi user thực sự chọn "chuyển khoản ngân hàng".
+  // Tạo link PayOS (lazy) chỉ khi user thực sự chọn "chuyển khoản ngân hàng" — và (nếu là giao
+  // dịch lớn của học sinh tự đăng ký) chỉ sau khi đã xác thực OTP xong, tránh tạo link trước khi
+  // được phép trả.
   useEffect(() => {
-    if (paymentMethod !== 'payos' || paymentInfo || loading || remainingLocked) return;
+    if (paymentMethod !== 'payos' || paymentInfo || loading || remainingLocked || !otpSettled) return;
 
     let cancelled = false;
     (async () => {
@@ -116,6 +136,10 @@ const PaymentPage = () => {
           navigate(`/parent-portal/booking/${bookingId}`, { replace: true });
           return;
         }
+        if (isAxiosError(err) && err.response?.data?.errorCode === 'OTP_REQUIRED') {
+          otpGate.handlePaymentOtpRequired();
+          return;
+        }
         antMessage.error(
           (isAxiosError(err) ? err.response?.data?.message : null) || 'Không thể tạo liên kết thanh toán.',
         );
@@ -127,7 +151,8 @@ const PaymentPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [paymentMethod, paymentInfo, loading, remainingLocked, bookingId, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentMethod, paymentInfo, loading, remainingLocked, otpSettled, bookingId, navigate]);
 
   // Polling payment status for PayOS
   useEffect(() => {
@@ -171,7 +196,11 @@ const PaymentPage = () => {
       setPaymentSuccess(true);
       antMessage.success('Thanh toán bằng ví thành công!');
     } catch (error: unknown) {
-      antMessage.error((isAxiosError(error) ? error.response?.data?.message : null) || 'Có lỗi xảy ra khi thanh toán.');
+      if (isAxiosError(error) && error.response?.data?.errorCode === 'OTP_REQUIRED') {
+        otpGate.handlePaymentOtpRequired();
+      } else {
+        antMessage.error((isAxiosError(error) ? error.response?.data?.message : null) || 'Có lỗi xảy ra khi thanh toán.');
+      }
     } finally {
       setIsPaying(false);
     }
@@ -411,6 +440,47 @@ const PaymentPage = () => {
         {/* Right Column: Payment Methods */}
         <main className={styles.main}>
           <div className={styles.card}>
+            {!otpSettled ? (
+              <>
+                <h2 className={styles.cardTitle}>Xác thực giao dịch</h2>
+                <div className={styles.checkoutSection}>
+                  {otpGate.status === 'checking' || otpGate.status === 'need_parent_phone' ? (
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '32px 0',
+                      }}
+                    >
+                      <div className={styles.spinner} aria-hidden="true" />
+                      <p style={{ color: '#6b7280', textAlign: 'center', margin: 0 }}>
+                        {otpGate.status === 'need_parent_phone'
+                          ? 'Đang chuyển sang trang hồ sơ để nhập số điện thoại phụ huynh...'
+                          : 'Đang kiểm tra bảo mật giao dịch...'}
+                      </p>
+                    </div>
+                  ) : otpGate.status === 'blocked' ? (
+                    <div className={styles.insufficientFunds}>
+                      <AlertCircle size={20} />
+                      <p>{otpGate.errorMessage}</p>
+                    </div>
+                  ) : otpGate.status === 'awaiting_otp' && summary ? (
+                    <PaymentOtpStep
+                      amount={summary.amount}
+                      phase={summary.paymentPhase}
+                      verifying={otpGate.verifying}
+                      initialCooldownSeconds={otpGate.initialCooldownSeconds}
+                      onVerify={otpGate.verify}
+                      onResend={otpGate.resend}
+                      onVerified={() => {}}
+                    />
+                  ) : null}
+                </div>
+              </>
+            ) : (
+            <>
             <h2 className={styles.cardTitle}>Chọn phương thức thanh toán</h2>
 
             <div className={styles.checkoutSection}>
@@ -632,6 +702,8 @@ const PaymentPage = () => {
                 )}
               </div>
             </div>
+            </>
+            )}
           </div>
         </main>
       </div>
