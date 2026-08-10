@@ -74,8 +74,8 @@ const TutorOnboarding: React.FC = () => {
       return;
     }
     if (state.currentStep === 2) {
+      // savePricing tự hiện toast đúng (kể cả trường hợp hồ sơ active → chờ Admin duyệt).
       if (await sync.savePricing(state.subjectRecords)) {
-        toast.success('Đã lưu môn học & giá');
         goNext();
       }
       return;
