@@ -197,10 +197,24 @@ export const useAgoraCall = (
     };
 
     const handleUserPublished = async (user: IAgoraRTCRemoteUser, mediaType: 'audio' | 'video') => {
-      await client.subscribe(user, mediaType);
-      if (mediaType === 'audio') user.audioTrack?.play();
+      try {
+        await client.subscribe(user, mediaType);
+        if (mediaType === 'audio') user.audioTrack?.play();
+      } catch (err) {
+        // subscribe() có thể lỗi tạm thời (vd. đúng lúc phía kia rời rồi vào lại channel với cùng
+        // uid) — nuốt lỗi ở đây trước là ĐÚNG mục đích: nếu để throw, listener bị đăng ký kiểu
+        // fire-and-forget này sẽ dừng luôn TRƯỚC syncRemotes() phía dưới, khiến remoteParticipants
+        // không bao giờ được cập nhật — tile của người đó biến mất khỏi màn hình vĩnh viễn dù SDK
+        // đã báo user-published. Vẫn phải sync để tile ít nhất hiện avatar đợi track.
+        console.error(`❌ Subscribe ${mediaType} track failed for uid ${user.uid}:`, err);
+      }
       syncRemotes();
     };
+
+    // Đồng bộ ngay khi có người vào lại channel (trước khi họ publish track), để tile của họ xuất
+    // hiện với avatar tức thì thay vì chờ tới lúc publish thành công — cùng lý do với việc bọc
+    // try/catch ở trên: không được chỉ trông chờ vào đúng một sự kiện publish để dựng lại UI.
+    const handleUserJoined = () => syncRemotes();
 
     const handleUserUnpublished = () => syncRemotes();
 
@@ -250,6 +264,7 @@ export const useAgoraCall = (
       void renewAgoraToken(true);
     };
 
+    client.on('user-joined', handleUserJoined);
     client.on('user-published', handleUserPublished);
     client.on('user-unpublished', handleUserUnpublished);
     client.on('user-left', handleUserLeft);
@@ -363,6 +378,7 @@ export const useAgoraCall = (
 
     return () => {
       cancelled = true;
+      client.off('user-joined', handleUserJoined);
       client.off('user-published', handleUserPublished);
       client.off('user-unpublished', handleUserUnpublished);
       client.off('user-left', handleUserLeft);

@@ -94,7 +94,13 @@ export const useSessionLobby = (classSessionId: number | null): UseSessionLobbyR
     });
 
     connection.on('sessionReady', () => {
-      if (!disposed) setPhase('ready');
+      if (disposed) return;
+      setPhase('ready');
+      // Đường "buổi đang diễn ra, vào lại ngay" (rớt mạng/rời tạm rồi vào lại) báo sessionReady
+      // thẳng, không kèm lobbyState như đường chờ bình thường — nếu không set ở đây, waitingState
+      // vẫn null và cả 2 chip "Gia sư"/"Học sinh" hiện xám dù nút "Vào lớp học" đã sáng. "ready"
+      // luôn đồng nghĩa cả 2 phía đã được xác nhận, nên set thẳng true/true là đúng ngữ nghĩa.
+      setWaitingState({ classSessionId, tutorWaiting: true, studentWaiting: true });
     });
 
     connection.on('lobbyClosed', (payload: { reason?: string }) => {

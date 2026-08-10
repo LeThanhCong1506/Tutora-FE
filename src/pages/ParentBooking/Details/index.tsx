@@ -325,7 +325,7 @@ const BookingDetailPage = () => {
           <AlertCircle size={48} />
           <h2>Không tìm thấy lịch đặt</h2>
           <p>Yêu cầu đặt lịch #{id} không tồn tại hoặc bạn không có quyền xem.</p>
-          <button className={styles.backBtnPrimary} onClick={() => navigate(`${basePath}/booking`)} type="button">
+          <button className={styles.backBtnPrimary} onClick={() => navigate(-1)} type="button">
             Quay lại danh sách
           </button>
         </div>
@@ -412,7 +412,7 @@ const BookingDetailPage = () => {
   return (
     <div className={styles.page}>
       <div className={styles.topBar}>
-        <button className={styles.backBtn} onClick={() => navigate(`${basePath}/booking`)} type="button">
+        <button className={styles.backBtn} onClick={() => navigate(-1)} type="button">
           <ArrowLeft size={18} />
           <span>Danh sách đặt lịch</span>
         </button>
