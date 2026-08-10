@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   BookOpen,
   CalendarDays,
@@ -157,8 +157,11 @@ const getPaymentAction = (booking: BookingResponseDTO) => {
 const StudentBooking = () => {
   const navigate = useNavigate();
   const currentTime = useCurrentTime();
-  const [activeTab, setActiveTab] = useState('all');
-  const [currentPage, setCurrentPage] = useState(1);
+  // Tab + trang sống trong URL (không phải useState cục bộ) — để "Xem chi tiết" rồi bấm back
+  // (hoặc quay lại từ trang khác) trả về đúng tab/trang đang xem, thay vì luôn reset về "Tất cả".
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('status') || 'all';
+  const currentPage = Number(searchParams.get('page')) || 1;
   const [bookings, setBookings] = useState<BookingResponseDTO[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -190,8 +193,18 @@ const StudentBooking = () => {
   const emptyCopy = EMPTY_STATE_COPY[activeTab] ?? EMPTY_STATE_COPY.all;
 
   const handleTabChange = (tabKey: string) => {
-    setCurrentPage(1);
-    setActiveTab(tabKey);
+    const next = new URLSearchParams(searchParams);
+    if (tabKey === 'all') next.delete('status');
+    else next.set('status', tabKey);
+    next.delete('page');
+    setSearchParams(next);
+  };
+
+  const handlePageChange = (page: number) => {
+    const next = new URLSearchParams(searchParams);
+    if (page <= 1) next.delete('page');
+    else next.set('page', String(page));
+    setSearchParams(next);
   };
 
   return (
@@ -413,7 +426,7 @@ const StudentBooking = () => {
                   type="button"
                   aria-label="Trang trước"
                   disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((page) => page - 1)}
+                  onClick={() => handlePageChange(currentPage - 1)}
                 >
                   <ChevronLeft size={16} />
                 </button>
@@ -424,7 +437,7 @@ const StudentBooking = () => {
                   type="button"
                   aria-label="Trang sau"
                   disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((page) => page + 1)}
+                  onClick={() => handlePageChange(currentPage + 1)}
                 >
                   <ChevronRight size={16} />
                 </button>
