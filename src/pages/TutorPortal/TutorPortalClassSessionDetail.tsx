@@ -889,7 +889,13 @@ const TutorPortalClassSessionDetail = () => {
                       {session.student?.school && <span>{session.student.school}</span>}
                     </div>
                     {session.student?.studentId && session.bookingId && (
-                      <button type="button" className={styles.profileButton} onClick={handleOpenStudentProfile}>
+                      <button
+                        type="button"
+                        className={styles.profileButton}
+                        onClick={handleOpenStudentProfile}
+                        disabled
+                        title="Tính năng đang được phát triển"
+                      >
                         <GraduationCap size={16} />
                         Xem hồ sơ học tập
                       </button>
