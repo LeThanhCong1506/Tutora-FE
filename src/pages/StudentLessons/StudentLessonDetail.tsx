@@ -5,7 +5,7 @@ import {
     ArrowLeft, BookOpen, AlertCircle, Video,
     Calendar as CalendarIcon, FileText, ClipboardCheck, Star,
     User, PlayCircle, StopCircle, Paperclip, Download, CalendarClock,
-    CheckCircle2, Clock3, XCircle,
+    CheckCircle2, Clock3, XCircle, Sparkles, Send,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { getStudentLessonDetail, confirmStudentLesson, type StudentLessonDetailDto } from '../../services/student-lesson.service';
@@ -18,10 +18,19 @@ import {
     respondStudentScheduleChange,
     proposeStudentReschedule,
     respondStudentReschedule,
+    getClassSessionRecording,
     type DisputeDetailResponse,
     type DisputeMessage,
     type SessionScheduleChangeResponse,
 } from '../../services/classSession.service';
+import {
+    triggerVideoSummary,
+    getVideoSummaryStatus,
+    sendVideoSummaryFollowUp,
+    getVideoSummaryMessages,
+    type ClassSessionAiJobResponse,
+    type VideoSummaryChatMessage,
+} from '../../services/videoSummary.service';
 import { signalRService } from '../../services/signalr.service';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
 import { message as antMessage, Spin, Modal } from 'antd';
@@ -99,6 +108,13 @@ const StudentLessonDetail = () => {
     const [materials, setMaterials] = useState<LearningMaterialResponse[]>([]);
     const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
     const [respondingReschedule, setRespondingReschedule] = useState(false);
+    const [recordingAvailable, setRecordingAvailable] = useState(false);
+    const [summaryJob, setSummaryJob] = useState<ClassSessionAiJobResponse | null>(null);
+    const [summaryViewTab, setSummaryViewTab] = useState<'summary' | 'transcript'>('summary');
+    const [triggeringSummary, setTriggeringSummary] = useState(false);
+    const [chatTurns, setChatTurns] = useState<VideoSummaryChatMessage[]>([]);
+    const [chatInput, setChatInput] = useState('');
+    const [chatSending, setChatSending] = useState(false);
 
     const fetchDetail = useCallback(async () => {
         if (!lessonId) return;
@@ -140,6 +156,36 @@ const StudentLessonDetail = () => {
         } catch (requestError: unknown) {
             console.error('Failed to load schedule-change state', requestError);
             setScheduleChange(null);
+        }
+    }, [lessonId]);
+
+    const fetchRecordingStatus = useCallback(async () => {
+        if (!lessonId) return;
+        try {
+            const response = await getClassSessionRecording(parseInt(lessonId));
+            setRecordingAvailable(Boolean(response.content?.available));
+        } catch {
+            setRecordingAvailable(false);
+        }
+    }, [lessonId]);
+
+    const fetchSummaryStatus = useCallback(async () => {
+        if (!lessonId) return;
+        try {
+            const response = await getVideoSummaryStatus(parseInt(lessonId));
+            setSummaryJob(response.content);
+        } catch (requestError: unknown) {
+            console.error('Failed to load video summary status', requestError);
+        }
+    }, [lessonId]);
+
+    const fetchChatMessages = useCallback(async () => {
+        if (!lessonId) return;
+        try {
+            const response = await getVideoSummaryMessages(parseInt(lessonId));
+            setChatTurns(response.content ?? []);
+        } catch (requestError: unknown) {
+            console.error('Failed to load video summary chat', requestError);
         }
     }, [lessonId]);
 
@@ -185,6 +231,22 @@ const StudentLessonDetail = () => {
         const timer = window.setInterval(() => void fetchScheduleChange(), 8000);
         return () => window.clearInterval(timer);
     }, [lessonId, fetchScheduleChange]);
+
+    useEffect(() => {
+        void fetchRecordingStatus();
+        void fetchSummaryStatus();
+    }, [fetchRecordingStatus, fetchSummaryStatus]);
+
+    // Poll trong lúc Gemini đang xử lý (video có thể vài tiếng, mất vài phút) — dừng khi có kết quả.
+    useEffect(() => {
+        if (summaryJob?.status !== 'pending' && summaryJob?.status !== 'processing') return;
+        const timer = window.setInterval(() => void fetchSummaryStatus(), 8000);
+        return () => window.clearInterval(timer);
+    }, [summaryJob?.status, fetchSummaryStatus]);
+
+    useEffect(() => {
+        if (summaryJob?.status === 'completed') void fetchChatMessages();
+    }, [summaryJob?.status, fetchChatMessages]);
 
     useEffect(() => {
         if (dispute) void fetchThread();
@@ -270,6 +332,35 @@ const StudentLessonDetail = () => {
             antMessage.error(error.response?.data?.message || 'Không thể xử lý yêu cầu đổi lịch.');
         } finally {
             setRespondingReschedule(false);
+        }
+    };
+
+    const handleTriggerSummary = async () => {
+        if (!lessonId || triggeringSummary) return;
+        setTriggeringSummary(true);
+        try {
+            const response = await triggerVideoSummary(parseInt(lessonId));
+            setSummaryJob(response.content);
+        } catch (error: any) {
+            antMessage.error(error.response?.data?.message || 'Không thể tóm tắt video lúc này.');
+        } finally {
+            setTriggeringSummary(false);
+        }
+    };
+
+    const handleSendChatMessage = async () => {
+        if (!lessonId || chatSending || chatInput.trim().length === 0) return;
+        const question = chatInput.trim();
+        setChatInput('');
+        setChatTurns((prev) => [...prev, { role: 'user', content: question, createdAt: new Date().toISOString() }]);
+        setChatSending(true);
+        try {
+            const response = await sendVideoSummaryFollowUp(parseInt(lessonId), question);
+            setChatTurns((prev) => [...prev, { role: 'assistant', content: response.content, createdAt: new Date().toISOString() }]);
+        } catch (error: any) {
+            antMessage.error(error.response?.data?.message || 'Không thể gửi câu hỏi lúc này.');
+        } finally {
+            setChatSending(false);
         }
     };
 
@@ -1027,6 +1118,159 @@ const StudentLessonDetail = () => {
                     <ClassSessionRecording classSessionId={lesson.lessonId} />
                 </div>
 
+                {/* ─── Tóm tắt video bằng AI + chat hỏi tiếp — chỉ chạy khi bấm lần đầu (lazy) ─── */}
+                <div style={sectionCard}>
+                    <div style={sectionHeaderRow}>
+                        <div style={{ ...sectionIconWrap, background: 'rgba(139,92,246,0.10)' }}>
+                            <Sparkles size={16} style={{ color: '#8b5cf6' }} />
+                        </div>
+                        <div style={sectionTitleText}>Tóm tắt buổi học bằng AI</div>
+                    </div>
+
+                    {(!summaryJob || summaryJob.status === 'none') && (
+                        <>
+                            <div style={{ fontSize: 13, color: '#667085', marginBottom: 16, lineHeight: 1.55 }}>
+                                Dùng AI đọc video buổi học và tóm tắt lại nội dung đã học — có thể mất vài phút.
+                            </div>
+                            <button
+                                style={{ ...actionBtnBase, background: 'linear-gradient(135deg, #8b5cf6, #a78bfa)', boxShadow: '0 2px 8px rgba(139,92,246,0.25)' }}
+                                disabled={!recordingAvailable || triggeringSummary}
+                                onClick={() => void handleTriggerSummary()}
+                            >
+                                <Sparkles size={16} /> {triggeringSummary ? 'Đang gửi yêu cầu…' : 'Tóm tắt video'}
+                            </button>
+                            {!recordingAvailable && (
+                                <div style={{ marginTop: 10, fontSize: 12, color: '#9ca3af' }}>
+                                    Chỉ tóm tắt được khi video buổi học đã sẵn sàng.
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {(summaryJob?.status === 'pending' || summaryJob?.status === 'processing') && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#667085', fontSize: 13 }}>
+                            <Spin size="small" />
+                            {summaryJob?.stage === 'verifying'
+                                ? 'AI đang kiểm tra lại tóm tắt và hội thoại, đảm bảo không thiếu nội dung nào…'
+                                : 'AI đang xem và tóm tắt video, có thể mất vài phút…'}
+                        </div>
+                    )}
+
+                    {summaryJob?.status === 'failed' && (
+                        <div>
+                            <div style={{ color: '#cf1322', background: '#fff2f0', borderRadius: 8, padding: '10px 12px', fontSize: 13, marginBottom: 12 }}>
+                                {summaryJob.errorMessage || 'Không thể tóm tắt video. Vui lòng thử lại.'}
+                            </div>
+                            <button
+                                style={{ ...actionBtnBase, background: 'linear-gradient(135deg, #8b5cf6, #a78bfa)' }}
+                                disabled={!recordingAvailable || triggeringSummary}
+                                onClick={() => void handleTriggerSummary()}
+                            >
+                                <Sparkles size={16} /> Thử lại
+                            </button>
+                        </div>
+                    )}
+
+                    {summaryJob?.status === 'completed' && (
+                        <>
+                            <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setSummaryViewTab('summary')}
+                                    style={{
+                                        ...summaryTabBtnBase,
+                                        ...(summaryViewTab === 'summary' ? summaryTabBtnActive : {}),
+                                    }}
+                                >
+                                    Tóm tắt
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setSummaryViewTab('transcript')}
+                                    disabled={!summaryJob.transcriptText}
+                                    title={!summaryJob.transcriptText ? 'Buổi học này chưa có hội thoại (tóm tắt trước khi có tính năng này)' : undefined}
+                                    style={{
+                                        ...summaryTabBtnBase,
+                                        ...(summaryViewTab === 'transcript' ? summaryTabBtnActive : {}),
+                                        ...(!summaryJob.transcriptText ? { opacity: 0.45, cursor: 'not-allowed' } : {}),
+                                    }}
+                                >
+                                    Hội thoại
+                                </button>
+                            </div>
+
+                            <div style={{ ...reportValueStyle, whiteSpace: 'pre-wrap', marginBottom: 16, maxHeight: 360, overflowY: 'auto' }}>
+                                {summaryViewTab === 'summary'
+                                    ? summaryJob.resultText
+                                    : (summaryJob.transcriptText || 'Buổi học này chưa có hội thoại.')}
+                            </div>
+
+                            <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 14 }}>
+                                <div style={{ fontSize: 13, fontWeight: 600, color: '#1a2238', marginBottom: 10 }}>
+                                    Hỏi thêm về buổi học
+                                </div>
+                                {(chatTurns.length > 0 || chatSending) && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10, maxHeight: 260, overflowY: 'auto' }}>
+                                        {chatTurns.map((msg, idx) => (
+                                            <div
+                                                key={idx}
+                                                style={{
+                                                    alignSelf: msg.role === 'assistant' ? 'flex-start' : 'flex-end',
+                                                    maxWidth: '85%',
+                                                    padding: '8px 12px',
+                                                    borderRadius: 8,
+                                                    background: msg.role === 'assistant' ? '#f5f3ff' : '#f1f5f9',
+                                                    fontSize: 13,
+                                                    whiteSpace: 'pre-wrap',
+                                                }}
+                                            >
+                                                {msg.content}
+                                            </div>
+                                        ))}
+                                        {chatSending && (
+                                            <div
+                                                style={{
+                                                    alignSelf: 'flex-start',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 6,
+                                                    padding: '8px 12px',
+                                                    borderRadius: 8,
+                                                    background: '#f5f3ff',
+                                                    fontSize: 13,
+                                                    color: '#667085',
+                                                }}
+                                            >
+                                                <Spin size="small" /> AI đang suy nghĩ…
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                    <input
+                                        type="text"
+                                        value={chatInput}
+                                        onChange={(event) => setChatInput(event.target.value)}
+                                        placeholder="Hỏi thêm về nội dung buổi học..."
+                                        style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid #d9dde3', fontSize: 13 }}
+                                        onKeyDown={(event) => {
+                                            if (event.key === 'Enter') void handleSendChatMessage();
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        style={{ ...actionBtnBase, background: '#8b5cf6', padding: '8px 14px' }}
+                                        disabled={chatSending || chatInput.trim().length === 0}
+                                        onClick={() => void handleSendChatMessage()}
+                                    >
+                                        <Send size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
+
                 {/* Modals */}
                 <Modal
                     title="Xác nhận buổi học"
@@ -1618,6 +1862,24 @@ const reportValueStyle: React.CSSProperties = {
     lineHeight: 1.6,
     fontFamily: FONT_BODY,
     whiteSpace: 'pre-wrap',
+};
+
+const summaryTabBtnBase: React.CSSProperties = {
+    padding: '6px 14px',
+    fontSize: 13,
+    fontWeight: 600,
+    border: '1px solid #e5e7eb',
+    borderRadius: 8,
+    background: '#fff',
+    color: '#667085',
+    cursor: 'pointer',
+    fontFamily: FONT_BODY,
+};
+
+const summaryTabBtnActive: React.CSSProperties = {
+    background: '#8b5cf6',
+    borderColor: '#8b5cf6',
+    color: '#fff',
 };
 
 const attachmentLinkStyle: React.CSSProperties = {
