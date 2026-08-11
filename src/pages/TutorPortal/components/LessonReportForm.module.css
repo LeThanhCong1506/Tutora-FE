@@ -36,6 +36,37 @@
   margin-bottom: 16px;
 }
 
+@keyframes aiFillBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+.aiFillBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(139, 92, 246, 0.14);
+  color: #8b5cf6;
+  font-weight: 800;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  vertical-align: middle;
+  animation: aiFillBlink 1.4s ease-in-out infinite;
+}
+
+.aiFillBadge:disabled {
+  cursor: default;
+  animation: none;
+  opacity: 0.4;
+}
+
 .actions {
   display: flex;
   padding-top: 3px;

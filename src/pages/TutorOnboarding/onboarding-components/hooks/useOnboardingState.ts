@@ -1,9 +1,7 @@
 import { useState, useCallback } from 'react';
 import { isSessionWithinAvailability } from '../availability-utils';
 import { HALF_HOUR_STEPS, formatHourMinute, minutesOf } from '../constants';
-import type { OnboardingState, OnboardingStep, SubjectRecord, FixedCombo } from '../types';
-
-const clampStep = (n: number): OnboardingStep => Math.min(3, Math.max(1, n)) as OnboardingStep;
+import type { OnboardingState, SubjectRecord, FixedCombo } from '../types';
 
 const newId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const availabilityId = (dayOfWeek: number, hour: number, minute: number) => `${dayOfWeek}-${hour}-${minute}`;
@@ -19,28 +17,18 @@ export function useOnboardingState() {
     subjectRecords: [],
     availability: [],
     combos: [],
-    currentStep: 1,
   });
-  // Nạp dữ liệu đã load từ API (upsert): thay 3 mảng, giữ nguyên currentStep.
-  const hydrate = useCallback((data: Partial<Pick<OnboardingState, 'subjectRecords' | 'availability' | 'combos'>>) => {
+  // Nạp dữ liệu đã load từ API (upsert): thay 3 mảng.
+  const hydrate = useCallback((data: Partial<OnboardingState>) => {
     setState((prev) => ({
-      ...prev,
       subjectRecords: data.subjectRecords ?? prev.subjectRecords,
       availability: data.availability ?? prev.availability,
       combos: data.combos ?? prev.combos,
     }));
   }, []);
 
-  // ── Step navigation ──
-  const goToStep = useCallback((step: OnboardingStep) => {
-    setState((p) => ({ ...p, currentStep: step }));
-  }, []);
-  const goNext = useCallback(() => {
-    setState((p) => ({ ...p, currentStep: clampStep(p.currentStep + 1) }));
-  }, []);
-  const goBack = useCallback(() => {
-    setState((p) => ({ ...p, currentStep: clampStep(p.currentStep - 1) }));
-  }, []);
+  // Bước đang xem không nằm ở đây — nó sống trên URL (`?step=`) và do index.tsx
+  // sở hữu, để reload/share link giữ đúng bước.
 
   // ── B1: subject records ──
   // Thêm 1 cấu hình (môn, nhiều khối, giá). Trả false nếu có khối bị trùng
@@ -197,9 +185,6 @@ export function useOnboardingState() {
     combosMatchSubjectRules,
     canFinish,
     hydrate,
-    goToStep,
-    goNext,
-    goBack,
     addSubjectRecord,
     updateSubjectRecord,
     removeSubjectRecord,

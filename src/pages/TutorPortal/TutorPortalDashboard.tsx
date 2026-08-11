@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import styles from '../../styles/pages/tutor-portal-dashboard.module.css';
 import {
     getTutorDashboardStats,
@@ -16,6 +16,7 @@ import { useTutorProfileForm } from './hooks/useTutorProfileForm';
 import { getProfileCompletionItems } from './profileCompletion';
 import { formatVNDNumber } from '../../utils/formatters';
 import { isWithinJoinWindow } from '../../utils/liveSession';
+import { useTabParam } from '../../hooks/useTabParam';
 
 // Icons
 const ClockIcon = () => (
@@ -131,12 +132,32 @@ const fetchRecentFeedbacks = async (tutorUserId: string): Promise<FeedbackDto[]>
     return paged?.items ?? [];
 };
 
+const DASHBOARD_TABS = ['today', 'tomorrow', 'week', 'date'] as const;
+type DashboardTab = (typeof DASHBOARD_TABS)[number];
+
+// `?date=` dùng ngày theo giờ local (không phải ISO/UTC) để không lệch múi giờ khi share link.
+const toDateParam = (date: Date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+const parseDateParam = (value: string | null): Date | null => {
+    if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+    const parsed = new Date(`${value}T00:00:00`);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
 const TutorPortalDashboard: React.FC = () => {
     const navigate = useNavigate();
     const { formData: profileData, isInitialLoading: isProfileLoading } = useTutorProfileForm();
-    const [selectedTab, setSelectedTab] = useState<'today' | 'tomorrow' | 'week' | 'date'>('today');
-    const [currentMonth, setCurrentMonth] = useState(new Date());
-    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+    // Tab + ngày đang chọn sống trên URL (`?tab=`, `?date=`) — reload/share link
+    // giữ nguyên khung đang xem thay vì nhảy về "Hôm nay".
+    const [searchParams] = useSearchParams();
+    const [tabParam, setSelectedTab] = useTabParam<DashboardTab>(DASHBOARD_TABS, 'today');
+    const selectedDate = parseDateParam(searchParams.get('date'));
+    // `?tab=date` mà thiếu/hỏng `?date=` thì không có gì để lọc — rơi về "Hôm nay".
+    const selectedTab: DashboardTab = tabParam === 'date' && !selectedDate ? 'today' : tabParam;
+
+    const [currentMonth, setCurrentMonth] = useState(() => selectedDate ?? new Date());
 
     // API data states
     const [stats, setStats] = useState<TutorDashboardStatsResponse | null>(null);
@@ -323,8 +344,7 @@ const TutorPortalDashboard: React.FC = () => {
     const handleCalendarDayClick = (day: number, isCurrentMonth: boolean) => {
         if (!isCurrentMonth) return;
         const clickedDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-        setSelectedDate(clickedDate);
-        setSelectedTab('date');
+        setSelectedTab('date', { date: toDateParam(clickedDate) });
     };
 
     const handlePrevMonth = () => {
@@ -579,19 +599,19 @@ const TutorPortalDashboard: React.FC = () => {
                             <div className={styles.tabGroup}>
                                 <button
                                     className={`${styles.tabBtn} ${selectedTab === 'today' ? styles.active : ''}`}
-                                    onClick={() => setSelectedTab('today')}
+                                    onClick={() => setSelectedTab('today', { date: null })}
                                 >
                                     Hôm nay
                                 </button>
                                 <button
                                     className={`${styles.tabBtn} ${selectedTab === 'tomorrow' ? styles.active : ''}`}
-                                    onClick={() => setSelectedTab('tomorrow')}
+                                    onClick={() => setSelectedTab('tomorrow', { date: null })}
                                 >
                                     Ngày mai
                                 </button>
                                 <button
                                     className={`${styles.tabBtn} ${selectedTab === 'week' ? styles.active : ''}`}
-                                    onClick={() => setSelectedTab('week')}
+                                    onClick={() => setSelectedTab('week', { date: null })}
                                 >
                                     Tuần
                                 </button>
