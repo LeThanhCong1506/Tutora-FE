@@ -582,16 +582,25 @@ const TutorAccount = () => {
                         {editing ? (
                             <>
                                 <select
-                                    style={{ ...fieldInput, ...(errors.gender ? { borderColor: '#dc2626' } : {}) }}
+                                    style={{
+                                        ...fieldInput,
+                                        ...(errors.gender ? { borderColor: '#dc2626' } : {}),
+                                        ...(identityLocked ? disabledSelectStyle : {}),
+                                    }}
                                     value={form.gender}
                                     onChange={e => updateField('gender', e.target.value)}
+                                    disabled={identityLocked}
                                 >
                                     <option value="">Chọn giới tính</option>
                                     <option value="Male">Nam</option>
                                     <option value="Female">Nữ</option>
                                     <option value="Other">Khác</option>
                                 </select>
-                                {errors.gender && <span style={errorTextStyle}>{errors.gender}</span>}
+                                {identityLocked ? (
+                                    <span style={readOnlyHint}>Đã xác minh qua CCCD, không thể chỉnh sửa.</span>
+                                ) : (
+                                    errors.gender && <span style={errorTextStyle}>{errors.gender}</span>
+                                )}
                             </>
                         ) : (
                             <p style={fieldValue}>{genderDisplay(profile?.gender)}</p>
@@ -892,6 +901,11 @@ const saveBtn: React.CSSProperties = {
 const disabledStyle: React.CSSProperties = {
     opacity: 0.6,
     cursor: 'not-allowed',
+};
+
+const disabledSelectStyle: React.CSSProperties = {
+    ...disabledStyle,
+    appearance: 'none',
 };
 
 const errorTextStyle: React.CSSProperties = {

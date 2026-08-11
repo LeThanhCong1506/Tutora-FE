@@ -2,6 +2,7 @@ import styles from "../styles.module.css";
 import {
     actionRow,
     cancelBtn,
+    disabledSelectStyle,
     disabledStyle,
     fieldGroup,
     fieldInput,
@@ -147,16 +148,25 @@ const PersonalInfoSection: React.FC<Props> = ({
                 {editing ? (
                     <>
                         <select
-                            style={{ ...fieldInput, ...(errors.gender ? { borderColor: "#dc2626" } : {}) }}
+                            style={{
+                                ...fieldInput,
+                                ...(errors.gender ? { borderColor: "#dc2626" } : {}),
+                                ...(identityLocked ? disabledSelectStyle : {}),
+                            }}
                             value={form.gender}
                             onChange={e => updateField("gender", e.target.value)}
+                            disabled={identityLocked}
                         >
                             <option value="">Chọn giới tính</option>
                             <option value="Male">Nam</option>
                             <option value="Female">Nữ</option>
                             <option value="Other">Khác</option>
                         </select>
-                        {errors.gender && <span style={errorTextStyle}>{errors.gender}</span>}
+                        {identityLocked ? (
+                            <span style={readOnlyHint}>Đã xác minh qua CCCD, không thể chỉnh sửa.</span>
+                        ) : (
+                            errors.gender && <span style={errorTextStyle}>{errors.gender}</span>
+                        )}
                     </>
                 ) : (
                     <p style={fieldValue}>{genderDisplay(profile?.gender)}</p>
