@@ -8,6 +8,8 @@ import {
     CheckCircle2, Clock3, XCircle, Sparkles, Send,
 } from 'lucide-react';
 import dayjs from 'dayjs';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { getStudentLessonDetail, confirmStudentLesson, type StudentLessonDetailDto } from '../../services/student-lesson.service';
 import { getMaterials, type LearningMaterialResponse } from '../../services/materials.service';
 import {
@@ -86,6 +88,13 @@ const getFileNameFromUrl = (url: string): string => {
 };
 
 const TERMINAL_BOOKING_STATUSES = ['completed', 'cancelled', 'cancelled_noshow'];
+
+/** Render markdown Gemini trả về (in đậm, gạch đầu dòng, tiêu đề phụ...) thay vì hiện nguyên ký tự ** / -. */
+const AiMarkdown = ({ content }: { content: string }) => (
+    <div className="sld-markdown">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+    </div>
+);
 
 // ─────────────────────────────────────────────────────────────────────────
 const StudentLessonDetail = () => {
@@ -1199,10 +1208,14 @@ const StudentLessonDetail = () => {
                                 </button>
                             </div>
 
-                            <div style={{ ...reportValueStyle, whiteSpace: 'pre-wrap', marginBottom: 16, maxHeight: 360, overflowY: 'auto' }}>
-                                {summaryViewTab === 'summary'
-                                    ? summaryJob.resultText
-                                    : (summaryJob.transcriptText || 'Buổi học này chưa có hội thoại.')}
+                            <div style={{ ...reportValueStyle, marginBottom: 16, maxHeight: 360, overflowY: 'auto' }}>
+                                <AiMarkdown
+                                    content={
+                                        summaryViewTab === 'summary'
+                                            ? (summaryJob.resultText || '')
+                                            : (summaryJob.transcriptText || 'Buổi học này chưa có hội thoại.')
+                                    }
+                                />
                             </div>
 
                             <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 14 }}>
@@ -1221,10 +1234,9 @@ const StudentLessonDetail = () => {
                                                     borderRadius: 8,
                                                     background: msg.role === 'assistant' ? '#f5f3ff' : '#f1f5f9',
                                                     fontSize: 13,
-                                                    whiteSpace: 'pre-wrap',
                                                 }}
                                             >
-                                                {msg.content}
+                                                {msg.role === 'assistant' ? <AiMarkdown content={msg.content} /> : msg.content}
                                             </div>
                                         ))}
                                         {chatSending && (
@@ -1360,6 +1372,16 @@ styleTag.textContent = `
     0%, 100% { transform: translate(0, 0) scale(1); }
     50% { transform: translate(-8px, 6px) scale(1.15); }
 }
+.sld-markdown { font-size: 14px; line-height: 1.6; color: #1a2238; font-family: 'IBM Plex Sans', sans-serif; }
+.sld-markdown > *:first-child { margin-top: 0; }
+.sld-markdown > *:last-child { margin-bottom: 0; }
+.sld-markdown p { margin: 0 0 10px; }
+.sld-markdown ul, .sld-markdown ol { margin: 0 0 10px; padding-left: 20px; }
+.sld-markdown li { margin-bottom: 4px; }
+.sld-markdown li > p { margin: 0; }
+.sld-markdown h1, .sld-markdown h2, .sld-markdown h3 { font-size: 14px; font-weight: 700; margin: 14px 0 6px; color: #1a2238; }
+.sld-markdown strong { font-weight: 700; color: #1a2238; }
+.sld-markdown code { background: #f1f5f9; padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
 `;
 if (!document.getElementById('sld-keyframes')) {
     styleTag.id = 'sld-keyframes';
