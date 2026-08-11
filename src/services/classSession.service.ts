@@ -362,6 +362,36 @@ export const submitClassSessionReport = async (
     return response.data;
 };
 
+/** Trạng thái/kết quả 1 job Gemini phân tích video — dùng chung cho tóm tắt học sinh + auto-fill báo cáo gia sư. */
+export interface ClassSessionAiJobResponse {
+    jobId?: string;
+    status: 'none' | 'pending' | 'processing' | 'completed' | 'failed';
+    /** Giai đoạn con khi status="processing" (tóm tắt học sinh): "analyzing" | "verifying". */
+    stage?: string | null;
+    resultText?: string | null;
+    /** Bản chép lời (transcript) đầy đủ — chỉ có ở job tóm tắt học sinh, lấy cùng lượt gọi Gemini với tóm tắt. */
+    transcriptText?: string | null;
+    resultJson?: TutorReportAiFillResult | null;
+    errorMessage?: string | null;
+}
+
+export interface TutorReportAiFillResult {
+    lessonContent: string;
+    homework: string;
+    tutorNotes: string;
+}
+
+/** Gia sư yêu cầu Gemini đọc video buổi học và gợi ý nội dung điền vào báo cáo. */
+export const triggerReportAiFill = async (id: number): Promise<ApiResponse<ClassSessionAiJobResponse>> => {
+    const response = await api.post(`/tutor/class-sessions/${id}/report/ai-fill`, {}, { headers: getAuthHeaders() });
+    return response.data;
+};
+
+export const getReportAiFillStatus = async (id: number): Promise<ApiResponse<ClassSessionAiJobResponse>> => {
+    const response = await api.get(`/tutor/class-sessions/${id}/report/ai-fill`, { headers: getAuthHeaders() });
+    return response.data;
+};
+
 export const proposeTutorReschedule = async (
     id: number,
     proposedScheduledStart: string,
