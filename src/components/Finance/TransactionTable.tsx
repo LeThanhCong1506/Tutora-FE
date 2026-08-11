@@ -1,19 +1,37 @@
-import React from 'react';
 import { Empty, Table, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { formatCurrency, formatDateTime, formatTransactionType } from '../../../../utils/formatters';
-import type { TutorTransaction } from '../../../../types/finance.types';
+import { formatCurrency, formatDateTime, formatTransactionType } from '../../utils/formatters';
 
-interface Props {
-  transactions: TutorTransaction[];
+/** Dùng chung cho Tutor (`TutorTransaction`) và Parent/Student (`TransactionHistory`) — cùng field shape. */
+export interface FinanceTransactionRow {
+  transactionId: number;
+  amount: number;
+  transactionType: string;
+  description: string;
+  referenceId: number | null;
+  referenceTable: string | null;
+  createdAt: string;
+}
+
+interface Props<T extends FinanceTransactionRow> {
+  transactions: T[];
   loading: boolean;
   total: number;
   pageSize: number;
   currentPage: number;
   onPageChange: (page: number, pageSize: number) => void;
+  onRowClick?: (row: T) => void;
 }
 
-const TransactionTable: React.FC<Props> = ({ transactions, loading, total, pageSize, currentPage, onPageChange }) => {
+const TransactionTable = <T extends FinanceTransactionRow>({
+  transactions,
+  loading,
+  total,
+  pageSize,
+  currentPage,
+  onPageChange,
+  onRowClick,
+}: Props<T>) => {
   const getTransactionTone = (type: string) => {
     if (type === 'Withdrawal') return 'debit';
     if (type === 'Refund') return 'refund';
@@ -22,7 +40,7 @@ const TransactionTable: React.FC<Props> = ({ transactions, loading, total, pageS
     return 'credit';
   };
 
-  const columns: ColumnsType<TutorTransaction> = [
+  const columns: ColumnsType<T> = [
     {
       title: 'Mã giao dịch',
       dataIndex: 'transactionId',
@@ -89,6 +107,7 @@ const TransactionTable: React.FC<Props> = ({ transactions, loading, total, pageS
       loading={loading}
       size="middle"
       scroll={{ x: 900 }}
+      onRow={onRowClick ? (record) => ({ onClick: () => onRowClick(record), style: { cursor: 'pointer' } }) : undefined}
       locale={{
         emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Không có giao dịch phù hợp" />,
       }}

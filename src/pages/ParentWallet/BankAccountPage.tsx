@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Modal } from 'antd';
 import { toast } from 'react-toastify';
 import {
@@ -13,7 +13,7 @@ import { formatDateTime, maskBankAccount } from '../../utils/formatters';
 import BankAccountCard from '../../components/BankAccount/BankAccountCard';
 import BankAccountForm from '../../components/BankAccount/BankAccountForm';
 import BankAccountDeleteModal from '../../components/BankAccount/BankAccountDeleteModal';
-import styles from './styles.module.css';
+import FinanceShell from './components/FinanceShell';
 import '../../styles/pages/tutor-finance.css';
 
 const ACTION_LABEL: Record<BankAccountAuditLogItem['action'], string> = {
@@ -30,8 +30,6 @@ const ACTION_LABEL: Record<BankAccountAuditLogItem['action'], string> = {
  */
 const BankAccountPage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const portalBase = location.pathname.startsWith('/student-portal') ? '/student-portal' : '/parent-portal';
   const [bankInfo, setBankInfo] = useState<BankAccount | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -88,15 +86,10 @@ const BankAccountPage = () => {
   };
 
   return (
-    <div className={styles.page}>
-      <div className={styles.pageHeader}>
-        <button className={styles.backBtn} type="button" onClick={() => navigate(`${portalBase}/wallet`)}>
-          ← Quay lại Ví của tôi
-        </button>
-        <h1 className={styles.pageTitle}>Tài khoản ngân hàng</h1>
-        <p className={styles.pageSubtitle}>Quản lý tài khoản nhận tiền khi bạn tạo yêu cầu rút tiền từ TUTORA.</p>
-      </div>
-
+    <FinanceShell
+      title="Tài khoản ngân hàng"
+      subtitle="Quản lý tài khoản nhận tiền khi bạn tạo yêu cầu rút tiền từ TUTORA."
+    >
       <div className="finance-bank-layout">
         <BankAccountCard
           bankInfo={bankInfo}
@@ -159,7 +152,7 @@ const BankAccountPage = () => {
         onClose={() => setIsDeleteModalOpen(false)}
         onSuccess={handleDeleteSuccess}
       />
-    </div>
+    </FinanceShell>
   );
 };
 

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import styles from './styles.module.css';
+import { useTabParam } from '../../hooks/useTabParam';
 import {
   useOnboardingState,
   useOnboardingSync,
@@ -14,13 +15,34 @@ import {
   type OnboardingStep,
 } from './onboarding-components';
 
+// Bước đang xem sống trên URL (`?step=`) thay vì useState — reload/F5 hoặc share
+// link không còn văng về bước 1. `summary` là màn tổng kết sau khi bấm "Hoàn tất".
+const STEP_SLUGS = ['availability', 'pricing', 'packages', 'summary'] as const;
+type StepSlug = (typeof STEP_SLUGS)[number];
+
+const STEP_BY_SLUG: Record<StepSlug, OnboardingStep> = {
+  availability: 1,
+  pricing: 2,
+  packages: 3,
+  summary: 3,
+};
+const SLUG_BY_STEP: Record<OnboardingStep, StepSlug> = { 1: 'availability', 2: 'pricing', 3: 'packages' };
+const clampStep = (n: number): OnboardingStep => Math.min(3, Math.max(1, n)) as OnboardingStep;
+
 const TutorOnboarding: React.FC = () => {
   const navigate = useNavigate();
   const onboarding = useOnboardingState();
-  const { state, hydrate, combosMatchAvailability, canFinish, goNext, goBack, goToStep } = onboarding;
+  const { state, hydrate, combosMatchAvailability, canFinish } = onboarding;
   const sync = useOnboardingSync(hydrate);
   const { subjects, gradeLevels } = useLookups();
-  const [finished, setFinished] = useState(false);
+
+  const [stepSlug, setStepSlug] = useTabParam<StepSlug>(STEP_SLUGS, 'availability', { paramKey: 'step' });
+  const finished = stepSlug === 'summary';
+  const currentStep = STEP_BY_SLUG[stepSlug];
+
+  const goToStep = useCallback((step: OnboardingStep) => setStepSlug(SLUG_BY_STEP[step]), [setStepSlug]);
+  const goNext = useCallback(() => setStepSlug(SLUG_BY_STEP[clampStep(currentStep + 1)]), [currentStep, setStepSlug]);
+  const goBack = useCallback(() => setStepSlug(SLUG_BY_STEP[clampStep(currentStep - 1)]), [currentStep, setStepSlug]);
 
   // Thứ tự bước: 1 = lịch rảnh, 2 = môn & giá, 3 = gói.
   const availabilityReady = state.availability.length > 0;
@@ -33,15 +55,23 @@ const TutorOnboarding: React.FC = () => {
     return availabilityReady && subjectsReady; // step 3
   };
 
-  const canProceedCurrent =
-    state.currentStep === 1 ? availabilityReady : state.currentStep === 2 ? subjectsReady : canFinish;
+  // URL có thể trỏ tới bước chưa mở khoá (link cũ, gõ tay, dữ liệu đã bị xoá).
+  // Chờ hydrate xong mới biết bước nào hợp lệ, rồi kéo về bước xa nhất đang mở.
+  // `summary` chỉ đọc nên không chặn — cứ hiển thị theo dữ liệu đã load.
+  useEffect(() => {
+    if (sync.loading || finished || isStepEnabled(currentStep)) return;
+    setStepSlug(SLUG_BY_STEP[availabilityReady ? (subjectsReady ? 3 : 2) : 1]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sync.loading, finished, currentStep, availabilityReady, subjectsReady]);
+
+  const canProceedCurrent = currentStep === 1 ? availabilityReady : currentStep === 2 ? subjectsReady : canFinish;
 
   const blockingReason = (() => {
     if (canProceedCurrent) return null;
-    if (state.currentStep === 1) {
+    if (currentStep === 1) {
       return 'Cần thêm ít nhất 1 khung giờ rảnh để tiếp tục.';
     }
-    if (state.currentStep === 2) {
+    if (currentStep === 2) {
       return 'Cần thêm ít nhất 1 cấu hình môn, khối lớp và giá để tiếp tục.';
     }
     if (!combosMatchAvailability) {
@@ -62,18 +92,18 @@ const TutorOnboarding: React.FC = () => {
     3: availabilityReady && subjectsReady ? (packagesReady ? `${state.combos.length} gói` : 'Tuỳ chọn') : 'Cần lịch & giá',
   };
 
-  const footerStatusText = `Đang chỉnh: ${sectionTitles[state.currentStep]}`;
+  const footerStatusText = `Đang chỉnh: ${sectionTitles[currentStep]}`;
 
   const handleNext = async () => {
     // Lưu từng bước: mỗi bước map đúng 1 nhóm endpoint.
-    if (state.currentStep === 1) {
+    if (currentStep === 1) {
       if (await sync.saveAvailability(state.availability)) {
         toast.success('Đã lưu lịch rảnh');
         goNext();
       }
       return;
     }
-    if (state.currentStep === 2) {
+    if (currentStep === 2) {
       // savePricing tự hiện toast đúng (kể cả trường hợp hồ sơ active → chờ Admin duyệt).
       if (await sync.savePricing(state.subjectRecords)) {
         goNext();
@@ -83,7 +113,7 @@ const TutorOnboarding: React.FC = () => {
     // Bước 3 — gói lịch học (kết thúc).
     if (await sync.savePackages(state.combos)) {
       toast.success('Đã lưu gói lịch học. Hoàn tất thiết lập!');
-      setFinished(true);
+      setStepSlug('summary');
     }
   };
 
@@ -105,7 +135,7 @@ const TutorOnboarding: React.FC = () => {
         availability={state.availability}
         combos={state.combos}
         gradeLevels={gradeLevels}
-        onBack={() => setFinished(false)}
+        onBack={() => setStepSlug('packages', { tab: null })}
         onFinish={() => navigate('/tutor-portal/dashboard')}
       />
     );
@@ -116,7 +146,7 @@ const TutorOnboarding: React.FC = () => {
       <div className={styles.header}>
         <h1 className={styles.headerTitle}>Thiết lập giảng dạy</h1>
         <OnboardingStepper
-          currentStep={state.currentStep}
+          currentStep={currentStep}
           onStepClick={goToStep}
           isStepEnabled={isStepEnabled}
           sectionStatuses={sectionStatuses}
@@ -124,10 +154,10 @@ const TutorOnboarding: React.FC = () => {
       </div>
 
       <div className={styles.body}>
-        {state.currentStep === 1 && (
+        {currentStep === 1 && (
           <StepAvailability onboarding={onboarding} onSaveAvailability={sync.saveAvailability} saving={sync.saving} />
         )}
-        {state.currentStep === 2 && (
+        {currentStep === 2 && (
           <StepSubjectRecords
             onboarding={onboarding}
             subjects={subjects}
@@ -136,7 +166,7 @@ const TutorOnboarding: React.FC = () => {
             saving={sync.saving}
           />
         )}
-        {state.currentStep === 3 && (
+        {currentStep === 3 && (
           <StepCombos
             onboarding={onboarding}
             inactiveCombos={sync.inactiveCombos}
@@ -153,7 +183,7 @@ const TutorOnboarding: React.FC = () => {
           {blockingReason ? <span className={styles.footerWarn}>{blockingReason}</span> : footerStatusText}
         </div>
         <div className={styles.footerBtns}>
-          {state.currentStep > 1 && (
+          {currentStep > 1 && (
             <button type="button" className={styles.btnGhost} onClick={goBack}>
               Quay lại
             </button>
@@ -164,7 +194,7 @@ const TutorOnboarding: React.FC = () => {
             onClick={handleNext}
             disabled={!canProceedCurrent || sync.saving}
           >
-            {sync.saving ? 'Đang lưu...' : state.currentStep === 3 ? 'Hoàn tất' : 'Tiếp tục'}
+            {sync.saving ? 'Đang lưu...' : currentStep === 3 ? 'Hoàn tất' : 'Tiếp tục'}
           </button>
         </div>
       </div>

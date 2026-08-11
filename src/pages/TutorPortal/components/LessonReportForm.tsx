@@ -25,6 +25,8 @@ interface LessonReportFormProps {
   onDescriptionChange?: (url: string, description: string) => void;
   onSubmitSuccess: (detail: ClassSessionDetailResponse) => void;
   onCancel?: () => void;
+  /** Nhãn nút phụ. Trong modal cuối buổi là "Để sau" chứ không phải huỷ hẳn. */
+  cancelText?: string;
 }
 
 interface ReportFormValues {
@@ -44,6 +46,7 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
   onDescriptionChange,
   onSubmitSuccess,
   onCancel,
+  cancelText = 'Hủy',
 }) => {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
@@ -222,7 +225,7 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
         <div className={styles.actions}>
           {onCancel && (
             <Button onClick={onCancel} className={styles.cancelButton}>
-              Hủy
+              {cancelText}
             </Button>
           )}
           <Button type="primary" htmlType="submit" loading={submitting} className={styles.submitButton}>

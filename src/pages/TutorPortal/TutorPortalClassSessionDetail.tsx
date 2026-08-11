@@ -40,6 +40,7 @@ import {
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 import { canJoinLiveSession, isWithinJoinWindow } from '../../utils/liveSession';
 import { signalRService } from '../../services/signalr.service';
+import { useTabParam } from '../../hooks/useTabParam';
 import LessonReportForm from './components/LessonReportForm';
 import MaterialsTab from './components/MaterialsTab';
 import {
@@ -51,7 +52,8 @@ import {
 } from '../../components/shared';
 import styles from '../../styles/pages/tutor-portal-class-session-detail.module.css';
 
-type DetailTab = 'overview' | 'materials';
+const DETAIL_TABS = ['overview', 'materials'] as const;
+type DetailTab = (typeof DETAIL_TABS)[number];
 
 const SESSION_STATUS_TONES: Record<string, { color: string; bg: string }> = {
   reserved: { color: '#687086', bg: '#f0f2f4' },
@@ -139,7 +141,7 @@ const TutorPortalClassSessionDetail = () => {
   const { classSessionId: rawClassSessionId } = useParams();
   const classSessionId = rawClassSessionId && /^\d+$/.test(rawClassSessionId) ? Number(rawClassSessionId) : null;
   const [session, setSession] = useState<ClassSessionDetailResponse | null>(null);
-  const [activeTab, setActiveTab] = useState<DetailTab>('overview');
+  const [activeTab, setActiveTab] = useTabParam<DetailTab>(DETAIL_TABS, 'overview');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [checkingOut, setCheckingOut] = useState(false);
@@ -1015,7 +1017,13 @@ const TutorPortalClassSessionDetail = () => {
                       {session.student?.school && <span>{session.student.school}</span>}
                     </div>
                     {session.student?.studentId && session.bookingId && (
-                      <button type="button" className={styles.profileButton} onClick={handleOpenStudentProfile}>
+                      <button
+                        type="button"
+                        className={styles.profileButton}
+                        onClick={handleOpenStudentProfile}
+                        disabled
+                        title="Tính năng đang được phát triển"
+                      >
                         <GraduationCap size={16} />
                         Xem hồ sơ học tập
                       </button>
