@@ -15,7 +15,7 @@
     BlinkMacSystemFont,
     'Segoe UI',
     sans-serif;
-  background: radial-gradient(circle at 14% -8%, rgba(15, 143, 131, 0.06), transparent 28%), transparent;
+  background: transparent;
 }
 
 .main {

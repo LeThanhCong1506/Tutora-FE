@@ -9,7 +9,7 @@
 
 /* Profile Page Container */
 .profilePage {
-  background-color: #f2f0e4;
+  background-color: transparent;
   min-height: 100vh;
   display: flex;
   flex-direction: column;

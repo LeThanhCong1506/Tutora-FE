@@ -13,7 +13,7 @@
   padding: clamp(24px, 2.2vw, 36px);
   color: var(--finance-navy);
   font-family: 'IBM Plex Sans', system-ui, sans-serif;
-  background: radial-gradient(circle at 92% 0%, rgba(212, 180, 131, 0.1), transparent 24rem), transparent;
+  background: transparent;
 }
 
 .finance-page-shell {
