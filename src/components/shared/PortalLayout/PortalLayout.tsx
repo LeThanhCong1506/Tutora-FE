@@ -3,32 +3,16 @@ import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import styles from './PortalLayout.module.css';
 
-import ProfileDropdown from './ProfileDropdown';
 import type { ProfileMenuItem } from './ProfileDropdown';
 import { ConfirmDialog } from '../ConfirmDialog';
-import NotificationDropdown from '../../NotificationDropdown/NotificationDropdown';
+import Header from '../../Header/Header';
 import { clearUserFromStorage, getUserInfoFromToken, getUserProfile } from '../../../services/auth.service';
-import { getUnreadCount } from '../../../services/notification.service';
-import { signalRService } from '../../../services/signalr.service';
 import { isZaloMiniApp } from '../../../services/zalo-env';
 
 // ─── Shared Icons (Logo, Menu, Close, Logout, Notification) ───
 
 const LogoIcon = () => (
     <img src="/tutora-logo.png" alt="Tutora" width="28" height="28" />
-);
-
-const NotificationIcon = () => (
-    <svg width="18" height="20" viewBox="0 0 18 20" fill="currentColor">
-        <path d="M9 0C5.68629 0 3 2.68629 3 6V11L1 14V15H17V14L15 11V6C15 2.68629 12.3137 0 9 0Z" />
-        <path d="M9 20C10.6569 20 12 18.6569 12 17H6C6 18.6569 7.34315 20 9 20Z" />
-    </svg>
-);
-
-const MenuIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M3 5H17M3 10H17M3 15H17" strokeLinecap="round" />
-    </svg>
 );
 
 const CloseIcon = () => (
@@ -103,11 +87,9 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
     navItems,
     userRole,
     isActive: isActiveProp,
-    headerLeft,
     sidebarNavFooter,
     showSidebarUserCard = true,
     showAvatarImage = true,
-    showNotificationDropdown: showNotifDropdownProp = true,
     profileMenuItems,
     extras,
     sidebarDataTour,
@@ -203,44 +185,6 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
         return () => window.removeEventListener('profile-name-updated', handleNameUpdated);
     }, []);
 
-    // ── Notifications ──
-    const [notificationCount, setNotificationCount] = useState(0);
-    const [showNotifDropdown, setShowNotifDropdown] = useState(false);
-
-    useEffect(() => {
-        const fetchCount = async () => {
-            try {
-                const count = await getUnreadCount();
-                setNotificationCount(count);
-            } catch { /* keep 0 */ }
-        };
-        fetchCount();
-
-        const handleCountUpdate = (count: number) => setNotificationCount(count);
-        const handleNewNotification = (notification: any) => {
-            const user = getUserInfoFromToken();
-            const currentUserId = user?.userId || user?.sub;
-            if (notification.userid && currentUserId && notification.userid !== currentUserId) return;
-            setNotificationCount(prev => prev + 1);
-        };
-
-        signalRService.onNotificationCountUpdated(handleCountUpdate);
-        signalRService.onNotificationReceived(handleNewNotification);
-        signalRService.connect().catch(() => {});
-
-        return () => {
-            signalRService.offNotificationCountUpdated();
-            signalRService.offNotificationReceived();
-        };
-    }, []);
-
-    const handleRefreshNotificationCount = async () => {
-        try {
-            const count = await getUnreadCount();
-            setNotificationCount(count);
-        } catch { /* ignore */ }
-    };
-
     // Profile dropdown
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
@@ -272,7 +216,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
 
     // ── Render ──
     return (
-        <div className={styles.layout}>
+        <div className={`${styles.layout} portal-layout`}>
             {/* Mobile Sidebar Overlay — ẩn trong Mini App */}
             {!inMiniApp && sidebarOpen && (
                 <div
@@ -283,7 +227,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
 
             {/* Sidebar — ẩn trong Mini App (dùng bottom nav thay thế) */}
             {!inMiniApp && <aside
-                className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ''}`}
+                className={`${styles.sidebar} portal-sidebar ${sidebarOpen ? styles.sidebarOpen : ''}`}
                 {...(sidebarDataTour ? { 'data-tour': sidebarDataTour } : {})}
             >
                 {/* Logo */}
@@ -376,71 +320,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                 className={styles.main}
                 style={inMiniApp ? { marginLeft: 0, paddingBottom: '60px' } : undefined}
             >
-                {/* Header — ẩn trong Mini App (Zalo cung cấp app bar riêng) */}
-                {!inMiniApp && <header className={styles.header}>
-                    <div className={styles.headerContainer}>
-                        {/* Mobile Menu Button */}
-                        <button
-                            className={styles.menuBtn}
-                            onClick={() => setSidebarOpen(true)}
-                        >
-                            <MenuIcon />
-                        </button>
-
-                        {/* Header Left (portal-specific) */}
-                        {headerLeft && (
-                            <div className={styles.headerLeft}>{headerLeft}</div>
-                        )}
-
-                        {/* Spacer */}
-                        <div style={{ flex: 1 }} />
-
-                        {/* Header Right */}
-                        <div className={styles.headerRight}>
-                            {/* Notification Bell */}
-                            <div style={{ position: 'relative' }}>
-                                <button
-                                    className={styles.notificationBtn}
-                                    data-tour="notification-btn"
-                                    onClick={() => {
-                                        if (showNotifDropdownProp) {
-                                            setShowNotifDropdown(!showNotifDropdown);
-                                        }
-                                    }}
-                                >
-                                    <div className={styles.notificationIconWrap}>
-                                        <NotificationIcon />
-                                    </div>
-                                    {notificationCount > 0 && (
-                                        <div className={styles.notificationBadge}>
-                                            <span>{notificationCount}</span>
-                                        </div>
-                                    )}
-                                </button>
-                                {showNotifDropdownProp && (
-                                    <NotificationDropdown
-                                        isOpen={showNotifDropdown}
-                                        onClose={() => setShowNotifDropdown(false)}
-                                        onCountUpdate={handleRefreshNotificationCount}
-                                    />
-                                )}
-                            </div>
-
-                            {/* User Info + quick actions */}
-                            <ProfileDropdown
-                                name={userData.name}
-                                role={userData.role}
-                                initials={userData.initials}
-                                avatarUrl={userData.avatar}
-                                subtitle={userData.email}
-                                showAvatarImage={showAvatarImage}
-                                items={dropdownItems}
-                                onNavigate={(path) => navigate(path)}
-                            />
-                        </div>
-                    </div>
-                </header>}
-
+                {!inMiniApp && <Header variant="portal" profileMenuItems={dropdownItems} />}
                 {/* Page Content */}
                 <div className={styles.contentArea}>
                     {children || <Outlet />}

@@ -11,7 +11,12 @@ import { getMyLinkStatus } from "../../services/student.service";
 const generateAvatarUrl = (name: string) =>
   `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=3d4a3e&color=f2f0e4&size=128`;
 
-const Header = () => {
+interface HeaderProps {
+  profileMenuItems?: ProfileMenuItem[];
+  variant?: 'default' | 'portal';
+}
+
+const Header = ({ profileMenuItems: profileMenuItemsProp, variant = 'default' }: HeaderProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -97,7 +102,7 @@ const Header = () => {
     return name.substring(0, 2).toUpperCase();
   };
 
-  const profileMenuItems = useMemo<ProfileMenuItem[]>(() => [
+  const defaultProfileMenuItems = useMemo<ProfileMenuItem[]>(() => [
     ...getProfileMenuItemsByRole(userRole, { studentSelfRegistered }),
     {
       key: "logout",
@@ -109,8 +114,10 @@ const Header = () => {
     },
   ], [userRole, studentSelfRegistered]);
 
+  const profileMenuItems = profileMenuItemsProp ?? defaultProfileMenuItems;
+
   return (
-    <header className="header">
+    <header className={`header ${variant === 'portal' ? 'portal-header' : ''}`}>
       <div className="header-content">
         <Link to="/" className="logo-link">
           <div className="logo-icon">

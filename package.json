@@ -23,7 +23,7 @@
     "agora-rtc-sdk-ng": "^4.24.5",
     "agora-rtm-sdk": "^2.2.4",
     "antd": "^6.1.4",
-    "axios": "^1.13.2",
+    "axios": "^1.19.0",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.562.0",
     "onnxruntime-web": "^1.27.0",
