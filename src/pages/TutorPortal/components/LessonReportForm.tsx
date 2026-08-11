@@ -1,11 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Form, Input, Button } from 'antd';
 import { toast } from 'react-toastify';
 import {
   submitClassSessionReport,
+  triggerReportAiFill,
+  getReportAiFillStatus,
   type SubmitReportRequest,
   type ClassSessionDetailResponse,
   type ReportAttachment,
+  type ClassSessionAiJobResponse,
+  type TutorReportAiFillResult,
 } from '../../../services/classSession.service';
 import { useFormDraft } from '../../../hooks/useFormDraft';
 import AttachmentUploader from './AttachmentUploader';
@@ -29,6 +33,9 @@ interface ReportFormValues {
   tutorNotes?: string;
 }
 
+type AiFillableField = keyof ReportFormValues;
+type AiJobStatus = 'idle' | 'pending' | 'processing' | 'completed' | 'failed';
+
 const LessonReportForm: React.FC<LessonReportFormProps> = ({
   classSessionId,
   attachments,
@@ -44,6 +51,16 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
     `draft_lesson_report_${classSessionId}`,
   );
 
+  // Điền bằng AI: mỗi field có dấu "*" riêng — bấm field nào thì chỉ field đó được điền, không
+  // phải điền hết cả form 1 lượt. Cả 3 field vẫn dùng chung 1 lần gọi Gemini (aiResult) — bấm
+  // field khác sau khi đã có kết quả thì áp dụng ngay, không phải chờ lại.
+  const [aiResult, setAiResult] = useState<TutorReportAiFillResult | null>(null);
+  const [aiJobStatus, setAiJobStatus] = useState<AiJobStatus>('idle');
+  const [aiAppliedFields, setAiAppliedFields] = useState<Set<AiFillableField>>(new Set());
+  // Field nào đang "chờ" được áp dụng khi job xong — dùng ref vì chỉ đọc trong callback polling,
+  // không cần re-render khi thay đổi.
+  const pendingAiFieldsRef = useRef<Set<AiFillableField>>(new Set());
+
   // Load draft on mount
   useEffect(() => {
     const draft = loadDraft();
@@ -58,6 +75,90 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
       saveDraft(allValues);
     },
     [saveDraft],
+  );
+
+  const applyAiJob = useCallback((job: ClassSessionAiJobResponse) => {
+    setAiJobStatus(job.status === 'none' ? 'idle' : job.status);
+
+    if (job.status === 'failed') {
+      pendingAiFieldsRef.current.clear();
+      return;
+    }
+
+    if (job.status === 'completed' && job.resultJson) {
+      setAiResult(job.resultJson);
+      const fieldsToApply = Array.from(pendingAiFieldsRef.current);
+      if (fieldsToApply.length > 0) {
+        const patch: Partial<ReportFormValues> = {};
+        fieldsToApply.forEach((field) => {
+          patch[field] = job.resultJson![field];
+        });
+        form.setFieldsValue(patch);
+        setAiAppliedFields((prev) => {
+          const next = new Set(prev);
+          fieldsToApply.forEach((field) => next.add(field));
+          return next;
+        });
+      }
+      pendingAiFieldsRef.current.clear();
+    }
+  }, [form]);
+
+  // Poll trong lúc Gemini đang xử lý (video có thể vài tiếng, mất vài phút) — dừng khi có kết quả.
+  useEffect(() => {
+    if (aiJobStatus !== 'pending' && aiJobStatus !== 'processing') return;
+    const timer = window.setInterval(async () => {
+      try {
+        const response = await getReportAiFillStatus(classSessionId);
+        applyAiJob(response.content);
+      } catch (error) {
+        console.error('Failed to poll AI report fill status', error);
+      }
+    }, 8000);
+    return () => window.clearInterval(timer);
+  }, [aiJobStatus, classSessionId, applyAiJob]);
+
+  const handleAiFillField = async (field: AiFillableField) => {
+    // Đã có kết quả sẵn (do field khác trigger trước đó) — áp dụng ngay, không cần gọi lại API.
+    if (aiResult) {
+      form.setFieldsValue({ [field]: aiResult[field] });
+      setAiAppliedFields((prev) => new Set(prev).add(field));
+      return;
+    }
+
+    pendingAiFieldsRef.current.add(field);
+    if (aiJobStatus === 'pending' || aiJobStatus === 'processing') return;
+
+    setAiJobStatus('pending');
+    try {
+      const response = await triggerReportAiFill(classSessionId);
+      applyAiJob(response.content);
+    } catch (error: unknown) {
+      setAiJobStatus('failed');
+      pendingAiFieldsRef.current.clear();
+      const e = error as { response?: { data?: { message?: string } } };
+      toast.error(e.response?.data?.message || 'Không thể gợi ý nội dung bằng AI. Vui lòng thử lại.');
+    }
+  };
+
+  const renderLabel = (field: AiFillableField, text: string) => (
+    <span>
+      {text}
+      {!aiAppliedFields.has(field) && (
+        <button
+          type="button"
+          className={styles.aiFillBadge}
+          disabled={aiJobStatus === 'pending' || aiJobStatus === 'processing'}
+          onClick={(event) => {
+            event.preventDefault();
+            void handleAiFillField(field);
+          }}
+          title="Điền nội dung này bằng AI (đọc video buổi học)"
+        >
+          *
+        </button>
+      )}
+    </span>
   );
 
   const handleSubmit = async (values: ReportFormValues) => {
@@ -95,13 +196,13 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
       >
         <Form.Item
           name="lessonContent"
-          label="Nội dung đã dạy"
+          label={renderLabel('lessonContent', 'Nội dung đã dạy')}
           rules={[{ required: true, message: 'Vui lòng nhập nội dung đã dạy' }]}
         >
           <TextArea rows={4} placeholder="Mô tả nội dung buổi học..." />
         </Form.Item>
 
-        <Form.Item name="homework" label="Bài tập về nhà">
+        <Form.Item name="homework" label={renderLabel('homework', 'Bài tập về nhà')}>
           <TextArea rows={3} placeholder="Bài tập giao cho học sinh (nếu có)..." />
         </Form.Item>
 
@@ -114,7 +215,7 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
           />
         </div>
 
-        <Form.Item name="tutorNotes" label="Ghi chú">
+        <Form.Item name="tutorNotes" label={renderLabel('tutorNotes', 'Ghi chú')}>
           <TextArea rows={2} placeholder="Ghi chú thêm về buổi học..." />
         </Form.Item>
 
