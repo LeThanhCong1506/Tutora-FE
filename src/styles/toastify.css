@@ -5,7 +5,12 @@
     width: min(368px, calc(100vw - 32px));
     padding: 0;
     gap: 10px;
-    z-index: 99999;
+    /* Phải nằm trên MỌI modal (modal dùng 100000, tooltip của TutorTour 100001). Toast thường
+       do chính form trong modal sinh ra — ví dụ "số điện thoại chưa đăng ký" ở modal quên mật
+       khẩu. Để toast thấp hơn là người dùng không bao giờ thấy lỗi vừa gây ra: nó nằm sau lớp
+       backdrop có blur. Giữ khớp với `style={{ zIndex }}` của ToastContainer trong App.tsx —
+       inline style thắng file CSS này nên lệch hai chỗ là rất khó truy. */
+    z-index: 100100;
 }
 
 .Toastify__toast-container--top-right {

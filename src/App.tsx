@@ -259,7 +259,8 @@ function App() {
         pauseOnFocusLoss
         newestOnTop
         draggable
-        style={{ zIndex: 99999 }}
+        /* Trên mọi modal — xem ghi chú ở .Toastify__toast-container trong styles/toastify.css. */
+        style={{ zIndex: 100100 }}
       />
 
       <ErrorBoundary>
@@ -288,7 +289,11 @@ function App() {
             {/* Đường dẫn cũ trước khi gộp vào /about. */}
             <Route path="/terms" element={<Navigate to="/about/terms" replace />} />
             <Route path="/privacy" element={<Navigate to="/about/privacy" replace />} />
-            <Route path="/operating-rules" element={<Navigate to="/about/community-guidelines" replace />} />
+            {/* "Quy chế hoạt động" cũ nói về đặt lịch, phí dịch vụ, tạm giữ và giải ngân, đổi
+                lịch, vắng mặt, khiếu nại, rút tiền — 8/11 mục nay nằm trong Điều khoản sử dụng
+                (mục 5 và 6). Trỏ sang Quy tắc cộng đồng là sai: bên đó chỉ có chuẩn mực ứng xử,
+                người vào tra mức phí dịch vụ sẽ không thấy gì. */}
+            <Route path="/operating-rules" element={<Navigate to="/about/terms" replace />} />
             <Route path="/policies" element={<Navigate to="/about" replace />} />
             <Route path="/policies/:slug" element={<LegacyPolicyRedirect />} />
 
