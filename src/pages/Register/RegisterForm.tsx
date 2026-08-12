@@ -226,7 +226,6 @@ const RegisterForm: React.FC = () => {
             {/* --- MAIN FORM --- */}
             <div className="register-form__header animate-fade-in-up">
                 <h2 className="register-form__title">Bắt đầu hành trình</h2>
-                <p className="register-form__subtitle">Tạo tài khoản TUTORA LMS.</p>
             </div>
 
             <div className="register-form__body">
