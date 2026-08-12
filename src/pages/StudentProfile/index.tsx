@@ -26,6 +26,7 @@ import { getGradeLevels, type GradeLevelLookup } from '../../services/lookup.ser
 import { useStudentProfile } from '../../contexts/StudentProfileContext';
 import { takeBookingOtpResume } from '../../utils/bookingOtpResume';
 import { takePendingRedirect } from '../../services/auth.service';
+import { fetchProtectedImage, releaseProtectedImage } from '../../utils/protectedImage';
 import styles from './styles.module.css';
 
 /** So khớp không phân biệt "0xxxxxxxxx" với "+84xxxxxxxxx" — cùng một số thật. */
@@ -119,7 +120,8 @@ const StudentProfile = () => {
       .catch(() => setMyCccd(null));
   }, []);
 
-  // Lấy signed URL mới ngay lúc bấm — link cũ lấy lúc mở trang có thể đã hết hạn.
+  // Lấy signed URL mới ngay lúc bấm (link chỉ sống 15 phút), rồi tải ảnh kèm token đăng nhập —
+  // endpoint file private đòi JWT + đúng chủ sở hữu nên không gán thẳng vào <img src> được.
   const handleViewCccd = async (side: 'front' | 'back') => {
     if (openingCccdSide) return;
     setOpeningCccdSide(side);
@@ -131,12 +133,23 @@ const StudentProfile = () => {
         toast.error('Không tìm thấy ảnh CCCD.');
         return;
       }
-      setCccdPreview({ label: side === 'front' ? 'CCCD mặt trước' : 'CCCD mặt sau', url });
+      const objectUrl = await fetchProtectedImage(url);
+      setCccdPreview((prev) => {
+        releaseProtectedImage(prev?.url);
+        return { label: side === 'front' ? 'CCCD mặt trước' : 'CCCD mặt sau', url: objectUrl };
+      });
     } catch {
       toast.error('Không mở được ảnh CCCD. Vui lòng thử lại.');
     } finally {
       setOpeningCccdSide(null);
     }
+  };
+
+  const closeCccdPreview = () => {
+    setCccdPreview((prev) => {
+      releaseProtectedImage(prev?.url);
+      return null;
+    });
   };
 
   // Cuộn tới + focus ô SĐT phụ huynh khi được điều hướng tới đây từ luồng xác thực OTP giao
@@ -684,7 +697,7 @@ const StudentProfile = () => {
           role="dialog"
           aria-modal="true"
           aria-label={cccdPreview.label}
-          onClick={() => setCccdPreview(null)}
+          onClick={closeCccdPreview}
         >
           <div className={styles.cccdPreviewBox} onClick={(e) => e.stopPropagation()}>
             <div className={styles.cccdPreviewHead}>
@@ -692,7 +705,7 @@ const StudentProfile = () => {
               <button
                 type="button"
                 className={styles.cccdPreviewClose}
-                onClick={() => setCccdPreview(null)}
+                onClick={closeCccdPreview}
                 aria-label="Đóng"
               >
                 <X size={16} />
