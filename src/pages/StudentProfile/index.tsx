@@ -67,6 +67,7 @@ const StudentProfile = () => {
 
   // Student rule: xác minh CCCD + đủ điều kiện đặt lịch + SĐT phụ huynh.
   const [eligibility, setEligibility] = useState<StudentBookingEligibility | null>(null);
+  const [eligibilityStatus, setEligibilityStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   // Ảnh CCCD đã upload — tự xem lại. Lần gọi lúc mở trang chỉ để biết CÓ ảnh hay không (hiện/ẩn nút);
   // link thật lấy lại ngay lúc bấm vì signed URL chỉ sống ~15 phút, để lâu sẽ hỏng.
   const [myCccd, setMyCccd] = useState<MyCccdUrls | null>(null);
@@ -103,10 +104,20 @@ const StudentProfile = () => {
   }, []);
 
   // Tải trạng thái đủ điều kiện đặt lịch (nguồn tin cậy cho trạng thái verify CCCD/tuổi).
-  const refreshEligibility = () =>
-    getBookingEligibility()
-      .then((res) => setEligibility(res.content ?? null))
-      .catch(() => setEligibility(null));
+  // Phải phân biệt "chưa tải xong / lỗi" với "chưa xác minh": nếu gộp làm một thì mỗi lần API
+  // lỗi hoặc còn đang chờ, học sinh đã xác minh vẫn thấy form upload và tưởng phải nộp lại CCCD.
+  const refreshEligibility = () => {
+    setEligibilityStatus('loading');
+    return getBookingEligibility()
+      .then((res) => {
+        setEligibility(res.content ?? null);
+        setEligibilityStatus('ready');
+      })
+      .catch(() => {
+        setEligibility(null);
+        setEligibilityStatus('error');
+      });
+  };
 
   useEffect(() => {
     void refreshEligibility();
@@ -481,7 +492,7 @@ const StudentProfile = () => {
                 <h2 className={styles.cardTitle}>
                   <IdCard size={18} /> Xác minh độ tuổi
                 </h2>
-                {identityVerified ? (
+                {eligibilityStatus !== 'ready' ? null : identityVerified ? (
                   <span className={`${styles.badge} ${styles.badgeVerified}`}>
                     <ShieldCheck size={14} /> Đã xác minh
                   </span>
@@ -496,7 +507,19 @@ const StudentProfile = () => {
                 )}
               </div>
 
-              {identityVerified ? (
+              {/* Chưa biết chắc trạng thái thì KHÔNG được hiện form upload — học sinh đã xác minh
+                  sẽ tưởng phải nộp lại CCCD. Chỉ quyết định sau khi API trả về thành công. */}
+              {eligibilityStatus === 'loading' ? (
+                <p className={styles.cccdLoadingNote}>Đang tải trạng thái xác minh…</p>
+              ) : eligibilityStatus === 'error' ? (
+                <div className={styles.cccdErrorNote}>
+                  <ShieldAlert size={16} />
+                  <span>Không tải được trạng thái xác minh. Vui lòng thử lại.</span>
+                  <button type="button" className={styles.cccdViewLink} onClick={() => void refreshEligibility()}>
+                    Thử lại
+                  </button>
+                </div>
+              ) : identityVerified ? (
                 <>
                   <p className={styles.cccdVerifiedNote}>
                     <ShieldCheck size={16} />
