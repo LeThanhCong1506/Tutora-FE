@@ -36,12 +36,20 @@ const getCloudinaryPdfImageUrl = (url: string, transformation: string): string |
 /**
  * URL ảnh để hiển thị cho một file chứng chỉ.
  * - Ảnh thường (jpg/png…): trả nguyên URL.
- * - PDF: trả ảnh trang đầu (qua Cloudinary). `fullSize` = true cho ảnh xem chi tiết.
+ * - PDF: ưu tiên `thumbnailUrl` backend tự render lúc upload (mọi chứng chỉ mới — không phụ thuộc
+ *   nơi lưu file là Cloudinary hay VPS). Chỉ khi không có (chứng chỉ cũ, upload trước khi có tính
+ *   năng thumbnail) mới thử cách cũ — nhờ Cloudinary tự render qua URL transformation.
  * - Không thể tạo ảnh: trả null (nơi gọi tự fallback sang icon).
  */
-export const getCertificateImageUrl = (url?: string | null, fullSize = false): string | null => {
+export const getCertificateImageUrl = (
+  url?: string | null,
+  fullSize = false,
+  thumbnailUrl?: string | null,
+): string | null => {
   if (!url) return null;
   if (!isPdfUrl(url)) return url;
+
+  if (thumbnailUrl) return thumbnailUrl;
 
   const transformation = fullSize
     ? 'pg_1,w_1800,c_limit,q_auto,f_jpg'

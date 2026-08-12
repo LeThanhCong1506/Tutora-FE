@@ -9,7 +9,7 @@
 
 /* Profile Page Container */
 .profilePage {
-  background-color: #f2f0e4;
+  background-color: transparent;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -1992,6 +1992,13 @@
 
 .editBtnSmall:hover {
   background-color: rgba(242, 240, 228, 0.5);
+}
+
+.cccdViewActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
 }
 
 /* Edit Icon Button (icon only, no text) */

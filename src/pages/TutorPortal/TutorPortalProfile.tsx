@@ -18,7 +18,7 @@ import BookingModal from './components/BookingModal';
 import TutorProfilePreview from './components/TutorProfilePreview';
 import { deleteCertificate } from '../../services/certificate.service';
 import { getUserIdFromToken } from '../../services/auth.service';
-import { getAcceptingBookings, setAcceptingBookings } from '../../services/tutorProfile.service';
+import { getAcceptingBookings, setAcceptingBookings, getMyCccdUrls, type MyCccdUrls } from '../../services/tutorProfile.service';
 import { validateAvatar } from './utils/validation';
 import { getCertificateImageUrl, isPdfUrl } from '../../utils/certificateImage';
 import { formatGradeLevelRanges } from '../TutorSearch/components/utils';
@@ -264,6 +264,7 @@ const ProfileEmptyState: React.FC<ProfileEmptyStateProps> = ({
 
 interface CertificateThumbnailProps {
   url?: string;
+  thumbnailUrl?: string | null;
   name: string;
   onPreview: (preview: CertificatePreviewData) => void;
 }
@@ -273,11 +274,11 @@ interface CertificatePreviewData {
   imageUrl: string;
 }
 
-const CertificateThumbnail: React.FC<CertificateThumbnailProps> = ({ url, name, onPreview }) => {
+const CertificateThumbnail: React.FC<CertificateThumbnailProps> = ({ url, thumbnailUrl: rawThumbnailUrl, name, onPreview }) => {
   const [imageFailed, setImageFailed] = useState(false);
   const isPdf = isPdfUrl(url);
-  const thumbnailUrl = getCertificateImageUrl(url);
-  const previewUrl = getCertificateImageUrl(url, true);
+  const thumbnailUrl = getCertificateImageUrl(url, false, rawThumbnailUrl);
+  const previewUrl = getCertificateImageUrl(url, true, rawThumbnailUrl);
 
   if (!url || !thumbnailUrl || imageFailed) {
     return (
@@ -334,6 +335,11 @@ const TutorPortalProfile: React.FC = () => {
   const [isAcceptingBookings, setIsAcceptingBookings] = useState<boolean | null>(null);
   const [togglingBookings, setTogglingBookings] = useState(false);
 
+  // Ảnh CCCD đã upload — tự xem lại. Lần gọi lúc mở trang chỉ để biết CÓ ảnh hay không (hiện/ẩn nút);
+  // link thật lấy lại ngay lúc bấm vì signed URL chỉ sống ~15 phút, để lâu sẽ hỏng.
+  const [myCccd, setMyCccd] = useState<MyCccdUrls | null>(null);
+  const [openingCccdSide, setOpeningCccdSide] = useState<'front' | 'back' | null>(null);
+
   useEffect(() => {
     const tutorUserId = getUserIdFromToken();
     if (!tutorUserId) return;
@@ -343,7 +349,38 @@ const TutorPortalProfile: React.FC = () => {
       .catch(() => {
         /* non-blocking — toggle just stays hidden if this fails */
       });
+
+    getMyCccdUrls(tutorUserId)
+      .then((response) => setMyCccd(response.content))
+      .catch(() => {
+        /* non-blocking — nút xem CCCD chỉ ẩn đi nếu lỗi */
+      });
   }, []);
+
+  // Lấy signed URL mới ngay lúc bấm — link cũ lấy lúc mở trang có thể đã hết hạn.
+  const handleViewCccd = async (side: 'front' | 'back') => {
+    const tutorUserId = getUserIdFromToken();
+    if (!tutorUserId || openingCccdSide) return;
+
+    setOpeningCccdSide(side);
+    try {
+      const response = await getMyCccdUrls(tutorUserId);
+      setMyCccd(response.content);
+      const url = side === 'front' ? response.content?.frontImageUrl : response.content?.backImageUrl;
+      if (!url) {
+        toast.error('Không tìm thấy ảnh CCCD.');
+        return;
+      }
+      setCertificatePreview({
+        name: side === 'front' ? 'CCCD mặt trước' : 'CCCD mặt sau',
+        imageUrl: url,
+      });
+    } catch {
+      toast.error('Không mở được ảnh CCCD. Vui lòng thử lại.');
+    } finally {
+      setOpeningCccdSide(null);
+    }
+  };
 
   const handleToggleAcceptingBookings = async (accepting: boolean) => {
     const tutorUserId = getUserIdFromToken();
@@ -520,6 +557,7 @@ const TutorPortalProfile: React.FC = () => {
           credentialId: data.credentialId,
           credentialUrl: data.credentialUrl,
           certificateUrl: data.certificateUrl,
+          thumbnailUrl: data.thumbnailUrl,
           verificationStatus: data.verificationStatus,
           verificationNote: data.verificationNote,
         });
@@ -536,6 +574,7 @@ const TutorPortalProfile: React.FC = () => {
           credentialId: data.credentialId,
           credentialUrl: data.credentialUrl,
           certificateUrl: data.certificateUrl,
+          thumbnailUrl: data.thumbnailUrl,
           verificationStatus: data.verificationStatus,
           verificationNote: data.verificationNote,
         });
@@ -935,6 +974,7 @@ const TutorPortalProfile: React.FC = () => {
                         <CertificateThumbnail
                           key={credential.certificateUrl || 'no-certificate-image'}
                           url={credential.certificateUrl}
+                          thumbnailUrl={credential.thumbnailUrl}
                           name={credential.name}
                           onPreview={setCertificatePreview}
                         />
@@ -1072,6 +1112,36 @@ const TutorPortalProfile: React.FC = () => {
                       </div>
                     )}
                   </div>
+                  {/* Chỉ hiện khi BE thực sự có ảnh (verify eKYC thành công ít nhất 1 lần) —
+                      không suy luận từ verificationStatus vì đó là trạng thái duyệt hồ sơ khác. */}
+                  {(myCccd?.frontImageUrl || myCccd?.backImageUrl) && (
+                    <div className={styles.cccdViewActions}>
+                      {myCccd.frontImageUrl && (
+                        <button
+                          type="button"
+                          className={styles.editBtnSmall}
+                          disabled={openingCccdSide !== null}
+                          onClick={() => void handleViewCccd('front')}
+                        >
+                          <span>
+                            {openingCccdSide === 'front' ? 'Đang mở…' : 'Xem CCCD mặt trước'}
+                          </span>
+                        </button>
+                      )}
+                      {myCccd.backImageUrl && (
+                        <button
+                          type="button"
+                          className={styles.editBtnSmall}
+                          disabled={openingCccdSide !== null}
+                          onClick={() => void handleViewCccd('back')}
+                        >
+                          <span>
+                            {openingCccdSide === 'back' ? 'Đang mở…' : 'Xem CCCD mặt sau'}
+                          </span>
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

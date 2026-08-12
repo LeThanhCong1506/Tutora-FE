@@ -60,6 +60,7 @@ const mapFormDataToFullProfile = (data: TutorProfileFormData): TutorFullProfile 
     credentialId: c.credentialId ?? null,
     credentialUrl: c.credentialUrl ?? null,
     certificateFileUrl: c.certificateUrl ?? '',
+    thumbnailUrl: c.thumbnailUrl ?? null,
     createdAt: c.createdAt ?? '',
     verificationStatus: c.verificationStatus,
     verificationNote: c.verificationNote ?? null,
