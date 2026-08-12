@@ -1,7 +1,7 @@
 .container {
   min-height: calc(100vh - 64px);
   padding: 30px clamp(20px, 2.2vw, 36px) 44px;
-  background: radial-gradient(circle at 100% 0, rgba(212, 180, 131, 0.11), transparent 28rem), #f7f8fa;
+  background: transparent;
   color: var(--color-navy, #1a2238);
   font-family: var(--font-primary, system-ui, sans-serif);
 }

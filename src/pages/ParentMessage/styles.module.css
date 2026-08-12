@@ -26,9 +26,7 @@
     BlinkMacSystemFont,
     'Segoe UI',
     sans-serif;
-  background:
-    radial-gradient(circle at 82% 4%, rgba(212, 180, 131, 0.2), transparent 24rem),
-    linear-gradient(145deg, #f7f4ec 0%, var(--messages-cream) 60%, #f5efe5 100%);
+  background: transparent;
 }
 
 .topBar {
