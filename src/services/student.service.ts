@@ -159,6 +159,27 @@ export const verifyStudentCccd = async (
   return response.data;
 };
 
+/** Link xem lại ảnh CCCD đã upload — signed URL, hết hạn sau ~15 phút. */
+export interface MyCccdUrls {
+  userId: string;
+  userFullName?: string | null;
+  frontImageUrl?: string | null;
+  backImageUrl?: string | null;
+  isIdentityVerified: boolean;
+}
+
+/**
+ * Học sinh tự xem lại ảnh CCCD mình đã upload — GET /api/students/me/cccd.
+ * Không truyền id — BE luôn lấy đúng userId từ JWT của người gọi.
+ */
+export const getMyCccdUrls = async (): Promise<ApiResponse<MyCccdUrls>> => {
+  const response = await api.get<ApiResponse<MyCccdUrls>>(
+    `/students/me/cccd`,
+    { headers: getAuthHeaders() },
+  );
+  return response.data;
+};
+
 /**
  * Trạng thái đủ điều kiện đặt lịch của học sinh — dùng để điều hướng / ẩn hiện nút đặt lịch.
  */

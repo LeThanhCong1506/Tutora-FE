@@ -60,6 +60,7 @@ export interface CredentialData {
   credentialUrl?: string | null;
   certificateFile: File | null;
   certificateUrl?: string;
+  thumbnailUrl?: string | null;
   createdAt?: string;
   verificationStatus: 'pending' | 'verified' | 'rejected';
   verificationNote?: string | null;
@@ -79,9 +80,10 @@ const YEARS = Array.from({ length: CURRENT_YEAR - 1990 + 1 }, (_, i) => ({
   label: String(CURRENT_YEAR - i),
 }));
 
-const getCertificatePreviewUrl = (url: string | null, fullSize = false): string | null => {
+const getCertificatePreviewUrl = (url: string | null, fullSize = false, thumbnailUrl?: string | null): string | null => {
   if (!url) return null;
   if (!/\.pdf(?:$|[?#])/i.test(url)) return url;
+  if (thumbnailUrl) return thumbnailUrl;
 
   try {
     const parsedUrl = new URL(url);
@@ -125,13 +127,14 @@ const CredentialModal: React.FC<CredentialModalProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [filePreviewThumbnailUrl, setFilePreviewThumbnailUrl] = useState<string | null>(null);
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
   const [certificateTypeSearch, setCertificateTypeSearch] = useState<string>('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { saveDraft, loadDraft, clearDraft } = useFormDraft<CredentialData>('draft_credential');
-  const previewImageUrl = getCertificatePreviewUrl(filePreview);
-  const fullPreviewImageUrl = getCertificatePreviewUrl(filePreview, true);
+  const previewImageUrl = getCertificatePreviewUrl(filePreview, false, filePreviewThumbnailUrl);
+  const fullPreviewImageUrl = getCertificatePreviewUrl(filePreview, true, filePreviewThumbnailUrl);
 
   // Reset form when modal opens — prioritize draft over initialData
   useEffect(() => {
@@ -141,6 +144,7 @@ const CredentialModal: React.FC<CredentialModalProps> = ({
       setFormData(dataToUse);
       setErrors({});
       setFilePreview(dataToUse.certificateUrl || null);
+      setFilePreviewThumbnailUrl(dataToUse.thumbnailUrl || null);
       setIsImagePreviewOpen(false);
       // Set initial search value
       if (dataToUse.certificateType) {
@@ -170,6 +174,8 @@ const CredentialModal: React.FC<CredentialModalProps> = ({
 
       setFormData((prev) => ({ ...prev, certificateFile: file }));
       setErrors((prev) => ({ ...prev, certificateFile: '' }));
+      // File mới chọn chưa upload/chưa có thumbnail server render — thumbnail cũ (nếu có) không còn khớp.
+      setFilePreviewThumbnailUrl(null);
 
       // Create preview for images
       if (file.type.startsWith('image/')) {
@@ -189,6 +195,7 @@ const CredentialModal: React.FC<CredentialModalProps> = ({
   const handleRemoveFile = () => {
     setFormData((prev) => ({ ...prev, certificateFile: null, certificateUrl: undefined }));
     setFilePreview(null);
+    setFilePreviewThumbnailUrl(null);
     setIsImagePreviewOpen(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -273,6 +280,7 @@ const CredentialModal: React.FC<CredentialModalProps> = ({
           ...formData,
           id: certificate.certificateId,
           certificateUrl: certificate.certificateFileUrl,
+          thumbnailUrl: certificate.thumbnailUrl,
           verificationStatus: 'pending',
         });
         onClose();

@@ -17,13 +17,16 @@ import {
   verifyStudentCccd,
   getBookingEligibility,
   setParentPhone,
+  getMyCccdUrls,
   type StudentBookingEligibility,
+  type MyCccdUrls,
 } from '../../services/student.service';
 import { getUserProfile } from '../../services/user.service';
 import { getGradeLevels, type GradeLevelLookup } from '../../services/lookup.service';
 import { useStudentProfile } from '../../contexts/StudentProfileContext';
 import { takeBookingOtpResume } from '../../utils/bookingOtpResume';
 import { takePendingRedirect } from '../../services/auth.service';
+import { fetchProtectedImage, releaseProtectedImage } from '../../utils/protectedImage';
 import styles from './styles.module.css';
 
 /** So khớp không phân biệt "0xxxxxxxxx" với "+84xxxxxxxxx" — cùng một số thật. */
@@ -64,6 +67,12 @@ const StudentProfile = () => {
 
   // Student rule: xác minh CCCD + đủ điều kiện đặt lịch + SĐT phụ huynh.
   const [eligibility, setEligibility] = useState<StudentBookingEligibility | null>(null);
+  const [eligibilityStatus, setEligibilityStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  // Ảnh CCCD đã upload — tự xem lại. Lần gọi lúc mở trang chỉ để biết CÓ ảnh hay không (hiện/ẩn nút);
+  // link thật lấy lại ngay lúc bấm vì signed URL chỉ sống ~15 phút, để lâu sẽ hỏng.
+  const [myCccd, setMyCccd] = useState<MyCccdUrls | null>(null);
+  const [openingCccdSide, setOpeningCccdSide] = useState<'front' | 'back' | null>(null);
+  const [cccdPreview, setCccdPreview] = useState<{ label: string; url: string } | null>(null);
   const [frontImage, setFrontImage] = useState<File | null>(null);
   const [backImage, setBackImage] = useState<File | null>(null);
   const [frontPreview, setFrontPreview] = useState<string | null>(null);
@@ -95,14 +104,67 @@ const StudentProfile = () => {
   }, []);
 
   // Tải trạng thái đủ điều kiện đặt lịch (nguồn tin cậy cho trạng thái verify CCCD/tuổi).
-  const refreshEligibility = () =>
-    getBookingEligibility()
-      .then((res) => setEligibility(res.content ?? null))
-      .catch(() => setEligibility(null));
+  // Phải phân biệt "chưa tải xong / lỗi" với "chưa xác minh": nếu gộp làm một thì mỗi lần API
+  // lỗi hoặc còn đang chờ, học sinh đã xác minh vẫn thấy form upload và tưởng phải nộp lại CCCD.
+  const refreshEligibility = () => {
+    setEligibilityStatus('loading');
+    return getBookingEligibility()
+      .then((res) => {
+        setEligibility(res.content ?? null);
+        setEligibilityStatus('ready');
+      })
+      .catch(() => {
+        setEligibility(null);
+        setEligibilityStatus('error');
+      });
+  };
 
   useEffect(() => {
     void refreshEligibility();
   }, []);
+
+  // Chỉ học sinh tự đăng ký mới eKYC CCCD — với tài khoản do phụ huynh tạo, gọi vẫn an toàn
+  // (BE chỉ trả về của chính người gọi) nhưng sẽ luôn rỗng nên không cần điều kiện thêm ở đây.
+  const refreshMyCccd = () =>
+    getMyCccdUrls()
+      .then((res) => setMyCccd(res.content ?? null))
+      .catch(() => setMyCccd(null));
+
+  useEffect(() => {
+    void refreshMyCccd();
+  }, []);
+
+  // Lấy signed URL mới ngay lúc bấm (link chỉ sống 15 phút), rồi tải ảnh kèm token đăng nhập —
+  // endpoint file private đòi JWT + đúng chủ sở hữu nên không gán thẳng vào <img src> được.
+  const handleViewCccd = async (side: 'front' | 'back') => {
+    if (openingCccdSide) return;
+    setOpeningCccdSide(side);
+    try {
+      const res = await getMyCccdUrls();
+      setMyCccd(res.content ?? null);
+      const url = side === 'front' ? res.content?.frontImageUrl : res.content?.backImageUrl;
+      if (!url) {
+        toast.error('Không tìm thấy ảnh CCCD.');
+        return;
+      }
+      const objectUrl = await fetchProtectedImage(url);
+      setCccdPreview((prev) => {
+        releaseProtectedImage(prev?.url);
+        return { label: side === 'front' ? 'CCCD mặt trước' : 'CCCD mặt sau', url: objectUrl };
+      });
+    } catch {
+      toast.error('Không mở được ảnh CCCD. Vui lòng thử lại.');
+    } finally {
+      setOpeningCccdSide(null);
+    }
+  };
+
+  const closeCccdPreview = () => {
+    setCccdPreview((prev) => {
+      releaseProtectedImage(prev?.url);
+      return null;
+    });
+  };
 
   // Cuộn tới + focus ô SĐT phụ huynh khi được điều hướng tới đây từ luồng xác thực OTP giao
   // dịch lớn. Đợi `loading` xong (context tải profile async) để đảm bảo card đã render.
@@ -222,7 +284,9 @@ const StudentProfile = () => {
       toast.success(res.content?.message || res.message || 'Xác minh độ tuổi thành công.');
       removeImage('front');
       removeImage('back');
-      await Promise.all([refresh(), refreshEligibility()]);
+      // Phải tải lại cả danh sách ảnh CCCD: thiếu bước này thì 2 nút "Xem CCCD" không hiện
+      // cho tới khi người dùng tự F5, vì myCccd chỉ được lấy một lần lúc mở trang.
+      await Promise.all([refresh(), refreshEligibility(), refreshMyCccd()]);
     } catch (err) {
       // 422 = nghiệp vụ (ảnh mờ/giả, chưa đủ 16, tên không khớp, CCCD trùng); 400 = file; message sẵn tiếng Việt.
       const message =
@@ -433,7 +497,7 @@ const StudentProfile = () => {
                 <h2 className={styles.cardTitle}>
                   <IdCard size={18} /> Xác minh độ tuổi
                 </h2>
-                {identityVerified ? (
+                {eligibilityStatus !== 'ready' ? null : identityVerified ? (
                   <span className={`${styles.badge} ${styles.badgeVerified}`}>
                     <ShieldCheck size={14} /> Đã xác minh
                   </span>
@@ -448,14 +512,61 @@ const StudentProfile = () => {
                 )}
               </div>
 
-              {identityVerified ? (
-                <p className={styles.cccdVerifiedNote}>
-                  <ShieldCheck size={16} />
-                  Độ tuổi đã được xác minh qua CCCD{eligibility?.age != null ? ` · ${eligibility.age} tuổi` : ''}.
-                  {eligibility?.canBook
-                    ? ' Bạn có thể đặt lịch học.'
-                    : ' Bạn cần đủ 16 tuổi để tự đặt lịch.'}
-                </p>
+              {/* Chưa biết chắc trạng thái thì KHÔNG được hiện form upload — học sinh đã xác minh
+                  sẽ tưởng phải nộp lại CCCD. Chỉ quyết định sau khi API trả về thành công. */}
+              {eligibilityStatus === 'loading' ? (
+                <p className={styles.cccdLoadingNote}>Đang tải trạng thái xác minh…</p>
+              ) : eligibilityStatus === 'error' ? (
+                <div className={styles.cccdErrorNote}>
+                  <ShieldAlert size={16} />
+                  <span>Không tải được trạng thái xác minh. Vui lòng thử lại.</span>
+                  <button type="button" className={styles.cccdViewLink} onClick={() => void refreshEligibility()}>
+                    Thử lại
+                  </button>
+                </div>
+              ) : identityVerified ? (
+                <>
+                  <p className={styles.cccdVerifiedNote}>
+                    <ShieldCheck size={16} />
+                    Độ tuổi đã được xác minh qua CCCD{eligibility?.age != null ? ` · ${eligibility.age} tuổi` : ''}.
+                    {eligibility?.canBook
+                      ? ' Bạn có thể đặt lịch học.'
+                      : ' Bạn cần đủ 16 tuổi để tự đặt lịch.'}
+                  </p>
+                  {/* Chỉ hiện nút khi thật sự có ảnh trong hệ thống. Chưa có (đang tải, hoặc tài khoản
+                      xác minh từ trước khi có tính năng lưu ảnh) thì nói rõ để người dùng không thắc mắc
+                      vì sao đã xác minh mà không xem lại được. */}
+                  {!myCccd?.frontImageUrl && !myCccd?.backImageUrl ? (
+                    <p className={styles.cccdPendingNote}>
+                      <IdCard size={14} /> Ảnh CCCD đang chờ tải lên.
+                    </p>
+                  ) : (
+                    <div className={styles.cccdViewActions}>
+                      {myCccd.frontImageUrl && (
+                        <button
+                          type="button"
+                          className={styles.cccdViewLink}
+                          disabled={openingCccdSide !== null}
+                          onClick={() => void handleViewCccd('front')}
+                        >
+                          <IdCard size={14} />
+                          {openingCccdSide === 'front' ? 'Đang mở…' : 'Xem CCCD mặt trước'}
+                        </button>
+                      )}
+                      {myCccd.backImageUrl && (
+                        <button
+                          type="button"
+                          className={styles.cccdViewLink}
+                          disabled={openingCccdSide !== null}
+                          onClick={() => void handleViewCccd('back')}
+                        >
+                          <IdCard size={14} />
+                          {openingCccdSide === 'back' ? 'Đang mở…' : 'Xem CCCD mặt sau'}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </>
               ) : (
                 <form onSubmit={handleVerifyCccd}>
                   <div className={styles.instructions}>
@@ -614,6 +725,31 @@ const StudentProfile = () => {
         </aside>
         )}
       </div>
+
+      {cccdPreview && (
+        <div
+          className={styles.cccdPreviewOverlay}
+          role="dialog"
+          aria-modal="true"
+          aria-label={cccdPreview.label}
+          onClick={closeCccdPreview}
+        >
+          <div className={styles.cccdPreviewBox} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.cccdPreviewHead}>
+              <strong>{cccdPreview.label}</strong>
+              <button
+                type="button"
+                className={styles.cccdPreviewClose}
+                onClick={closeCccdPreview}
+                aria-label="Đóng"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <img src={cccdPreview.url} alt={cccdPreview.label} className={styles.cccdPreviewImg} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
