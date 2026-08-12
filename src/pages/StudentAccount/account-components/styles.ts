@@ -183,6 +183,11 @@ export const disabledStyle: CSSProperties = {
     cursor: "not-allowed",
 };
 
+export const disabledSelectStyle: CSSProperties = {
+    ...disabledStyle,
+    appearance: "none",
+};
+
 export const toggleBtn: CSSProperties = {
     padding: "7px 16px",
     border: "1px solid #e5e5e5",

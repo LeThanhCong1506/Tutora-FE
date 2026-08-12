@@ -4,7 +4,11 @@
 
 /* Main Layout */
 .layout {
+    /* 12px left inset + 68px rail + 20px content gutter */
+    --sidebar-space: 80px;
+    --sidebar-panel-width: 68px;
     width: 100%;
+    overflow-x: hidden;
     min-height: 100vh;
     position: relative;
     display: flex;
@@ -17,30 +21,36 @@
 /* ===== SIDEBAR (Collapsible) ===== */
 .sidebar {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 68px;
-    height: 100vh;
+    top: 14px;
+    /* Align the floating rail with the bottom edge of the portal content area,
+       which keeps it level with the lesson columns instead of the viewport. */
+    bottom: 14px;
+    left: 12px;
+    width: var(--sidebar-panel-width);
     background-color: #1a2238;
+    border: 1px solid rgba(242, 240, 228, 0.18);
+    border-radius: 16px;
+    box-shadow: 0 12px 28px rgba(26, 34, 56, 0.18);
     display: flex;
     flex-direction: column;
     z-index: 100;
     box-sizing: border-box;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar:hover {
-    width: 288px;
+    width: 248px;
 }
 
 /* Sidebar Logo */
 .sidebarLogo {
     display: flex;
     align-items: center;
-    padding: 20px;
+    padding: 14px 12px;
     gap: 10.5px;
-    min-height: 68px;
+    min-height: 64px;
     box-sizing: border-box;
 }
 
@@ -59,13 +69,17 @@
     line-height: 28px;
     letter-spacing: -0.52px;
     color: #f2f0e4;
-    opacity: 0;
+    display: none;
     white-space: nowrap;
     transition: opacity 0.2s ease 0.05s;
 }
 
+.sidebar:hover .sidebarLogo {
+    justify-content: flex-start;
+}
+
 .sidebar:hover .logoText {
-    opacity: 1;
+    display: block;
 }
 
 /* Sidebar Navigation */
@@ -74,7 +88,7 @@
     flex-direction: column;
     padding: 8px;
     gap: 3.5px;
-    flex: 1;
+    flex: 1 1 auto;
 }
 
 .navItem {
@@ -293,20 +307,30 @@
 
 /* ===== MAIN CONTENT AREA (Right Side) ===== */
 .main {
-    margin-left: 68px;
+    margin-left: var(--sidebar-space);
     flex: 1;
+    position: relative;
     display: flex;
     flex-direction: column;
     height: 100vh;
+    padding-top: 96px;
     background-color: #f2f0e4;
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     min-width: 0;
     box-sizing: border-box;
 }
 
-/* Push content when sidebar is hovered */
+/* Header và content phải dịch cùng sidebar khi sidebar mở rộng. */
 .sidebar:hover ~ .main {
-    margin-left: 288px;
+    margin-left: 260px;
+}
+
+@media (min-width: 1025px) {
+    .portal-layout:has(.sidebar:hover) {
+        /* 12px left inset + 248px expanded rail */
+        --sidebar-space: 260px;
+        --sidebar-panel-width: 248px;
+    }
 }
 
 /* ===== HEADER ===== */
@@ -523,11 +547,20 @@
 
 /* ===== CONTENT AREA ===== */
 .contentArea {
-    flex: 1;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+    display: flex;
+    flex-direction: column;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 0;
     width: 100%;
+    min-height: 0;
+}
+
+.contentArea > * {
+    flex: 1 1 auto;
     min-height: 0;
 }
 
@@ -670,8 +703,15 @@
 
 /* Tablet: sidebar slides in/out from left */
 @media (max-width: 1024px) {
+    .layout {
+        --sidebar-space: 0px;
+        --sidebar-panel-width: 288px;
+    }
+
     .sidebar {
         width: 288px;
+        top: 10px;
+        bottom: 14px;
         transform: translateX(-100%);
         transition: transform 0.3s ease;
     }
@@ -708,13 +748,14 @@
     }
 
     .main {
-        margin-left: 0;
+        margin-left: var(--sidebar-space);
         transition: none;
+        padding-top: 80px;
     }
 
     /* Prevent sidebar hover from pushing main content on mobile/tablet */
     .sidebar:hover ~ .main {
-        margin-left: 0;
+        margin-left: var(--sidebar-space);
     }
 
     .main {
@@ -752,6 +793,17 @@
 
 /* Mobile: hide user info, compact header */
 @media (max-width: 768px) {
+    .sidebar {
+        top: 8px;
+        bottom: 14px;
+        height: auto;
+        max-height: calc(100vh - 68px);
+    }
+
+    .main {
+        padding-top: 68px;
+    }
+
     .header {
         padding: 0 12px;
         height: 48px;

@@ -3,11 +3,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
     ArrowLeft, BookOpen, AlertCircle, Video,
-    Calendar as CalendarIcon, FileText, ClipboardCheck, Star,
+    FileText, ClipboardCheck, Star,
     User, PlayCircle, StopCircle, Paperclip, Download, CalendarClock,
-    CheckCircle2, Clock3, XCircle,
+    CheckCircle2, Clock3, XCircle, Sparkles, ChevronDown, X, Plus, ArrowUp,
 } from 'lucide-react';
 import dayjs from 'dayjs';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { getStudentLessonDetail, confirmStudentLesson, type StudentLessonDetailDto } from '../../services/student-lesson.service';
 import { getMaterials, type LearningMaterialResponse } from '../../services/materials.service';
 import {
@@ -18,10 +20,19 @@ import {
     respondStudentScheduleChange,
     proposeStudentReschedule,
     respondStudentReschedule,
+    getClassSessionRecording,
     type DisputeDetailResponse,
     type DisputeMessage,
     type SessionScheduleChangeResponse,
 } from '../../services/classSession.service';
+import {
+    triggerVideoSummary,
+    getVideoSummaryStatus,
+    sendVideoSummaryFollowUp,
+    getVideoSummaryMessages,
+    type ClassSessionAiJobResponse,
+    type VideoSummaryChatMessage,
+} from '../../services/videoSummary.service';
 import { signalRService } from '../../services/signalr.service';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
 import { message as antMessage, Spin, Modal } from 'antd';
@@ -30,6 +41,7 @@ import CreateDisputeForm from '../ParentLessons/components/CreateDisputeForm';
 import ReportNoShowModal from '../ParentLessons/components/ReportNoShowModal';
 import NoShowActionModal from '../ParentLessons/components/NoShowActionModal';
 import { useStudentProfile } from '../../contexts/StudentProfileContext';
+import { getUserInfoFromToken } from '../../services/auth.service';
 import s from '../StudentPages.module.css';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 import { canJoinLiveSession, isWithinJoinWindow } from '../../utils/liveSession';
@@ -78,6 +90,22 @@ const getFileNameFromUrl = (url: string): string => {
 
 const TERMINAL_BOOKING_STATUSES = ['completed', 'cancelled', 'cancelled_noshow'];
 
+/** Gợi ý hỏi AI — trước khi có tóm tắt thì bấm nút nào cũng chỉ kích hoạt tóm tắt (điều kiện bắt
+ *  buộc để có transcript), sau khi có tóm tắt thì gửi thẳng câu hỏi tương ứng vào khung chat. */
+const AI_SUGGESTIONS: { key: string; label: string; prompt: string }[] = [
+    { key: 'summary', label: 'Tóm tắt buổi học', prompt: 'Tóm tắt lại nội dung buổi học này.' },
+    { key: 'simple', label: 'Giải thích dễ hiểu hơn', prompt: 'Giải thích nội dung buổi học này bằng ngôn ngữ đơn giản, dễ hiểu hơn.' },
+    { key: 'practice', label: 'Cho câu hỏi ôn tập', prompt: 'Cho tôi vài câu hỏi ôn tập dựa trên nội dung buổi học này.' },
+    { key: 'examples', label: 'Cho ví dụ thực tế', prompt: 'Cho tôi vài ví dụ thực tế liên quan đến nội dung buổi học này.' },
+];
+
+/** Render markdown Gemini trả về (in đậm, gạch đầu dòng, tiêu đề phụ...) thay vì hiện nguyên ký tự ** / -. */
+const AiMarkdown = ({ content }: { content: string }) => (
+    <div className="sld-markdown">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+    </div>
+);
+
 // ─────────────────────────────────────────────────────────────────────────
 const StudentLessonDetail = () => {
     const { lessonId } = useParams<{ lessonId: string }>();
@@ -99,6 +127,16 @@ const StudentLessonDetail = () => {
     const [materials, setMaterials] = useState<LearningMaterialResponse[]>([]);
     const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
     const [respondingReschedule, setRespondingReschedule] = useState(false);
+    const [recordingAvailable, setRecordingAvailable] = useState(false);
+    const [summaryJob, setSummaryJob] = useState<ClassSessionAiJobResponse | null>(null);
+    const [summaryViewTab, setSummaryViewTab] = useState<'summary' | 'transcript'>('summary');
+    const [triggeringSummary, setTriggeringSummary] = useState(false);
+    const [chatTurns, setChatTurns] = useState<VideoSummaryChatMessage[]>([]);
+    const [chatInput, setChatInput] = useState('');
+    const [chatSending, setChatSending] = useState(false);
+    const [diveDeeperOpen, setDiveDeeperOpen] = useState(false);
+    const [scheduleHistoryOpen, setScheduleHistoryOpen] = useState(true);
+    const [rescheduleHistoryOpen, setRescheduleHistoryOpen] = useState(true);
 
     const fetchDetail = useCallback(async () => {
         if (!lessonId) return;
@@ -140,6 +178,36 @@ const StudentLessonDetail = () => {
         } catch (requestError: unknown) {
             console.error('Failed to load schedule-change state', requestError);
             setScheduleChange(null);
+        }
+    }, [lessonId]);
+
+    const fetchRecordingStatus = useCallback(async () => {
+        if (!lessonId) return;
+        try {
+            const response = await getClassSessionRecording(parseInt(lessonId));
+            setRecordingAvailable(Boolean(response.content?.available));
+        } catch {
+            setRecordingAvailable(false);
+        }
+    }, [lessonId]);
+
+    const fetchSummaryStatus = useCallback(async () => {
+        if (!lessonId) return;
+        try {
+            const response = await getVideoSummaryStatus(parseInt(lessonId));
+            setSummaryJob(response.content);
+        } catch (requestError: unknown) {
+            console.error('Failed to load video summary status', requestError);
+        }
+    }, [lessonId]);
+
+    const fetchChatMessages = useCallback(async () => {
+        if (!lessonId) return;
+        try {
+            const response = await getVideoSummaryMessages(parseInt(lessonId));
+            setChatTurns(response.content ?? []);
+        } catch (requestError: unknown) {
+            console.error('Failed to load video summary chat', requestError);
         }
     }, [lessonId]);
 
@@ -185,6 +253,22 @@ const StudentLessonDetail = () => {
         const timer = window.setInterval(() => void fetchScheduleChange(), 8000);
         return () => window.clearInterval(timer);
     }, [lessonId, fetchScheduleChange]);
+
+    useEffect(() => {
+        void fetchRecordingStatus();
+        void fetchSummaryStatus();
+    }, [fetchRecordingStatus, fetchSummaryStatus]);
+
+    // Poll trong lúc Gemini đang xử lý (video có thể vài tiếng, mất vài phút) — dừng khi có kết quả.
+    useEffect(() => {
+        if (summaryJob?.status !== 'pending' && summaryJob?.status !== 'processing') return;
+        const timer = window.setInterval(() => void fetchSummaryStatus(), 8000);
+        return () => window.clearInterval(timer);
+    }, [summaryJob?.status, fetchSummaryStatus]);
+
+    useEffect(() => {
+        if (summaryJob?.status === 'completed') void fetchChatMessages();
+    }, [summaryJob?.status, fetchChatMessages]);
 
     useEffect(() => {
         if (dispute) void fetchThread();
@@ -273,6 +357,58 @@ const StudentLessonDetail = () => {
         }
     };
 
+    const handleTriggerSummary = async () => {
+        if (!lessonId || triggeringSummary) return;
+        setTriggeringSummary(true);
+        try {
+            const response = await triggerVideoSummary(parseInt(lessonId));
+            setSummaryJob(response.content);
+        } catch (error: any) {
+            antMessage.error(error.response?.data?.message || 'Không thể tóm tắt video lúc này.');
+        } finally {
+            setTriggeringSummary(false);
+        }
+    };
+
+    const handleSendChatMessage = async (overrideText?: string) => {
+        const question = (overrideText ?? chatInput).trim();
+        if (!lessonId || chatSending || question.length === 0) return;
+        setChatInput('');
+        setChatTurns((prev) => [...prev, { role: 'user', content: question, createdAt: new Date().toISOString() }]);
+        setChatSending(true);
+        try {
+            const response = await sendVideoSummaryFollowUp(parseInt(lessonId), question);
+            setChatTurns((prev) => [...prev, { role: 'assistant', content: response.content, createdAt: new Date().toISOString() }]);
+        } catch (error: any) {
+            antMessage.error(error.response?.data?.message || 'Không thể gửi câu hỏi lúc này.');
+        } finally {
+            setChatSending(false);
+        }
+    };
+
+    /** 4 gợi ý kiểu Coursera dùng ở cả thanh "Đào sâu nội dung này" (cột giữa) và khung chat AI
+     *  (cột phải) — trước khi có tóm tắt thì AI chưa có transcript để trả lời, nên bấm nút nào
+     *  cũng kích hoạt tóm tắt trước; sau khi có tóm tắt thì gửi thẳng câu hỏi tương ứng. */
+    const handleAiSuggestionClick = (item: { key: string; prompt: string }) => {
+        if (!recordingAvailable || triggeringSummary) return;
+        if (!summaryJob || summaryJob.status === 'none' || summaryJob.status === 'failed') {
+            void handleTriggerSummary();
+            return;
+        }
+        if (summaryJob.status !== 'completed' || chatSending) return;
+        if (item.key === 'summary') {
+            setSummaryViewTab('summary');
+            return;
+        }
+        void handleSendChatMessage(item.prompt);
+    };
+
+    /** Xoá hội thoại hỏi thêm đang hiển thị (tóm tắt vẫn giữ nguyên) để bắt đầu hỏi lại từ đầu. */
+    const handleClearChatTurns = () => {
+        setChatTurns([]);
+        setChatInput('');
+    };
+
     // ── Loading ──
     if (loading) {
         return (
@@ -323,20 +459,27 @@ const StudentLessonDetail = () => {
     const canProposeReschedule = lesson.status === 'scheduled' && !isParentManaged && !pendingReschedule;
     const isRescheduleCounterpart = pendingReschedule?.counterpartRole === 'Student';
     const isRescheduleProposer = pendingReschedule?.proposedByRole === 'Student';
+    const currentUserInfo = getUserInfoFromToken();
+    const greetingName = currentUserInfo?.firstName
+        || currentUserInfo?.fullname?.trim().split(/\s+/).pop()
+        || null;
 
     return (
         <div className={s.page}>
             {/* Top Bar */}
-            <div className={s.topBar}>
+            <div className={s.topBar} style={{ display: 'none' }}>
                 <div className={s.topBarLeft}>
                     <h1 className={s.pageTitle}>Chi tiết buổi học</h1>
                 </div>
             </div>
 
-            {/* Main Content */}
-            <div className={s.mainContent} style={{ maxWidth: 860, margin: '0 auto', width: '100%' }}>
+            {/* Main Content — padding hẹp lại so với mặc định 40px của các trang khác trong app,
+                giống Coursera. Tắt cuộn ở cấp trang: khối 3 cột co giãn lấp đúng phần còn lại
+                sau breadcrumb/banner (flex:1), mỗi cột tự cuộn nội dung riêng bên trong. */}
+            <div className={s.mainContent} style={{ padding: '0 20px 14px', overflow: 'hidden' }}>
+                <div style={{ maxWidth: 860, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 24, flexShrink: 0 }}>
                 {/* Breadcrumb-style back nav */}
-                <div style={breadcrumbRow}>
+                <div style={{ ...breadcrumbRow, display: 'none' }}>
                     <button style={backBtnStyle} onClick={() => navigate('/student-portal/calendar')}>
                         <ArrowLeft size={15} />
                         <span>Thời khóa biểu</span>
@@ -532,69 +675,6 @@ const StudentLessonDetail = () => {
                     onCancel={() => setRescheduleModalOpen(false)}
                     accentColor="#6366F1"
                 />
-
-                {/* ─── Subject Header Card ─── */}
-                <div style={subjectCard}>
-                    <div style={subjectCardInner}>
-                        <div style={subjectTopRow}>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={subjectTitle}>{subjectName}</div>
-                                <div style={subjectDateRow}>
-                                    <CalendarIcon size={14} style={{ color: '#9ca3af' }} />
-                                    <span>{formatLongDate(lesson.scheduledStart)}</span>
-                                </div>
-                            </div>
-                            <div style={{ ...statusChip, color: status.color, background: status.bg }}>
-                                <span style={{ fontSize: 12 }}>{status.icon}</span>
-                                {status.label}
-                            </div>
-                        </div>
-
-                        {/* Time blocks — horizontal timeline style */}
-                        <div style={timelineRow}>
-                            <div style={timeBlock}>
-                                <div style={{ ...timeBlockIconWrap, background: 'rgba(16,185,129,0.10)' }}>
-                                    <PlayCircle size={16} style={{ color: '#10b981' }} />
-                                </div>
-                                <div>
-                                    <div style={timeBlockLabel}>BẮT ĐẦU</div>
-                                    <div style={timeBlockValue}>{formatTime(lesson.scheduledStart)}</div>
-                                </div>
-                            </div>
-                            <div style={timeConnector}>
-                                <div style={timeConnectorLine} />
-                                <div style={timeConnectorDot} />
-                                <div style={timeConnectorLine} />
-                            </div>
-                            <div style={timeBlock}>
-                                <div style={{ ...timeBlockIconWrap, background: 'rgba(244,63,94,0.10)' }}>
-                                    <StopCircle size={16} style={{ color: '#f43f5e' }} />
-                                </div>
-                                <div>
-                                    <div style={timeBlockLabel}>KẾT THÚC</div>
-                                    <div style={timeBlockValue}>{formatTime(lesson.scheduledEnd)}</div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                {/* ─── Tutor Card ─── */}
-                <div style={tutorCard}>
-                    <div style={tutorCardInner}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={tutorLabelRow}>
-                                <User size={12} style={{ color: '#9ca3af' }} />
-                                <span style={tutorLabel}>GIA SƯ</span>
-                            </div>
-                            <div style={tutorNameStyle}>{tutorName}</div>
-                        </div>
-                        <div style={tutorBadge}>
-                            Người dạy của bạn
-                        </div>
-                    </div>
-                </div>
 
                 {/* ─── Action card — Confirm / Feedback ─── */}
                 {lesson.status === 'pending_confirmation' && (
@@ -814,92 +894,6 @@ const StudentLessonDetail = () => {
                     </div>
                 )}
 
-                {/* ─── Lịch sử dời lịch (nếu có) ─── */}
-                {Array.isArray(lesson.scheduleChanges) && lesson.scheduleChanges.length > 0 && (
-                    <div style={sectionCard}>
-                        <div style={sectionHeaderRow}>
-                            <div style={{ ...sectionIconWrap, background: 'rgba(217,119,6,0.10)' }}>
-                                <CalendarClock size={16} style={{ color: '#d97706' }} />
-                            </div>
-                            <div style={sectionTitleText}>Lịch sử vào học ngoài giờ</div>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            {lesson.scheduleChanges.map((sc: any) => {
-                                const statusLabel: Record<string, string> = {
-                                    applied: 'Đã áp dụng',
-                                    approved: 'Hai bên đã đồng ý',
-                                    rejected: 'Đã từ chối',
-                                    expired: 'Đã hết hạn',
-                                    pending: 'Đang chờ xác nhận',
-                                };
-                                return (
-                                    <div key={sc.scheduleChangeId} style={reportRowBlock}>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
-                                            <span style={reportLabelStyle}>{statusLabel[sc.status] || sc.status}</span>
-                                            {sc.appliedAt && (
-                                                <span style={{ fontSize: 12, color: '#9ca3af' }}>
-                                                    Áp dụng lúc {formatLongDate(sc.appliedAt)} {formatTime(sc.appliedAt)}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div style={reportValueStyle}>
-                                            {formatLongDate(sc.originalScheduledStart)}, {formatTime(sc.originalScheduledStart)}–{formatTime(sc.originalScheduledEnd)}
-                                            {sc.adjustedScheduledStart && (
-                                                <> {'→'} {formatLongDate(sc.adjustedScheduledStart)}, {formatTime(sc.adjustedScheduledStart)}–{formatTime(sc.adjustedScheduledEnd)}</>
-                                            )}
-                                        </div>
-                                        <div style={{ display: 'flex', gap: 20, marginTop: 8, fontSize: 12, color: '#666', flexWrap: 'wrap' }}>
-                                            <span>Gia sư: {sc.tutorConfirmedByName ? `${sc.tutorConfirmedByName} đã xác nhận` : 'Chưa xác nhận'}</span>
-                                            <span>
-                                                {sc.learnerApproverRole === 'Student' ? 'Học sinh' : 'Phụ huynh'}: {sc.learnerConfirmedByName ? `${sc.learnerConfirmedByName} đã xác nhận` : 'Chưa xác nhận'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-
-                {/* ─── Lịch sử đổi lịch học (tính năng mới — khác cổng xác nhận vào học ngoài giờ ở trên) ─── */}
-                {Array.isArray(lesson.rescheduleProposals) && lesson.rescheduleProposals.length > 0 && (
-                    <div style={sectionCard}>
-                        <div style={sectionHeaderRow}>
-                            <div style={{ ...sectionIconWrap, background: 'rgba(99,102,241,0.10)' }}>
-                                <CalendarClock size={16} style={{ color: '#6366F1' }} />
-                            </div>
-                            <div style={sectionTitleText}>Lịch sử đổi lịch học</div>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            {lesson.rescheduleProposals.map((proposal) => {
-                                const statusLabel: Record<string, string> = {
-                                    pending: 'Đang chờ phản hồi',
-                                    accepted: 'Đã đồng ý',
-                                    rejected: 'Đã từ chối',
-                                    expired: 'Đã hết hạn',
-                                };
-                                return (
-                                    <div key={proposal.rescheduleProposalId} style={reportRowBlock}>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
-                                            <span style={reportLabelStyle}>{statusLabel[proposal.status] || proposal.status}</span>
-                                            {proposal.respondedAt && (
-                                                <span style={{ fontSize: 12, color: '#9ca3af' }}>
-                                                    Phản hồi lúc {formatLongDate(proposal.respondedAt)} {formatTime(proposal.respondedAt)}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div style={reportValueStyle}>
-                                            {proposal.proposedByName ?? 'Người đề xuất'} đề xuất dời sang{' '}
-                                            {formatLongDate(proposal.proposedScheduledStart)}, {formatTime(proposal.proposedScheduledStart)}
-                                            {proposal.reason ? ` — Lý do: ${proposal.reason}` : ''}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-
                 {/* ─── Content + Homework — cũng gồm tệp đính kèm của báo cáo (thường là bài tập) ─── */}
                 {(lesson.lessonContent || lesson.homework || (report && Array.isArray(report.attachments) && report.attachments.length > 0)) && (
                     <div style={sectionCard}>
@@ -1015,16 +1009,401 @@ const StudentLessonDetail = () => {
                         </div>
                     </div>
                 )}
+                </div>
 
-                {/* ─── Video buổi học ─── */}
-                <div style={sectionCard}>
-                    <div style={sectionHeaderRow}>
-                        <div style={{ ...sectionIconWrap, background: 'rgba(26,34,56,0.08)' }}>
-                            <Video size={16} style={{ color: '#1a2238' }} />
+                {/* ─── Bố cục 3 cột: gia sư & lịch sử · video · AI tóm tắt ─── */}
+                <div className="sld-3col-grid" style={threeColGrid}>
+                    {/* Cột trái — kiểu sidebar khoá học Coursera: một khối bo viền duy nhất,
+                        chia mục bằng đường kẻ mảnh + accordion, thay vì nhiều thẻ nổi rời rạc */}
+                    <div style={threeColLeft}>
+                        <div style={sidebarCard}>
+                            <div style={sidebarHeaderRow}>
+                                <div style={sidebarHeaderTitle}>{subjectName}</div>
+                                <button
+                                    type="button"
+                                    className="sld-sidebar-close"
+                                    style={sidebarCloseBtn}
+                                    title="Về thời khóa biểu"
+                                    onClick={() => navigate('/student-portal/calendar')}
+                                >
+                                    <X size={15} />
+                                </button>
+                            </div>
+
+                            <div style={sidebarScrollBody}>
+                            {/* Tương đương "Today's goals" của Coursera — nhưng gắn dữ liệu buổi học thật */}
+                            <div style={sidebarGoalCard}>
+                                <div style={sidebarGoalHeader}>
+                                    <span style={sidebarGoalTitle}>Trạng thái buổi học</span>
+                                    <span style={{ ...statusChip, color: status.color, background: status.bg }}>
+                                        <span style={{ fontSize: 12 }}>{status.icon}</span>
+                                        {status.label}
+                                    </span>
+                                </div>
+                                <div style={sidebarGoalRow}>
+                                    <PlayCircle size={14} style={{ color: '#10b981', flexShrink: 0 }} />
+                                    Bắt đầu {formatLongDate(lesson.scheduledStart)}, {formatTime(lesson.scheduledStart)}
+                                </div>
+                                <div style={sidebarGoalRow}>
+                                    <StopCircle size={14} style={{ color: '#f43f5e', flexShrink: 0 }} />
+                                    Kết thúc {formatTime(lesson.scheduledEnd)}
+                                </div>
+                            </div>
+
+                            <SidebarSection label="Gia sư">
+                                <SidebarItemRow
+                                    active
+                                    icon={<User size={14} />}
+                                    title={tutorName}
+                                    meta="Người dạy của bạn"
+                                />
+                            </SidebarSection>
+
+                            {Array.isArray(lesson.scheduleChanges) && lesson.scheduleChanges.length > 0 && (
+                                <SidebarSection
+                                    label="Lịch sử vào học ngoài giờ"
+                                    collapsible
+                                    open={scheduleHistoryOpen}
+                                    onToggle={() => setScheduleHistoryOpen((open) => !open)}
+                                >
+                                    {lesson.scheduleChanges.map((sc: any) => {
+                                        const statusLabel: Record<string, string> = {
+                                            applied: 'Đã áp dụng',
+                                            approved: 'Hai bên đã đồng ý',
+                                            rejected: 'Đã từ chối',
+                                            expired: 'Đã hết hạn',
+                                            pending: 'Đang chờ xác nhận',
+                                        };
+                                        const isPositive = sc.status === 'applied' || sc.status === 'approved';
+                                        const isNegative = sc.status === 'rejected';
+                                        const icon = isPositive
+                                            ? <CheckCircle2 size={14} style={{ color: '#16a34a' }} />
+                                            : isNegative
+                                                ? <XCircle size={14} style={{ color: '#cf1322' }} />
+                                                : <Clock3 size={14} style={{ color: '#d97706' }} />;
+                                        return (
+                                            <SidebarItemRow
+                                                key={sc.scheduleChangeId}
+                                                icon={icon}
+                                                title={statusLabel[sc.status] || sc.status}
+                                                meta={
+                                                    <>
+                                                        <div>
+                                                            {formatLongDate(sc.originalScheduledStart)}, {formatTime(sc.originalScheduledStart)}–{formatTime(sc.originalScheduledEnd)}
+                                                            {sc.adjustedScheduledStart && (
+                                                                <> {'→'} {formatLongDate(sc.adjustedScheduledStart)}, {formatTime(sc.adjustedScheduledStart)}–{formatTime(sc.adjustedScheduledEnd)}</>
+                                                            )}
+                                                        </div>
+                                                        <div style={{ marginTop: 2 }}>
+                                                            Gia sư: {sc.tutorConfirmedByName ? 'đã xác nhận' : 'chưa xác nhận'} ·{' '}
+                                                            {sc.learnerApproverRole === 'Student' ? 'Học sinh' : 'Phụ huynh'}: {sc.learnerConfirmedByName ? 'đã xác nhận' : 'chưa xác nhận'}
+                                                        </div>
+                                                    </>
+                                                }
+                                            />
+                                        );
+                                    })}
+                                </SidebarSection>
+                            )}
+
+                            {Array.isArray(lesson.rescheduleProposals) && lesson.rescheduleProposals.length > 0 && (
+                                <SidebarSection
+                                    label="Lịch sử đổi lịch học"
+                                    collapsible
+                                    open={rescheduleHistoryOpen}
+                                    onToggle={() => setRescheduleHistoryOpen((open) => !open)}
+                                >
+                                    {lesson.rescheduleProposals.map((proposal) => {
+                                        const statusLabel: Record<string, string> = {
+                                            pending: 'Đang chờ phản hồi',
+                                            accepted: 'Đã đồng ý',
+                                            rejected: 'Đã từ chối',
+                                            expired: 'Đã hết hạn',
+                                        };
+                                        const icon = proposal.status === 'accepted'
+                                            ? <CheckCircle2 size={14} style={{ color: '#16a34a' }} />
+                                            : proposal.status === 'rejected'
+                                                ? <XCircle size={14} style={{ color: '#cf1322' }} />
+                                                : <Clock3 size={14} style={{ color: '#d97706' }} />;
+                                        return (
+                                            <SidebarItemRow
+                                                key={proposal.rescheduleProposalId}
+                                                icon={icon}
+                                                title={statusLabel[proposal.status] || proposal.status}
+                                                meta={
+                                                    <>
+                                                        {proposal.proposedByName ?? 'Người đề xuất'} đề xuất dời sang{' '}
+                                                        {formatLongDate(proposal.proposedScheduledStart)}, {formatTime(proposal.proposedScheduledStart)}
+                                                        {proposal.reason ? ` — Lý do: ${proposal.reason}` : ''}
+                                                    </>
+                                                }
+                                            />
+                                        );
+                                    })}
+                                </SidebarSection>
+                            )}
+                            </div>
                         </div>
-                        <div style={sectionTitleText}>Video buổi học</div>
                     </div>
-                    <ClassSessionRecording classSessionId={lesson.lessonId} />
+
+                    {/* Cột giữa — thẻ trắng bo góc chứa video + thanh "đào sâu" gợi ý AI + footer điều hướng */}
+                    <div style={threeColMiddle}>
+                    <div style={middleCard}>
+                    <div style={middleScrollBody}>
+                        <div style={videoCard}>
+                            <ClassSessionRecording classSessionId={lesson.lessonId} />
+                        </div>
+                        <div style={videoInfoRow}>
+                            <Video size={16} style={{ color: '#1a2238' }} />
+                            <span style={videoInfoTitle}>Video buổi học</span>
+                        </div>
+
+                        {recordingAvailable && (
+                            <div style={diveDeeperCard}>
+                                <button
+                                    type="button"
+                                    className="sld-dive-btn"
+                                    style={diveDeeperHeaderBtn}
+                                    onClick={() => setDiveDeeperOpen((open) => !open)}
+                                >
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <Sparkles size={15} style={{ color: '#8b5cf6' }} />
+                                        Đào sâu nội dung này
+                                    </span>
+                                    <ChevronDown
+                                        size={16}
+                                        style={{ color: '#667085', transform: diveDeeperOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}
+                                    />
+                                </button>
+                                {diveDeeperOpen && (
+                                    <div style={pillsGrid}>
+                                        {AI_SUGGESTIONS.map((item) => (
+                                            <button
+                                                key={item.key}
+                                                type="button"
+                                                className="sld-pill"
+                                                style={pillBtn}
+                                                disabled={triggeringSummary || summaryJob?.status === 'pending' || summaryJob?.status === 'processing'}
+                                                onClick={() => handleAiSuggestionClick(item)}
+                                            >
+                                                {item.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                    </div>
+                    <div style={middleFooterBar}>
+                        <button type="button" className="sld-next-btn" style={nextBtn} onClick={() => navigate('/student-portal/calendar')}>
+                            Về thời khóa biểu <ArrowLeft size={14} style={{ transform: 'rotate(180deg)' }} />
+                        </button>
+                    </div>
+                    </div>
+                    </div>
+
+                    {/* Cột phải — trợ lý AI kiểu chat: tóm tắt hiện như tin nhắn đầu tiên, hỏi thêm nối tiếp bên dưới */}
+                    <div style={threeColRight}>
+                        <div style={aiPanelCard}>
+                            <div style={aiPanelHeader}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <Sparkles size={18} style={{ color: '#8b5cf6' }} />
+                                    {summaryJob && summaryJob.status !== 'none' && (
+                                        <div style={aiCompactTitle}>Tóm tắt buổi học bằng AI</div>
+                                    )}
+                                </div>
+                                {chatTurns.length > 0 && (
+                                    <div style={aiPanelHeaderIcons}>
+                                        <button
+                                            type="button"
+                                            className="sld-ai-header-icon"
+                                            style={aiHeaderIconBtn}
+                                            title="Xoá hội thoại hỏi thêm, giữ nguyên tóm tắt"
+                                            onClick={handleClearChatTurns}
+                                        >
+                                            <Plus size={16} />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div style={aiPanelBody}>
+                                {(!summaryJob || summaryJob.status === 'none') && (
+                                    <>
+                                        <div style={aiHeroGreeting}>
+                                            {greetingName && <div style={aiGreetingHi}>Xin chào, {greetingName}.</div>}
+                                            <div style={aiGreetingTitle}>Trợ lý AI có thể giúp gì?</div>
+                                        </div>
+                                        <div style={aiEmptyDesc}>
+                                            Dùng AI đọc video buổi học và tóm tắt lại nội dung đã học — có thể mất vài phút.
+                                        </div>
+                                        <div style={pillsGridVertical}>
+                                            {AI_SUGGESTIONS.map((item) => (
+                                                <button
+                                                    key={item.key}
+                                                    type="button"
+                                                    className="sld-pill-ghost"
+                                                    style={pillBtnGhost}
+                                                    disabled={!recordingAvailable || triggeringSummary}
+                                                    onClick={() => handleAiSuggestionClick(item)}
+                                                >
+                                                    <Sparkles size={15} style={{ color: '#8b5cf6', flexShrink: 0 }} />
+                                                    {item.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {!recordingAvailable && (
+                                            <div style={{ fontSize: 12, color: '#9ca3af' }}>
+                                                Chỉ tóm tắt được khi video buổi học đã sẵn sàng.
+                                            </div>
+                                        )}
+                                        {triggeringSummary && (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#8b5cf6' }}>
+                                                <Spin size="small" /> Đang gửi yêu cầu…
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+
+                                {(summaryJob?.status === 'pending' || summaryJob?.status === 'processing') && (
+                                    <div style={{ ...aiBubbleAssistant, flexDirection: 'row', alignItems: 'center' }}>
+                                        <Spin size="small" />
+                                        <span>
+                                            {summaryJob?.stage === 'verifying'
+                                                ? 'AI đang kiểm tra lại tóm tắt và hội thoại, đảm bảo không thiếu nội dung nào…'
+                                                : 'AI đang xem và tóm tắt video, có thể mất vài phút…'}
+                                        </span>
+                                    </div>
+                                )}
+
+                                {summaryJob?.status === 'failed' && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                        <div style={{ color: '#cf1322', background: '#fff2f0', borderRadius: 10, padding: '10px 12px', fontSize: 13 }}>
+                                            {summaryJob.errorMessage || 'Không thể tóm tắt video. Vui lòng thử lại.'}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            style={{ ...actionBtnBase, background: 'linear-gradient(135deg, #8b5cf6, #a78bfa)', alignSelf: 'flex-start' }}
+                                            disabled={!recordingAvailable || triggeringSummary}
+                                            onClick={() => void handleTriggerSummary()}
+                                        >
+                                            <Sparkles size={16} /> Thử lại
+                                        </button>
+                                    </div>
+                                )}
+
+                                {summaryJob?.status === 'completed' && (
+                                    <>
+                                        <div style={{ display: 'flex', gap: 6 }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => setSummaryViewTab('summary')}
+                                                style={{
+                                                    ...summaryTabBtnBase,
+                                                    ...(summaryViewTab === 'summary' ? summaryTabBtnActive : {}),
+                                                }}
+                                            >
+                                                Tóm tắt
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setSummaryViewTab('transcript')}
+                                                disabled={!summaryJob.transcriptText}
+                                                title={!summaryJob.transcriptText ? 'Buổi học này chưa có hội thoại (tóm tắt trước khi có tính năng này)' : undefined}
+                                                style={{
+                                                    ...summaryTabBtnBase,
+                                                    ...(summaryViewTab === 'transcript' ? summaryTabBtnActive : {}),
+                                                    ...(!summaryJob.transcriptText ? { opacity: 0.45, cursor: 'not-allowed' } : {}),
+                                                }}
+                                            >
+                                                Hội thoại
+                                            </button>
+                                        </div>
+
+                                        {/* Tóm tắt hiện như tin nhắn đầu tiên của AI trong khung chat */}
+                                        <div style={aiBubbleAssistant}>
+                                            <AiMarkdown
+                                                content={
+                                                    summaryViewTab === 'summary'
+                                                        ? (summaryJob.resultText || '')
+                                                        : (summaryJob.transcriptText || 'Buổi học này chưa có hội thoại.')
+                                                }
+                                            />
+                                        </div>
+
+                                        {chatTurns.map((msg, idx) => (
+                                            <div key={idx} style={msg.role === 'assistant' ? aiBubbleAssistant : aiBubbleUser}>
+                                                {msg.role === 'assistant' ? <AiMarkdown content={msg.content} /> : msg.content}
+                                            </div>
+                                        ))}
+                                        {chatSending && (
+                                            <div style={{ ...aiBubbleAssistant, flexDirection: 'row', alignItems: 'center', color: '#667085' }}>
+                                                <Spin size="small" /> AI đang suy nghĩ…
+                                            </div>
+                                        )}
+
+                                        {chatTurns.length === 0 && !chatSending && (
+                                            <div style={pillsGridVertical}>
+                                                {AI_SUGGESTIONS.filter((item) => item.key !== 'summary').map((item) => (
+                                                    <button
+                                                        key={item.key}
+                                                        type="button"
+                                                        className="sld-pill-ghost"
+                                                        style={pillBtnGhost}
+                                                        onClick={() => handleAiSuggestionClick(item)}
+                                                    >
+                                                        <Sparkles size={15} style={{ color: '#8b5cf6', flexShrink: 0 }} />
+                                                        {item.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+
+                            {(() => {
+                                const chatReady = summaryJob?.status === 'completed';
+                                const inputPlaceholder = !recordingAvailable
+                                    ? 'Chưa có video buổi học để hỏi...'
+                                    : chatReady
+                                        ? 'Hỏi AI về buổi học...'
+                                        : summaryJob?.status === 'pending' || summaryJob?.status === 'processing'
+                                            ? 'AI đang xử lý video...'
+                                            : 'Bấm tóm tắt video ở trên để bắt đầu hỏi AI...';
+                                return (
+                                    <div style={aiPanelInputRow}>
+                                        <div className="sld-ai-input-pill" style={aiInputPill}>
+                                            <input
+                                                type="text"
+                                                value={chatInput}
+                                                onChange={(event) => setChatInput(event.target.value)}
+                                                placeholder={inputPlaceholder}
+                                                disabled={!chatReady}
+                                                style={{ ...aiInputField, ...(!chatReady ? { cursor: 'not-allowed' } : {}) }}
+                                                onKeyDown={(event) => {
+                                                    if (event.key === 'Enter') void handleSendChatMessage();
+                                                }}
+                                            />
+                                            <button
+                                                type="button"
+                                                style={{ ...aiSendBtn, opacity: (!chatReady || chatSending || chatInput.trim().length === 0) ? 0.5 : 1 }}
+                                                disabled={!chatReady || chatSending || chatInput.trim().length === 0}
+                                                onClick={() => void handleSendChatMessage()}
+                                            >
+                                                <ArrowUp size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
+                            <div style={aiDisclaimer}>
+                                Công cụ này dùng AI nên có thể mắc lỗi — hãy kiểm tra lại thông tin quan trọng và không chia sẻ dữ liệu nhạy cảm.
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Modals */}
@@ -1099,6 +1478,61 @@ const ReportRow = ({ label, value }: { label: string; value: string }) => (
     </div>
 );
 
+// ── Sidebar cột trái kiểu Coursera: khối bo viền duy nhất, chia mục bằng
+// đường kẻ mảnh thay vì nhiều thẻ nổi rời rạc ──
+const SidebarSection = ({
+    label,
+    collapsible,
+    open,
+    onToggle,
+    children,
+}: {
+    label: string;
+    collapsible?: boolean;
+    open?: boolean;
+    onToggle?: () => void;
+    children: React.ReactNode;
+}) => (
+    <div style={sidebarSection}>
+        {collapsible ? (
+            <button type="button" className="sld-side-section-btn" style={sidebarSectionHeaderBtn} onClick={onToggle}>
+                <span style={sidebarSectionLabel}>{label}</span>
+                <ChevronDown
+                    size={14}
+                    style={{ color: '#9ca3af', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}
+                />
+            </button>
+        ) : (
+            <div style={sidebarSectionLabel}>{label}</div>
+        )}
+        {(!collapsible || open) && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 10 }}>
+                {children}
+            </div>
+        )}
+    </div>
+);
+
+const SidebarItemRow = ({
+    icon,
+    title,
+    meta,
+    active,
+}: {
+    icon: React.ReactNode;
+    title: React.ReactNode;
+    meta?: React.ReactNode;
+    active?: boolean;
+}) => (
+    <div className="sld-side-item" style={active ? sidebarItemRowActive : sidebarItemRow}>
+        <span style={{ ...sidebarItemIconWrap, ...(active ? sidebarItemIconWrapActive : {}) }}>{icon}</span>
+        <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={sidebarItemTitle}>{title}</div>
+            {meta && <div style={sidebarItemMeta}>{meta}</div>}
+        </div>
+    </div>
+);
+
 // ─────────────────────────────────────────────────────────────────────────
 // Keyframes — injected via a tiny <style> tag
 // ─────────────────────────────────────────────────────────────────────────
@@ -1116,6 +1550,37 @@ styleTag.textContent = `
     0%, 100% { transform: translate(0, 0) scale(1); }
     50% { transform: translate(-8px, 6px) scale(1.15); }
 }
+.sld-markdown { font-size: 14px; line-height: 1.6; color: #1a2238; font-family: 'IBM Plex Sans', sans-serif; }
+.sld-markdown > *:first-child { margin-top: 0; }
+.sld-markdown > *:last-child { margin-bottom: 0; }
+.sld-markdown p { margin: 0 0 10px; }
+.sld-markdown ul, .sld-markdown ol { margin: 0 0 10px; padding-left: 20px; }
+.sld-markdown li { margin-bottom: 4px; }
+.sld-markdown li > p { margin: 0; }
+.sld-markdown h1, .sld-markdown h2, .sld-markdown h3 { font-size: 14px; font-weight: 700; margin: 14px 0 6px; color: #1a2238; }
+.sld-markdown strong { font-weight: 700; color: #1a2238; }
+.sld-markdown code { background: #f1f5f9; padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+@media (max-width: 1180px) {
+    .sld-3col-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; }
+    .sld-3col-grid > *:first-child { grid-column: 1 / -1; }
+}
+@media (max-width: 760px) {
+    .sld-3col-grid { grid-template-columns: minmax(0, 1fr) !important; }
+    .sld-3col-grid > *:first-child { grid-column: auto; }
+}
+.sld-side-section-btn:hover,
+.sld-side-item:hover { background: #f7f7f5; }
+.sld-side-section-btn, .sld-side-item { transition: background .12s; }
+.sld-pill, .sld-pill-ghost, .sld-dive-btn, .sld-sidebar-close, .sld-next-btn {
+    transition: border-color .12s, background .12s, color .12s;
+}
+.sld-pill:hover:not(:disabled) { background: #f5f4ff; }
+.sld-pill-ghost:hover:not(:disabled) { border-color: #c7d2fe; background: #f5f6fe; }
+.sld-dive-btn:hover { background: #e8eafc; }
+.sld-sidebar-close:hover { background: #f0f0ee; color: #1a2238; }
+.sld-next-btn:hover { background: #1a2238; color: #fff; }
+.sld-ai-input-pill:focus-within { border-color: #6366F1; box-shadow: 0 0 0 3px rgba(99,102,241,0.12); }
+.sld-ai-header-icon:hover { background: #f5f5f5; color: #1a2238; }
 `;
 if (!document.getElementById('sld-keyframes')) {
     styleTag.id = 'sld-keyframes';
@@ -1265,48 +1730,6 @@ const heroJoinBtn: React.CSSProperties = {
     transition: 'transform 0.15s, box-shadow 0.15s',
 };
 
-// ── Subject card ──
-const subjectCard: React.CSSProperties = {
-    background: '#fff',
-    border: '1px solid #f0f0f0',
-    borderRadius: 16,
-    overflow: 'hidden',
-    marginBottom: 12,
-    boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-};
-
-const subjectCardInner: React.CSSProperties = {
-    padding: '24px 26px 22px',
-};
-
-const subjectTopRow: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginBottom: 22,
-};
-
-const subjectTitle: React.CSSProperties = {
-    fontSize: 24,
-    fontWeight: 700,
-    color: '#1a2238',
-    fontFamily: FONT_DISPLAY,
-    lineHeight: 1.2,
-    marginBottom: 8,
-    wordBreak: 'break-word',
-};
-
-const subjectDateRow: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 6,
-    fontSize: 13,
-    color: '#737373',
-    fontFamily: FONT_BODY,
-    fontWeight: 500,
-};
-
 const statusChip: React.CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
@@ -1315,127 +1738,6 @@ const statusChip: React.CSSProperties = {
     borderRadius: 6,
     fontSize: 13,
     fontWeight: 600,
-    fontFamily: FONT_BODY,
-    whiteSpace: 'nowrap',
-    flexShrink: 0,
-};
-
-// ── Timeline ──
-const timelineRow: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 0,
-    padding: '16px 0 4px',
-};
-
-const timeBlock: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    padding: '14px 18px',
-    background: '#fafaf8',
-    borderRadius: 12,
-    border: '1px solid #f5f5f5',
-    flex: 1,
-};
-
-const timeBlockIconWrap: React.CSSProperties = {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    background: 'rgba(99,102,241,0.10)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-};
-
-const timeBlockLabel: React.CSSProperties = {
-    fontSize: 10,
-    color: '#9ca3af',
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 2,
-    fontFamily: FONT_BODY,
-};
-
-const timeBlockValue: React.CSSProperties = {
-    fontSize: 18,
-    fontWeight: 700,
-    color: '#1a2238',
-    fontFamily: FONT_DISPLAY,
-};
-
-const timeConnector: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 0,
-    width: 60,
-    flexShrink: 0,
-};
-
-const timeConnectorLine: React.CSSProperties = {
-    flex: 1,
-    height: 2,
-    background: '#e5e7eb',
-};
-
-const timeConnectorDot: React.CSSProperties = {
-    width: 8,
-    height: 8,
-    borderRadius: '50%',
-    background: '#d1d5db',
-    flexShrink: 0,
-};
-
-// ── Tutor card ──
-const tutorCard: React.CSSProperties = {
-    background: '#fff',
-    border: '1px solid #f0f0f0',
-    borderRadius: 14,
-    padding: '18px 22px',
-    marginBottom: 12,
-    boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-};
-
-const tutorCardInner: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 16,
-};
-
-const tutorLabelRow: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 2,
-};
-
-const tutorLabel: React.CSSProperties = {
-    fontSize: 10,
-    fontWeight: 700,
-    color: '#9ca3af',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    fontFamily: FONT_BODY,
-};
-
-const tutorNameStyle: React.CSSProperties = {
-    fontSize: 16,
-    fontWeight: 700,
-    color: '#1a2238',
-    fontFamily: FONT_DISPLAY,
-    lineHeight: 1.3,
-};
-
-const tutorBadge: React.CSSProperties = {
-    fontSize: 11,
-    fontWeight: 600,
-    color: '#6366F1',
-    background: 'rgba(99,102,241,0.08)',
-    padding: '5px 12px',
-    borderRadius: 8,
     fontFamily: FONT_BODY,
     whiteSpace: 'nowrap',
     flexShrink: 0,
@@ -1519,6 +1821,455 @@ const actionBtnDispute: React.CSSProperties = {
 };
 
 // ── Section card ──
+// ── Video card + "Đào sâu nội dung này" (cột giữa, kiểu Coursera) ──
+// ── Sidebar cột trái: thẻ trắng bo góc + viền + đổ bóng nhẹ (theo mẫu tham khảo),
+// header cố định có đường kẻ dưới, phần danh sách cuộn riêng bên trong.
+const sidebarCard: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    background: '#fff',
+    border: '1px solid #e5e7eb',
+    borderRadius: 16,
+    boxShadow: '0 1px 2px rgba(16,24,40,0.04)',
+    overflow: 'hidden',
+    height: '100%',
+    minHeight: 0,
+};
+
+const sidebarHeaderRow: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 10,
+    padding: '16px 18px',
+    borderBottom: '1px solid #f1f1ef',
+    flexShrink: 0,
+};
+
+const sidebarScrollBody: React.CSSProperties = {
+    flex: 1,
+    minHeight: 0,
+    overflowY: 'auto',
+    padding: '16px 18px',
+};
+
+const sidebarHeaderTitle: React.CSSProperties = {
+    fontSize: 17,
+    fontWeight: 700,
+    color: '#1a2238',
+    lineHeight: 1.3,
+};
+
+const sidebarCloseBtn: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    border: 'none',
+    background: 'transparent',
+    color: '#667085',
+    cursor: 'pointer',
+    flexShrink: 0,
+};
+
+const sidebarGoalCard: React.CSSProperties = {
+    background: '#f2f3fc',
+    border: '1px solid #e2e5f8',
+    borderRadius: 12,
+    padding: '14px 16px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+    marginBottom: 16,
+};
+
+const sidebarGoalHeader: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginBottom: 2,
+};
+
+const sidebarGoalTitle: React.CSSProperties = {
+    fontSize: 13,
+    fontWeight: 700,
+    color: '#1a2238',
+};
+
+const sidebarGoalRow: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    fontSize: 12.5,
+    color: '#475467',
+};
+
+const sidebarSection: React.CSSProperties = {
+    borderTop: '1px solid #f0f0f0',
+    paddingTop: 14,
+    marginTop: 14,
+};
+
+const sidebarSectionHeaderBtn: React.CSSProperties = {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    background: 'none',
+    border: 'none',
+    padding: '2px 4px',
+    margin: '-2px -4px',
+    borderRadius: 6,
+    cursor: 'pointer',
+};
+
+// color rgb(94,111,146) đo được từ nhãn "Module 1" thật trên Coursera.
+const sidebarSectionLabel: React.CSSProperties = {
+    fontSize: 14,
+    fontWeight: 600,
+    color: '#5e6f92',
+};
+
+const sidebarItemRow: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 10,
+    padding: '8px 12px',
+    margin: '0 -12px',
+    borderRadius: 6,
+};
+
+const sidebarItemRowActive: React.CSSProperties = {
+    ...sidebarItemRow,
+    background: '#eef1fb',
+    borderLeft: '3px solid #6366F1',
+    paddingLeft: 9,
+};
+
+const sidebarItemIconWrap: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 20,
+    height: 20,
+    borderRadius: '50%',
+    background: '#fff',
+    border: '1.5px solid #d0d5dd',
+    color: '#8a8370',
+    flexShrink: 0,
+    marginTop: 1,
+};
+
+const sidebarItemIconWrapActive: React.CSSProperties = {
+    background: '#fff',
+    border: '1.5px solid #6366F1',
+    color: '#6366F1',
+};
+
+const sidebarItemTitle: React.CSSProperties = {
+    fontSize: 13,
+    fontWeight: 600,
+    color: '#1a2238',
+    lineHeight: 1.4,
+};
+
+const sidebarItemMeta: React.CSSProperties = {
+    fontSize: 11.5,
+    color: '#9ca3af',
+    marginTop: 2,
+    lineHeight: 1.5,
+};
+
+// ── Thẻ bọc cột giữa (video + tiêu đề + đào sâu) + thanh footer chứa nút điều hướng,
+// theo mẫu tham khảo: 1 thẻ trắng bo góc/viền/đổ bóng, nội dung cuộn riêng, footer
+// ngăn cách bằng đường kẻ trên + nền hơi khác màu.
+const middleCard: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    background: '#fff',
+    border: '1px solid #e5e7eb',
+    borderRadius: 16,
+    boxShadow: '0 1px 2px rgba(16,24,40,0.04)',
+    overflow: 'hidden',
+    height: '100%',
+    minHeight: 0,
+};
+
+const middleScrollBody: React.CSSProperties = {
+    flex: 1,
+    minHeight: 0,
+    overflowY: 'auto',
+    padding: 24,
+    display: 'flex',
+    flexDirection: 'column',
+};
+
+const middleFooterBar: React.CSSProperties = {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    padding: '14px 24px',
+    borderTop: '1px solid #f1f1ef',
+    background: '#faf9f6',
+    flexShrink: 0,
+};
+
+const nextBtn: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    padding: '10px 18px',
+    borderRadius: 10,
+    border: '1px solid #d0d5dd',
+    background: '#fff',
+    color: '#1a2238',
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: 'pointer',
+    boxShadow: '0 1px 2px rgba(16,24,40,0.05)',
+};
+
+const videoCard: React.CSSProperties = {
+    background: '#fff',
+    border: 'none',
+    borderRadius: 0,
+    overflow: 'hidden',
+    boxShadow: 'none',
+};
+
+const videoInfoRow: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 20,
+    marginBottom: 4,
+};
+
+const videoInfoTitle: React.CSSProperties = {
+    fontSize: 22,
+    fontWeight: 700,
+    color: '#1a2238',
+};
+
+const diveDeeperCard: React.CSSProperties = {
+    marginTop: 20,
+};
+
+const diveDeeperHeaderBtn: React.CSSProperties = {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    background: '#f2f3fc',
+    border: '1px solid #e2e5f8',
+    borderRadius: 10,
+    padding: '14px 16px',
+    cursor: 'pointer',
+    fontSize: 14,
+    fontWeight: 600,
+    color: '#4338ca',
+};
+
+const pillsGrid: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: 10,
+    marginTop: 14,
+};
+
+const pillBtn: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+    padding: '11px 12px',
+    borderRadius: 10,
+    border: '1.5px solid #6366F1',
+    background: '#fff',
+    color: '#1a2238',
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: 'pointer',
+    lineHeight: 1.35,
+};
+
+const pillsGridVertical: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+};
+
+const pillBtnGhost: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    textAlign: 'left',
+    padding: '14px 16px',
+    borderRadius: 10,
+    border: '1px solid #e5e7eb',
+    background: '#fff',
+    color: '#1a2238',
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: 'pointer',
+    boxShadow: '0 1px 2px rgba(16,24,40,0.04)',
+};
+
+// ── Khung chat AI (cột phải): thẻ trắng bo góc + viền + đổ bóng nhẹ, theo mẫu tham khảo.
+const aiPanelCard: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    background: '#fff',
+    border: '1px solid #e5e7eb',
+    borderRadius: 16,
+    boxShadow: '0 1px 2px rgba(16,24,40,0.04)',
+    height: '100%',
+    minHeight: 0,
+    overflow: 'hidden',
+};
+
+const aiPanelHeader: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    padding: '16px 18px',
+    borderBottom: '1px solid #f1f1ef',
+    flexShrink: 0,
+};
+
+const aiPanelHeaderIcons: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+};
+
+const aiHeaderIconBtn: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    border: 'none',
+    background: 'transparent',
+    color: '#667085',
+    cursor: 'pointer',
+};
+
+const aiCompactTitle: React.CSSProperties = {
+    fontSize: 14,
+    fontWeight: 700,
+    color: '#1a2238',
+};
+
+const aiHeroGreeting: React.CSSProperties = {
+    marginBottom: 2,
+};
+
+const aiGreetingHi: React.CSSProperties = {
+    fontSize: 26,
+    fontWeight: 800,
+    color: '#4338ca',
+    marginBottom: 2,
+    lineHeight: 1.2,
+};
+
+const aiGreetingTitle: React.CSSProperties = {
+    fontSize: 22,
+    fontWeight: 700,
+    color: '#1a2238',
+    lineHeight: 1.25,
+};
+
+const aiPanelBody: React.CSSProperties = {
+    flex: 1,
+    minHeight: 0,
+    overflowY: 'auto',
+    padding: '14px 14px 18px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 12,
+};
+
+const aiEmptyDesc: React.CSSProperties = {
+    fontSize: 13,
+    color: '#667085',
+    lineHeight: 1.55,
+};
+
+// Tin nhắn AI hiện dạng chữ thường trên nền trắng, không bong bóng — khớp Coursera
+const aiBubbleAssistant: React.CSSProperties = {
+    fontSize: 13.5,
+    color: '#1a2238',
+    lineHeight: 1.6,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+    maxWidth: '100%',
+};
+
+// Tin nhắn người dùng mới có bong bóng tím nhạt, bo tròn, căn phải
+const aiBubbleUser: React.CSSProperties = {
+    alignSelf: 'flex-end',
+    background: '#ede9fe',
+    borderRadius: 16,
+    padding: '10px 16px',
+    fontSize: 13.5,
+    color: '#1a2238',
+    maxWidth: '85%',
+};
+
+const aiPanelInputRow: React.CSSProperties = {
+    padding: '14px 16px 8px',
+    borderTop: '1px solid #f1f1ef',
+    flexShrink: 0,
+};
+
+const aiInputPill: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    padding: 6,
+    borderRadius: 14,
+    border: '1px solid #e5e7eb',
+    background: '#faf9f7',
+};
+
+const aiInputField: React.CSSProperties = {
+    flex: 1,
+    padding: '8px 10px',
+    border: 'none',
+    outline: 'none',
+    background: 'transparent',
+    fontSize: 13,
+};
+
+const aiSendBtn: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    border: 'none',
+    background: '#6366F1',
+    color: '#fff',
+    cursor: 'pointer',
+    flexShrink: 0,
+};
+
+const aiDisclaimer: React.CSSProperties = {
+    fontSize: 11,
+    color: '#9ca3af',
+    lineHeight: 1.5,
+    padding: '0 16px 16px',
+    textAlign: 'center',
+    flexShrink: 0,
+};
+
 const sectionCard: React.CSSProperties = {
     background: '#fff',
     border: '1px solid #f0f0f0',
@@ -1526,6 +2277,44 @@ const sectionCard: React.CSSProperties = {
     padding: '22px 24px',
     marginBottom: 12,
     boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+};
+
+// Theo mẫu tham khảo mới (3 thẻ trắng bo góc, viền + đổ bóng nhẹ, cách nhau bằng khoảng
+// trắng — không còn dính liền như bản đo từ Coursera trước đó). Nền trang Tutora (kem)
+// lộ ra ở khoảng cách giữa 3 thẻ, giống hệt bố cục mẫu (nền xám nhạt lộ ra giữa các card).
+const threeColGrid: React.CSSProperties = {
+    display: 'grid',
+    // Coursera uses a wide course-outline rail, a dominant lesson canvas, and
+    // an AI rail. Keep the same visual balance while allowing Tutora content
+    // to remain readable at common laptop and desktop widths.
+    gridTemplateColumns: 'minmax(280px, 26%) minmax(0, 1fr) minmax(340px, 27%)',
+    gridTemplateRows: 'minmax(0, 1fr)',
+    alignItems: 'stretch',
+    gap: 20,
+    width: '100%',
+    flex: 1,
+    minHeight: 0,
+};
+
+const threeColLeft: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    minWidth: 0,
+    minHeight: 0,
+};
+
+const threeColMiddle: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    minWidth: 0,
+    minHeight: 0,
+};
+
+const threeColRight: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    minWidth: 0,
+    minHeight: 0,
 };
 
 const sectionHeaderRow: React.CSSProperties = {
@@ -1618,6 +2407,24 @@ const reportValueStyle: React.CSSProperties = {
     lineHeight: 1.6,
     fontFamily: FONT_BODY,
     whiteSpace: 'pre-wrap',
+};
+
+const summaryTabBtnBase: React.CSSProperties = {
+    padding: '6px 14px',
+    fontSize: 13,
+    fontWeight: 600,
+    border: '1px solid #e5e7eb',
+    borderRadius: 8,
+    background: '#fff',
+    color: '#667085',
+    cursor: 'pointer',
+    fontFamily: FONT_BODY,
+};
+
+const summaryTabBtnActive: React.CSSProperties = {
+    background: '#8b5cf6',
+    borderColor: '#8b5cf6',
+    color: '#fff',
 };
 
 const attachmentLinkStyle: React.CSSProperties = {
