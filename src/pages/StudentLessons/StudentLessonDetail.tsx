@@ -1727,7 +1727,6 @@ const FONT_BODY = "'IBM Plex Sans', sans-serif";
 // Một palette surface dùng xuyên suốt rail trái, lấy cảm hứng từ Coursera:
 // các item chỉ khác nhau bởi nội dung/trạng thái, không đổi sang tím/xanh/vàng.
 const LESSON_RAIL_SURFACE = '#faf9f7';
-const LESSON_RAIL_BORDER = '#dbe4f0';
 const TUTORA_MIDNIGHT = '#272A31';
 const TUTORA_MOSS = '#2D372F';
 const TUTORA_IVORY = '#DED8CA';

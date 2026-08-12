@@ -1,0 +1,520 @@
+.page {
+  padding: 24px 28px 48px;
+}
+
+.centerState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 72px 20px;
+  font-size: 14px;
+  color: rgba(62, 47, 40, 0.7);
+}
+
+/* ── Header ── */
+
+.header {
+  margin-bottom: 20px;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(26, 34, 56, 0.7);
+}
+
+.backLink:hover {
+  color: #1a2238;
+}
+
+.headerMain {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.eyebrow {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  color: rgba(62, 47, 40, 0.5);
+}
+
+.title {
+  margin: 0 0 4px;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 26px;
+  line-height: 1.2;
+  font-weight: 750;
+  color: #1a2238;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(62, 47, 40, 0.65);
+}
+
+/* ── Layout ── */
+
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 20px;
+  align-items: start;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 20px;
+}
+
+.card {
+  padding: 20px 22px;
+  background-color: #fff;
+  border: 1px solid rgba(26, 34, 56, 0.1);
+  border-radius: 16px;
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 12px;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 700;
+  color: #1a2238;
+}
+
+.paragraph {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+  color: rgba(62, 47, 40, 0.85);
+  /* Lý do khiếu nại người dùng gõ tay — giữ xuống dòng, và bẻ chuỗi dài để không tràn khung. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: rgba(62, 47, 40, 0.55);
+}
+
+.emptyText {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(62, 47, 40, 0.55);
+}
+
+.fieldLabel {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(62, 47, 40, 0.5);
+}
+
+.evidenceBlock {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(26, 34, 56, 0.07);
+}
+
+/* ── Cảnh báo hạn phản hồi ── */
+
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 13px 16px;
+  border-radius: 12px;
+  background-color: #fdf6e7;
+  border: 1px solid rgba(164, 109, 24, 0.25);
+  font-size: 13px;
+  line-height: 20px;
+  color: #7d5310;
+}
+
+.alertDanger {
+  background-color: #fbefee;
+  border-color: rgba(178, 80, 72, 0.28);
+  color: #8f342c;
+}
+
+/* ── Phản hồi gia sư ── */
+
+.textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba(26, 34, 56, 0.16);
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 21px;
+  color: #1a2238;
+  resize: vertical;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #1a2238;
+}
+
+.composerFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.charHint {
+  font-size: 12px;
+  color: rgba(178, 80, 72, 0.9);
+}
+
+.charHintOk {
+  color: rgba(61, 74, 62, 0.9);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.primaryButton,
+.secondaryButton,
+.uploadButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.primaryButton {
+  background-color: #1a2238;
+  color: #fff;
+}
+
+.primaryButton:hover:not(:disabled) {
+  background-color: #303a54;
+}
+
+.secondaryButton,
+.uploadButton {
+  background-color: #fff;
+  border-color: rgba(26, 34, 56, 0.18);
+  color: #1a2238;
+}
+
+.secondaryButton:hover:not(:disabled),
+.uploadButton:hover {
+  border-color: rgba(26, 34, 56, 0.35);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Kết quả xử lý ── */
+
+.resolutionCard {
+  background: linear-gradient(135deg, #f6f9f6 0%, #eef4ee 100%);
+  border-color: rgba(61, 74, 62, 0.22);
+}
+
+.resolutionHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.resolutionHead .cardTitle {
+  margin-bottom: 0;
+}
+
+.resolutionIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 11px;
+  background-color: #fff;
+  border: 1px solid rgba(61, 74, 62, 0.2);
+  color: #3d4a3e;
+}
+
+.refundRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.refundChip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 14px;
+  background-color: #fff;
+  border: 1px solid rgba(61, 74, 62, 0.2);
+  border-radius: 12px;
+}
+
+.refundChip small {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: rgba(62, 47, 40, 0.5);
+}
+
+.refundChip strong {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 17px;
+  color: #1a2238;
+}
+
+/* ── Trao đổi với quản trị viên ── */
+
+.threadList {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  max-height: 320px;
+  overflow-y: auto;
+  margin: 12px 0;
+}
+
+.threadBubble {
+  max-width: 82%;
+  padding: 9px 13px;
+  border-radius: 13px;
+}
+
+.threadAdmin {
+  align-self: flex-start;
+  background-color: #f2f0e4;
+}
+
+.threadMine {
+  align-self: flex-end;
+  background-color: #1a2238;
+}
+
+.threadMine .threadSender,
+.threadMine .threadText {
+  color: #fff;
+}
+
+.threadSender {
+  margin: 0 0 3px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(62, 47, 40, 0.55);
+}
+
+.threadText {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 20px;
+  color: rgba(62, 47, 40, 0.9);
+  overflow-wrap: anywhere;
+}
+
+.threadComposer {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.threadInput {
+  flex: 1;
+  min-width: 0;
+  padding: 0 14px;
+  min-height: 38px;
+  border: 1px solid rgba(26, 34, 56, 0.16);
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 13.5px;
+  color: #1a2238;
+}
+
+.threadInput:focus {
+  outline: none;
+  border-color: #1a2238;
+}
+
+/* ── Sidebar ── */
+
+.infoList {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.infoList > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.infoList dt {
+  font-size: 12.5px;
+  color: rgba(62, 47, 40, 0.6);
+}
+
+.infoList dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a2238;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.sidebarLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 38px;
+  margin-top: 14px;
+  border: 1px solid rgba(26, 34, 56, 0.18);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a2238;
+  text-decoration: none;
+}
+
+.sidebarLink:hover {
+  border-color: rgba(26, 34, 56, 0.35);
+  background-color: rgba(242, 240, 228, 0.5);
+}
+
+.attendanceList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.attendanceList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: rgba(62, 47, 40, 0.75);
+}
+
+.person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.person strong {
+  display: block;
+  font-size: 14px;
+  color: #1a2238;
+}
+
+.person small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: rgba(62, 47, 40, 0.6);
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background-color: #1a2238;
+  color: #fff;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+@media (max-width: 1024px) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Bỏ sticky khi sidebar đã xuống dưới — dính lại sẽ che nội dung chính. */
+  .sidebar {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 18px 16px 40px;
+  }
+
+  .card {
+    padding: 16px 16px;
+  }
+
+  .title {
+    font-size: 22px;
+  }
+}

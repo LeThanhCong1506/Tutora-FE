@@ -1,0 +1,476 @@
+.page {
+  min-height: calc(100vh - 98px);
+  padding: 120px 24px 120px;
+  background:
+    radial-gradient(circle at 8% 28%, rgba(26, 34, 56, 0.035), transparent 29%),
+    radial-gradient(circle at 92% 8%, rgba(123, 28, 28, 0.035), transparent 24%),
+    #f4f2ea;
+}
+
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* Bản Zalo Mini App không render Header/Footer web nên không cần chừa khoảng trống 98px. */
+.pageMiniApp {
+  min-height: 100vh;
+  padding-top: 24px;
+  padding-bottom: 56px;
+}
+
+/* ── Breadcrumb ── */
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 20px;
+  margin: 0 4px 16px;
+  font-size: 13px;
+  color: rgba(62, 47, 40, 0.6);
+}
+
+.breadcrumb a {
+  color: rgba(62, 47, 40, 0.7);
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  color: #1a2238;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.breadcrumb [aria-current='page'] {
+  font-weight: 600;
+  color: #1a2238;
+}
+
+/* ── Layout 2 cột ── */
+
+.layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.sidebar {
+  position: sticky;
+  top: 116px;
+  max-height: calc(100vh - 136px);
+  padding: 20px 0 14px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background-color: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(26, 34, 56, 0.1);
+  border-radius: 20px;
+  box-shadow: 0 18px 46px -34px rgba(26, 34, 56, 0.45);
+}
+
+.sidebarTitle {
+  display: block;
+  padding: 0 22px 15px;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 750;
+  color: #1a2238;
+}
+
+.sidebarList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebarLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 12px 20px;
+  /* Vạch trái trong suốt giữ sẵn chỗ — mục active không bị đẩy ngang 3px so với mục thường. */
+  border-left: 3px solid transparent;
+  font-size: 14px;
+  line-height: 21px;
+  color: rgba(62, 47, 40, 0.82);
+  text-decoration: none;
+  transition: background-color 0.16s ease, color 0.16s ease;
+}
+
+.sidebarLink:hover {
+  background-color: #f7f6f0;
+  color: #1a2238;
+}
+
+.sidebarLink .material-symbols-outlined {
+  font-size: 21px;
+  flex-shrink: 0;
+  color: rgba(62, 47, 40, 0.5);
+}
+
+.sidebarLinkActive,
+.sidebarLinkActive:hover {
+  border-left-color: #7b1c1c;
+  background-color: #f8f2f0;
+  font-weight: 700;
+  color: #7b1c1c;
+}
+
+.sidebarLinkActive .material-symbols-outlined {
+  color: #7b1c1c;
+}
+
+/* Bản gập chỉ dùng cho mobile — desktop luôn hiện sidebar dọc. */
+.sidebarMobile {
+  display: none;
+}
+
+/* ── Nội dung ── */
+
+.content {
+  min-width: 0;
+  padding: 40px 48px 46px;
+  background-color: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(26, 34, 56, 0.1);
+  border-radius: 22px;
+  box-shadow: 0 24px 60px -42px rgba(26, 34, 56, 0.48);
+}
+
+.centerState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 64px 20px;
+  font-size: 14px;
+  color: rgba(62, 47, 40, 0.7);
+}
+
+.stateLink {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a2238;
+}
+
+.head {
+  padding-bottom: 24px;
+  margin-bottom: 26px;
+  border-bottom: 1px solid rgba(26, 34, 56, 0.1);
+}
+
+.title {
+  margin: 0 0 10px;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: clamp(30px, 2.2vw, 36px);
+  line-height: 1.18;
+  font-weight: 750;
+  letter-spacing: -0.025em;
+  color: #1a2238;
+}
+
+.summary {
+  max-width: 820px;
+  margin: 0 0 10px;
+  font-size: 16px;
+  line-height: 26px;
+  color: rgba(62, 47, 40, 0.75);
+}
+
+.meta {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(62, 47, 40, 0.5);
+}
+
+/* ── Markdown ──
+   Thẻ bên trong do react-markdown sinh ra nên không gắn được class riêng;
+   style bằng selector con của .doc. */
+
+.doc {
+  font-size: 15.5px;
+  line-height: 27px;
+  color: rgba(62, 47, 40, 0.85);
+}
+
+.doc h2 {
+  scroll-margin-top: 122px;
+  margin: 30px 0 12px;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 21px;
+  line-height: 28px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #1a2238;
+}
+
+.doc > h2:first-child {
+  margin-top: 0;
+}
+
+.doc h3 {
+  scroll-margin-top: 122px;
+  margin: 22px 0 9px;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 17px;
+  line-height: 24px;
+  font-weight: 700;
+  color: #1a2238;
+}
+
+.doc p {
+  margin: 0 0 14px;
+}
+
+/* Preflight của Tailwind đặt `list-style: none` cho ul/ol, phải trả lại tường minh — thiếu nó
+   thì mục "Mục đích sử dụng dữ liệu" đánh số 1-9 hiện ra thành 9 dòng không số. Cũng không
+   dùng `display: flex` để giãn dòng: flex làm mất luôn ::marker. */
+.doc ul,
+.doc ol {
+  margin: 8px 0 16px;
+  padding-left: 24px;
+}
+
+.doc ul {
+  list-style: disc;
+}
+
+.doc ol {
+  list-style: decimal;
+}
+
+.doc li {
+  line-height: 26px;
+}
+
+.doc li + li {
+  margin-top: 8px;
+}
+
+.doc li::marker {
+  color: #7b1c1c;
+}
+
+.doc a {
+  color: #7b1c1c;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.doc strong {
+  color: #1a2238;
+}
+
+.doc code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background-color: rgba(26, 34, 56, 0.06);
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+}
+
+/* Bảng cuộn ngang trong khung riêng để trang không bao giờ bị đẩy tràn ngang. */
+.doc table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  margin: 10px 0 14px;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.doc th,
+.doc td {
+  padding: 9px 12px;
+  border: 1px solid rgba(26, 34, 56, 0.12);
+  text-align: left;
+  vertical-align: top;
+}
+
+.doc th {
+  background-color: #f6f5ef;
+  font-weight: 700;
+  color: #1a2238;
+  white-space: nowrap;
+}
+
+.doc blockquote {
+  margin: 12px 0;
+  padding: 2px 0 2px 14px;
+  border-left: 3px solid rgba(26, 34, 56, 0.15);
+  color: rgba(62, 47, 40, 0.7);
+}
+
+.doc hr {
+  margin: 28px 0;
+  border: none;
+  border-top: 1px solid rgba(26, 34, 56, 0.1);
+}
+
+.sidebarLink:focus-visible,
+.breadcrumb a:focus-visible,
+.doc a:focus-visible,
+.sidebarMobile summary:focus-visible {
+  outline: 3px solid rgba(123, 28, 28, 0.22);
+  outline-offset: 3px;
+}
+
+@media (max-width: 1100px) {
+  .page {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .layout {
+    grid-template-columns: 248px minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .content {
+    padding: 34px 36px 40px;
+  }
+
+  .sidebarLink {
+    padding-right: 17px;
+    padding-left: 17px;
+  }
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .sidebarMobile {
+    display: block;
+    padding: 0;
+    background-color: rgba(255, 255, 255, 0.97);
+    border: 1px solid rgba(26, 34, 56, 0.1);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 16px 40px -34px rgba(26, 34, 56, 0.5);
+  }
+
+  .sidebarMobile summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 52px;
+    padding: 14px 18px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a2238;
+    list-style: none;
+  }
+
+  .sidebarMobile summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .sidebarMobile summary .material-symbols-outlined {
+    font-size: 20px;
+    color: rgba(62, 47, 40, 0.55);
+  }
+
+  .sidebarMobile summary::after {
+    width: 8px;
+    height: 8px;
+    margin-left: auto;
+    border-right: 2px solid rgba(26, 34, 56, 0.55);
+    border-bottom: 2px solid rgba(26, 34, 56, 0.55);
+    content: '';
+    transform: rotate(45deg) translateY(-2px);
+    transition: transform 0.18s ease;
+  }
+
+  .sidebarMobile[open] summary::after {
+    transform: rotate(225deg) translate(-2px, -2px);
+  }
+
+  .sidebarMobile .sidebarList {
+    max-height: min(440px, 55vh);
+    overflow-y: auto;
+    border-top: 1px solid rgba(26, 34, 56, 0.08);
+    padding: 6px 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    min-height: calc(100vh - 76px);
+    padding: 92px 14px 72px;
+  }
+
+  .pageMiniApp {
+    min-height: 100vh;
+    padding-top: 16px;
+    padding-bottom: 36px;
+  }
+
+  .breadcrumb {
+    margin-right: 2px;
+    margin-bottom: 12px;
+    margin-left: 2px;
+    font-size: 12px;
+  }
+
+  .content {
+    padding: 26px 20px 30px;
+    border-radius: 18px;
+  }
+
+  .title {
+    font-size: 27px;
+  }
+
+  .summary {
+    font-size: 15px;
+    line-height: 24px;
+  }
+
+  .doc {
+    font-size: 15px;
+    line-height: 26px;
+  }
+
+  .doc h2 {
+    scroll-margin-top: 90px;
+    margin-top: 26px;
+    font-size: 19px;
+    line-height: 26px;
+  }
+
+  .doc h3 {
+    scroll-margin-top: 90px;
+  }
+}
+
+@media (max-width: 400px) {
+  .page {
+    min-height: calc(100vh - 66px);
+    padding-top: 78px;
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .pageMiniApp {
+    min-height: 100vh;
+    padding-top: 12px;
+  }
+
+  .content {
+    padding-right: 17px;
+    padding-left: 17px;
+  }
+}

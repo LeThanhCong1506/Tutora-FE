@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import InputGroup from "../../components/InputGroup";
 import GoogleSignInButton from "../../components/GoogleSignInButton";
 import ZaloSignInButton from "../../components/ZaloSignInButton";
+import { POLICY_LABELS, POLICY_SLUGS, policyPath } from "../../constants/policy";
 import axios from "axios";
 import { saveUserToStorage, getRoleFromToken, googleAuth } from "../../services/auth.service";
 
@@ -225,7 +226,6 @@ const RegisterForm: React.FC = () => {
             {/* --- MAIN FORM --- */}
             <div className="register-form__header animate-fade-in-up">
                 <h2 className="register-form__title">Bắt đầu hành trình</h2>
-                <p className="register-form__subtitle">Tạo tài khoản TUTORA LMS.</p>
             </div>
 
             <div className="register-form__body">
@@ -325,7 +325,15 @@ const RegisterForm: React.FC = () => {
                             <input id="terms" name="terms" type="checkbox" checked={formData.terms} onChange={handleChange} className="register-form__checkbox" disabled={isSubmitting} />
                         </div>
                         <label htmlFor="terms" className="register-form__terms-label text-xs">
-                            Đồng ý với <a href="#" className="register-form__terms-link">Điều khoản</a> & <a href="#" className="register-form__terms-link">Chính sách</a>.
+                            Đồng ý với{" "}
+                            <Link to={policyPath(POLICY_SLUGS.terms)} className="register-form__terms-link" target="_blank" rel="noopener noreferrer">
+                                {POLICY_LABELS.terms}
+                            </Link>{" "}
+                            &{" "}
+                            <Link to={policyPath(POLICY_SLUGS.privacy)} className="register-form__terms-link" target="_blank" rel="noopener noreferrer">
+                                {POLICY_LABELS.privacy}
+                            </Link>
+                            .
                         </label>
                     </div>
 

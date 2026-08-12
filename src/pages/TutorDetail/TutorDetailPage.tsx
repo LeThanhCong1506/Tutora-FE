@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Header from '../../components/Header';
@@ -48,6 +48,13 @@ const TutorDetailPage = () => {
     // biến mất trước khi BookingModal kịp nhận prop này.
     const [resumeBookingId, setResumeBookingId] = useState<number | null>(null);
     const autoResumeTriggered = useRef(false);
+
+    // React Router giữ nguyên scrollY khi đổi route trong cùng document. Đưa trang chi tiết
+    // về đầu trước khi browser paint để người dùng không rơi vào giữa hồ sơ theo vị trí của
+    // thẻ vừa chọn ở trang tìm kiếm.
+    useLayoutEffect(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }, [id]);
 
     const requireLogin = async (onSuccess: () => void): Promise<void> => {
         const user = getCurrentUser();

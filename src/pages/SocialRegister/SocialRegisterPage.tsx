@@ -16,6 +16,7 @@ import {
 } from "../../services/auth.service";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
+import PolicyConsent from "../../components/PolicyConsent";
 import styles from "../../styles/pages/reset-password.module.css";
 
 const RESEND_COOLDOWN = 60; // giây
@@ -76,6 +77,9 @@ const SocialRegisterPage: React.FC = () => {
   const [role, setRole] = useState("");
   const [phone, setPhone] = useState(initial?.phone || "");
   const [otp, setOtp] = useState("");
+  // Đăng ký qua mạng xã hội không đi qua RegisterForm nên phải hỏi đồng ý ở đây,
+  // nếu không sẽ có người tạo được tài khoản mà chưa từng thấy điều khoản.
+  const [agreedToPolicy, setAgreedToPolicy] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
@@ -281,7 +285,19 @@ const SocialRegisterPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <button type="submit" disabled={isSubmitting} className={styles.btnPrimary}>
+                    <PolicyConsent
+                      checked={agreedToPolicy}
+                      onChange={setAgreedToPolicy}
+                      docs={["terms", "privacy"]}
+                      disabled={isSubmitting}
+                      className={styles.policyConsent}
+                    />
+
+                    <button
+                      type="submit"
+                      disabled={isSubmitting || !agreedToPolicy}
+                      className={styles.btnPrimary}
+                    >
                       {isSubmitting ? "Đang gửi mã..." : "Tiếp tục"}
                     </button>
                   </form>
