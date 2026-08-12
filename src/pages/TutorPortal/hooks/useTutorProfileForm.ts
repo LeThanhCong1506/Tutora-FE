@@ -40,6 +40,7 @@ export interface CredentialData {
     credentialId?: string | null;  // credentialId (optional)
     credentialUrl?: string | null;  // credentialUrl (optional)
     certificateUrl?: string;  // certificateFileUrl
+    thumbnailUrl?: string | null;  // ảnh trang 1 (JPG) khi certificateUrl là PDF
     createdAt?: string;  // createdAt
     verificationStatus: 'pending' | 'verified' | 'rejected';  // mapped from API status
     verificationNote?: string | null;  // verificationNote (reason for rejection/pending)
@@ -231,6 +232,7 @@ function mapSectionsToFormData(sections: VerificationSections): Partial<TutorPro
                 credentialId: cert.credentialId,
                 credentialUrl: cert.credentialUrl,
                 certificateUrl: cert.certificateFileUrl,
+                thumbnailUrl: cert.thumbnailUrl,
                 createdAt: cert.createdAt,
                 verificationStatus: mappedStatus,
                 verificationNote: cert.verificationNote

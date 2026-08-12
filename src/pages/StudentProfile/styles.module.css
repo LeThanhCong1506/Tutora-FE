@@ -262,6 +262,112 @@
   line-height: 1.5;
 }
 
+.cccdLoadingNote {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 13.5px;
+}
+
+.cccdErrorNote {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  font-size: 13.5px;
+}
+
+.cccdViewActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.cccdViewLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #d9dde3;
+  background: #fff;
+  color: #1a2238;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.cccdViewLink:hover {
+  background: #f5f3ff;
+  border-color: #8b5cf6;
+}
+
+.cccdViewLink:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.cccdPreviewOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.78);
+}
+
+.cccdPreviewBox {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(92vw, 860px);
+  max-height: 88vh;
+  padding: 14px;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.cccdPreviewHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  color: #1a2238;
+}
+
+.cccdPreviewClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid #d9dde3;
+  background: #fff;
+  color: #1a2238;
+  cursor: pointer;
+}
+
+.cccdPreviewImg {
+  width: 100%;
+  max-height: calc(88vh - 70px);
+  object-fit: contain;
+  border-radius: 10px;
+}
+
 .instructions {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
