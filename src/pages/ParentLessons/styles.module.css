@@ -1,500 +1,286 @@
-/* ===== PARENT LESSONS PAGE ===== */
-/* Uses global design system: cream bg, navy text, gold accents */
+/* ===== PARENT LESSONS — phần riêng của phụ huynh =====
+   Khung lịch (toolbar, tab trạng thái, card buổi học) dùng chung
+   `../StudentLessons/styles.module.css`. File này chỉ giữ những mảng chỉ phụ huynh mới có:
+   tiêu đề trang, bộ lọc theo con, và dải nhắc việc cần phụ huynh xử lý. */
 
-.page {
-  padding: 28px 32px 40px;
-  min-height: 100%;
-  font-family: var(--font-primary);
-  animation: fadeIn 0.35s ease;
+.header,
+.alerts {
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 36px;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  font-family:
+    'IBM Plex Sans',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* ===== HEADER ===== */
 .header {
   display: flex;
-  align-items: flex-start;
+  padding-top: 18px;
+  align-items: flex-end;
   justify-content: space-between;
-  margin-bottom: 28px;
   gap: 16px;
   flex-wrap: wrap;
 }
 
-.headerLeft {
+.headerCopy {
   display: flex;
+  min-width: 0;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .title {
-  font-family: var(--font-serif);
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--color-navy);
   margin: 0;
-  letter-spacing: -0.5px;
+  color: #17213a;
+  font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
   line-height: 1.2;
 }
 
 .subtitle {
-  font-size: 14px;
-  color: var(--color-navy-40);
+  display: flex;
   margin: 0;
-  font-weight: 400;
-}
-
-/* ===== STATS GRID ===== */
-.statsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.statCard {
-  background: var(--color-white);
-  border-radius: 14px;
-  padding: 20px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  border: 1px solid rgba(26, 34, 56, 0.06);
-  transition: all 0.2s ease;
-}
-
-.statCard:hover {
-  box-shadow: 0 4px 16px rgba(26, 34, 56, 0.08);
-  transform: translateY(-2px);
-}
-
-.statIcon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.statIconBlue {
-  background: rgba(37, 99, 235, 0.1);
-  color: #2563eb;
-}
-
-.statIconPurple {
-  background: rgba(114, 46, 209, 0.1);
-  color: #722ed1;
-}
-
-.statIconGreen {
-  background: rgba(22, 163, 74, 0.1);
-  color: #16a34a;
-}
-
-.statIconAmber {
-  background: rgba(217, 119, 6, 0.1);
-  color: #d97706;
-}
-
-.statValue {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--color-navy);
-  line-height: 1;
-  font-family: var(--font-primary);
-}
-
-.statLabel {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--color-navy-40);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  margin-top: 2px;
-}
-
-/* ===== FILTER SECTION ===== */
-.filterSection {
-  margin-bottom: 24px;
-}
-
-/* ===== LESSON LIST ===== */
-.lessonList {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* ===== LESSON CARD ===== */
-.lessonCard {
-  background: var(--color-white);
-  border-radius: 14px;
-  padding: 18px 22px;
-  border: 1px solid rgba(26, 34, 56, 0.06);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  transition: all 0.2s ease;
-  outline: none;
-}
-
-.lessonCard:hover {
-  border-color: var(--color-gold);
-  box-shadow: 0 6px 20px rgba(26, 34, 56, 0.08);
-  transform: translateY(-1px);
-}
-
-.lessonCard:focus-visible {
-  border-color: var(--color-gold);
-  box-shadow: 0 0 0 3px rgba(212, 180, 131, 0.2);
-}
-
-.lessonCardLeft {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  min-width: 0;
-  flex: 1;
-}
-
-/* Date Block */
-.dateBlock {
-  width: 54px;
-  height: 54px;
-  border-radius: 12px;
-  background: var(--color-cream);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  border: 1px solid rgba(26, 34, 56, 0.04);
-}
-
-.dateDay {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--color-navy);
-  line-height: 1;
-}
-
-.dateMonth {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--color-navy-40);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-/* Lesson Info */
-.lessonInfo {
-  min-width: 0;
-}
-
-.lessonTitle {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--color-navy);
-  margin: 0 0 3px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.lessonTitle span {
-  font-weight: 400;
-  color: var(--color-navy-40);
-}
-
-.lessonTime {
-  font-size: 13px;
-  color: var(--color-navy-40);
-  margin: 0;
-  display: flex;
   align-items: center;
   gap: 6px;
+  color: #687086;
+  font-size: 12.5px;
+  line-height: 1.45;
 }
 
-.lessonTime svg {
-  flex-shrink: 0;
-  opacity: 0.5;
+.subtitle svg {
+  flex: 0 0 auto;
+  color: #8b93a3;
 }
 
-/* Card Right */
-.lessonCardRight {
+/* ── Bộ lọc theo từng con (chỉ hiện khi phụ huynh có từ 2 học sinh) ── */
+.childFilter {
   display: flex;
+  max-width: 100%;
+  padding: 4px;
   align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
+  gap: 4px;
+  overflow-x: auto;
+  border: 1px solid #dfe3e9;
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: 0 3px 10px rgba(23, 33, 58, 0.035);
+  scrollbar-width: none;
 }
 
-/* Status Badges */
-.statusBadge {
+.childFilter::-webkit-scrollbar {
+  display: none;
+}
+
+.childFilterLabel {
   display: inline-flex;
+  padding: 0 8px 0 6px;
   align-items: center;
   gap: 5px;
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
+  flex: 0 0 auto;
+  color: #7b8393;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.childFilter button {
+  min-height: 34px;
+  padding: 0 12px;
+  flex: 0 0 auto;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: #6d7587;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 550;
   white-space: nowrap;
-  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
 }
 
-.statusScheduled {
-  background: rgba(37, 99, 235, 0.08);
-  color: #2563eb;
+.childFilter button:hover:not(.childChipActive) {
+  background: #f3f5f7;
+  color: #17213a;
 }
 
-/* Yêu cầu dời lịch đang chờ/đã xác nhận — badge riêng, KHÔNG phải statusBadge (trạng thái buổi
-   học). Amber khi chờ, chuyển xanh khi tutor đã xác nhận. */
-.scheduleChangeBadge {
-  display: inline-flex;
+.childFilter .childChipActive {
+  border-color: rgba(23, 33, 58, 0.9);
+  background: #17213a;
+  color: #fff;
+  box-shadow: 0 5px 13px rgba(23, 33, 58, 0.13);
+}
+
+.childFilter button:focus-visible {
+  outline: 3px solid rgba(23, 33, 58, 0.18);
+  outline-offset: 1px;
+}
+
+/* ── Dải nhắc việc: buổi chờ xác nhận, yêu cầu đổi lịch ──
+   Hai loại này có hạn chót và có thể nằm ngoài tuần đang xem, nên luôn đứng trên khung lịch. */
+.alerts {
+  display: grid;
+  padding-top: 14px;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+}
+
+.alertCard {
+  display: flex;
+  padding: 11px 13px;
   align-items: center;
-  gap: 5px;
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-  letter-spacing: 0.2px;
-  background: rgba(217, 119, 6, 0.1);
+  gap: 11px;
+  border: 1px solid rgba(23, 33, 58, 0.1);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 3px 10px rgba(23, 33, 58, 0.04);
+}
+
+.alertUrgent {
+  border-color: rgba(217, 119, 6, 0.3);
+  background: #fffaf1;
+}
+
+.alertIcon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  background: rgba(23, 33, 58, 0.07);
+  color: #17213a;
+}
+
+.alertUrgent .alertIcon {
+  background: rgba(217, 119, 6, 0.13);
   color: #a46d18;
 }
 
-.scheduleChangeBadgeApproved {
-  background: rgba(16, 150, 122, 0.1);
-  color: #0b796a;
-}
-
-.statusCheckedIn {
-  background: rgba(22, 163, 74, 0.08);
-  color: #16a34a;
-}
-
-.statusCheckedOut {
-  background: rgba(250, 173, 20, 0.1);
-  color: #d48806;
-}
-
-.statusPending {
-  background: rgba(114, 46, 209, 0.08);
-  color: #722ed1;
-}
-
-.statusCompleted {
-  background: rgba(22, 163, 74, 0.08);
-  color: #16a34a;
-}
-
-.statusDisputed {
-  background: rgba(255, 77, 79, 0.08);
-  color: #dc2626;
-}
-
-.statusCancelled {
-  background: rgba(107, 114, 128, 0.08);
-  color: #6b7280;
-}
-
-.statusNoShow {
-  background: rgba(255, 77, 79, 0.08);
-  color: #dc2626;
-}
-
-.statusDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-.chevron {
-  color: var(--color-navy-40);
-  opacity: 0.4;
-  transition: all 0.2s ease;
-}
-
-.lessonCard:hover .chevron {
-  opacity: 0.8;
-  transform: translateX(2px);
-}
-
-/* ===== EMPTY STATE ===== */
-.emptyState {
+.alertCopy {
   display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 24px;
-  text-align: center;
-  animation: fadeIn 0.4s ease;
+  gap: 2px;
 }
 
-.emptyIcon {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-navy) 0%, #3d4a3e 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 24px;
-  color: var(--color-cream);
-}
-
-.emptyTitle {
-  font-family: var(--font-serif);
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--color-navy);
-  margin: 0 0 8px;
-  letter-spacing: -0.3px;
-}
-
-.emptyText {
-  font-size: 14px;
-  color: var(--color-navy-40);
-  margin: 0 0 28px;
-  max-width: 340px;
-  line-height: 1.6;
-}
-
-.emptyBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
-  background: var(--color-navy);
-  color: var(--color-cream);
-  border: none;
-  border-radius: 10px;
-  font-family: var(--font-primary);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.emptyBtn:hover {
-  background: #2a3452;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(26, 34, 56, 0.2);
-}
-
-/* ===== LOADING ===== */
-.loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 24px;
-}
-
-/* ===== PAGINATION ===== */
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 28px;
-}
-
-.pageBtn {
-  width: 38px;
-  height: 38px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-white);
-  border: 1px solid rgba(26, 34, 56, 0.1);
-  border-radius: 10px;
-  cursor: pointer;
-  color: var(--color-navy);
-  transition: all 0.15s ease;
-}
-
-.pageBtn:hover:not(:disabled) {
-  background: var(--color-navy);
-  color: var(--color-cream);
-  border-color: var(--color-navy);
-}
-
-.pageBtn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.pageInfo {
+.alertCopy strong {
+  color: #17213a;
   font-size: 13px;
-  font-weight: 500;
-  color: var(--color-navy-40);
+  font-weight: 650;
+  line-height: 1.3;
 }
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 768px) {
-  .page {
-    padding: 20px 16px 32px;
+.alertCopy span {
+  color: #687086;
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.alertCard button {
+  display: inline-flex;
+  min-height: 34px;
+  padding: 0 11px;
+  align-items: center;
+  gap: 3px;
+  flex: 0 0 auto;
+  border: 1px solid #dde3ea;
+  border-radius: 10px;
+  background: #fff;
+  color: #17213a;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.alertCard button:hover {
+  border-color: rgba(23, 33, 58, 0.26);
+  background: #f5f6f8;
+  box-shadow: 0 5px 13px rgba(23, 33, 58, 0.08);
+}
+
+.alertUrgent button {
+  border-color: rgba(217, 119, 6, 0.32);
+  color: #8a5a12;
+}
+
+.alertUrgent button:hover {
+  border-color: rgba(217, 119, 6, 0.5);
+  background: #fdf3e0;
+}
+
+.alertCard button:focus-visible {
+  outline: 3px solid rgba(23, 33, 58, 0.18);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1080px) {
+  .header,
+  .alerts {
+    padding: 0 18px;
   }
 
   .header {
-    flex-direction: column;
-    gap: 12px;
+    padding-top: 16px;
   }
 
-  .title {
-    font-size: 22px;
-  }
-
-  .statsGrid {
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-
-  .statCard {
-    padding: 14px;
-    gap: 12px;
-  }
-
-  .statIcon {
-    width: 38px;
-    height: 38px;
-  }
-
-  .statValue {
-    font-size: 20px;
-  }
-
-  .lessonCard {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 14px 16px;
-    gap: 12px;
-  }
-
-  .lessonCardLeft {
-    width: 100%;
-  }
-
-  .lessonCardRight {
-    width: 100%;
-    justify-content: space-between;
-    padding-top: 10px;
-    border-top: 1px solid rgba(26, 34, 56, 0.04);
-  }
-
-  .chevron {
-    display: none;
+  .alerts {
+    padding-top: 12px;
   }
 }
 
-@media (max-width: 480px) {
-  .statsGrid {
+@media (max-width: 760px) {
+  .header,
+  .alerts {
+    padding: 0 11px;
+  }
+
+  .header {
+    padding-top: 12px;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .title {
+    font-size: 18px;
+  }
+
+  .subtitle {
+    font-size: 12px;
+  }
+
+  .alerts {
+    padding-top: 10px;
     grid-template-columns: 1fr;
+  }
+
+  .alertCard {
+    padding: 10px 11px;
+  }
+
+  /* Nút "Xem ngay" trên mobile chỉ còn mũi tên để nhường chỗ cho nội dung nhắc việc. */
+  .alertCard button {
+    padding: 0 9px;
+    font-size: 0;
+    gap: 0;
   }
 }
