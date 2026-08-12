@@ -63,6 +63,8 @@ export interface Certificate {
   credentialId: string | null;
   credentialUrl: string | null;
   certificateFileUrl: string;
+  /** Ảnh trang 1 (JPG) — chỉ có khi certificateFileUrl là PDF. Null/undefined thì FE tự fallback icon. */
+  thumbnailUrl?: string | null;
   createdAt: string;
   verificationStatus: 'pending_review' | 'verified' | 'rejected';
   verificationNote: string | null;
@@ -259,11 +261,11 @@ export const updateVideo = async (userId: string, videoUrl: string): Promise<Api
 // ============================================
 
 /**
- * Kết quả xác minh CCCD trả về từ BE. BE upload ảnh lên Cloudinary (private) VÀ
- * chạy OCR/eKYC ngay trong cùng 1 request — không cần gọi thêm verify nữa.
+ * Kết quả xác minh CCCD trả về từ BE. BE lưu ảnh private (VPS) VÀ chạy OCR/eKYC ngay
+ * trong cùng 1 request — không cần gọi thêm verify nữa.
  * - ocrSuccess = true: đọc được CCCD và tên khớp hồ sơ → đã xác minh.
  * - ocrSuccess = false: không đọc được → ảnh đã lưu, chờ admin xác minh thủ công.
- * Lưu ý: BE KHÔNG trả URL ảnh (ảnh lưu private trên Cloudinary).
+ * Lưu ý: response upload KHÔNG trả URL ảnh — gọi getMyCccdUrls() riêng để xem lại ảnh đã upload.
  */
 export interface CccdUploadResult {
   ocrSuccess: boolean;
@@ -312,6 +314,26 @@ export const uploadCccd = async (
     });
     throw error;
   }
+};
+
+/** Link xem lại ảnh CCCD đã upload — signed URL, hết hạn sau ~15 phút. */
+export interface MyCccdUrls {
+  userId: string;
+  userFullName?: string | null;
+  frontImageUrl?: string | null;
+  backImageUrl?: string | null;
+  isIdentityVerified: boolean;
+}
+
+/**
+ * Gia sư tự xem lại ảnh CCCD mình đã upload — GET /api/tutors/{id}/profile/cccd.
+ * BE chỉ trả về CCCD của chính người gọi (so khớp userId từ JWT).
+ */
+export const getMyCccdUrls = async (userId: string): Promise<ApiResponse<MyCccdUrls>> => {
+  const response = await api.get(`/tutors/${userId}/profile/cccd`, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
 };
 
 // ============================================

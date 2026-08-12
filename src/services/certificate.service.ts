@@ -29,6 +29,8 @@ export interface CertificateData {
   credentialId: string | null;
   credentialUrl: string | null;
   certificateFileUrl: string;
+  /** Ảnh trang 1 (JPG) — chỉ có khi certificateFileUrl là PDF. Null/undefined thì FE tự fallback icon. */
+  thumbnailUrl?: string | null;
   createdAt: string;
   // BE trả "pending_review" | "verified" | "rejected"
   verificationStatus?: string | null;
