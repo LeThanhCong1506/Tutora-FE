@@ -21,6 +21,7 @@ import { getUserIdFromToken } from '../../services/auth.service';
 import { getAcceptingBookings, setAcceptingBookings, getMyCccdUrls, type MyCccdUrls } from '../../services/tutorProfile.service';
 import { validateAvatar } from './utils/validation';
 import { getCertificateImageUrl, isPdfUrl } from '../../utils/certificateImage';
+import { fetchProtectedImage, releaseProtectedImage } from '../../utils/protectedImage';
 import { formatGradeLevelRanges } from '../TutorSearch/components/utils';
 import styles from '../../styles/pages/tutor-portal-profile.module.css';
 
@@ -371,9 +372,15 @@ const TutorPortalProfile: React.FC = () => {
         toast.error('Không tìm thấy ảnh CCCD.');
         return;
       }
-      setCertificatePreview({
-        name: side === 'front' ? 'CCCD mặt trước' : 'CCCD mặt sau',
-        imageUrl: url,
+      // Endpoint file private đòi JWT + đúng chủ sở hữu, thẻ <img> không gửi được token
+      // nên phải tải bằng JS rồi đổi sang blob URL.
+      const objectUrl = await fetchProtectedImage(url);
+      setCertificatePreview((prev) => {
+        releaseProtectedImage(prev?.imageUrl);
+        return {
+          name: side === 'front' ? 'CCCD mặt trước' : 'CCCD mặt sau',
+          imageUrl: objectUrl,
+        };
       });
     } catch {
       toast.error('Không mở được ảnh CCCD. Vui lòng thử lại.');
@@ -1220,7 +1227,13 @@ const TutorPortalProfile: React.FC = () => {
       {/* Modals */}
       <Modal
         open={Boolean(certificatePreview)}
-        onCancel={() => setCertificatePreview(null)}
+        onCancel={() =>
+          setCertificatePreview((prev) => {
+            // Ảnh CCCD dùng blob URL — phải giải phóng, ảnh chứng chỉ là URL thường nên bỏ qua.
+            releaseProtectedImage(prev?.imageUrl);
+            return null;
+          })
+        }
         footer={null}
         centered
         width={1000}
