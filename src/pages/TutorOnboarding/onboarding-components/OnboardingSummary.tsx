@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import styles from '../styles.module.css';
+import { useTabParam } from '../../../hooks/useTabParam';
 import {
   DAY_COLUMNS,
   formatHourMinute,
@@ -29,7 +30,8 @@ interface OnboardingSummaryProps {
   onFinish: () => void;
 }
 
-type View = 'schedule' | 'subjects' | 'combos';
+const VIEWS = ['schedule', 'subjects', 'combos'] as const;
+type View = (typeof VIEWS)[number];
 
 const dayLabel = (dow: number) => DAY_COLUMNS.find((c) => c.dayOfWeek === dow)?.full ?? `Ngày ${dow}`;
 const formatHourAmount = (hours: number) => (Number.isInteger(hours) ? `${hours}` : hours.toFixed(1).replace('.', ','));
@@ -83,7 +85,8 @@ const OnboardingSummary: React.FC<OnboardingSummaryProps> = ({
   onBack,
   onFinish,
 }) => {
-  const [view, setView] = useState<View>(() => (combos.length > 0 ? 'schedule' : 'subjects'));
+  // Tab nằm trên URL (`?tab=`) — reload không văng về tab đầu, và link copy được.
+  const [view, setView] = useTabParam<View>(VIEWS, combos.length > 0 ? 'schedule' : 'subjects');
 
   const gradeLabel = (g: string) => gradeLevels.find((x) => x.value === g)?.label ?? g;
   const gradeLabels = (grades: string[]) => grades.map(gradeLabel);

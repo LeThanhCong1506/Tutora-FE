@@ -5,6 +5,7 @@ import { Input, Modal, Pagination } from 'antd';
 import { toast } from 'react-toastify';
 import BookingMonthCalendar from '../../components/BookingMonthCalendar/BookingMonthCalendar';
 import { useCurrentTime } from '../../hooks/useCurrentTime';
+import { useTabParam } from '../../hooks/useTabParam';
 import styles from '../../styles/pages/tutor-portal-bookings.module.css';
 import {
   acceptBooking,
@@ -18,12 +19,49 @@ import ReplyFeedbackModal from './components/ReplyFeedbackModal';
 import { getBookingResponseDeadlineState } from '../../utils/bookingDeadline';
 import { formatVNDNumber } from '../../utils/formatters';
 
+// `key` là slug hiển thị trên URL (`?tab=`), `status` là chuỗi status gửi cho API —
+// tách ra để URL không lộ danh sách status nội bộ và vẫn đọc được khi share link.
 const STATUS_TABS = [
-  { key: 'pending_tutor', label: 'Chờ xác nhận' },
-  { key: 'deposit_paid,pending_remaining_payment,paid,ongoing', label: 'Đã thanh toán' },
-  { key: 'completed', label: 'Hoàn thành' },
-  { key: 'cancelled,cancelled_noshow,payment_timeout', label: 'Đã hủy' },
-];
+  {
+    key: 'pending',
+    label: 'Chờ xác nhận',
+    status: 'pending_tutor',
+    empty: {
+      title: 'Không có yêu cầu đang chờ',
+      description: 'Các yêu cầu đặt lịch mới từ phụ huynh sẽ xuất hiện tại đây.',
+    },
+  },
+  {
+    key: 'paid',
+    label: 'Đã thanh toán',
+    status: 'deposit_paid,pending_remaining_payment,paid,ongoing',
+    empty: {
+      title: 'Chưa có yêu cầu đã thanh toán',
+      description: 'Booking đã thanh toán cọc hoặc đầy đủ sẽ được cập nhật tại đây.',
+    },
+  },
+  {
+    key: 'completed',
+    label: 'Hoàn thành',
+    status: 'completed',
+    empty: {
+      title: 'Chưa có yêu cầu hoàn thành',
+      description: 'Các khóa học đã hoàn tất sẽ được lưu tại đây.',
+    },
+  },
+  {
+    key: 'cancelled',
+    label: 'Đã hủy',
+    status: 'cancelled,cancelled_noshow,payment_timeout',
+    empty: {
+      title: 'Chưa có yêu cầu đã hủy',
+      description: 'Các yêu cầu bị hủy, từ chối hoặc hết hạn sẽ được lưu tại đây.',
+    },
+  },
+] as const;
+
+type BookingTab = (typeof STATUS_TABS)[number]['key'];
+const BOOKING_TAB_KEYS = STATUS_TABS.map((tab) => tab.key);
 
 const STATUS_CONFIG: Record<string, { label: string; tone: string }> = {
   pending_tutor: { label: 'Chờ xác nhận', tone: 'pending' },
@@ -38,25 +76,6 @@ const STATUS_CONFIG: Record<string, { label: string; tone: string }> = {
   cancelled_noshow: { label: 'Hủy do vắng mặt', tone: 'cancelled' },
   declined: { label: 'Đã từ chối', tone: 'cancelled' },
   payment_timeout: { label: 'Hết hạn thanh toán', tone: 'cancelled' },
-};
-
-const EMPTY_STATE_COPY: Record<string, { title: string; description: string }> = {
-  pending_tutor: {
-    title: 'Không có yêu cầu đang chờ',
-    description: 'Các yêu cầu đặt lịch mới từ phụ huynh sẽ xuất hiện tại đây.',
-  },
-  'deposit_paid,pending_remaining_payment,paid,ongoing': {
-    title: 'Chưa có yêu cầu đã thanh toán',
-    description: 'Booking đã thanh toán cọc hoặc đầy đủ sẽ được cập nhật tại đây.',
-  },
-  completed: {
-    title: 'Chưa có yêu cầu hoàn thành',
-    description: 'Các khóa học đã hoàn tất sẽ được lưu tại đây.',
-  },
-  'cancelled,cancelled_noshow,payment_timeout': {
-    title: 'Chưa có yêu cầu đã hủy',
-    description: 'Các yêu cầu bị hủy, từ chối hoặc hết hạn sẽ được lưu tại đây.',
-  },
 };
 
 const formatDayName = (dayOfWeek: number) => {
@@ -130,7 +149,8 @@ const getFeeBreakdown = (booking: BookingResponseDTO) => {
 const TutorPortalBookings = () => {
   const [bookings, setBookings] = useState<BookingResponseDTO[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('pending_tutor');
+  const [activeTab, setActiveTab] = useTabParam<BookingTab>(BOOKING_TAB_KEYS, 'pending');
+  const activeTabConfig = STATUS_TABS.find((tab) => tab.key === activeTab) ?? STATUS_TABS[0];
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
@@ -183,7 +203,7 @@ const TutorPortalBookings = () => {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const response = await getTutorBookings({ status: activeTab, page: currentPage, pageSize });
+      const response = await getTutorBookings({ status: activeTabConfig.status, page: currentPage, pageSize });
 
       // API can return either a paged payload or a direct array in older environments.
       const payload = response.content as unknown as
@@ -229,7 +249,7 @@ const TutorPortalBookings = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, currentPage, pageSize]);
 
-  const handleTabChange = (tabKey: string) => {
+  const handleTabChange = (tabKey: BookingTab) => {
     setCurrentPage(1);
     setActiveTab(tabKey);
   };
@@ -330,7 +350,7 @@ const TutorPortalBookings = () => {
     }
   };
 
-  const emptyCopy = EMPTY_STATE_COPY[activeTab] ?? EMPTY_STATE_COPY.pending_tutor;
+  const emptyCopy = activeTabConfig.empty;
 
   return (
     <div className={styles.container}>
