@@ -7,10 +7,7 @@ import { ArrowLeft, CalendarClock, CheckCircle2, Clock3, XCircle } from 'lucide-
 import { getParentLessonDetail, type ParentLessonDetailDto } from '../../services/parent-lesson.service';
 import {
   getClassSessionDispute,
-  getClassSessionDisputeThread,
-  sendClassSessionDisputeThreadMessage,
   type DisputeDetailResponse,
-  type DisputeMessage,
   getParentScheduleChange,
   respondParentScheduleChange,
   proposeParentReschedule,
@@ -19,9 +16,8 @@ import {
   type ScheduleChangeAuditDto,
   type SessionScheduleChangeResponse,
 } from '../../services/classSession.service';
-import { signalRService } from '../../services/signalr.service';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
-import { Spin, Button, Input } from 'antd';
+import { Spin, Button } from 'antd';
 import { toast } from 'react-toastify';
 import CountdownTimer from './components/CountdownTimer';
 import ConfirmLessonModal from './components/ConfirmLessonModal';
@@ -107,10 +103,8 @@ const ParentLessonDetail: React.FC = () => {
   const [showDisputeForm, setShowDisputeForm] = useState(false);
   const [showNoShowModal, setShowNoShowModal] = useState(false);
   const [showNoShowActionModal, setShowNoShowActionModal] = useState(false);
+  // Chỉ đủ để vẽ phần tóm tắt khiếu nại — bằng chứng và kênh trao đổi nằm ở trang khiếu nại riêng.
   const [dispute, setDispute] = useState<DisputeDetailResponse | null>(null);
-  const [thread, setThread] = useState<DisputeMessage[]>([]);
-  const [threadInput, setThreadInput] = useState('');
-  const [sendingThreadMessage, setSendingThreadMessage] = useState(false);
 
   /**
    * Quay lại đúng trang người dùng vừa rời (danh sách khiếu nại, lịch học, dashboard…).
@@ -154,30 +148,6 @@ const ParentLessonDetail: React.FC = () => {
     }
   };
 
-  const fetchThread = async () => {
-    if (!id) return;
-    try {
-      const response = await getClassSessionDisputeThread(id);
-      setThread(response.content);
-    } catch (requestError: unknown) {
-      console.error('Failed to load dispute thread', requestError);
-    }
-  };
-
-  const handleSendThreadMessage = async () => {
-    if (!id || threadInput.trim().length === 0 || sendingThreadMessage) return;
-    setSendingThreadMessage(true);
-    try {
-      await sendClassSessionDisputeThreadMessage(id, threadInput.trim());
-      setThreadInput('');
-      await fetchThread();
-    } catch (error: unknown) {
-      toast.error(getApiErrorMessage(error) || 'Không thể gửi tin nhắn.', { toastId: 'dispute-thread-send-error' });
-    } finally {
-      setSendingThreadMessage(false);
-    }
-  };
-
   useEffect(() => {
     if (id) {
       fetchLesson();
@@ -193,24 +163,6 @@ const ParentLessonDetail: React.FC = () => {
     return () => window.clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
-  useEffect(() => {
-    if (dispute) void fetchThread();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispute?.disputeId]);
-
-  // Real-time: chèn tin nhắn mới trực tiếp thay vì phải F5/refetch.
-  useEffect(() => {
-    if (!dispute) return;
-    const unsubscribe = signalRService.subscribeToDisputeMessages((message: DisputeMessage) => {
-      if (message.disputeId !== dispute.disputeId) return;
-      setThread((prev) =>
-        prev.some((m) => m.disputeMessageId === message.disputeMessageId) ? prev : [...prev, message],
-      );
-      toast.info(`Admin: ${message.message}`);
-    });
-    return unsubscribe;
-  }, [dispute]);
-
   // Tutor check-in → notification "Buổi học đã bắt đầu" → tự refetch để render banner Join
   useLessonStartedListener(() => {
     if (id) fetchLesson();
@@ -635,6 +587,8 @@ const ParentLessonDetail: React.FC = () => {
                 ) : undefined
               }
             >
+              {/* Bằng chứng, kết quả xử lý và kênh trao đổi với quản trị viên đã chuyển sang
+                  /parent-portal/disputes/:classSessionId — ở đây chỉ giữ phần tóm tắt. */}
               <div className={styles.sectionBody}>
                 <div className={styles.reportGrid}>
                   <ReportBlock label="Loại khiếu nại">
@@ -652,70 +606,11 @@ const ParentLessonDetail: React.FC = () => {
                   <p className={styles.reportText}>{dispute.reason || 'Không có mô tả.'}</p>
                 </div>
 
-                {(Array.isArray(dispute.evidence) && dispute.evidence.length > 0) ||
-                (Array.isArray(dispute.additionalEvidence) && dispute.additionalEvidence.length > 0) ? (
-                  <div className={styles.blockGap}>
-                    <p className={styles.reportLabel}>Bằng chứng</p>
-                    <AttachmentGallery
-                      items={[
-                        ...(dispute.evidence ?? []).map((url) => ({ url })),
-                        ...(dispute.additionalEvidence ?? []).map((item) => ({
-                          key: `additional-${item.disputeEvidenceId}`,
-                          url: item.fileUrl ?? '',
-                          label: item.description,
-                          mimeType: item.fileType,
-                        })),
-                      ]}
-                    />
-                  </div>
-                ) : null}
-
-                {dispute.status === 'resolved' && (
-                  <div className={`${styles.notice} ${styles.noticeSuccess} ${styles.blockGap}`}>
-                    <span>
-                      <strong>Kết quả xử lý:</strong> {dispute.resolutionNote || 'Không có ghi chú.'}
-                      {typeof dispute.refundPercentage === 'number' && ` · Hoàn ${dispute.refundPercentage}%`}
-                    </span>
-                  </div>
-                )}
-
-                {dispute.status !== 'resolved' && (
-                  <div className={styles.blockGap}>
-                    <p className={styles.reportLabel}>Trao đổi riêng với quản trị viên</p>
-                    {thread.length > 0 ? (
-                      <div className={styles.thread}>
-                        {thread.map((msg) => (
-                          <div
-                            key={msg.disputeMessageId}
-                            className={`${styles.threadBubble} ${msg.senderRole === 'admin' ? styles.threadAdmin : styles.threadMine}`}
-                          >
-                            <p className={styles.threadSender}>
-                              {msg.senderRole === 'admin' ? 'Quản trị viên' : 'Bạn'}
-                            </p>
-                            <p className={styles.threadText}>{msg.message}</p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className={styles.threadEmpty}>Chưa có tin nhắn nào. Gửi câu hỏi cho quản trị viên tại đây.</p>
-                    )}
-                    <div className={styles.threadForm}>
-                      <Input
-                        value={threadInput}
-                        placeholder="Nhắn cho quản trị viên..."
-                        onChange={(event) => setThreadInput(event.target.value)}
-                        onPressEnter={() => void handleSendThreadMessage()}
-                      />
-                      <Button
-                        loading={sendingThreadMessage}
-                        disabled={threadInput.trim().length === 0}
-                        onClick={() => void handleSendThreadMessage()}
-                      >
-                        Gửi
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                <div className={styles.blockGap}>
+                  <Button type="primary" onClick={() => navigate(`/parent-portal/disputes/${id}`)}>
+                    Xem chi tiết khiếu nại
+                  </Button>
+                </div>
               </div>
             </SectionCard>
           )}

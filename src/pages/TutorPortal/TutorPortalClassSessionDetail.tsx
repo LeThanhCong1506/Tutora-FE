@@ -10,10 +10,8 @@ import {
   FileText,
   GraduationCap,
   MapPin,
-  MessageSquare,
   Paperclip,
   RefreshCw,
-  ShieldCheck,
   Timer,
   UserRound,
   Video,
@@ -26,20 +24,14 @@ import {
   checkOutClassSession,
   getTutorClassSessionDetail,
   getTutorClassSessionDispute,
-  submitTutorDisputeResponse,
-  uploadTutorDisputeEvidence,
-  getTutorDisputeThread,
-  sendTutorDisputeThreadMessage,
   proposeTutorReschedule,
   respondTutorReschedule,
   type ClassSessionDetailResponse,
   type DisputeDetailResponse,
-  type DisputeMessage,
   type ReportAttachment,
 } from '../../services/classSession.service';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 import { canJoinLiveSession, isWithinJoinWindow } from '../../utils/liveSession';
-import { signalRService } from '../../services/signalr.service';
 import { useTabParam } from '../../hooks/useTabParam';
 import LessonReportForm from './components/LessonReportForm';
 import MaterialsTab from './components/MaterialsTab';
@@ -146,13 +138,9 @@ const TutorPortalClassSessionDetail = () => {
   const [error, setError] = useState<string | null>(null);
   const [checkingOut, setCheckingOut] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<ReportAttachment[]>([]);
+  // Chỉ giữ đủ để vẽ dải tóm tắt khiếu nại — phản hồi, bằng chứng và trao đổi với quản trị viên
+  // đã chuyển hết sang /tutor-portal/disputes/:classSessionId.
   const [dispute, setDispute] = useState<DisputeDetailResponse | null>(null);
-  const [responseText, setResponseText] = useState('');
-  const [submittingResponse, setSubmittingResponse] = useState(false);
-  const [uploadingEvidence, setUploadingEvidence] = useState(false);
-  const [thread, setThread] = useState<DisputeMessage[]>([]);
-  const [threadInput, setThreadInput] = useState('');
-  const [sendingThreadMessage, setSendingThreadMessage] = useState(false);
   const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
   const [respondingReschedule, setRespondingReschedule] = useState(false);
 
@@ -196,74 +184,6 @@ const TutorPortalClassSessionDetail = () => {
   useEffect(() => {
     void loadDispute();
   }, [loadDispute]);
-
-  const loadThread = useCallback(async () => {
-    if (!classSessionId) return;
-    try {
-      const response = await getTutorDisputeThread(classSessionId);
-      setThread(response.content);
-    } catch (requestError: unknown) {
-      console.error('Failed to load dispute thread', requestError);
-    }
-  }, [classSessionId]);
-
-  useEffect(() => {
-    if (dispute) void loadThread();
-  }, [dispute, loadThread]);
-
-  // Real-time: chèn tin nhắn mới trực tiếp thay vì phải F5/refetch.
-  useEffect(() => {
-    if (!dispute) return;
-    const unsubscribe = signalRService.subscribeToDisputeMessages((message: DisputeMessage) => {
-      if (message.disputeId !== dispute.disputeId) return;
-      setThread((prev) => (prev.some((m) => m.disputeMessageId === message.disputeMessageId) ? prev : [...prev, message]));
-      toast.info(`Admin: ${message.message}`);
-    });
-    return unsubscribe;
-  }, [dispute]);
-
-  const handleSendThreadMessage = async () => {
-    if (!session || threadInput.trim().length === 0 || sendingThreadMessage) return;
-    setSendingThreadMessage(true);
-    try {
-      await sendTutorDisputeThreadMessage(session.classSessionId, threadInput.trim());
-      setThreadInput('');
-      await loadThread();
-    } catch (requestError: unknown) {
-      toast.error(getErrorMessage(requestError), { toastId: 'dispute-thread-send-error' });
-    } finally {
-      setSendingThreadMessage(false);
-    }
-  };
-
-  const handleSubmitDisputeResponse = async () => {
-    if (!session || responseText.trim().length < 10) return;
-    setSubmittingResponse(true);
-    try {
-      const response = await submitTutorDisputeResponse(session.classSessionId, responseText.trim());
-      setDispute(response.content);
-      setResponseText('');
-      toast.success('Đã gửi phản hồi tranh chấp.');
-    } catch (requestError: unknown) {
-      toast.error(getErrorMessage(requestError));
-    } finally {
-      setSubmittingResponse(false);
-    }
-  };
-
-  const handleUploadDisputeEvidence = async (file: File) => {
-    if (!session) return;
-    setUploadingEvidence(true);
-    try {
-      await uploadTutorDisputeEvidence(session.classSessionId, file);
-      toast.success('Đã tải lên bằng chứng.');
-      await loadDispute();
-    } catch (requestError: unknown) {
-      toast.error(getErrorMessage(requestError));
-    } finally {
-      setUploadingEvidence(false);
-    }
-  };
 
   const schedule = useMemo(() => {
     if (!session) return null;
@@ -451,26 +371,10 @@ const TutorPortalClassSessionDetail = () => {
     '--status-bg': displayStatus.bg,
   } as CSSProperties;
   const disputeStatusMeta = getDisputeStatusMeta(dispute?.status);
-  const responseLength = responseText.trim().length;
-  // Nút đính kèm dùng chung cho cả lúc chưa phản hồi (nằm trong composer) và đã phản hồi (đứng riêng).
-  const evidenceUploadControl = (
-    <label className={`${styles.secondaryButton} ${styles.uploadLabel}`}>
-      <Paperclip size={16} />
-      {uploadingEvidence ? 'Đang tải lên…' : 'Đính kèm bằng chứng'}
-      <input
-        type="file"
-        accept="image/*,.pdf"
-        style={{ display: 'none' }}
-        disabled={uploadingEvidence}
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) void handleUploadDisputeEvidence(file);
-          event.target.value = '';
-        }}
-      />
-    </label>
+  // Chỉ để đổi nhãn nút và hiện nhắc trên dải tóm tắt; việc phản hồi thật nằm ở trang khiếu nại.
+  const needsTutorResponse = Boolean(
+    dispute && !dispute.tutorResponse && !['resolved', 'closed', 'confirmed_no_show'].includes(dispute.status ?? ''),
   );
-
   return (
     <div className={styles.page}>
       <main className={styles.main}>
@@ -740,6 +644,9 @@ const TutorPortalClassSessionDetail = () => {
                     </section>
                   )}
 
+                  {/* Toàn bộ nội dung khiếu nại đã chuyển sang trang riêng
+                      (/tutor-portal/disputes/:classSessionId) — ở đây chỉ còn dải tóm tắt để
+                      gia sư biết buổi này có tranh chấp và bấm sang xem. */}
                   {dispute && (
                     <section className={styles.card}>
                       <div className={styles.cardHeader}>
@@ -758,173 +665,27 @@ const TutorPortalClassSessionDetail = () => {
                       </div>
 
                       <div className={styles.disputeBody}>
-                        {dispute.status === 'pending' &&
-                          !dispute.tutorResponse &&
-                          dispute.tutorResponseDeadline &&
-                          (() => {
-                            const deadline = new Date(dispute.tutorResponseDeadline!);
-                            const msLeft = deadline.getTime() - Date.now();
-                            const hoursLeft = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60)));
-                            return (
-                              <div
-                                className={`${styles.disputeAlert} ${msLeft > 0 ? '' : styles.disputeAlertDanger}`}
-                                role="status"
-                              >
-                                <CircleAlert size={17} />
-                                <span>
-                                  {msLeft > 0
-                                    ? `Bạn còn khoảng ${hoursLeft} giờ để phản hồi trước khi quản trị viên có thể bắt đầu điều tra (hạn ${formatDateTime(dispute.tutorResponseDeadline)}).`
-                                    : `Đã quá hạn phản hồi ưu tiên (${formatDateTime(dispute.tutorResponseDeadline)}) — quản trị viên có thể bắt đầu điều tra bất cứ lúc nào, hãy phản hồi sớm.`}
-                                </span>
-                              </div>
-                            );
-                          })()}
-
-                        <div className={styles.disputeGrid}>
-                          <div className={`${styles.reportField} ${styles.reportFieldWide}`}>
-                            <span>Lý do khiếu nại</span>
-                            <p>{dispute.reason || 'Không có mô tả.'}</p>
-                          </div>
-                          {dispute.evidence && dispute.evidence.length > 0 && (
-                            <div className={`${styles.reportField} ${styles.reportFieldWide}`}>
-                              <span>Bằng chứng từ phụ huynh/học sinh</span>
-                              <AttachmentGallery items={dispute.evidence.map((url) => ({ url }))} />
-                            </div>
-                          )}
-                          {dispute.tutorResponse && (
-                            <div className={`${styles.reportField} ${styles.reportFieldWide}`}>
-                              <span>Phản hồi của bạn</span>
-                              <p>{dispute.tutorResponse}</p>
-                            </div>
-                          )}
-                          {dispute.additionalEvidence && dispute.additionalEvidence.length > 0 && (
-                            <div className={`${styles.reportField} ${styles.reportFieldWide}`}>
-                              <span>Bằng chứng bạn đã nộp</span>
-                              <AttachmentGallery
-                                items={dispute.additionalEvidence.map((item) => ({
-                                  key: `additional-${item.disputeEvidenceId}`,
-                                  url: item.fileUrl ?? '',
-                                  label: item.description,
-                                  mimeType: item.fileType,
-                                }))}
-                              />
-                            </div>
-                          )}
+                        <div className={`${styles.reportField} ${styles.reportFieldWide}`}>
+                          <span>Lý do khiếu nại</span>
+                          <p>{dispute.reason || 'Không có mô tả.'}</p>
                         </div>
 
-                        {dispute.status === 'resolved' ? (
-                          <div className={styles.resolutionPanel}>
-                            <div className={styles.resolutionHead}>
-                              <span className={styles.resolutionIcon}>
-                                <ShieldCheck size={19} />
-                              </span>
-                              <div className={styles.resolutionTitle}>
-                                <strong>Kết quả xử lý</strong>
-                                <small>
-                                  {dispute.resolvedAt
-                                    ? `Quản trị viên chốt lúc ${formatDateTime(dispute.resolvedAt)}`
-                                    : 'Quản trị viên đã đưa ra quyết định'}
-                                </small>
-                              </div>
-                              {typeof dispute.refundPercentage === 'number' && (
-                                <div className={styles.refundBadge}>
-                                  <small>Hoàn tiền</small>
-                                  <strong>{dispute.refundPercentage}%</strong>
-                                </div>
-                              )}
-                            </div>
-                            <p className={styles.resolutionNote}>
-                              {dispute.resolutionNote || 'Quản trị viên không để lại ghi chú cho quyết định này.'}
-                            </p>
-                            {typeof dispute.refundAmount === 'number' && dispute.refundAmount > 0 && (
-                              <p className={styles.resolutionAmount}>
-                                Số tiền hoàn cho phụ huynh: <strong>{formatCurrency(dispute.refundAmount)}</strong>
-                              </p>
-                            )}
-                          </div>
-                        ) : dispute.tutorResponse ? (
-                          <div className={styles.disputeActions}>{evidenceUploadControl}</div>
-                        ) : (
-                          <div className={`${styles.reportField} ${styles.reportFieldWide}`}>
-                            <span>Phản hồi của bạn</span>
-                            <textarea
-                              className={styles.disputeTextarea}
-                              value={responseText}
-                              onChange={(event) => setResponseText(event.target.value)}
-                              placeholder="Trình bày góc nhìn của bạn về khiếu nại này (tối thiểu 10 ký tự)..."
-                              rows={4}
-                            />
-                            <div className={styles.disputeComposerFoot}>
-                              <span
-                                className={`${styles.disputeHint} ${responseLength >= 10 ? styles.disputeHintOk : ''}`}
-                              >
-                                {responseLength}/10 ký tự tối thiểu
-                              </span>
-                              <div className={styles.disputeActions}>
-                                {evidenceUploadControl}
-                                <button
-                                  type="button"
-                                  className={styles.primaryButton}
-                                  disabled={submittingResponse || responseLength < 10}
-                                  onClick={() => void handleSubmitDisputeResponse()}
-                                >
-                                  {submittingResponse ? 'Đang gửi…' : 'Gửi phản hồi'}
-                                </button>
-                              </div>
-                            </div>
+                        {needsTutorResponse && (
+                          <div className={styles.disputeAlert} role="status">
+                            <CircleAlert size={17} />
+                            <span>Khiếu nại này đang chờ phản hồi của bạn.</span>
                           </div>
                         )}
 
-                        {dispute.status !== 'resolved' && (
-                          <div className={styles.threadBlock}>
-                            <div className={styles.threadHead}>
-                              <MessageSquare size={15} />
-                              <span>Trao đổi riêng với quản trị viên</span>
-                            </div>
-                            {thread.length > 0 ? (
-                              <div className={styles.threadList}>
-                                {thread.map((msg) => (
-                                  <div
-                                    key={msg.disputeMessageId}
-                                    className={`${styles.threadBubble} ${
-                                      msg.senderRole === 'admin' ? styles.threadAdmin : styles.threadMine
-                                    }`}
-                                  >
-                                    <p className={styles.threadSender}>
-                                      {msg.senderRole === 'admin' ? 'Quản trị viên' : 'Bạn'}
-                                      {msg.createdAt ? ` · ${formatDateTime(msg.createdAt)}` : ''}
-                                    </p>
-                                    <p className={styles.threadText}>{msg.message}</p>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <p className={styles.threadEmpty}>
-                                Chưa có tin nhắn nào — bạn có thể nhắn trực tiếp cho quản trị viên phụ trách vụ việc.
-                              </p>
-                            )}
-                            <div className={styles.threadComposer}>
-                              <input
-                                type="text"
-                                className={styles.threadInput}
-                                value={threadInput}
-                                onChange={(event) => setThreadInput(event.target.value)}
-                                placeholder="Nhắn cho quản trị viên..."
-                                onKeyDown={(event) => {
-                                  if (event.key === 'Enter') void handleSendThreadMessage();
-                                }}
-                              />
-                              <button
-                                type="button"
-                                className={styles.secondaryButton}
-                                disabled={sendingThreadMessage || threadInput.trim().length === 0}
-                                onClick={() => void handleSendThreadMessage()}
-                              >
-                                {sendingThreadMessage ? 'Đang gửi…' : 'Gửi'}
-                              </button>
-                            </div>
-                          </div>
-                        )}
+                        <div className={styles.disputeActions}>
+                          <button
+                            type="button"
+                            className={styles.primaryButton}
+                            onClick={() => navigate(`/tutor-portal/disputes/${classSessionId}`)}
+                          >
+                            {needsTutorResponse ? 'Phản hồi khiếu nại' : 'Xem chi tiết khiếu nại'}
+                          </button>
+                        </div>
                       </div>
                     </section>
                   )}

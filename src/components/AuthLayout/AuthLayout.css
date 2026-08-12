@@ -1,0 +1,41 @@
+/* Shared geometry for authentication pages. Page-specific files own the visual details. */
+.auth-page .footer {
+  margin-top: 0;
+}
+
+.auth-page .auth-page__main {
+  align-items: flex-start;
+  padding: clamp(116px, 15vh, 132px) clamp(16px, 4vw, 40px) clamp(72px, 8vh, 88px);
+}
+
+.auth-page .auth-page__content {
+  align-items: start;
+}
+
+.auth-page .auth-page__hero {
+  position: sticky;
+  top: clamp(116px, 15vh, 132px);
+  align-self: start;
+}
+
+.auth-page .auth-page__form-wrapper {
+  width: 100%;
+  max-width: 480px;
+  align-self: start;
+  justify-self: end;
+}
+
+@media (max-width: 960px) {
+  .auth-page .auth-page__main {
+    padding-top: 96px;
+    padding-bottom: 72px;
+  }
+
+  .auth-page .auth-page__hero {
+    position: static;
+  }
+
+  .auth-page .auth-page__form-wrapper {
+    justify-self: center;
+  }
+}

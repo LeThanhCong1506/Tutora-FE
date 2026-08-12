@@ -9,10 +9,10 @@ const StudentDisputes = () => {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
-  const viewSession = useCallback(
+  const openDispute = useCallback(
     (dispute: DisputeListResponse) => {
       if (dispute.classSessionId) {
-        navigate(`/student-portal/calendar/${dispute.classSessionId}`);
+        navigate(`/student-portal/disputes/${dispute.classSessionId}`);
       }
     },
     [navigate],
@@ -24,7 +24,7 @@ const StudentDisputes = () => {
         key={reloadKey}
         reloadKey={reloadKey}
         onCreate={() => setCreateModalOpen(true)}
-        onViewSession={viewSession}
+        onOpenDispute={openDispute}
       />
 
       <CreateDisputeForm

@@ -289,9 +289,6 @@ const LoginForm: React.FC = () => {
       {/* --- NỘI DUNG FORM CHÍNH --- */}
       <div className="login-form__header animate-fade-in-up">
         <h1 className="login-form__title">Chào mừng trở lại</h1>
-        <p className="login-form__subtitle">
-          Tiếp tục hành trình học thuật của bạn cùng TUTORA.
-        </p>
       </div>
 
       <div className="login-form__body">

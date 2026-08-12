@@ -10,16 +10,18 @@ interface CertificatePreview {
 
 const CertificateThumbnail = ({
     url,
+    thumbnailUrl,
     name,
     onPreview,
 }: {
     url?: string | null;
+    thumbnailUrl?: string | null;
     name: string;
     onPreview: (preview: CertificatePreview) => void;
 }) => {
     const [failed, setFailed] = useState(false);
-    const thumbUrl = getCertificateImageUrl(url);
-    const fullUrl = getCertificateImageUrl(url, true);
+    const thumbUrl = getCertificateImageUrl(url, false, thumbnailUrl);
+    const fullUrl = getCertificateImageUrl(url, true, thumbnailUrl);
 
     if (!thumbUrl || failed) {
         return (
@@ -128,6 +130,7 @@ const AcademicPortfolioSection = ({ certificates }: { certificates: CertificateI
                                 <div key={index} className={`certificate-card${isVerified ? ' is-verified' : ''}`}>
                                     <CertificateThumbnail
                                         url={cert.certificateFileUrl}
+                                        thumbnailUrl={cert.thumbnailUrl}
                                         name={cert.certificateName}
                                         onPreview={setPreview}
                                     />

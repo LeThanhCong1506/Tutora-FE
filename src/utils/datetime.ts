@@ -58,6 +58,20 @@ export function formatLocalDate(iso: string | null | undefined, locale = 'vi-VN'
   return d ? d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
 }
 
+/**
+ * "dd/MM/yyyy" cho ngày lịch thuần — kiểu `DateOnly` bên backend, gửi về dạng "2026-08-07".
+ *
+ * Cố ý KHÔNG đi qua `new Date()` như `formatLocalDate`: chuỗi "2026-08-07" bị parse thành nửa
+ * đêm UTC, nên người xem ở múi giờ âm (vd America/New_York) thấy lùi thành 06/08/2026. Ngày
+ * này là ngày hiệu lực của văn bản pháp lý, lệch một ngày là sai thông tin.
+ *
+ * Ngày lịch không có múi giờ: đã là 07/08 thì ở đâu cũng phải là 07/08.
+ */
+export function formatCalendarDate(value: string | null | undefined): string {
+  const parts = /^(\d{4})-(\d{2})-(\d{2})/.exec(value ?? '');
+  return parts ? `${parts[3]}/${parts[2]}/${parts[1]}` : '';
+}
+
 /** "HH:mm" theo múi giờ thiết bị. */
 export function formatLocalTime(iso: string | null | undefined, locale = 'vi-VN'): string {
   const d = parseUtc(iso);

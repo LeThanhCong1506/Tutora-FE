@@ -1994,6 +1994,13 @@
   background-color: rgba(242, 240, 228, 0.5);
 }
 
+.cccdViewActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
 /* Edit Icon Button (icon only, no text) */
 .editIconBtn {
   width: 32px;

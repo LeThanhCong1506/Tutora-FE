@@ -2550,6 +2550,14 @@
   font-weight: 700;
 }
 
+/* Ô tick đồng ý chính sách ở bước xác nhận — nằm sát trên footer để người dùng
+   thấy ngay cạnh nút "Gửi yêu cầu" đang bị khoá. */
+.policyConsentBar {
+  padding: 14px 27px;
+  border-top: 1px solid rgba(62, 47, 40, 0.08);
+  background: rgba(250, 249, 246, 0.68);
+}
+
 .modalFooter {
   justify-content: space-between;
   gap: 10px;

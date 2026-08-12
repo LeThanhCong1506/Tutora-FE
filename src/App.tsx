@@ -31,6 +31,7 @@ import ParentDisputes from './pages/ParentDisputes';
 const HomePage = lazy(() => import('./pages/Home/HomePage'));
 const TutorSearchPage = lazy(() => import('./pages/TutorSearch/TutorSearchPage'));
 const MiniAppSearchFormPage = lazy(() => import('./pages/MiniAppSearchForm/MiniAppSearchFormPage'));
+const PolicyPage = lazy(() => import('./pages/Policy'));
 const TutorDetailPage = lazy(() => import('./pages/TutorDetail/TutorDetailPage'));
 const ParentBookingDemo = lazy(() => import('./pages/ParentBookingDemo'));
 const LoginPage = lazy(() => import('./pages/Login/LoginPage'));
@@ -55,6 +56,7 @@ const TutorPortalMessages = lazy(() => import('./pages/TutorPortal/TutorPortalMe
 const TutorPortalCalendar = lazy(() => import('./pages/TutorPortal/TutorPortalCalendar'));
 const TutorPortalClassSessionDetail = lazy(() => import('./pages/TutorPortal/TutorPortalClassSessionDetail'));
 const TutorPortalDisputes = lazy(() => import('./pages/TutorPortal/TutorPortalDisputes'));
+const TutorPortalDisputeDetail = lazy(() => import('./pages/TutorPortal/TutorPortalDisputeDetail'));
 const TutorPortalStudentProfile = lazy(() => import('./pages/TutorPortal/TutorPortalStudentProfile'));
 const TutorPortalBookings = lazy(() => import('./pages/TutorPortal/TutorPortalBookings'));
 const TutorFinanceDashboardPage = lazy(
@@ -91,6 +93,8 @@ const StudentBooking = lazy(() => import('./pages/StudentBooking'));
 const StudentLessons = lazy(() => import('./pages/StudentLessons'));
 const StudentLessonDetail = lazy(() => import('./pages/StudentLessons/StudentLessonDetail'));
 const StudentDisputes = lazy(() => import('./pages/StudentLessons/StudentDisputes'));
+const StudentDisputeDetail = lazy(() => import('./pages/StudentLessons/StudentDisputeDetail'));
+const ParentDisputeDetail = lazy(() => import('./pages/ParentDisputes/ParentDisputeDetail'));
 const StudentAccount = lazy(() => import('./pages/StudentAccount'));
 const StudentProfile = lazy(() => import('./pages/StudentProfile'));
 
@@ -140,6 +144,17 @@ function LegacyTutorClassesRedirect() {
   const location = useLocation();
 
   return <Navigate to={{ pathname: '/tutor-portal/calendar', search: location.search, hash: location.hash }} replace />;
+}
+
+/**
+ * Văn bản pháp lý từng nằm ở /policies/<slug> trước khi gộp vào trang "Về chúng tôi".
+ * Giữ redirect vì đây là loại URL người dùng hay bookmark và được trích dẫn trong chính
+ * nội dung điều khoản.
+ */
+function LegacyPolicyRedirect() {
+  const { slug } = useParams<{ slug: string }>();
+
+  return <Navigate to={slug ? `/about/${slug}` : '/about'} replace />;
 }
 
 function App() {
@@ -263,6 +278,20 @@ function App() {
             <Route path="/tutor-detail" element={<Navigate to="/" replace />} />
             <Route path="/tutor-detail/:id" element={<TutorDetailPage />} />
 
+            {/* "Về chúng tôi" — giới thiệu Tutora và toàn bộ văn bản pháp lý dùng chung một
+                layout có sidebar. Public, có cả trong Zalo Mini App vì người dùng Zalo cũng
+                phải đọc được thứ họ tick đồng ý. Route động theo slug: nội dung nằm trong DB
+                và admin thêm văn bản mới qua CMS mà không cần deploy lại FE.
+                `/about` không có param → trang hiển thị văn bản giới thiệu. */}
+            <Route path="/about" element={<PolicyPage />} />
+            <Route path="/about/:slug" element={<PolicyPage />} />
+            {/* Đường dẫn cũ trước khi gộp vào /about. */}
+            <Route path="/terms" element={<Navigate to="/about/terms" replace />} />
+            <Route path="/privacy" element={<Navigate to="/about/privacy" replace />} />
+            <Route path="/operating-rules" element={<Navigate to="/about/community-guidelines" replace />} />
+            <Route path="/policies" element={<Navigate to="/about" replace />} />
+            <Route path="/policies/:slug" element={<LegacyPolicyRedirect />} />
+
             {/* Tutor Portal — không có trong Zalo Mini App */}
             {!inMiniApp && (
               <>
@@ -287,6 +316,9 @@ function App() {
                   <Route path="class-sessions" element={<Navigate to="/tutor-portal/calendar" replace />} />
                   <Route path="class-sessions/:classSessionId" element={<TutorPortalClassSessionDetail />} />
                   <Route path="disputes" element={<TutorPortalDisputes />} />
+                  {/* Khiếu nại có trang riêng thay vì card nhúng trong chi tiết buổi học.
+                      Param là classSessionId vì toàn bộ API khiếu nại keyed theo buổi học. */}
+                  <Route path="disputes/:classSessionId" element={<TutorPortalDisputeDetail />} />
                   {/* Legacy: URL /classes từng dùng bookingId, nên quay về lịch thay vì hiểu nhầm là classSessionId. */}
                   <Route path="classes" element={<LegacyTutorClassesRedirect />} />
                   <Route path="classes/:classId" element={<LegacyTutorClassesRedirect />} />
@@ -330,6 +362,7 @@ function App() {
               <Route path="account" element={<ParentAccount />} />
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="disputes" element={<ParentDisputes />} />
+              <Route path="disputes/:classSessionId" element={<ParentDisputeDetail />} />
             </Route>
 
             {/* Student Layout - PROTECTED */}
@@ -361,6 +394,7 @@ function App() {
                   <Route path="wallet/withdrawals/:id" element={<ParentWalletWithdrawalDetail />} />
                   <Route path="wallet/bank-account" element={<BankAccountPage />} />
                   <Route path="disputes" element={<StudentDisputes />} />
+                  <Route path="disputes/:classSessionId" element={<StudentDisputeDetail />} />
                 </Route>
                 <Route path="messages" element={<ParentMessage />} />
                 <Route path="profile" element={<StudentProfile />} />
