@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import styles from './styles.module.css';
 import { useTabParam } from '../../hooks/useTabParam';
+import PolicyConsent from '../../components/PolicyConsent';
 import {
   useOnboardingState,
   useOnboardingSync,
@@ -37,6 +38,7 @@ const TutorOnboarding: React.FC = () => {
   const { subjects, gradeLevels } = useLookups();
 
   const [stepSlug, setStepSlug] = useTabParam<StepSlug>(STEP_SLUGS, 'availability', { paramKey: 'step' });
+  const [agreedToPolicy, setAgreedToPolicy] = useState(false);
   const finished = stepSlug === 'summary';
   const currentStep = STEP_BY_SLUG[stepSlug];
 
@@ -178,6 +180,20 @@ const TutorOnboarding: React.FC = () => {
         )}
       </div>
 
+      {/* Bước cuối là lúc gia sư chốt giá và cam kết nhận booking — hỏi đồng ý ở đây,
+          không hỏi ở bước 1 khi họ còn chưa biết mình sẽ cam kết cái gì. */}
+      {currentStep === 3 && (
+        <div className={styles.consentBar}>
+          <PolicyConsent
+            checked={agreedToPolicy}
+            onChange={setAgreedToPolicy}
+            docs={['operating-rules', 'terms']}
+            hint="Bao gồm phí dịch vụ 5% trừ vào thu nhập mỗi buổi, nghĩa vụ gửi báo cáo sau buổi học và quy định đổi lịch."
+            disabled={sync.saving}
+          />
+        </div>
+      )}
+
       <div className={styles.footer}>
         <div className={styles.footerInfo}>
           {blockingReason ? <span className={styles.footerWarn}>{blockingReason}</span> : footerStatusText}
@@ -192,7 +208,7 @@ const TutorOnboarding: React.FC = () => {
             type="button"
             className={styles.btnPrimary}
             onClick={handleNext}
-            disabled={!canProceedCurrent || sync.saving}
+            disabled={!canProceedCurrent || sync.saving || (currentStep === 3 && !agreedToPolicy)}
           >
             {sync.saving ? 'Đang lưu...' : currentStep === 3 ? 'Hoàn tất' : 'Tiếp tục'}
           </button>

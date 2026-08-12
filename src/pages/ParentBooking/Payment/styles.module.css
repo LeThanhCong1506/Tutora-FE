@@ -436,6 +436,16 @@
   color: #0f172a;
 }
 
+/* Xác nhận quy chế — nằm giữa danh sách phương thức và khu vực thanh toán, vì nó
+   là điều kiện để mã QR được tạo và để nút trả bằng ví mở khoá. */
+.policyConsentBox {
+  margin-top: 20px;
+  padding: 14px 16px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
 /* Action Area */
 .paymentActionArea {
   margin-top: 4px;

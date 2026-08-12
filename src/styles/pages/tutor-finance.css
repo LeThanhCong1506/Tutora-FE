@@ -1519,6 +1519,11 @@
   white-space: nowrap;
 }
 
+/* Ô tick quy chế, ngay trên nút "Tiếp tục xác nhận" của form rút tiền. */
+.finance-withdraw-consent {
+  margin-bottom: 16px;
+}
+
 .finance-withdraw-submit.ant-btn {
   min-height: 48px;
   border-radius: 12px;

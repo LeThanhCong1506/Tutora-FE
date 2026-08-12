@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import InputGroup from "../../components/InputGroup";
 import GoogleSignInButton from "../../components/GoogleSignInButton";
 import ZaloSignInButton from "../../components/ZaloSignInButton";
+import { POLICY_DOC_LABELS, POLICY_ROUTES } from "../../constants/policy";
 import axios from "axios";
 import { saveUserToStorage, getRoleFromToken, googleAuth } from "../../services/auth.service";
 
@@ -325,7 +326,15 @@ const RegisterForm: React.FC = () => {
                             <input id="terms" name="terms" type="checkbox" checked={formData.terms} onChange={handleChange} className="register-form__checkbox" disabled={isSubmitting} />
                         </div>
                         <label htmlFor="terms" className="register-form__terms-label text-xs">
-                            Đồng ý với <a href="#" className="register-form__terms-link">Điều khoản</a> & <a href="#" className="register-form__terms-link">Chính sách</a>.
+                            Đồng ý với{" "}
+                            <Link to={POLICY_ROUTES.terms} className="register-form__terms-link" target="_blank" rel="noopener noreferrer">
+                                {POLICY_DOC_LABELS.terms}
+                            </Link>{" "}
+                            &{" "}
+                            <Link to={POLICY_ROUTES.privacy} className="register-form__terms-link" target="_blank" rel="noopener noreferrer">
+                                {POLICY_DOC_LABELS.privacy}
+                            </Link>
+                            .
                         </label>
                     </div>
 

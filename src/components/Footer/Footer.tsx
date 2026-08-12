@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+import { POLICY_DOC_LABELS, POLICY_ROUTES } from "../../constants/policy";
 import "./Footer.css";
 
 const Footer = () => {
@@ -72,9 +74,9 @@ const Footer = () => {
                 <div className="footer-bottom">
                     <span className="copyright">© 2026 Tutora. All Rights Reserved.</span>
                     <div className="footer-legal">
-                        <a href="#">Chính sách bảo mật</a>
-                        <a href="#">Điều khoản sử dụng</a>
-                        <a href="#">Quy chế hoạt động</a>
+                        <Link to={POLICY_ROUTES.privacy}>{POLICY_DOC_LABELS.privacy}</Link>
+                        <Link to={POLICY_ROUTES.terms}>{POLICY_DOC_LABELS.terms}</Link>
+                        <Link to={POLICY_ROUTES['operating-rules']}>{POLICY_DOC_LABELS['operating-rules']}</Link>
                     </div>
                 </div>
             </div>
