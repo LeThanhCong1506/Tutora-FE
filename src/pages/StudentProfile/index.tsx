@@ -125,10 +125,13 @@ const StudentProfile = () => {
 
   // Chỉ học sinh tự đăng ký mới eKYC CCCD — với tài khoản do phụ huynh tạo, gọi vẫn an toàn
   // (BE chỉ trả về của chính người gọi) nhưng sẽ luôn rỗng nên không cần điều kiện thêm ở đây.
-  useEffect(() => {
+  const refreshMyCccd = () =>
     getMyCccdUrls()
       .then((res) => setMyCccd(res.content ?? null))
       .catch(() => setMyCccd(null));
+
+  useEffect(() => {
+    void refreshMyCccd();
   }, []);
 
   // Lấy signed URL mới ngay lúc bấm (link chỉ sống 15 phút), rồi tải ảnh kèm token đăng nhập —
@@ -281,7 +284,9 @@ const StudentProfile = () => {
       toast.success(res.content?.message || res.message || 'Xác minh độ tuổi thành công.');
       removeImage('front');
       removeImage('back');
-      await Promise.all([refresh(), refreshEligibility()]);
+      // Phải tải lại cả danh sách ảnh CCCD: thiếu bước này thì 2 nút "Xem CCCD" không hiện
+      // cho tới khi người dùng tự F5, vì myCccd chỉ được lấy một lần lúc mở trang.
+      await Promise.all([refresh(), refreshEligibility(), refreshMyCccd()]);
     } catch (err) {
       // 422 = nghiệp vụ (ảnh mờ/giả, chưa đủ 16, tên không khớp, CCCD trùng); 400 = file; message sẵn tiếng Việt.
       const message =
@@ -528,7 +533,14 @@ const StudentProfile = () => {
                       ? ' Bạn có thể đặt lịch học.'
                       : ' Bạn cần đủ 16 tuổi để tự đặt lịch.'}
                   </p>
-                  {(myCccd?.frontImageUrl || myCccd?.backImageUrl) && (
+                  {/* Chỉ hiện nút khi thật sự có ảnh trong hệ thống. Chưa có (đang tải, hoặc tài khoản
+                      xác minh từ trước khi có tính năng lưu ảnh) thì nói rõ để người dùng không thắc mắc
+                      vì sao đã xác minh mà không xem lại được. */}
+                  {!myCccd?.frontImageUrl && !myCccd?.backImageUrl ? (
+                    <p className={styles.cccdPendingNote}>
+                      <IdCard size={14} /> Ảnh CCCD đang chờ tải lên.
+                    </p>
+                  ) : (
                     <div className={styles.cccdViewActions}>
                       {myCccd.frontImageUrl && (
                         <button
