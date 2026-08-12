@@ -470,9 +470,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                 <PolicyConsent
                                     checked={agreedToPolicy}
                                     onChange={setAgreedToPolicy}
-                                    docs={["operating-rules", "terms"]}
+                                    docs={["terms", "community-guidelines"]}
                                     leadText="Tôi đã đọc và đồng ý với"
-                                    hint="Bao gồm phí dịch vụ 5%, thanh toán theo giai đoạn và quy định đổi lịch, hoàn tiền."
+                                    hint="Bao gồm phí dịch vụ, cơ chế giữ tiền tạm và quy định hủy lịch, hoàn tiền."
                                     disabled={submitting}
                                 />
                             </div>

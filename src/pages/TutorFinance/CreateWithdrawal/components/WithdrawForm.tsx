@@ -105,9 +105,9 @@ const WithdrawForm: React.FC<Props> = ({ balance, bankInfo, onSubmit, loading })
         <PolicyConsent
           checked={agreedToPolicy}
           onChange={setAgreedToPolicy}
-          docs={['operating-rules']}
+          docs={['tutor-agreement']}
           leadText="Tôi xác nhận đã đọc"
-          hint="Tên chủ tài khoản ngân hàng phải trùng hồ sơ đã xác minh. Thu nhập trên nền tảng chịu thuế thu nhập cá nhân theo quy định."
+          hint="Tài khoản ngân hàng phải chính chủ (mục 4.4). Gia sư tự kê khai và nộp thuế thu nhập cá nhân theo mục 1.2."
           disabled={loading}
           className="finance-withdraw-consent"
         />

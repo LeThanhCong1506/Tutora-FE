@@ -146,6 +146,17 @@ function LegacyTutorClassesRedirect() {
   return <Navigate to={{ pathname: '/tutor-portal/calendar', search: location.search, hash: location.hash }} replace />;
 }
 
+/**
+ * Văn bản pháp lý từng nằm ở /policies/<slug> trước khi gộp vào trang "Về chúng tôi".
+ * Giữ redirect vì đây là loại URL người dùng hay bookmark và được trích dẫn trong chính
+ * nội dung điều khoản.
+ */
+function LegacyPolicyRedirect() {
+  const { slug } = useParams<{ slug: string }>();
+
+  return <Navigate to={slug ? `/about/${slug}` : '/about'} replace />;
+}
+
 function App() {
   const location = useLocation();
   const [showSessionExpired, setShowSessionExpired] = useState(false);
@@ -267,12 +278,19 @@ function App() {
             <Route path="/tutor-detail" element={<Navigate to="/" replace />} />
             <Route path="/tutor-detail/:id" element={<TutorDetailPage />} />
 
-            {/* Văn bản pháp lý — public, có cả trong Zalo Mini App vì người dùng Zalo
-                cũng phải đọc được thứ họ tick đồng ý. Mỗi văn bản một URL riêng để
-                chia sẻ và trích dẫn được; `doc` khớp POLICY_ROUTES ở constants/policy.ts. */}
-            <Route path="/terms" element={<PolicyPage />} />
-            <Route path="/privacy" element={<PolicyPage />} />
-            <Route path="/operating-rules" element={<PolicyPage />} />
+            {/* "Về chúng tôi" — giới thiệu Tutora và toàn bộ văn bản pháp lý dùng chung một
+                layout có sidebar. Public, có cả trong Zalo Mini App vì người dùng Zalo cũng
+                phải đọc được thứ họ tick đồng ý. Route động theo slug: nội dung nằm trong DB
+                và admin thêm văn bản mới qua CMS mà không cần deploy lại FE.
+                `/about` không có param → trang hiển thị văn bản giới thiệu. */}
+            <Route path="/about" element={<PolicyPage />} />
+            <Route path="/about/:slug" element={<PolicyPage />} />
+            {/* Đường dẫn cũ trước khi gộp vào /about. */}
+            <Route path="/terms" element={<Navigate to="/about/terms" replace />} />
+            <Route path="/privacy" element={<Navigate to="/about/privacy" replace />} />
+            <Route path="/operating-rules" element={<Navigate to="/about/community-guidelines" replace />} />
+            <Route path="/policies" element={<Navigate to="/about" replace />} />
+            <Route path="/policies/:slug" element={<LegacyPolicyRedirect />} />
 
             {/* Tutor Portal — không có trong Zalo Mini App */}
             {!inMiniApp && (

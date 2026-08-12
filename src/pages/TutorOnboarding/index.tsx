@@ -187,8 +187,8 @@ const TutorOnboarding: React.FC = () => {
           <PolicyConsent
             checked={agreedToPolicy}
             onChange={setAgreedToPolicy}
-            docs={['operating-rules', 'terms']}
-            hint="Bao gồm phí dịch vụ 5% trừ vào thu nhập mỗi buổi, nghĩa vụ gửi báo cáo sau buổi học và quy định đổi lịch."
+            docs={['tutor-agreement', 'community-guidelines']}
+            hint="Bao gồm phí dịch vụ trừ vào thu nhập mỗi buổi, nghĩa vụ báo trước 24 giờ khi đổi lịch và các hành vi bị xử lý vi phạm."
             disabled={sync.saving}
           />
         </div>

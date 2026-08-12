@@ -1,32 +1,58 @@
 /**
- * Nguồn duy nhất cho đường dẫn và tên các văn bản chính sách.
+ * Trang "Về chúng tôi" (/about) gom phần giới thiệu Tutora và toàn bộ văn bản pháp lý vào
+ * một chỗ, chuyển qua lại bằng sidebar.
  *
- * Footer, ô tick đồng ý ở các luồng và chính trang chính sách đều đọc từ đây —
- * đổi slug một chỗ là mọi liên kết đi theo, không còn `href="#"` chết như trước.
+ * Nội dung và danh sách nằm trong DB (admin CRUD qua CMS) nên route là động theo slug. Các
+ * hằng dưới đây chỉ là slug mà CODE cần trỏ tới đích danh — ô tick đồng ý ở đăng ký, đặt
+ * lịch, thanh toán, rút tiền. Văn bản admin tự tạo thêm vẫn xem được qua /about/<slug> mà
+ * không phải sửa file này.
  */
 
-export const POLICY_DOC_SLUGS = ['terms', 'privacy', 'operating-rules'] as const;
+/** Trang mặc định của mục "Về chúng tôi" — chính là văn bản giới thiệu (slug `about`). */
+export const ABOUT_BASE_PATH = '/about';
 
-export type PolicyDocSlug = (typeof POLICY_DOC_SLUGS)[number];
+export const POLICY_SLUGS = {
+  about: 'about',
+  terms: 'terms',
+  privacy: 'privacy',
+  cookies: 'cookies',
+  communityGuidelines: 'community-guidelines',
+  tutorAgreement: 'tutor-agreement',
+} as const;
 
-export const POLICY_ROUTES: Record<PolicyDocSlug, string> = {
-  terms: '/terms',
-  privacy: '/privacy',
-  'operating-rules': '/operating-rules',
-};
+export type PolicySlug = (typeof POLICY_SLUGS)[keyof typeof POLICY_SLUGS];
 
-/** Nhãn ngắn dùng trong câu "Tôi đồng ý với ..." và trên thanh điều hướng của trang. */
-export const POLICY_DOC_LABELS: Record<PolicyDocSlug, string> = {
+/** `about` dùng URL gốc cho gọn, các văn bản còn lại nằm dưới nó. */
+export const policyPath = (slug: string) =>
+  slug === POLICY_SLUGS.about ? ABOUT_BASE_PATH : `${ABOUT_BASE_PATH}/${slug}`;
+
+/**
+ * Nhãn hiển thị trong câu "Tôi đồng ý với ..." và ở Footer.
+ *
+ * Cố ý lấy tĩnh chứ không fetch: ô tick nằm trong form đăng ký/thanh toán, không đáng để
+ * chặn render chỉ vì chờ một lời gọi API lấy tiêu đề. Nếu admin đổi tiêu đề trên CMS thì
+ * trang /about hiển thị tên mới, còn nhãn ngắn ở đây giữ nguyên.
+ */
+export const POLICY_LABELS: Record<PolicySlug, string> = {
+  about: 'Về Tutora',
   terms: 'Điều khoản sử dụng',
   privacy: 'Chính sách bảo mật',
-  'operating-rules': 'Quy chế hoạt động',
+  cookies: 'Chính sách Cookie',
+  'community-guidelines': 'Quy tắc cộng đồng',
+  'tutor-agreement': 'Thoả thuận gia sư',
 };
 
 /**
- * Phiên bản văn bản đang hiển thị. Hiện chỉ dùng để in ra trang; khi nào backend lưu
- * được bằng chứng đồng ý thì gửi kèm giá trị này để biết người dùng đã đồng ý với bản nào.
+ * Icon Material Symbols cho sidebar. Slug do admin tự tạo sẽ không có ở đây — dùng icon
+ * mặc định thay vì để trống, tránh danh sách bị so le.
  */
-export const POLICY_VERSION = '1.0';
+export const POLICY_ICONS: Record<string, string> = {
+  about: 'info',
+  terms: 'gavel',
+  privacy: 'lock',
+  cookies: 'cookie',
+  'community-guidelines': 'groups',
+  'tutor-agreement': 'handshake',
+};
 
-/** Ngày hiệu lực của bản hiện tại, hiển thị ở đầu mỗi văn bản. */
-export const POLICY_EFFECTIVE_DATE = '12/08/2026';
+export const DEFAULT_POLICY_ICON = 'description';

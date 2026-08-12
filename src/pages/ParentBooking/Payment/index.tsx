@@ -570,9 +570,9 @@ const PaymentPage = () => {
                 <PolicyConsent
                   checked={agreedToPolicy}
                   onChange={setAgreedToPolicy}
-                  docs={['operating-rules']}
+                  docs={['terms']}
                   leadText="Tôi xác nhận đã đọc"
-                  hint="Tiền được giữ ở tài khoản tạm giữ và chỉ chuyển cho gia sư sau khi buổi học hoàn tất. Điều kiện hoàn tiền nêu trong quy chế."
+                  hint="Tiền được giữ ở tài khoản tạm giữ và chỉ chuyển cho gia sư sau khi buổi học hoàn tất (mục 5 Điều khoản sử dụng)."
                   disabled={isPaying}
                 />
               </div>

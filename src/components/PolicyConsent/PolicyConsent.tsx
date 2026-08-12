@@ -1,14 +1,14 @@
 import React, { useId } from 'react';
 import { Link } from 'react-router-dom';
-import { POLICY_DOC_LABELS, POLICY_ROUTES, type PolicyDocSlug } from '../../constants/policy';
+import { POLICY_LABELS, POLICY_SLUGS, policyPath, type PolicySlug } from '../../constants/policy';
 import { isZaloMiniApp } from '../../services/zalo-env';
 import styles from './PolicyConsent.module.css';
 
 export interface PolicyConsentProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
-  /** Văn bản cần dẫn link, theo thứ tự hiển thị. Mặc định: điều khoản + quy chế + bảo mật. */
-  docs?: PolicyDocSlug[];
+  /** Văn bản cần dẫn link, theo thứ tự hiển thị. Mặc định: điều khoản + bảo mật. */
+  docs?: PolicySlug[];
   /** Câu dẫn trước danh sách văn bản. Đổi theo ngữ cảnh, vd "Tôi đã đọc và đồng ý với". */
   leadText?: string;
   /** Dòng phụ dưới nhãn — nơi nhắc điều khoản đắt giá nhất của luồng đó. */
@@ -17,7 +17,7 @@ export interface PolicyConsentProps {
   className?: string;
 }
 
-const DEFAULT_DOCS: PolicyDocSlug[] = ['terms', 'operating-rules', 'privacy'];
+const DEFAULT_DOCS: PolicySlug[] = [POLICY_SLUGS.terms, POLICY_SLUGS.privacy];
 
 /**
  * Ô tick "đồng ý với chính sách" dùng chung cho mọi luồng cần xác nhận (đăng ký, đặt lịch,
@@ -61,11 +61,11 @@ const PolicyConsent: React.FC<PolicyConsentProps> = ({
             <React.Fragment key={slug}>
               {index > 0 && (index === docs.length - 1 ? ' và ' : ', ')}
               <Link
-                to={POLICY_ROUTES[slug]}
+                to={policyPath(slug)}
                 className={styles.link}
                 {...(openInNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
               >
-                {POLICY_DOC_LABELS[slug]}
+                {POLICY_LABELS[slug]}
               </Link>
             </React.Fragment>
           ))}{' '}

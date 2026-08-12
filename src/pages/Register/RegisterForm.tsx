@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import InputGroup from "../../components/InputGroup";
 import GoogleSignInButton from "../../components/GoogleSignInButton";
 import ZaloSignInButton from "../../components/ZaloSignInButton";
-import { POLICY_DOC_LABELS, POLICY_ROUTES } from "../../constants/policy";
+import { POLICY_LABELS, POLICY_SLUGS, policyPath } from "../../constants/policy";
 import axios from "axios";
 import { saveUserToStorage, getRoleFromToken, googleAuth } from "../../services/auth.service";
 
@@ -327,12 +327,12 @@ const RegisterForm: React.FC = () => {
                         </div>
                         <label htmlFor="terms" className="register-form__terms-label text-xs">
                             Đồng ý với{" "}
-                            <Link to={POLICY_ROUTES.terms} className="register-form__terms-link" target="_blank" rel="noopener noreferrer">
-                                {POLICY_DOC_LABELS.terms}
+                            <Link to={policyPath(POLICY_SLUGS.terms)} className="register-form__terms-link" target="_blank" rel="noopener noreferrer">
+                                {POLICY_LABELS.terms}
                             </Link>{" "}
                             &{" "}
-                            <Link to={POLICY_ROUTES.privacy} className="register-form__terms-link" target="_blank" rel="noopener noreferrer">
-                                {POLICY_DOC_LABELS.privacy}
+                            <Link to={policyPath(POLICY_SLUGS.privacy)} className="register-form__terms-link" target="_blank" rel="noopener noreferrer">
+                                {POLICY_LABELS.privacy}
                             </Link>
                             .
                         </label>
