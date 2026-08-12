@@ -5,7 +5,7 @@ import {
     ArrowLeft, BookOpen, AlertCircle, Video,
     FileText, ClipboardCheck, Star,
     User, PlayCircle, StopCircle, Paperclip, Download, CalendarClock,
-    CheckCircle2, Clock3, XCircle, Sparkles, ChevronDown, X, Plus, ArrowUp,
+    CheckCircle2, Clock3, XCircle, Sparkles, ChevronDown, Plus, ArrowUp,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import ReactMarkdown from 'react-markdown';
@@ -463,6 +463,7 @@ const StudentLessonDetail = () => {
     const greetingName = currentUserInfo?.firstName
         || currentUserInfo?.fullname?.trim().split(/\s+/).pop()
         || null;
+    const renderLegacyTopSections = false;
 
     return (
         <div className={s.page}>
@@ -489,7 +490,7 @@ const StudentLessonDetail = () => {
                 {/* Hero Join Banner — nút luôn hiện khi canJoin, badge "đã bắt đầu/đã mở" chỉ hiện
                     trong khung ±15 phút quanh giờ học (isWithinJoinWindow, khớp BE EarlyJoinToleranceMinutes).
                     Còn xa giờ học, nút vẫn bấm được — dẫn vào cổng xác nhận vào học ngoài giờ như cũ. */}
-                {canJoin && (
+                {renderLegacyTopSections && canJoin && (
                     <div style={heroCard}>
                         {/* Animated background circles */}
                         <div style={heroBgCircle1} />
@@ -543,7 +544,7 @@ const StudentLessonDetail = () => {
                             <div style={reportRowBlock}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                     {scheduleChange.tutorConfirmedAt
-                                        ? <CheckCircle2 size={18} color="#16a34a" />
+                                        ? <CheckCircle2 size={18} color={TUTORA_MOSS} />
                                         : <Clock3 size={18} color="#d97706" />}
                                     <div>
                                         <div style={reportLabelStyle}>Gia sư</div>
@@ -556,7 +557,7 @@ const StudentLessonDetail = () => {
                             <div style={reportRowBlock}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                     {scheduleChange.learnerConfirmedAt
-                                        ? <CheckCircle2 size={18} color="#16a34a" />
+                                        ? <CheckCircle2 size={18} color={TUTORA_MOSS} />
                                         : <Clock3 size={18} color="#d97706" />}
                                     <div>
                                         <div style={reportLabelStyle}>Bạn</div>
@@ -572,7 +573,7 @@ const StudentLessonDetail = () => {
                         </div>
 
                         {scheduleChange.status === 'rejected' ? (
-                            <div style={{ marginTop: 14, color: '#cf1322', background: '#fff2f0', borderRadius: 8, padding: '10px 12px', fontSize: 13 }}>
+                            <div style={{ marginTop: 14, color: TUTORA_BURGUNDY, background: '#f7e8e6', borderRadius: 8, padding: '10px 12px', fontSize: 13 }}>
                                 Yêu cầu đổi lịch đã bị từ chối. Bạn và gia sư chưa thể vào buổi học ngoài lịch này.
                             </div>
                         ) : scheduleChange.status === 'approved' && scheduleChange.scheduleConflict ? (
@@ -591,7 +592,7 @@ const StudentLessonDetail = () => {
                         ) : scheduleChange.canCurrentUserConfirm ? (
                             <div style={{ marginTop: 14, display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
                                 <button
-                                    style={{ ...actionBtnBase, background: '#fff', color: '#cf1322', border: '1px solid #ffccc7', boxShadow: 'none' }}
+                                    style={{ ...actionBtnBase, background: '#fff', color: TUTORA_BURGUNDY, border: '1px solid #d9b9b4', boxShadow: 'none' }}
                                     disabled={submittingScheduleDecision}
                                     onClick={() => void handleScheduleChangeDecision(false)}
                                 >
@@ -614,7 +615,7 @@ const StudentLessonDetail = () => {
                     <div style={sectionCard}>
                         <div style={sectionHeaderRow}>
                             <div style={{ ...sectionIconWrap, background: 'rgba(99,102,241,0.10)' }}>
-                                <CalendarClock size={16} style={{ color: '#6366F1' }} />
+                                <CalendarClock size={16} style={{ color: TUTORA_MIDNIGHT }} />
                             </div>
                             <div style={sectionTitleText}>Đổi lịch học</div>
                         </div>
@@ -622,7 +623,7 @@ const StudentLessonDetail = () => {
                             Muốn dời buổi học này sang giờ khác? Gửi đề xuất cho gia sư, buổi học chỉ đổi giờ khi gia sư đồng ý.
                         </div>
                         <button
-                            style={{ ...actionBtnBase, background: 'linear-gradient(135deg, #6366F1, #818cf8)', boxShadow: '0 2px 8px rgba(99,102,241,0.25)' }}
+                            style={{ ...actionBtnBase, background: TUTORA_MIDNIGHT, boxShadow: '0 2px 8px rgba(39,42,49,0.22)' }}
                             onClick={() => setRescheduleModalOpen(true)}
                         >
                             <CalendarClock size={16} /> Đề xuất đổi lịch
@@ -634,7 +635,7 @@ const StudentLessonDetail = () => {
                     <div style={sectionCard}>
                         <div style={sectionHeaderRow}>
                             <div style={{ ...sectionIconWrap, background: 'rgba(99,102,241,0.10)' }}>
-                                <CalendarClock size={16} style={{ color: '#6366F1' }} />
+                                <CalendarClock size={16} style={{ color: TUTORA_MIDNIGHT }} />
                             </div>
                             <div style={sectionTitleText}>Đề xuất đổi lịch học</div>
                         </div>
@@ -646,7 +647,7 @@ const StudentLessonDetail = () => {
                         {isRescheduleCounterpart ? (
                             <div style={{ marginTop: 14, display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
                                 <button
-                                    style={{ ...actionBtnBase, background: '#fff', color: '#cf1322', border: '1px solid #ffccc7', boxShadow: 'none' }}
+                                    style={{ ...actionBtnBase, background: '#fff', color: TUTORA_BURGUNDY, border: '1px solid #d9b9b4', boxShadow: 'none' }}
                                     disabled={respondingReschedule}
                                     onClick={() => void handleRespondReschedule(false)}
                                 >
@@ -673,7 +674,7 @@ const StudentLessonDetail = () => {
                     currentScheduledStart={lesson.scheduledStart}
                     onSubmit={handleProposeReschedule}
                     onCancel={() => setRescheduleModalOpen(false)}
-                    accentColor="#6366F1"
+                    accentColor={TUTORA_MIDNIGHT}
                 />
 
                 {/* ─── Action card — Confirm / Feedback ─── */}
@@ -742,7 +743,7 @@ const StudentLessonDetail = () => {
                                             border: '1px solid rgba(26,34,56,0.06)', textDecoration: 'none',
                                         }}
                                     >
-                                        <Paperclip size={14} style={{ flexShrink: 0, color: '#6366F1' }} />
+                                        <Paperclip size={14} style={{ flexShrink: 0, color: TUTORA_MIDNIGHT }} />
                                         <span style={{ flex: 1, minWidth: 0, fontSize: '13px', color: '#1a2238', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                             {getFileNameFromUrl(url)}
                                         </span>
@@ -765,7 +766,7 @@ const StudentLessonDetail = () => {
                                             border: '1px solid rgba(26,34,56,0.06)', textDecoration: 'none',
                                         }}
                                     >
-                                        <Paperclip size={14} style={{ flexShrink: 0, color: '#6366F1' }} />
+                                        <Paperclip size={14} style={{ flexShrink: 0, color: TUTORA_MIDNIGHT }} />
                                         <span style={{ flex: 1, minWidth: 0, fontSize: '13px', color: '#1a2238', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                             {item.fileUrl ? getFileNameFromUrl(item.fileUrl) : 'Bằng chứng'}
                                         </span>
@@ -895,11 +896,11 @@ const StudentLessonDetail = () => {
                 )}
 
                 {/* ─── Content + Homework — cũng gồm tệp đính kèm của báo cáo (thường là bài tập) ─── */}
-                {(lesson.lessonContent || lesson.homework || (report && Array.isArray(report.attachments) && report.attachments.length > 0)) && (
+                {renderLegacyTopSections && (lesson.lessonContent || lesson.homework || (report && Array.isArray(report.attachments) && report.attachments.length > 0)) && (
                     <div style={sectionCard}>
                         <div style={sectionHeaderRow}>
                             <div style={sectionIconWrap}>
-                                <BookOpen size={16} style={{ color: '#6366F1' }} />
+                                <BookOpen size={16} style={{ color: LESSON_RAIL_ACCENT }} />
                             </div>
                             <div style={sectionTitleText}>Nội dung & bài tập</div>
                         </div>
@@ -907,7 +908,7 @@ const StudentLessonDetail = () => {
                             {lesson.lessonContent && (
                                 <ContentBlock
                                     icon={<BookOpen size={15} />}
-                                    accent="#6366F1"
+                                    accent={LESSON_RAIL_ACCENT}
                                     label="Nội dung buổi học"
                                     value={lesson.lessonContent}
                                 />
@@ -915,7 +916,7 @@ const StudentLessonDetail = () => {
                             {lesson.homework && (
                                 <ContentBlock
                                     icon={<AlertCircle size={15} />}
-                                    accent="#d97706"
+                                    accent={LESSON_RAIL_ACCENT}
                                     label="Bài tập về nhà"
                                     value={lesson.homework}
                                 />
@@ -932,7 +933,7 @@ const StudentLessonDetail = () => {
                                                 rel="noopener noreferrer"
                                                 style={attachmentLinkStyle}
                                             >
-                                                <Paperclip size={14} style={{ flexShrink: 0, color: '#6366F1' }} />
+                                                <Paperclip size={14} style={{ flexShrink: 0, color: TUTORA_MIDNIGHT }} />
                                                 <span style={attachmentNameStyle}>{getFileNameFromUrl(url)}</span>
                                                 <Download size={14} style={{ flexShrink: 0, color: '#9ca3af' }} />
                                             </a>
@@ -945,11 +946,11 @@ const StudentLessonDetail = () => {
                 )}
 
                 {/* ─── Tutor Report — cũng gồm tài liệu lớp học (cùng chỗ gia sư chia sẻ cho học sinh) ─── */}
-                {(report || materials.length > 0) && (
+                {renderLegacyTopSections && (report || materials.length > 0) && (
                     <div style={sectionCard}>
                         <div style={sectionHeaderRow}>
-                            <div style={{ ...sectionIconWrap, background: 'rgba(5,150,105,0.10)' }}>
-                                <ClipboardCheck size={16} style={{ color: '#059669' }} />
+                            <div style={sectionIconWrap}>
+                                <ClipboardCheck size={16} style={{ color: LESSON_RAIL_ACCENT }} />
                             </div>
                             <div style={sectionTitleText}>Báo cáo gia sư</div>
                         </div>
@@ -995,7 +996,7 @@ const StudentLessonDetail = () => {
                                                 rel="noopener noreferrer"
                                                 style={attachmentLinkStyle}
                                             >
-                                                <Paperclip size={14} style={{ flexShrink: 0, color: '#6366F1' }} />
+                                                <Paperclip size={14} style={{ flexShrink: 0, color: TUTORA_MIDNIGHT }} />
                                                 <span style={attachmentNameStyle}>
                                                     {m.title}
                                                     {m.description ? ` · ${m.description}` : ''}
@@ -1021,32 +1022,41 @@ const StudentLessonDetail = () => {
                                 <div style={sidebarHeaderTitle}>{subjectName}</div>
                                 <button
                                     type="button"
-                                    className="sld-sidebar-close"
-                                    style={sidebarCloseBtn}
+                                    className="sld-next-btn"
+                                    style={{ ...nextBtn, padding: '8px 12px', fontSize: 12, boxShadow: 'none' }}
                                     title="Về thời khóa biểu"
                                     onClick={() => navigate('/student-portal/calendar')}
                                 >
-                                    <X size={15} />
+                                    <span>Về thời khóa biểu</span>
+                                    <ArrowLeft size={14} style={{ transform: 'rotate(180deg)' }} />
                                 </button>
                             </div>
 
                             <div style={sidebarScrollBody}>
                             {/* Tương đương "Today's goals" của Coursera — nhưng gắn dữ liệu buổi học thật */}
-                            <div style={sidebarGoalCard}>
+                            <div className="sld-hover-card" style={sidebarGoalCard}>
                                 <div style={sidebarGoalHeader}>
                                     <span style={sidebarGoalTitle}>Trạng thái buổi học</span>
                                     <span style={{ ...statusChip, color: status.color, background: status.bg }}>
-                                        <span style={{ fontSize: 12 }}>{status.icon}</span>
+                                        <span style={{ ...statusDot, background: status.color }} />
                                         {status.label}
                                     </span>
                                 </div>
-                                <div style={sidebarGoalRow}>
-                                    <PlayCircle size={14} style={{ color: '#10b981', flexShrink: 0 }} />
-                                    Bắt đầu {formatLongDate(lesson.scheduledStart)}, {formatTime(lesson.scheduledStart)}
-                                </div>
-                                <div style={sidebarGoalRow}>
-                                    <StopCircle size={14} style={{ color: '#f43f5e', flexShrink: 0 }} />
-                                    Kết thúc {formatTime(lesson.scheduledEnd)}
+                                <div style={sidebarGoalTimeline}>
+                                    <div style={sidebarGoalRow}>
+                                        <span style={{ ...sidebarGoalIcon, color: TUTORA_MOSS }}><PlayCircle size={14} /></span>
+                                        <div style={sidebarGoalTimeContent}>
+                                            <span style={sidebarGoalTimeLabel}>Bắt đầu</span>
+                                            <span style={sidebarGoalTimeValue}>{formatLongDate(lesson.scheduledStart)}, {formatTime(lesson.scheduledStart)}</span>
+                                        </div>
+                                    </div>
+                                    <div style={sidebarGoalRow}>
+                                        <span style={{ ...sidebarGoalIcon, color: TUTORA_BURGUNDY }}><StopCircle size={14} /></span>
+                                        <div style={sidebarGoalTimeContent}>
+                                            <span style={sidebarGoalTimeLabel}>Kết thúc</span>
+                                            <span style={sidebarGoalTimeValue}>{formatTime(lesson.scheduledEnd)}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1077,10 +1087,10 @@ const StudentLessonDetail = () => {
                                         const isPositive = sc.status === 'applied' || sc.status === 'approved';
                                         const isNegative = sc.status === 'rejected';
                                         const icon = isPositive
-                                            ? <CheckCircle2 size={14} style={{ color: '#16a34a' }} />
+                                            ? <CheckCircle2 size={14} style={{ color: TUTORA_MOSS }} />
                                             : isNegative
-                                                ? <XCircle size={14} style={{ color: '#cf1322' }} />
-                                                : <Clock3 size={14} style={{ color: '#d97706' }} />;
+                                                ? <XCircle size={14} style={{ color: TUTORA_BURGUNDY }} />
+                                                : <Clock3 size={14} style={{ color: TUTORA_UMBER }} />;
                                         return (
                                             <SidebarItemRow
                                                 key={sc.scheduleChangeId}
@@ -1121,10 +1131,10 @@ const StudentLessonDetail = () => {
                                             expired: 'Đã hết hạn',
                                         };
                                         const icon = proposal.status === 'accepted'
-                                            ? <CheckCircle2 size={14} style={{ color: '#16a34a' }} />
+                                            ? <CheckCircle2 size={14} style={{ color: TUTORA_MOSS }} />
                                             : proposal.status === 'rejected'
-                                                ? <XCircle size={14} style={{ color: '#cf1322' }} />
-                                                : <Clock3 size={14} style={{ color: '#d97706' }} />;
+                                                ? <XCircle size={14} style={{ color: TUTORA_BURGUNDY }} />
+                                                : <Clock3 size={14} style={{ color: TUTORA_UMBER }} />;
                                         return (
                                             <SidebarItemRow
                                                 key={proposal.rescheduleProposalId}
@@ -1142,6 +1152,12 @@ const StudentLessonDetail = () => {
                                     })}
                                 </SidebarSection>
                             )}
+                            <LessonContentCard
+                                lessonContent={lesson.lessonContent}
+                                homework={lesson.homework}
+                                attachments={report?.attachments}
+                            />
+                            <TutorReportCard report={report} materials={materials} />
                             </div>
                         </div>
                     </div>
@@ -1150,11 +1166,12 @@ const StudentLessonDetail = () => {
                     <div style={threeColMiddle}>
                     <div style={middleCard}>
                     <div style={middleScrollBody}>
+                        {canJoin && <JoinSessionBanner lessonId={lesson.lessonId} nearJoinWindow={nearJoinWindow} isInProgress={isInProgress} />}
                         <div style={videoCard}>
                             <ClassSessionRecording classSessionId={lesson.lessonId} />
                         </div>
                         <div style={videoInfoRow}>
-                            <Video size={16} style={{ color: '#1a2238' }} />
+                            <Video size={16} style={{ color: TUTORA_BURGUNDY }} />
                             <span style={videoInfoTitle}>Video buổi học</span>
                         </div>
 
@@ -1167,7 +1184,7 @@ const StudentLessonDetail = () => {
                                     onClick={() => setDiveDeeperOpen((open) => !open)}
                                 >
                                     <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <Sparkles size={15} style={{ color: '#8b5cf6' }} />
+                                        <Sparkles size={15} style={{ color: TUTORA_BURGUNDY }} />
                                         Đào sâu nội dung này
                                     </span>
                                     <ChevronDown
@@ -1195,11 +1212,6 @@ const StudentLessonDetail = () => {
                         )}
 
                     </div>
-                    <div style={middleFooterBar}>
-                        <button type="button" className="sld-next-btn" style={nextBtn} onClick={() => navigate('/student-portal/calendar')}>
-                            Về thời khóa biểu <ArrowLeft size={14} style={{ transform: 'rotate(180deg)' }} />
-                        </button>
-                    </div>
                     </div>
                     </div>
 
@@ -1208,7 +1220,7 @@ const StudentLessonDetail = () => {
                         <div style={aiPanelCard}>
                             <div style={aiPanelHeader}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                    <Sparkles size={18} style={{ color: '#8b5cf6' }} />
+                                    <Sparkles size={18} style={{ color: TUTORA_BURGUNDY }} />
                                     {summaryJob && summaryJob.status !== 'none' && (
                                         <div style={aiCompactTitle}>Tóm tắt buổi học bằng AI</div>
                                     )}
@@ -1248,7 +1260,7 @@ const StudentLessonDetail = () => {
                                                     disabled={!recordingAvailable || triggeringSummary}
                                                     onClick={() => handleAiSuggestionClick(item)}
                                                 >
-                                                    <Sparkles size={15} style={{ color: '#8b5cf6', flexShrink: 0 }} />
+                                                    <Sparkles size={15} style={{ color: TUTORA_BURGUNDY, flexShrink: 0 }} />
                                                     {item.label}
                                                 </button>
                                             ))}
@@ -1259,7 +1271,7 @@ const StudentLessonDetail = () => {
                                             </div>
                                         )}
                                         {triggeringSummary && (
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#8b5cf6' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: TUTORA_BURGUNDY }}>
                                                 <Spin size="small" /> Đang gửi yêu cầu…
                                             </div>
                                         )}
@@ -1279,12 +1291,12 @@ const StudentLessonDetail = () => {
 
                                 {summaryJob?.status === 'failed' && (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                        <div style={{ color: '#cf1322', background: '#fff2f0', borderRadius: 10, padding: '10px 12px', fontSize: 13 }}>
+                                        <div style={{ color: TUTORA_BURGUNDY, background: '#f7e8e6', borderRadius: 10, padding: '10px 12px', fontSize: 13 }}>
                                             {summaryJob.errorMessage || 'Không thể tóm tắt video. Vui lòng thử lại.'}
                                         </div>
                                         <button
                                             type="button"
-                                            style={{ ...actionBtnBase, background: 'linear-gradient(135deg, #8b5cf6, #a78bfa)', alignSelf: 'flex-start' }}
+                                            style={{ ...actionBtnBase, background: TUTORA_MIDNIGHT, alignSelf: 'flex-start' }}
                                             disabled={!recordingAvailable || triggeringSummary}
                                             onClick={() => void handleTriggerSummary()}
                                         >
@@ -1353,7 +1365,7 @@ const StudentLessonDetail = () => {
                                                         style={pillBtnGhost}
                                                         onClick={() => handleAiSuggestionClick(item)}
                                                     >
-                                                        <Sparkles size={15} style={{ color: '#8b5cf6', flexShrink: 0 }} />
+                                                        <Sparkles size={15} style={{ color: TUTORA_BURGUNDY, flexShrink: 0 }} />
                                                         {item.label}
                                                     </button>
                                                 ))}
@@ -1388,6 +1400,7 @@ const StudentLessonDetail = () => {
                                             />
                                             <button
                                                 type="button"
+                                                className="sld-ai-send-btn"
                                                 style={{ ...aiSendBtn, opacity: (!chatReady || chatSending || chatInput.trim().length === 0) ? 0.5 : 1 }}
                                                 disabled={!chatReady || chatSending || chatInput.trim().length === 0}
                                                 onClick={() => void handleSendChatMessage()}
@@ -1478,6 +1491,93 @@ const ReportRow = ({ label, value }: { label: string; value: string }) => (
     </div>
 );
 
+const embeddedSectionCard: React.CSSProperties = {
+    background: '#fff',
+    border: '1px solid #d9e1eb',
+    borderRadius: 14,
+    padding: 16,
+    marginTop: 12,
+    marginBottom: 0,
+    boxShadow: '0 2px 8px rgba(16,24,40,0.06)',
+};
+
+const LessonContentCard = ({
+    lessonContent,
+    homework,
+    attachments,
+}: {
+    lessonContent?: string | null;
+    homework?: string | null;
+    attachments?: string[];
+}) => {
+    if (!lessonContent && !homework && !attachments?.length) return null;
+    return (
+        <div className="sld-hover-card" style={embeddedSectionCard}>
+            <div style={sectionHeaderRow}>
+                <div style={sectionIconWrap}><BookOpen size={16} style={{ color: LESSON_RAIL_ACCENT }} /></div>
+                <div style={sectionTitleText}>Nội dung & bài tập</div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {lessonContent && <ContentBlock icon={<BookOpen size={15} />} accent={LESSON_RAIL_ACCENT} label="Nội dung buổi học" value={lessonContent} />}
+                {homework && <ContentBlock icon={<AlertCircle size={15} />} accent={LESSON_RAIL_ACCENT} label="Bài tập về nhà" value={homework} />}
+                {!!attachments?.length && (
+                    <div>
+                        <span style={reportLabelStyle}>Bài tập được giao</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                            {attachments.map((url, index) => (
+                                <a key={`${url}-${index}`} href={url} target="_blank" rel="noopener noreferrer" style={attachmentLinkStyle}>
+                                    <Paperclip size={14} style={{ flexShrink: 0, color: LESSON_RAIL_ACCENT }} />
+                                    <span style={attachmentNameStyle}>{getFileNameFromUrl(url)}</span>
+                                    <Download size={14} style={{ flexShrink: 0, color: '#9ca3af' }} />
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const TutorReportCard = ({ report, materials }: { report?: any; materials: LearningMaterialResponse[] }) => {
+    if (!report && materials.length === 0) return null;
+    return (
+        <div className="sld-hover-card" style={embeddedSectionCard}>
+            <div style={sectionHeaderRow}>
+                <div style={sectionIconWrap}><ClipboardCheck size={16} style={{ color: LESSON_RAIL_ACCENT }} /></div>
+                <div style={sectionTitleText}>Báo cáo gia sư</div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {report?.contentCovered && <ReportRow label="Nội dung đã dạy" value={report.contentCovered} />}
+                {report?.homeworkAssigned && <ReportRow label="Bài tập giao" value={report.homeworkAssigned} />}
+                {report && (
+                    <div style={ratingRow}>
+                        <span style={reportLabelStyle}>Đánh giá học sinh</span>
+                        {report.studentPerformanceRating > 0 ? (
+                            <div style={ratingStars}>{[1, 2, 3, 4, 5].map((i) => <Star key={i} size={16} fill={i <= report.studentPerformanceRating ? '#fbbf24' : '#e5e7eb'} color={i <= report.studentPerformanceRating ? '#f59e0b' : '#d1d5db'} strokeWidth={1.5} />)}<span style={ratingNumber}>{report.studentPerformanceRating}/5</span></div>
+                        ) : <span style={{ fontSize: 13, color: '#999' }}>Chưa đánh giá</span>}
+                    </div>
+                )}
+                {materials.length > 0 && (
+                    <div><span style={reportLabelStyle}>Tài liệu lớp học</span><div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                        {materials.map((m) => <a key={m.materialId} href={m.fileUrl} target="_blank" rel="noopener noreferrer" style={attachmentLinkStyle}><Paperclip size={14} style={{ flexShrink: 0, color: LESSON_RAIL_ACCENT }} /><span style={attachmentNameStyle}>{m.title}{m.description ? ` · ${m.description}` : ''}</span><Download size={14} style={{ flexShrink: 0, color: '#9ca3af' }} /></a>)}
+                    </div></div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const JoinSessionBanner = ({ lessonId, nearJoinWindow, isInProgress }: { lessonId: number; nearJoinWindow: boolean; isInProgress: boolean }) => (
+    <div style={heroCard}>
+        <div style={heroBgCircle1} /><div style={heroBgCircle2} />
+        <div style={heroInner}>
+            <div style={heroLeft}><div style={heroLiveDot}><span style={heroPulseRing} /><span style={heroSolidDot} /></div><div><div style={heroBadgeText}>{isInProgress ? 'BUỔI HỌC ĐÃ BẮT ĐẦU' : 'PHÒNG HỌC ĐÃ MỞ'}</div><div style={heroSubtext}>{isInProgress ? 'Gia sư đang chờ bạn trong lớp' : 'Phòng học đã sẵn sàng — bạn có thể vào lớp bất cứ lúc nào'}</div></div></div>
+            <Link to={`/session-lobby/${lessonId}`} style={heroJoinBtn}><Video size={16} /> {nearJoinWindow ? 'Vào học' : 'Vào học nhanh'}</Link>
+        </div>
+    </div>
+);
+
 // ── Sidebar cột trái kiểu Coursera: khối bo viền duy nhất, chia mục bằng
 // đường kẻ mảnh thay vì nhiều thẻ nổi rời rạc ──
 const SidebarSection = ({
@@ -1493,7 +1593,7 @@ const SidebarSection = ({
     onToggle?: () => void;
     children: React.ReactNode;
 }) => (
-    <div style={sidebarSection}>
+    <div className="sld-hover-card" style={sidebarSection}>
         {collapsible ? (
             <button type="button" className="sld-side-section-btn" style={sidebarSectionHeaderBtn} onClick={onToggle}>
                 <span style={sidebarSectionLabel}>{label}</span>
@@ -1568,21 +1668,52 @@ styleTag.textContent = `
     .sld-3col-grid { grid-template-columns: minmax(0, 1fr) !important; }
     .sld-3col-grid > *:first-child { grid-column: auto; }
 }
-.sld-side-section-btn:hover,
-.sld-side-item:hover { background: #f7f7f5; }
-.sld-side-section-btn, .sld-side-item { transition: background .12s; }
-.sld-pill, .sld-pill-ghost, .sld-dive-btn, .sld-sidebar-close, .sld-next-btn {
-    transition: border-color .12s, background .12s, color .12s;
+.sld-hover-card {
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
-.sld-pill:hover:not(:disabled) { background: #f5f4ff; }
-.sld-pill-ghost:hover:not(:disabled) { border-color: #c7d2fe; background: #f5f6fe; }
-.sld-dive-btn:hover { background: #e8eafc; }
+.sld-hover-card:hover {
+    transform: translateY(-2px);
+    border-color: #cdbeb8 !important;
+    box-shadow: 0 10px 24px rgba(39,42,49,.08), 0 0 0 3px rgba(103,35,32,.035) !important;
+}
+.sld-side-section-btn:hover,
+.sld-side-item:hover { background: #f7f4ed; }
+.sld-side-section-btn, .sld-side-item { transition: background .14s ease, transform .14s ease; }
+.sld-side-item:hover { transform: translateX(2px); }
+.sld-pill, .sld-pill-ghost, .sld-dive-btn, .sld-sidebar-close, .sld-next-btn {
+    transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease, background .14s ease, color .14s ease;
+}
+.sld-pill:hover:not(:disabled),
+.sld-pill-ghost:hover:not(:disabled),
+.sld-dive-btn:hover,
+.sld-next-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 12px rgba(39,42,49,.10);
+}
+.sld-pill:hover:not(:disabled) { background: #f5f2ea; }
+.sld-pill-ghost:hover:not(:disabled) {
+    border-color: #cdbeb8;
+    background: #f7f4ed;
+    box-shadow: 0 7px 16px rgba(103,35,32,.10);
+}
+.sld-dive-btn:hover { background: #f2eee4; }
 .sld-sidebar-close:hover { background: #f0f0ee; color: #1a2238; }
-.sld-next-btn:hover { background: #1a2238; color: #fff; }
-.sld-ai-input-pill:focus-within { border-color: #6366F1; box-shadow: 0 0 0 3px rgba(99,102,241,0.12); }
+.sld-next-btn:hover { background: #272A31; color: #fff; }
+.sld-ai-send-btn:hover:not(:disabled) {
+    background: #7b2b28 !important;
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 7px 16px rgba(103,35,32,.30);
+}
+.sld-ai-send-btn:active:not(:disabled) { transform: translateY(0) scale(.98); }
+.sld-ai-input-pill:focus-within { border-color: #272A31; box-shadow: 0 0 0 3px rgba(39,42,49,0.12); }
 .sld-ai-header-icon:hover { background: #f5f5f5; color: #1a2238; }
 `;
-if (!document.getElementById('sld-keyframes')) {
+const existingStyleTag = document.getElementById('sld-keyframes') as HTMLStyleElement | null;
+if (existingStyleTag) {
+    // Vite HMR tái thực thi module nhưng giữ nguyên <style> cũ; thay nội dung để
+    // các chỉnh sửa hover/animation có hiệu lực ngay, không cần người dùng hard refresh.
+    existingStyleTag.textContent = styleTag.textContent;
+} else {
     styleTag.id = 'sld-keyframes';
     document.head.appendChild(styleTag);
 }
@@ -1593,6 +1724,16 @@ if (!document.getElementById('sld-keyframes')) {
 
 const FONT_DISPLAY = "'Bricolage Grotesque', 'IBM Plex Sans', sans-serif";
 const FONT_BODY = "'IBM Plex Sans', sans-serif";
+// Một palette surface dùng xuyên suốt rail trái, lấy cảm hứng từ Coursera:
+// các item chỉ khác nhau bởi nội dung/trạng thái, không đổi sang tím/xanh/vàng.
+const LESSON_RAIL_SURFACE = '#faf9f7';
+const LESSON_RAIL_BORDER = '#dbe4f0';
+const TUTORA_MIDNIGHT = '#272A31';
+const TUTORA_MOSS = '#2D372F';
+const TUTORA_IVORY = '#DED8CA';
+const TUTORA_UMBER = '#2E2721';
+const TUTORA_BURGUNDY = '#672320';
+const LESSON_RAIL_ACCENT = TUTORA_BURGUNDY;
 
 // ── Breadcrumb ──
 const breadcrumbRow: React.CSSProperties = {
@@ -1621,11 +1762,11 @@ const backBtnStyle: React.CSSProperties = {
 const heroCard: React.CSSProperties = {
     position: 'relative',
     overflow: 'hidden',
-    background: 'linear-gradient(135deg, #15803d 0%, #059669 50%, #0d9488 100%)',
+    background: 'linear-gradient(135deg, #2D372F 0%, #3B4A3D 58%, #4B5B4E 100%)',
     color: '#fff',
     borderRadius: 16,
     marginBottom: 16,
-    boxShadow: '0 8px 24px rgba(5,150,105,0.25), 0 2px 8px rgba(0,0,0,0.08)',
+    boxShadow: '0 8px 24px rgba(45,55,47,0.25), 0 2px 8px rgba(0,0,0,0.08)',
 };
 
 const heroBgCircle1: React.CSSProperties = {
@@ -1718,7 +1859,7 @@ const heroJoinBtn: React.CSSProperties = {
     gap: 8,
     padding: '12px 24px',
     background: '#fff',
-    color: '#15803d',
+    color: TUTORA_MOSS,
     fontSize: 14,
     fontWeight: 700,
     borderRadius: 10,
@@ -1733,13 +1874,21 @@ const heroJoinBtn: React.CSSProperties = {
 const statusChip: React.CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: 6,
-    padding: '6px 14px',
-    borderRadius: 6,
-    fontSize: 13,
-    fontWeight: 600,
+    gap: 7,
+    padding: '7px 10px',
+    borderRadius: 999,
+    fontSize: 12.5,
+    fontWeight: 700,
     fontFamily: FONT_BODY,
     whiteSpace: 'nowrap',
+    flexShrink: 0,
+};
+
+const statusDot: React.CSSProperties = {
+    width: 8,
+    height: 8,
+    borderRadius: '50%',
+    boxShadow: '0 0 0 3px rgba(255,255,255,.45)',
     flexShrink: 0,
 };
 
@@ -1856,32 +2005,18 @@ const sidebarScrollBody: React.CSSProperties = {
 const sidebarHeaderTitle: React.CSSProperties = {
     fontSize: 17,
     fontWeight: 700,
-    color: '#1a2238',
+    color: TUTORA_MIDNIGHT,
     lineHeight: 1.3,
 };
 
-const sidebarCloseBtn: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 26,
-    height: 26,
-    borderRadius: 8,
-    border: 'none',
-    background: 'transparent',
-    color: '#667085',
-    cursor: 'pointer',
-    flexShrink: 0,
-};
-
 const sidebarGoalCard: React.CSSProperties = {
-    background: '#f2f3fc',
-    border: '1px solid #e2e5f8',
-    borderRadius: 12,
-    padding: '14px 16px',
+    background: LESSON_RAIL_SURFACE,
+    border: '1px solid #e8e2d8',
+    borderRadius: 14,
+    padding: '15px 16px',
     display: 'flex',
     flexDirection: 'column',
-    gap: 8,
+    gap: 12,
     marginBottom: 16,
 };
 
@@ -1890,27 +2025,71 @@ const sidebarGoalHeader: React.CSSProperties = {
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
-    marginBottom: 2,
 };
 
 const sidebarGoalTitle: React.CSSProperties = {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 700,
-    color: '#1a2238',
+    color: TUTORA_MIDNIGHT,
 };
 
 const sidebarGoalRow: React.CSSProperties = {
     display: 'flex',
+    alignItems: 'flex-start',
+    gap: 10,
+};
+
+const sidebarGoalTimeline: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
+    padding: '11px 12px',
+    background: '#fff',
+    borderRadius: 10,
+    border: '1px solid #eee9e0',
+};
+
+const sidebarGoalIcon: React.CSSProperties = {
+    width: 22,
+    height: 22,
+    display: 'inline-flex',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
+    borderRadius: '50%',
+    background: '#f7f4ed',
+    flexShrink: 0,
+};
+
+const sidebarGoalTimeContent: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 2,
+    minWidth: 0,
+};
+
+const sidebarGoalTimeLabel: React.CSSProperties = {
+    color: '#7c746b',
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: '.02em',
+    textTransform: 'uppercase',
+};
+
+const sidebarGoalTimeValue: React.CSSProperties = {
+    color: TUTORA_MIDNIGHT,
     fontSize: 12.5,
-    color: '#475467',
+    fontWeight: 500,
+    lineHeight: 1.45,
+    overflowWrap: 'anywhere',
 };
 
 const sidebarSection: React.CSSProperties = {
-    borderTop: '1px solid #f0f0f0',
-    paddingTop: 14,
-    marginTop: 14,
+    background: '#fff',
+    border: '1px solid #d9e1eb',
+    borderRadius: 14,
+    padding: 16,
+    marginTop: 12,
+    boxShadow: '0 2px 8px rgba(16,24,40,0.06)',
 };
 
 const sidebarSectionHeaderBtn: React.CSSProperties = {
@@ -1930,7 +2109,7 @@ const sidebarSectionHeaderBtn: React.CSSProperties = {
 const sidebarSectionLabel: React.CSSProperties = {
     fontSize: 14,
     fontWeight: 600,
-    color: '#5e6f92',
+    color: LESSON_RAIL_ACCENT,
 };
 
 const sidebarItemRow: React.CSSProperties = {
@@ -1938,15 +2117,14 @@ const sidebarItemRow: React.CSSProperties = {
     alignItems: 'flex-start',
     gap: 10,
     padding: '8px 12px',
-    margin: '0 -12px',
+    margin: 0,
     borderRadius: 6,
 };
 
 const sidebarItemRowActive: React.CSSProperties = {
     ...sidebarItemRow,
-    background: '#eef1fb',
-    borderLeft: '3px solid #6366F1',
-    paddingLeft: 9,
+    background: LESSON_RAIL_SURFACE,
+    paddingLeft: 12,
 };
 
 const sidebarItemIconWrap: React.CSSProperties = {
@@ -1964,15 +2142,15 @@ const sidebarItemIconWrap: React.CSSProperties = {
 };
 
 const sidebarItemIconWrapActive: React.CSSProperties = {
-    background: '#fff',
-    border: '1.5px solid #6366F1',
-    color: '#6366F1',
+    background: LESSON_RAIL_SURFACE,
+    border: 'none',
+    color: LESSON_RAIL_ACCENT,
 };
 
 const sidebarItemTitle: React.CSSProperties = {
     fontSize: 13,
     fontWeight: 600,
-    color: '#1a2238',
+    color: TUTORA_MIDNIGHT,
     lineHeight: 1.4,
 };
 
@@ -2005,15 +2183,6 @@ const middleScrollBody: React.CSSProperties = {
     padding: 24,
     display: 'flex',
     flexDirection: 'column',
-};
-
-const middleFooterBar: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    padding: '14px 24px',
-    borderTop: '1px solid #f1f1ef',
-    background: '#faf9f6',
-    flexShrink: 0,
 };
 
 const nextBtn: React.CSSProperties = {
@@ -2050,7 +2219,7 @@ const videoInfoRow: React.CSSProperties = {
 const videoInfoTitle: React.CSSProperties = {
     fontSize: 22,
     fontWeight: 700,
-    color: '#1a2238',
+    color: TUTORA_MIDNIGHT,
 };
 
 const diveDeeperCard: React.CSSProperties = {
@@ -2062,14 +2231,14 @@ const diveDeeperHeaderBtn: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    background: '#f2f3fc',
-    border: '1px solid #e2e5f8',
+    background: '#f7f4ed',
+    border: `1px solid ${TUTORA_IVORY}`,
     borderRadius: 10,
     padding: '14px 16px',
     cursor: 'pointer',
     fontSize: 14,
     fontWeight: 600,
-    color: '#4338ca',
+    color: TUTORA_BURGUNDY,
 };
 
 const pillsGrid: React.CSSProperties = {
@@ -2086,9 +2255,9 @@ const pillBtn: React.CSSProperties = {
     textAlign: 'center',
     padding: '11px 12px',
     borderRadius: 10,
-    border: '1.5px solid #6366F1',
+    border: `1.5px solid ${TUTORA_MIDNIGHT}`,
     background: '#fff',
-    color: '#1a2238',
+    color: TUTORA_MIDNIGHT,
     fontSize: 14,
     fontWeight: 600,
     cursor: 'pointer',
@@ -2162,7 +2331,7 @@ const aiHeaderIconBtn: React.CSSProperties = {
 const aiCompactTitle: React.CSSProperties = {
     fontSize: 14,
     fontWeight: 700,
-    color: '#1a2238',
+    color: TUTORA_MIDNIGHT,
 };
 
 const aiHeroGreeting: React.CSSProperties = {
@@ -2172,7 +2341,7 @@ const aiHeroGreeting: React.CSSProperties = {
 const aiGreetingHi: React.CSSProperties = {
     fontSize: 26,
     fontWeight: 800,
-    color: '#4338ca',
+    color: TUTORA_BURGUNDY,
     marginBottom: 2,
     lineHeight: 1.2,
 };
@@ -2180,7 +2349,7 @@ const aiGreetingHi: React.CSSProperties = {
 const aiGreetingTitle: React.CSSProperties = {
     fontSize: 22,
     fontWeight: 700,
-    color: '#1a2238',
+    color: TUTORA_MIDNIGHT,
     lineHeight: 1.25,
 };
 
@@ -2214,7 +2383,7 @@ const aiBubbleAssistant: React.CSSProperties = {
 // Tin nhắn người dùng mới có bong bóng tím nhạt, bo tròn, căn phải
 const aiBubbleUser: React.CSSProperties = {
     alignSelf: 'flex-end',
-    background: '#ede9fe',
+    background: '#f2eee4',
     borderRadius: 16,
     padding: '10px 16px',
     fontSize: 13.5,
@@ -2255,7 +2424,7 @@ const aiSendBtn: React.CSSProperties = {
     height: 34,
     borderRadius: 10,
     border: 'none',
-    background: '#6366F1',
+    background: TUTORA_BURGUNDY,
     color: '#fff',
     cursor: 'pointer',
     flexShrink: 0,
@@ -2321,16 +2490,17 @@ const sectionHeaderRow: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
     gap: 10,
-    marginBottom: 18,
-    paddingBottom: 14,
-    borderBottom: '1px solid #f5f5f5',
+    marginBottom: 14,
+    paddingBottom: 0,
+    borderBottom: 'none',
 };
 
 const sectionIconWrap: React.CSSProperties = {
     width: 32,
     height: 32,
     borderRadius: 8,
-    background: 'rgba(99,102,241,0.10)',
+    background: LESSON_RAIL_SURFACE,
+    border: 'none',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -2340,7 +2510,7 @@ const sectionIconWrap: React.CSSProperties = {
 const sectionTitleText: React.CSSProperties = {
     fontSize: 15,
     fontWeight: 700,
-    color: '#1a2238',
+    color: TUTORA_MIDNIGHT,
     fontFamily: FONT_DISPLAY,
 };
 
@@ -2350,9 +2520,9 @@ const contentBlock: React.CSSProperties = {
     alignItems: 'flex-start',
     gap: 12,
     padding: '14px 16px',
-    background: '#fafaf8',
+    background: LESSON_RAIL_SURFACE,
     borderRadius: 10,
-    border: '1px solid #f5f5f5',
+    border: 'none',
 };
 
 const contentBlockIcon: React.CSSProperties = {
@@ -2386,9 +2556,9 @@ const contentBlockValue: React.CSSProperties = {
 // ── Report ──
 const reportRowBlock: React.CSSProperties = {
     padding: '12px 14px',
-    background: '#fafaf8',
+    background: LESSON_RAIL_SURFACE,
     borderRadius: 10,
-    border: '1px solid #f5f5f5',
+    border: 'none',
 };
 
 const reportLabelStyle: React.CSSProperties = {
@@ -2422,8 +2592,8 @@ const summaryTabBtnBase: React.CSSProperties = {
 };
 
 const summaryTabBtnActive: React.CSSProperties = {
-    background: '#8b5cf6',
-    borderColor: '#8b5cf6',
+    background: TUTORA_MIDNIGHT,
+    borderColor: TUTORA_MIDNIGHT,
     color: '#fff',
 };
 
@@ -2432,9 +2602,9 @@ const attachmentLinkStyle: React.CSSProperties = {
     alignItems: 'center',
     gap: 10,
     padding: '10px 14px',
-    background: '#fafaf8',
+    background: LESSON_RAIL_SURFACE,
     borderRadius: 10,
-    border: '1px solid #f5f5f5',
+    border: 'none',
     textDecoration: 'none',
     transition: 'background 0.15s',
 };
@@ -2455,8 +2625,8 @@ const ratingRow: React.CSSProperties = {
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: '14px 16px',
-    background: 'rgba(251,191,36,0.06)',
-    border: '1px solid rgba(251,191,36,0.15)',
+    background: LESSON_RAIL_SURFACE,
+    border: 'none',
     borderRadius: 10,
 };
 
@@ -2489,7 +2659,7 @@ const notFoundIcon: React.CSSProperties = {
     height: 80,
     borderRadius: '50%',
     background: 'rgba(99,102,241,0.08)',
-    color: '#6366F1',
+    color: TUTORA_MIDNIGHT,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
