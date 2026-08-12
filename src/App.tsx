@@ -31,6 +31,7 @@ import ParentDisputes from './pages/ParentDisputes';
 const HomePage = lazy(() => import('./pages/Home/HomePage'));
 const TutorSearchPage = lazy(() => import('./pages/TutorSearch/TutorSearchPage'));
 const MiniAppSearchFormPage = lazy(() => import('./pages/MiniAppSearchForm/MiniAppSearchFormPage'));
+const PolicyPage = lazy(() => import('./pages/Policy'));
 const TutorDetailPage = lazy(() => import('./pages/TutorDetail/TutorDetailPage'));
 const ParentBookingDemo = lazy(() => import('./pages/ParentBookingDemo'));
 const LoginPage = lazy(() => import('./pages/Login/LoginPage'));
@@ -55,6 +56,7 @@ const TutorPortalMessages = lazy(() => import('./pages/TutorPortal/TutorPortalMe
 const TutorPortalCalendar = lazy(() => import('./pages/TutorPortal/TutorPortalCalendar'));
 const TutorPortalClassSessionDetail = lazy(() => import('./pages/TutorPortal/TutorPortalClassSessionDetail'));
 const TutorPortalDisputes = lazy(() => import('./pages/TutorPortal/TutorPortalDisputes'));
+const TutorPortalDisputeDetail = lazy(() => import('./pages/TutorPortal/TutorPortalDisputeDetail'));
 const TutorPortalStudentProfile = lazy(() => import('./pages/TutorPortal/TutorPortalStudentProfile'));
 const TutorPortalBookings = lazy(() => import('./pages/TutorPortal/TutorPortalBookings'));
 const TutorFinanceDashboardPage = lazy(
@@ -91,6 +93,8 @@ const StudentBooking = lazy(() => import('./pages/StudentBooking'));
 const StudentLessons = lazy(() => import('./pages/StudentLessons'));
 const StudentLessonDetail = lazy(() => import('./pages/StudentLessons/StudentLessonDetail'));
 const StudentDisputes = lazy(() => import('./pages/StudentLessons/StudentDisputes'));
+const StudentDisputeDetail = lazy(() => import('./pages/StudentLessons/StudentDisputeDetail'));
+const ParentDisputeDetail = lazy(() => import('./pages/ParentDisputes/ParentDisputeDetail'));
 const StudentAccount = lazy(() => import('./pages/StudentAccount'));
 const StudentProfile = lazy(() => import('./pages/StudentProfile'));
 
@@ -263,6 +267,13 @@ function App() {
             <Route path="/tutor-detail" element={<Navigate to="/" replace />} />
             <Route path="/tutor-detail/:id" element={<TutorDetailPage />} />
 
+            {/* Văn bản pháp lý — public, có cả trong Zalo Mini App vì người dùng Zalo
+                cũng phải đọc được thứ họ tick đồng ý. Mỗi văn bản một URL riêng để
+                chia sẻ và trích dẫn được; `doc` khớp POLICY_ROUTES ở constants/policy.ts. */}
+            <Route path="/terms" element={<PolicyPage />} />
+            <Route path="/privacy" element={<PolicyPage />} />
+            <Route path="/operating-rules" element={<PolicyPage />} />
+
             {/* Tutor Portal — không có trong Zalo Mini App */}
             {!inMiniApp && (
               <>
@@ -287,6 +298,9 @@ function App() {
                   <Route path="class-sessions" element={<Navigate to="/tutor-portal/calendar" replace />} />
                   <Route path="class-sessions/:classSessionId" element={<TutorPortalClassSessionDetail />} />
                   <Route path="disputes" element={<TutorPortalDisputes />} />
+                  {/* Khiếu nại có trang riêng thay vì card nhúng trong chi tiết buổi học.
+                      Param là classSessionId vì toàn bộ API khiếu nại keyed theo buổi học. */}
+                  <Route path="disputes/:classSessionId" element={<TutorPortalDisputeDetail />} />
                   {/* Legacy: URL /classes từng dùng bookingId, nên quay về lịch thay vì hiểu nhầm là classSessionId. */}
                   <Route path="classes" element={<LegacyTutorClassesRedirect />} />
                   <Route path="classes/:classId" element={<LegacyTutorClassesRedirect />} />
@@ -330,6 +344,7 @@ function App() {
               <Route path="account" element={<ParentAccount />} />
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="disputes" element={<ParentDisputes />} />
+              <Route path="disputes/:classSessionId" element={<ParentDisputeDetail />} />
             </Route>
 
             {/* Student Layout - PROTECTED */}
@@ -361,6 +376,7 @@ function App() {
                   <Route path="wallet/withdrawals/:id" element={<ParentWalletWithdrawalDetail />} />
                   <Route path="wallet/bank-account" element={<BankAccountPage />} />
                   <Route path="disputes" element={<StudentDisputes />} />
+                  <Route path="disputes/:classSessionId" element={<StudentDisputeDetail />} />
                 </Route>
                 <Route path="messages" element={<ParentMessage />} />
                 <Route path="profile" element={<StudentProfile />} />

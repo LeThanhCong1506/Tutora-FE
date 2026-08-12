@@ -4,11 +4,7 @@ import { AlertCircle, ArrowUpRight, RefreshCw, Search, X } from 'lucide-react';
 import { Button, ConfigProvider, Empty, Input, Select, Table, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { PageContainer, SectionCard, StatusBadge } from '../../components/shared';
-import {
-  getTutorClassSessionDispute,
-  getTutorDisputesList,
-  type DisputeListResponse,
-} from '../../services/classSession.service';
+import { getTutorDisputesList, type DisputeListResponse } from '../../services/classSession.service';
 import {
   DISPUTE_PAGE_THEME,
   DISPUTE_SORT_OPTIONS,
@@ -21,15 +17,11 @@ import {
   type DisputeStatusFilter,
   type DisputeTypeFilter,
 } from '../../components/disputes/disputePresentation';
-import { DisputeDetailModal } from '../../components/disputes';
 import { formatCurrency } from '../../utils/formatters';
 import { formatLocalDateTime } from '../../utils/datetime';
 import styles from '../../components/disputes/DisputesTable.module.css';
 
 const SEARCH_DEBOUNCE_MS = 350;
-
-const fetchTutorDisputeDetail = async (classSessionId: number) =>
-  (await getTutorClassSessionDispute(classSessionId)).content ?? null;
 
 const TutorPortalDisputes = () => {
   const navigate = useNavigate();
@@ -46,7 +38,6 @@ const TutorPortalDisputes = () => {
   const [sortDirection, setSortDirection] = useState<DisputeSortDirection>('desc');
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeDispute, setActiveDispute] = useState<DisputeListResponse | null>(null);
 
   const fetchDisputes = useCallback(async () => {
     const requestId = ++latestRequest.current;
@@ -115,14 +106,11 @@ const TutorPortalDisputes = () => {
     return () => window.clearTimeout(timer);
   }, [searchInput, searchQuery]);
 
-  const openDispute = useCallback((dispute: DisputeListResponse) => setActiveDispute(dispute), []);
-
-  const viewSession = useCallback(
+  // Sang trang chi tiết khiếu nại thay vì mở popup: có URL để chia sẻ, F5 không mất, và đủ
+  // chỗ cho dòng thời gian, bằng chứng, bối cảnh buổi học.
+  const openDispute = useCallback(
     (dispute: DisputeListResponse) => {
-      setActiveDispute(null);
-      if (dispute.classSessionId) {
-        navigate(`/tutor-portal/class-sessions/${dispute.classSessionId}`);
-      }
+      if (dispute.classSessionId) navigate(`/tutor-portal/disputes/${dispute.classSessionId}`);
     },
     [navigate],
   );
@@ -421,15 +409,6 @@ const TutorPortalDisputes = () => {
           />
         </SectionCard>
       </PageContainer>
-
-      <DisputeDetailModal
-        open={Boolean(activeDispute)}
-        dispute={activeDispute}
-        fetchDetail={fetchTutorDisputeDetail}
-        viewerRole="tutor"
-        onClose={() => setActiveDispute(null)}
-        onViewSession={viewSession}
-      />
     </ConfigProvider>
   );
 };
