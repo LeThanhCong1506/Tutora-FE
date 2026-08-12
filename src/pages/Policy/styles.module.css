@@ -1,0 +1,208 @@
+.page {
+  min-height: 60vh;
+  padding: 40px 20px 72px;
+  background: #faf9f5;
+}
+
+.container {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.head {
+  margin-bottom: 22px;
+}
+
+.eyebrow {
+  display: inline-block;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: rgba(62, 47, 40, 0.5);
+}
+
+.title {
+  margin: 0 0 10px;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 34px;
+  line-height: 1.2;
+  font-weight: 750;
+  color: #1a2238;
+}
+
+.summary {
+  max-width: 720px;
+  margin: 0 0 8px;
+  font-size: 15px;
+  line-height: 23px;
+  color: rgba(62, 47, 40, 0.75);
+}
+
+.meta {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(62, 47, 40, 0.5);
+}
+
+.docNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 22px;
+  margin-bottom: 26px;
+  border-bottom: 1px solid rgba(26, 34, 56, 0.1);
+}
+
+.docNavItem {
+  padding: 8px 15px;
+  border: 1px solid rgba(26, 34, 56, 0.14);
+  border-radius: 9999px;
+  background-color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(26, 34, 56, 0.72);
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.docNavItem:hover {
+  border-color: rgba(26, 34, 56, 0.3);
+  color: #1a2238;
+}
+
+.docNavItemActive,
+.docNavItemActive:hover {
+  background-color: #1a2238;
+  border-color: #1a2238;
+  color: #fff;
+}
+
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 250px;
+  gap: 40px;
+  align-items: start;
+}
+
+/* Mục lục nằm cột phải và dính theo cuộn — văn bản dài, không muốn người đọc
+   phải cuộn ngược lên đầu mới nhảy được sang mục khác. */
+.tocWrap {
+  order: 2;
+  position: sticky;
+  top: 24px;
+}
+
+.toc {
+  padding: 18px;
+  background-color: #fff;
+  border: 1px solid rgba(26, 34, 56, 0.1);
+  border-radius: 14px;
+}
+
+.tocTitle {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: rgba(62, 47, 40, 0.5);
+}
+
+.tocList {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.tocList a {
+  font-size: 13px;
+  line-height: 18px;
+  color: rgba(26, 34, 56, 0.78);
+  text-decoration: none;
+}
+
+.tocList a:hover {
+  color: #1a2238;
+  text-decoration: underline;
+}
+
+.doc {
+  order: 1;
+  min-width: 0;
+  padding: 28px 32px;
+  background-color: #fff;
+  border: 1px solid rgba(26, 34, 56, 0.1);
+  border-radius: 18px;
+}
+
+.section {
+  /* Bù chiều cao header dính khi nhảy anchor, để tiêu đề không bị che. */
+  scroll-margin-top: 90px;
+}
+
+.section + .section {
+  margin-top: 26px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(26, 34, 56, 0.07);
+}
+
+.sectionHeading {
+  margin: 0 0 10px;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 19px;
+  line-height: 26px;
+  font-weight: 700;
+  color: #1a2238;
+}
+
+.paragraph {
+  margin: 0 0 10px;
+  font-size: 14.5px;
+  line-height: 24px;
+  color: rgba(62, 47, 40, 0.85);
+}
+
+.paragraph:last-child {
+  margin-bottom: 0;
+}
+
+.bullets {
+  margin: 6px 0 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.bullets li {
+  font-size: 14.5px;
+  line-height: 23px;
+  color: rgba(62, 47, 40, 0.85);
+}
+
+@media (max-width: 900px) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+  }
+
+  /* Mobile: mục lục lên trên để vẫn thấy được, và bỏ sticky cho khỏi che nội dung. */
+  .tocWrap {
+    order: 1;
+    position: static;
+  }
+
+  .doc {
+    order: 2;
+    padding: 22px 20px;
+  }
+
+  .title {
+    font-size: 27px;
+  }
+}
