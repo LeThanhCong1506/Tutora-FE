@@ -5,7 +5,9 @@ import { clearUserFromStorage, getCurrentUser, getUserInfoFromToken, getUserProf
 import { ConfirmDialog } from "../shared/ConfirmDialog";
 import ProfileDropdown from "../shared/PortalLayout/ProfileDropdown";
 import type { ProfileMenuItem } from "../shared/PortalLayout/ProfileDropdown";
+import NotificationDropdown from '../NotificationDropdown/NotificationDropdown';
 import { getProfileMenuItemsByRole } from "../../layouts/shared/profileMenus";
+import { useNotifications } from '../../layouts/shared/useLayoutData';
 import { ABOUT_BASE_PATH } from "../../constants/policy";
 import { getMyLinkStatus } from "../../services/student.service";
 
@@ -28,6 +30,12 @@ const Header = ({ profileMenuItems: profileMenuItemsProp, variant = 'default' }:
   const [userAvatar, setUserAvatar] = useState<string>("");
   const [studentSelfRegistered, setStudentSelfRegistered] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const {
+    notificationCount,
+    showNotificationDropdown,
+    setShowNotificationDropdown,
+    handleRefreshNotificationCount,
+  } = useNotifications(variant === 'portal' && isLoggedIn);
 
   // Ẩn user info trên trang đăng ký/đăng nhập
   const isAuthPage = location.pathname === "/register" || location.pathname === "/login";
@@ -133,12 +141,6 @@ const Header = ({ profileMenuItems: profileMenuItemsProp, variant = 'default' }:
           <Link to="/tutor-search" className="nav-link">
             TÌM GIA SƯ
           </Link>
-          <a href="/#learning-path" className="nav-link">
-            LỘ TRÌNH HỌC
-          </a>
-          <a href="/#lms" className="nav-link">
-            THEO DÕI HỌC TẬP
-          </a>
           {/* Trang thật thay cho anchor /#about — trang chủ không có section id="about"
               nên anchor cũ cuộn không tới đâu. */}
           <Link to={ABOUT_BASE_PATH} className="nav-link">
@@ -150,7 +152,31 @@ const Header = ({ profileMenuItems: profileMenuItemsProp, variant = 'default' }:
         <div className="auth-buttons">
           {isLoggedIn && !isAuthPage ? (
             // --- DROPDOWN TÀI KHOẢN KHI ĐÃ ĐĂNG NHẬP ---
-            <ProfileDropdown
+            <>
+              {variant === 'portal' && (
+                <div className="portal-notification">
+                  <button
+                    type="button"
+                    className="portal-notification-btn"
+                    aria-label={`Thông báo${notificationCount > 0 ? `, ${notificationCount} chưa đọc` : ''}`}
+                    aria-expanded={showNotificationDropdown}
+                    onClick={() => setShowNotificationDropdown(!showNotificationDropdown)}
+                  >
+                    <span className="material-symbols-outlined" aria-hidden="true">notifications</span>
+                    {notificationCount > 0 && (
+                      <span className="portal-notification-badge" aria-hidden="true">
+                        {notificationCount > 99 ? '99+' : notificationCount}
+                      </span>
+                    )}
+                  </button>
+                  <NotificationDropdown
+                    isOpen={showNotificationDropdown}
+                    onClose={() => setShowNotificationDropdown(false)}
+                    onCountUpdate={handleRefreshNotificationCount}
+                  />
+                </div>
+              )}
+              <ProfileDropdown
               name={userDisplayName}
               role={userRole || "TÀI KHOẢN"}
               initials={getInitials(userDisplayName)}
@@ -158,7 +184,8 @@ const Header = ({ profileMenuItems: profileMenuItemsProp, variant = 'default' }:
               subtitle={userEmail}
               items={profileMenuItems}
               onNavigate={(path) => navigate(path)}
-            />
+              />
+            </>
           ) : (
             <>
               <Link to="/login" className="btn-login">
@@ -194,20 +221,6 @@ const Header = ({ profileMenuItems: profileMenuItemsProp, variant = 'default' }:
             >
               TÌM GIA SƯ
             </Link>
-            <a
-              href="/#learning-path"
-              className="mobile-nav-link"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              LỘ TRÌNH HỌC
-            </a>
-            <a
-              href="/#lms"
-              className="mobile-nav-link"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              THEO DÕI HỌC TẬP
-            </a>
             <Link
               to={ABOUT_BASE_PATH}
               className="mobile-nav-link"

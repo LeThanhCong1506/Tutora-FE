@@ -730,6 +730,13 @@
   overflow: hidden;
 }
 
+/* Trang lịch sử giao dịch dùng scroll dọc nội bộ của Ant Table. Giữ bộ lọc,
+ * tiêu đề và phân trang trong viewport thay vì làm toàn trang dài ra. */
+.finance-table-surface .finance-data-table .ant-table-body {
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
 .finance-table-heading {
   min-height: 74px;
   padding: 17px 22px;

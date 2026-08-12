@@ -173,19 +173,6 @@ const CheckCircleIcon = () => (
   </svg>
 );
 
-const ShareIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-    <path
-      d="M6 12L12 6M12 6H7.5M12 6V10.5"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <rect x="2.25" y="2.25" width="13.5" height="13.5" rx="3" stroke="currentColor" strokeWidth="1.5" />
-  </svg>
-);
-
 const VerifiedIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
     <path
@@ -411,11 +398,9 @@ const TutorPortalProfile: React.FC = () => {
     formData,
     profileStatus,
     sectionStatuses: _sectionStatuses,
-    isDirty,
     isLoading: _isLoading,
     isInitialLoading: _isInitialLoading,
     isVideoSaving,
-    lastSaved,
     error: _error,
     canPublish: _canPublish,
     fetchProgress,
@@ -1181,45 +1166,20 @@ const TutorPortalProfile: React.FC = () => {
         </div>
       )}
 
-      {/* Edit Bar - Sticky Bottom */}
-      <div className={styles.editBar} data-tour="profile-editbar">
-        <div className={styles.editBarLeft}>
-          {/* Preview/Edit Toggle */}
-          <div className={styles.toggleGroup}>
-            <button
-              className={`${styles.toggleBtn} ${!isEditMode ? styles.active : ''}`}
-              onClick={() => setIsEditMode(false)}
-            >
-              Xem trước
-            </button>
-            <button
-              className={`${styles.toggleBtn} ${isEditMode ? styles.active : ''}`}
-              onClick={() => setIsEditMode(true)}
-            >
-              Chỉnh sửa
-            </button>
-          </div>
-        </div>
-
-        <div className={styles.editBarRight}>
-          {/* Saved Status */}
-          <div className={styles.savedStatus}>
-            {isDirty ? (
-              <>
-                <span className={styles.unsavedDot}></span>
-                <span className={styles.savedText}>Chưa lưu</span>
-              </>
-            ) : lastSaved ? (
-              <>
-                <span className={styles.savedDot}></span>
-                <span className={styles.savedText}>Đã lưu</span>
-              </>
-            ) : null}
-          </div>
-
-          {/* Share Button */}
-          <button className={styles.shareBtn}>
-            <ShareIcon />
+      {/* Giữ riêng bộ chuyển Xem trước/Chỉnh sửa, không còn thanh sticky bao quanh. */}
+      <div className={styles.editBarLeft} data-tour="profile-editbar">
+        <div className={styles.toggleGroup}>
+          <button
+            className={`${styles.toggleBtn} ${!isEditMode ? styles.active : ''}`}
+            onClick={() => setIsEditMode(false)}
+          >
+            Xem trước
+          </button>
+          <button
+            className={`${styles.toggleBtn} ${isEditMode ? styles.active : ''}`}
+            onClick={() => setIsEditMode(true)}
+          >
+            Chỉnh sửa
           </button>
         </div>
       </div>
