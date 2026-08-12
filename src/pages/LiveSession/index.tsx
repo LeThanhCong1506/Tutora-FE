@@ -383,9 +383,15 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
     toast.info('Buổi học đã kết thúc.');
     void (async () => {
       await leave();
+      // Hết giờ, AutoEndLiveSessionJob tự đóng phòng trong lúc gia sư còn mở trang: job đã ghi
+      // check-out (Status vẫn in_progress) nên backend nhận báo cáo ngay → mở form thay vì đá ra.
+      if (isTutor && classSessionId) {
+        setReportSessionId(parseInt(classSessionId, 10));
+        return;
+      }
       navigate(-1);
     })();
-  }, [sessionEnded, sessionReplaced, isMock, leave, navigate]);
+  }, [sessionEnded, sessionReplaced, isMock, isTutor, classSessionId, leave, navigate]);
 
   const handleBack = () => {
     void (async () => {

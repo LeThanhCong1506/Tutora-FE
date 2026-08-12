@@ -660,6 +660,14 @@
 }
 
 /* ── Footer nav ── */
+/* Ô tick quy chế ở bước cuối. Đặt ngay trên footer dính, dùng chung nền để đọc như
+   một khối với nút "Hoàn tất" đang bị khoá bên dưới. */
+.consentBar {
+  padding: 14px 32px;
+  background: rgba(242, 240, 228, 0.92);
+  border-top: 1px solid rgba(26, 34, 56, 0.1);
+}
+
 .footer {
   position: sticky;
   bottom: 0;

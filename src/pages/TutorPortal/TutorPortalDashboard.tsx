@@ -135,6 +135,24 @@ const fetchRecentFeedbacks = async (tutorUserId: string): Promise<FeedbackDto[]>
 const DASHBOARD_TABS = ['today', 'tomorrow', 'week', 'date'] as const;
 type DashboardTab = (typeof DASHBOARD_TABS)[number];
 
+/**
+ * Cửa sổ quét "buổi chờ gửi báo cáo". Query riêng chứ không tái dùng calendar của tháng đang
+ * xem: gia sư lật sang tháng khác thì buổi còn nợ báo cáo sẽ biến mất khỏi danh sách nhắc.
+ */
+const PENDING_REPORT_LOOKBACK_DAYS = 14;
+
+/**
+ * Buổi `in_progress` mà ĐÃ có `checkOutTime` = phòng đã đóng vĩnh viễn, chỉ còn chờ báo cáo.
+ * Status chỉ chuyển sang `pending_confirmation` sau khi báo cáo được gửi, nên đây là cách duy
+ * nhất phân biệt "đang dạy" với "dạy xong chưa viết". Cùng quy tắc với `isAwaitingReport`
+ * ở StudentLessons/lesson-components — badge trên lịch dạy đã dùng sẵn.
+ */
+const isAwaitingReport = (session: CalendarClassSessionResponse) =>
+    (session.status ?? '').trim().toLowerCase() === 'in_progress' && Boolean(session.checkOutTime);
+
+/** Số buổi liệt kê thẳng trong dải nhắc; dư ra thì đẩy sang link mở lịch dạy. */
+const PENDING_REPORT_VISIBLE = 3;
+
 // `?date=` dùng ngày theo giờ local (không phải ISO/UTC) để không lệch múi giờ khi share link.
 const toDateParam = (date: Date) =>
     `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -164,6 +182,9 @@ const TutorPortalDashboard: React.FC = () => {
     const [calendarData, setCalendarData] = useState<CalendarDayResponse[]>([]);
     const [loading, setLoading] = useState(true);
     const [recentFeedbacks, setRecentFeedbacks] = useState<FeedbackDto[]>([]);
+    // Buổi đã dạy xong nhưng chưa gửi báo cáo — lưới an toàn cho gia sư tắt trang giữa chừng
+    // hoặc bấm "Để sau" ở modal cuối buổi.
+    const [pendingReports, setPendingReports] = useState<CalendarClassSessionResponse[]>([]);
     const [replyModal, setReplyModal] = useState<{ open: boolean; feedback: FeedbackDto | null }>({ open: false, feedback: null });
 
     useEffect(() => {
@@ -214,6 +235,30 @@ const TutorPortalDashboard: React.FC = () => {
 
         fetchDashboardData();
     }, [currentMonth]);
+
+    // Tách khỏi fetchDashboardData vì cửa sổ 14 ngày không phụ thuộc tháng đang xem trên lịch —
+    // gộp chung sẽ gọi lại thừa mỗi lần gia sư lật tháng.
+    useEffect(() => {
+        const fetchPendingReports = async () => {
+            const to = new Date();
+            const from = new Date();
+            from.setDate(from.getDate() - PENDING_REPORT_LOOKBACK_DAYS);
+
+            try {
+                const response = await getTutorCalendar(from.toISOString(), to.toISOString());
+                const pending = (response.content ?? [])
+                    .flatMap((day) => day.classSessions || [])
+                    .filter(isAwaitingReport)
+                    .sort((a, b) => new Date(b.scheduledStart).getTime() - new Date(a.scheduledStart).getTime());
+                setPendingReports(pending);
+            } catch (err) {
+                // Đây là nhắc nhở phụ — hỏng thì log rồi thôi, không chắn phần còn lại của dashboard.
+                console.error('Error fetching sessions awaiting report:', err);
+            }
+        };
+
+        fetchPendingReports();
+    }, []);
 
     // Generate calendar days
     const generateCalendarDays = () => {
@@ -462,6 +507,63 @@ const TutorPortalDashboard: React.FC = () => {
                             <ArrowRightIcon />
                         </button>
                     </aside>
+                </section>
+            )}
+
+            {/* Buổi đã dạy xong nhưng chưa gửi báo cáo. Modal cuối buổi trong phòng live chỉ bắt
+                được gia sư còn đang mở trang — dải này là lưới đỡ cho ca tắt tab hoặc bấm "Để sau". */}
+            {pendingReports.length > 0 && (
+                <section className={styles.reportBanner} aria-labelledby="pending-report-title">
+                    <div className={styles.reportBannerHead}>
+                        <div className={styles.bannerIcon}>
+                            <ClockIcon />
+                        </div>
+                        <div className={styles.bannerText}>
+                            <div className={styles.bannerTitleRow}>
+                                <h2 id="pending-report-title" className={styles.bannerTitle}>
+                                    {pendingReports.length} buổi học chờ gửi báo cáo
+                                </h2>
+                                <span className={styles.reportBadge}>Cần xử lý</span>
+                            </div>
+                            <p className={styles.bannerDescription}>
+                                Các buổi này đã kết thúc nhưng chưa có báo cáo. Buổi học chỉ được ghi nhận hoàn tất
+                                sau khi bạn gửi báo cáo.
+                            </p>
+                        </div>
+                    </div>
+
+                    <ul className={styles.reportList}>
+                        {pendingReports.slice(0, PENDING_REPORT_VISIBLE).map((session) => (
+                            <li key={session.classSessionId} className={styles.reportListItem}>
+                                <div className={styles.reportListInfo}>
+                                    <span className={styles.reportListSubject}>
+                                        {session.subjectName || 'Buổi học'}
+                                    </span>
+                                    <span className={styles.reportListMeta}>
+                                        {session.studentName || 'Chưa có học sinh'} · {formatDate(session.scheduledStart)}
+                                    </span>
+                                </div>
+                                <button
+                                    type="button"
+                                    className={styles.outlineBtn}
+                                    onClick={() => navigate(`/tutor-portal/class-sessions/${session.classSessionId}`)}
+                                >
+                                    Viết báo cáo
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+
+                    {pendingReports.length > PENDING_REPORT_VISIBLE && (
+                        <button
+                            type="button"
+                            className={styles.reportMoreBtn}
+                            onClick={() => navigate('/tutor-portal/calendar')}
+                        >
+                            Xem {pendingReports.length - PENDING_REPORT_VISIBLE} buổi còn lại trên lịch dạy
+                            <ArrowRightIcon />
+                        </button>
+                    )}
                 </section>
             )}
 

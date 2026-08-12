@@ -6,6 +6,7 @@ import { ConfirmDialog } from "../shared/ConfirmDialog";
 import ProfileDropdown from "../shared/PortalLayout/ProfileDropdown";
 import type { ProfileMenuItem } from "../shared/PortalLayout/ProfileDropdown";
 import { getProfileMenuItemsByRole } from "../../layouts/shared/profileMenus";
+import { ABOUT_BASE_PATH } from "../../constants/policy";
 import { getMyLinkStatus } from "../../services/student.service";
 
 const generateAvatarUrl = (name: string) =>
@@ -138,9 +139,11 @@ const Header = ({ profileMenuItems: profileMenuItemsProp, variant = 'default' }:
           <a href="/#lms" className="nav-link">
             THEO DÕI HỌC TẬP
           </a>
-          <a href="/#about" className="nav-link">
+          {/* Trang thật thay cho anchor /#about — trang chủ không có section id="about"
+              nên anchor cũ cuộn không tới đâu. */}
+          <Link to={ABOUT_BASE_PATH} className="nav-link">
             VỀ CHÚNG TÔI
-          </a>
+          </Link>
         </nav>
 
         {/* Auth Buttons - Xử lý điều kiện hiển thị */}
@@ -205,13 +208,13 @@ const Header = ({ profileMenuItems: profileMenuItemsProp, variant = 'default' }:
             >
               THEO DÕI HỌC TẬP
             </a>
-            <a
-              href="/#about"
+            <Link
+              to={ABOUT_BASE_PATH}
               className="mobile-nav-link"
               onClick={() => setIsMenuOpen(false)}
             >
               VỀ CHÚNG TÔI
-            </a>
+            </Link>
           </nav>
 
           {/* Mobile Auth Section */}

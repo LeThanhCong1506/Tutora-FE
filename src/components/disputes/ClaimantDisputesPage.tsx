@@ -3,11 +3,7 @@ import { AlertCircle, ArrowUpRight, Plus, RefreshCw, Search, X } from 'lucide-re
 import { Button, ConfigProvider, Empty, Input, Select, Table, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { PageContainer, SectionCard, StatusBadge } from '../shared';
-import {
-  getClassSessionDispute,
-  getParentDisputesList,
-  type DisputeListResponse,
-} from '../../services/classSession.service';
+import { getParentDisputesList, type DisputeListResponse } from '../../services/classSession.service';
 import { formatLocalDateTime } from '../../utils/datetime';
 import { formatCurrency } from '../../utils/formatters';
 import {
@@ -21,23 +17,18 @@ import {
   type DisputeStatusFilter,
   type DisputeTypeFilter,
 } from './disputePresentation';
-import DisputeDetailModal from './DisputeDetailModal';
 import styles from './DisputesTable.module.css';
 
 export interface ClaimantDisputesPageProps {
   reloadKey: number;
   onCreate: () => void;
-  /** Bỏ qua nếu portal không có trang chi tiết buổi học để nhảy sang từ popup. */
-  onViewSession?: (dispute: DisputeListResponse) => void;
+  /** Mở chi tiết một khiếu nại — mỗi portal tự dựng đường dẫn của mình. */
+  onOpenDispute: (dispute: DisputeListResponse) => void;
 }
 
 const SEARCH_DEBOUNCE_MS = 350;
 
-/** Parent và student dùng chung endpoint chi tiết khiếu nại theo buổi học. */
-const fetchClaimantDisputeDetail = async (classSessionId: number) =>
-  (await getClassSessionDispute(classSessionId)).content ?? null;
-
-const ClaimantDisputesPage = ({ reloadKey, onCreate, onViewSession }: ClaimantDisputesPageProps) => {
+const ClaimantDisputesPage = ({ reloadKey, onCreate, onOpenDispute }: ClaimantDisputesPageProps) => {
   const latestRequest = useRef(0);
   const skipNextAutoFetch = useRef(false);
   const [disputes, setDisputes] = useState<DisputeListResponse[]>([]);
@@ -51,7 +42,6 @@ const ClaimantDisputesPage = ({ reloadKey, onCreate, onViewSession }: ClaimantDi
   const [sortDirection, setSortDirection] = useState<DisputeSortDirection>('desc');
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeDispute, setActiveDispute] = useState<DisputeListResponse | null>(null);
 
   const fetchDisputes = useCallback(async () => {
     const requestId = ++latestRequest.current;
@@ -120,7 +110,10 @@ const ClaimantDisputesPage = ({ reloadKey, onCreate, onViewSession }: ClaimantDi
     return () => window.clearTimeout(timer);
   }, [searchInput, searchQuery]);
 
-  const openDispute = useCallback((dispute: DisputeListResponse) => setActiveDispute(dispute), []);
+  const openDispute = useCallback(
+    (dispute: DisputeListResponse) => onOpenDispute(dispute),
+    [onOpenDispute],
+  );
 
   const applyFilterChange = (update: () => void) => {
     setCurrentPage(1);
@@ -407,22 +400,6 @@ const ClaimantDisputesPage = ({ reloadKey, onCreate, onViewSession }: ClaimantDi
           />
         </SectionCard>
       </PageContainer>
-
-      <DisputeDetailModal
-        open={Boolean(activeDispute)}
-        dispute={activeDispute}
-        fetchDetail={fetchClaimantDisputeDetail}
-        viewerRole="claimant"
-        onClose={() => setActiveDispute(null)}
-        onViewSession={
-          onViewSession
-            ? (dispute) => {
-                setActiveDispute(null);
-                onViewSession(dispute);
-              }
-            : undefined
-        }
-      />
     </ConfigProvider>
   );
 };

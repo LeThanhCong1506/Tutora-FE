@@ -1,7 +1,8 @@
 export { default as ClaimantDisputesPage } from './ClaimantDisputesPage';
 export type { ClaimantDisputesPageProps } from './ClaimantDisputesPage';
-export { default as DisputeDetailModal } from './DisputeDetailModal';
-export type { DisputeDetailModalProps } from './DisputeDetailModal';
+export { default as DisputeDetailView } from './DisputeDetailView';
+export type { DisputeDetailViewProps } from './DisputeDetailView';
+export type { DisputeDetailAdapter, DisputeSessionContext } from './disputeDetailTypes';
 export {
   DISPUTE_PAGE_THEME,
   DISPUTE_SORT_OPTIONS,

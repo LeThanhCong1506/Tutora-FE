@@ -3,6 +3,7 @@ import { Button, Card, Form, InputNumber } from 'antd';
 import { ArrowRightOutlined, BankOutlined, WalletOutlined } from '@ant-design/icons';
 import { formatCurrency, formatVNDNumber, maskBankAccount } from '../../../../utils/formatters';
 import type { BankAccount } from '../../../../services/bankAccount.service';
+import PolicyConsent from '../../../../components/PolicyConsent';
 
 interface Props {
   balance: number;
@@ -16,6 +17,7 @@ const MIN_WITHDRAW = 10000;
 const WithdrawForm: React.FC<Props> = ({ balance, bankInfo, onSubmit, loading }) => {
   const [form] = Form.useForm();
   const [amount, setAmount] = useState(0);
+  const [agreedToPolicy, setAgreedToPolicy] = useState(false);
 
   const handleFinish = (values: { amount: number }) => {
     onSubmit(values.amount);
@@ -100,6 +102,16 @@ const WithdrawForm: React.FC<Props> = ({ balance, bankInfo, onSubmit, loading })
           <span className="finance-recipient-card__verified">Đã lưu</span>
         </div>
 
+        <PolicyConsent
+          checked={agreedToPolicy}
+          onChange={setAgreedToPolicy}
+          docs={['tutor-agreement']}
+          leadText="Tôi xác nhận đã đọc"
+          hint="Tài khoản ngân hàng phải chính chủ (mục 4.4). Gia sư tự kê khai và nộp thuế thu nhập cá nhân theo mục 1.2."
+          disabled={loading}
+          className="finance-withdraw-consent"
+        />
+
         <Button
           type="primary"
           htmlType="submit"
@@ -107,7 +119,7 @@ const WithdrawForm: React.FC<Props> = ({ balance, bankInfo, onSubmit, loading })
           block
           className="finance-primary-action finance-withdraw-submit"
           loading={loading}
-          disabled={amount < MIN_WITHDRAW || amount > balance}
+          disabled={amount < MIN_WITHDRAW || amount > balance || !agreedToPolicy}
         >
           Tiếp tục xác nhận <ArrowRightOutlined />
         </Button>
