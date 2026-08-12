@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import styles from './PortalLayout.module.css';
 
@@ -10,10 +10,6 @@ import { clearUserFromStorage, getUserInfoFromToken, getUserProfile } from '../.
 import { isZaloMiniApp } from '../../../services/zalo-env';
 
 // ─── Shared Icons (Logo, Menu, Close, Logout, Notification) ───
-
-const LogoIcon = () => (
-    <img src="/tutora-logo.png" alt="Tutora" width="28" height="28" />
-);
 
 const CloseIcon = () => (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
@@ -230,19 +226,13 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                 className={`${styles.sidebar} portal-sidebar ${sidebarOpen ? styles.sidebarOpen : ''}`}
                 {...(sidebarDataTour ? { 'data-tour': sidebarDataTour } : {})}
             >
-                {/* Logo */}
-                <div className={styles.sidebarLogo}>
-                    <Link to="/" className={styles.logoLink}>
-                        <LogoIcon />
-                        <span className={styles.logoText}>TUTORA</span>
-                    </Link>
-                    <button
-                        className={styles.sidebarClose}
-                        onClick={() => setSidebarOpen(false)}
-                    >
-                        <CloseIcon />
-                    </button>
-                </div>
+                <button
+                    className={styles.sidebarClose}
+                    onClick={() => setSidebarOpen(false)}
+                    aria-label="Đóng menu"
+                >
+                    <CloseIcon />
+                </button>
 
                 {/* Navigation */}
                 <nav className={styles.sidebarNav}>

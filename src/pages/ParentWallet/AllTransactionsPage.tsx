@@ -161,6 +161,7 @@ const AllTransactionsPage = () => {
           total={total}
           currentPage={currentPage}
           pageSize={pageSize}
+          scrollY="clamp(240px, calc(100dvh - 500px), 560px)"
           onPageChange={handlePageChange}
           onRowClick={(tx) => setSelectedTxId(tx.transactionId)}
         />

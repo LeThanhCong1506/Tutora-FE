@@ -23,6 +23,8 @@
 .portal-header .header-content {
     max-width: none;
     margin: 0;
+    /* Header là một card nổi độc lập; phần wrapper không có nền, border hay hiệu ứng. */
+    box-shadow: 0 8px 22px rgba(45, 55, 47, 0.055);
 }
 
 .header-content {
@@ -113,6 +115,59 @@
     display: flex;
     align-items: center;
     gap: 21px;
+}
+
+.portal-notification {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.portal-notification-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid rgba(26, 34, 56, 0.1);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.55);
+    color: var(--color-navy);
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.portal-notification-btn:hover,
+.portal-notification-btn[aria-expanded='true'] {
+    background: var(--color-white);
+    box-shadow: 0 8px 18px rgba(26, 34, 56, 0.12);
+    transform: translateY(-1px);
+}
+
+.portal-notification-btn .material-symbols-outlined {
+    font-size: 21px;
+    line-height: 1;
+}
+
+.portal-notification-badge {
+    position: absolute;
+    top: -3px;
+    right: -4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    border: 2px solid var(--color-white);
+    border-radius: 999px;
+    background: var(--color-burgundy, #7b1e22);
+    color: var(--color-white);
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1;
 }
 
 .btn-login {

@@ -22,9 +22,8 @@ const HourSlotGrid: React.FC<HourSlotGridProps> = ({
 }) => {
   return (
     <div className={styles.gridCard}>
-      <div className={styles.grid}>
+      <div className={styles.weekHeader}>
         {/* Header row */}
-        <div className={styles.gridCorner} />
         {DAY_COLUMNS.map((col) => (
           <div key={`head-${col.dayOfWeek}`} className={styles.colHead}>
             <div className={styles.colHeadDay}>{col.label}</div>
@@ -37,6 +36,9 @@ const HourSlotGrid: React.FC<HourSlotGridProps> = ({
         ))}
 
         {/* Body rows: 1 row / 30 phút */}
+      </div>
+
+      <div className={styles.grid}>
         {HALF_HOUR_STEPS.map(({ hour, minute }) => {
           const label = hideHalfHourLabels && minute === 30 ? '' : formatHourMinute(hour, minute);
           return (
