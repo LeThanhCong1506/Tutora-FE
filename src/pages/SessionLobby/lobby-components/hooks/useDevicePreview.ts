@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
+import { describeMediaError, type MediaErrorInfo } from '../../../../utils/mediaPermissionError';
 
 export interface DevicePreviewController {
   /** Gắn vào <video> để hiển thị hình camera của chính mình. */
@@ -8,12 +9,14 @@ export interface DevicePreviewController {
   micOn: boolean;
   /** true khi đã lấy được luồng camera/micro để hiển thị preview. */
   streaming: boolean;
-  /** Thông báo lỗi quyền/thiết bị (nếu có). */
-  error: string | null;
+  /** Lỗi quyền/thiết bị (nếu có) — kèm tiêu đề, mô tả và gợi ý khắc phục. */
+  error: MediaErrorInfo | null;
   toggleCam: () => void;
   toggleMic: () => void;
   /** Nhả camera/micro. Gọi TRƯỚC khi rời trang để phòng học (Agora) chiếm lại được thiết bị. */
   stop: () => void;
+  /** Xin lại quyền/mở lại camera-micro sau khi người dùng đã sửa (vd cấp lại quyền ở trình duyệt). */
+  retry: () => void;
 }
 
 /**
@@ -35,7 +38,9 @@ export const useDevicePreview = (active: boolean): DevicePreviewController => {
   const [camOn, setCamOn] = useState(true);
   const [micOn, setMicOn] = useState(true);
   const [streaming, setStreaming] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<MediaErrorInfo | null>(null);
+  // Tăng lên mỗi lần bấm "Thử lại" để effect bên dưới mở lại camera/micro từ đầu.
+  const [retryTick, setRetryTick] = useState(0);
 
   useEffect(() => {
     if (!active) return;
@@ -56,13 +61,8 @@ export const useDevicePreview = (active: boolean): DevicePreviewController => {
         setStreaming(true);
       } catch (err) {
         if (cancelled) return;
-        const name = err instanceof Error ? err.name : '';
         setStreaming(false);
-        setError(
-          name === 'NotAllowedError' || name === 'SecurityError'
-            ? 'Vui lòng cấp quyền camera/micro để chuẩn bị vào lớp.'
-            : 'Không tìm thấy hoặc không truy cập được camera/micro.',
-        );
+        setError(describeMediaError(err, 'preview'));
       }
     })();
 
@@ -74,7 +74,12 @@ export const useDevicePreview = (active: boolean): DevicePreviewController => {
       // Không đụng videoRef.current ở đây: <video> unmount cùng lúc, và stop()/toggle đã lo srcObject.
       setStreaming(false);
     };
-  }, [active]);
+  }, [active, retryTick]);
+
+  const retry = useCallback(() => {
+    setError(null);
+    setRetryTick((t) => t + 1);
+  }, []);
 
   // Gắn lại srcObject phòng khi <video> mount sau thời điểm luồng đã sẵn sàng.
   useEffect(() => {
@@ -109,5 +114,5 @@ export const useDevicePreview = (active: boolean): DevicePreviewController => {
     setStreaming(false);
   }, []);
 
-  return { videoRef, camOn, micOn, streaming, error, toggleCam, toggleMic, stop };
+  return { videoRef, camOn, micOn, streaming, error, toggleCam, toggleMic, stop, retry };
 };

@@ -480,7 +480,13 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
   if (!isMock && joinError) {
     return (
       <div className={styles.page}>
-        <PermissionErrorState message={joinError} onBack={handleBack} />
+        <PermissionErrorState
+          title={joinError.title}
+          message={joinError.message}
+          kind={joinError.kind}
+          onBack={handleBack}
+          onRetry={() => window.location.reload()}
+        />
       </div>
     );
   }

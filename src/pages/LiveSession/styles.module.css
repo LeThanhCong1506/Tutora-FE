@@ -944,7 +944,15 @@
   margin-bottom: 8px;
 }
 
-.errorBackBtn {
+.errorActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Nút chính: khắc phục được ngay (vd cấp lại quyền rồi thử lại) nên nổi bật hơn "Quay lại". */
+.errorRetryBtn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -956,6 +964,30 @@
   border: none;
   border-radius: 10px;
   cursor: pointer;
+}
+
+.errorRetryBtn:hover {
+  background: rgba(255, 255, 255, 0.88);
+}
+
+/* Nút phụ: rời khỏi màn hình lỗi — viền mờ, không cần nổi bật bằng nút Thử lại. */
+.errorBackBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.errorBackBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* ── Responsive: giữ vùng học là ưu tiên, panel chuyển thành lớp nổi trên màn hình hẹp. ── */

@@ -200,6 +200,7 @@ const SessionLobby = () => {
               myInitial={myInitial}
               onToggleCam={preview.toggleCam}
               onToggleMic={preview.toggleMic}
+              onRetry={preview.retry}
             />
 
             <h1 className={styles.title}>Chuẩn bị vào lớp</h1>
