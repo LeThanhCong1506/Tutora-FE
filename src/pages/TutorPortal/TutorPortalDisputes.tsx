@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, ArrowUpRight, RefreshCw, Search, X } from 'lucide-react';
-import { Button, ConfigProvider, Empty, Input, Select, Table, Tooltip } from 'antd';
+import { Button, ConfigProvider, Empty, Input, Pagination, Select, Table, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { PageContainer, SectionCard, StatusBadge } from '../../components/shared';
 import { getTutorDisputesList, type DisputeListResponse } from '../../services/classSession.service';
@@ -22,6 +22,7 @@ import { formatLocalDateTime } from '../../utils/datetime';
 import styles from '../../components/disputes/DisputesTable.module.css';
 
 const SEARCH_DEBOUNCE_MS = 350;
+const DISPUTES_PER_PAGE = 10;
 
 const TutorPortalDisputes = () => {
   const navigate = useNavigate();
@@ -31,8 +32,8 @@ const TutorPortalDisputes = () => {
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
+  const [usesLegacyUnpaginatedResponse, setUsesLegacyUnpaginatedResponse] = useState(false);
   const [statusFilter, setStatusFilter] = useState<DisputeStatusFilter>('');
   const [typeFilter, setTypeFilter] = useState<DisputeTypeFilter>('');
   const [sortDirection, setSortDirection] = useState<DisputeSortDirection>('desc');
@@ -47,7 +48,7 @@ const TutorPortalDisputes = () => {
       setHasError(false);
       const response = await getTutorDisputesList({
         page: currentPage,
-        pageSize,
+        pageSize: DISPUTES_PER_PAGE,
         status: statusFilter || undefined,
         disputeType: typeFilter || undefined,
         search: searchQuery || undefined,
@@ -58,14 +59,17 @@ const TutorPortalDisputes = () => {
 
       const content = response.content;
       if (Array.isArray(content)) {
-        // Backward-compatible fallback for older API deployments that serialized PagedList as an array.
+        // Older API deployments may return the whole collection instead of a paged payload.
+        // Keep the UI at 10 rows/page in that case too.
         setDisputes(content);
         setTotalItems(content.length);
+        setUsesLegacyUnpaginatedResponse(true);
         return;
       }
 
       setDisputes(content?.items ?? []);
       setTotalItems(content?.totalCount ?? 0);
+      setUsesLegacyUnpaginatedResponse(false);
       if (content?.page && content.page !== currentPage) {
         skipNextAutoFetch.current = true;
         setCurrentPage(content.page);
@@ -74,11 +78,12 @@ const TutorPortalDisputes = () => {
       if (requestId !== latestRequest.current) return;
       setDisputes([]);
       setTotalItems(0);
+      setUsesLegacyUnpaginatedResponse(false);
       setHasError(true);
     } finally {
       if (requestId === latestRequest.current) setLoading(false);
     }
-  }, [currentPage, pageSize, searchQuery, sortDirection, statusFilter, typeFilter]);
+  }, [currentPage, searchQuery, sortDirection, statusFilter, typeFilter]);
 
   useEffect(() => {
     if (skipNextAutoFetch.current) {
@@ -134,6 +139,11 @@ const TutorPortalDisputes = () => {
 
   const filtersAreActive = Boolean(statusFilter || typeFilter || searchQuery);
   const controlsAreModified = filtersAreActive || sortDirection !== 'desc';
+  const visibleDisputes = useMemo(() => {
+    if (!usesLegacyUnpaginatedResponse) return disputes;
+    const startIndex = (currentPage - 1) * DISPUTES_PER_PAGE;
+    return disputes.slice(startIndex, startIndex + DISPUTES_PER_PAGE);
+  }, [currentPage, disputes, usesLegacyUnpaginatedResponse]);
 
   const columns = useMemo<ColumnsType<DisputeListResponse>>(
     () => [
@@ -287,9 +297,23 @@ const TutorPortalDisputes = () => {
           <div className={styles.cardHeader}>
             <div className={styles.cardHeading}>
               <h2 className={styles.cardTitle}>Danh sách khiếu nại</h2>
-              <p className={styles.cardSubtitle} aria-live="polite">
-                {loading ? 'Đang cập nhật dữ liệu...' : `${totalItems.toLocaleString('vi-VN')} hồ sơ`}
-              </p>
+              <div className={styles.cardMeta}>
+                <p className={styles.cardSubtitle} aria-live="polite">
+                  {loading ? 'Đang cập nhật dữ liệu...' : `${totalItems.toLocaleString('vi-VN')} hồ sơ`}
+                </p>
+                {totalItems > DISPUTES_PER_PAGE && (
+                  <Pagination
+                    className={styles.headerPagination}
+                    size="small"
+                    current={currentPage}
+                    pageSize={DISPUTES_PER_PAGE}
+                    total={totalItems}
+                    showSizeChanger={false}
+                    showLessItems
+                    onChange={setCurrentPage}
+                  />
+                )}
+              </div>
             </div>
 
             <div className={styles.toolbar}>
@@ -356,11 +380,11 @@ const TutorPortalDisputes = () => {
           <Table<DisputeListResponse>
             className={styles.disputeTable}
             columns={columns}
-            dataSource={disputes}
+            dataSource={visibleDisputes}
             rowKey="disputeId"
             loading={loading}
             size="middle"
-            scroll={{ x: 'max-content' }}
+            scroll={{ x: 'max-content', y: 'calc(100dvh - 440px)' }}
             locale={{
               emptyText: (
                 <Empty
@@ -385,28 +409,27 @@ const TutorPortalDisputes = () => {
                 />
               ),
             }}
-            pagination={{
-              current: currentPage,
-              pageSize,
-              total: totalItems,
-              showSizeChanger: totalItems > 10,
-              pageSizeOptions: ['10', '20', '50'],
-              showLessItems: true,
-              showTotal: (total, range) => `Hiển thị ${range[0]}–${range[1]} trong ${total} hồ sơ`,
-              onChange: (page, nextPageSize) => {
-                if (nextPageSize !== pageSize) {
-                  setPageSize(nextPageSize);
-                  setCurrentPage(1);
-                  return;
-                }
-                setCurrentPage(page);
-              },
-            }}
+            pagination={false}
             onRow={(dispute) => ({
               className: styles.clickableRow,
               onClick: () => openDispute(dispute),
             })}
           />
+          {totalItems > 0 && (
+            <div className={styles.paginationBar}>
+              <span className={styles.paginationSummary}>
+                Hiển thị {Math.min((currentPage - 1) * DISPUTES_PER_PAGE + 1, totalItems)}–{Math.min(currentPage * DISPUTES_PER_PAGE, totalItems)} trong {totalItems.toLocaleString('vi-VN')} hồ sơ
+              </span>
+              <Pagination
+                current={currentPage}
+                pageSize={DISPUTES_PER_PAGE}
+                total={totalItems}
+                showSizeChanger={false}
+                showLessItems
+                onChange={setCurrentPage}
+              />
+            </div>
+          )}
         </SectionCard>
       </PageContainer>
     </ConfigProvider>
