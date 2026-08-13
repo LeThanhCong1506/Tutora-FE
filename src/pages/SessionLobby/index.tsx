@@ -10,6 +10,7 @@ import {
 } from '../../hooks/useLiveSessionAdmission';
 import { getCurrentUserRole, getUserIdFromToken } from '../../services/auth.service';
 import { getAgoraErrorMessage } from '../../services/agora.service';
+import { formatLocalDateTime, formatLocalTime } from '../../utils/datetime';
 import {
   useSessionLobby,
   useDevicePreview,
@@ -22,19 +23,12 @@ import styles from './styles.module.css';
 /** "học sinh" → "Học sinh" */
 const capitalize = (s: string): string => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
-/**
- * Format chuỗi ISO của BE thành "dd/MM/yyyy HH:mm" mà KHÔNG qua Date object,
- * tránh bị lệch múi giờ (BE trả giờ VN sẵn trong chuỗi).
- */
+/** BE trả UTC ("CONTRACT" trong TimeZoneHelper.cs) → đổi sang giờ thiết bị rồi format "dd/MM/yyyy HH:mm – HH:mm". */
 const formatSchedule = (isoStart?: string | null, isoEnd?: string | null): string => {
   if (!isoStart) return '';
-  const m = isoStart.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
-  if (!m) return isoStart;
-  const [, y, mo, d, h, mi] = m;
-  let text = `${d}/${mo}/${y} · ${h}:${mi}`;
-  const endMatch = isoEnd?.match(/T(\d{2}):(\d{2})/);
-  if (endMatch) text += ` – ${endMatch[1]}:${endMatch[2]}`;
-  return text;
+  const start = formatLocalDateTime(isoStart);
+  const endTime = isoEnd ? formatLocalTime(isoEnd) : '';
+  return endTime ? `${start} – ${endTime}` : start;
 };
 
 const LobbyLoader = ({ icon: Icon }: { icon: LucideIcon }) => (
