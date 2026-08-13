@@ -155,25 +155,15 @@ const TutorOnboarding: React.FC = () => {
         )}
       </div>
 
-      <div className={styles.footer}>
-        <div className={styles.footerInfo}>
-          {blockingReason ? <span className={styles.footerWarn}>{blockingReason}</span> : footerStatusText}
-        </div>
-        <div className={styles.footerBtns}>
-          {currentStep > 1 && (
-            <button type="button" className={styles.btnGhost} onClick={goBack}>
-              Quay lại
-            </button>
-          )}
-          <button
-            type="button"
-            className={styles.btnPrimary}
-            onClick={handleNext}
-            disabled={!canProceedCurrent || sync.saving}
-          >
-            {sync.saving ? 'Đang lưu...' : currentStep === 3 ? 'Hoàn tất' : 'Tiếp tục'}
-          </button>
-        </div>
+      <div className={styles.footerPrimaryPill}>
+        <button
+          type="button"
+          className={styles.btnPrimary}
+          onClick={handleNext}
+          disabled={!canProceedCurrent || sync.saving}
+        >
+          {sync.saving ? 'Đang lưu...' : currentStep === 3 ? 'Hoàn tất' : 'Tiếp tục'}
+        </button>
       </div>
     </div>
   );
