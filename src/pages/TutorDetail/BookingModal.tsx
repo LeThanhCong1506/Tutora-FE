@@ -3,7 +3,6 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, CalendarRange, CheckCircle2, Clock, ShieldAlert, Wallet, X } from "lucide-react";
 import PaymentModal from "../../components/PaymentModal/PaymentModal";
-import PolicyConsent from "../../components/PolicyConsent";
 import {
     BookingStepper,
     StepBookingMode,
@@ -67,21 +66,11 @@ const BookingModal: React.FC<BookingModalProps> = ({
     } = useBookingForm({ isOpen, tutorId, tutorTeachingMode, resumeBookingId });
 
     const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
-    // Đồng ý chính sách ở bước xác nhận cuối. Reset khi modal đóng để lần đặt lịch sau
-    // phải tick lại — không để trạng thái đồng ý cũ dùng cho một booking khác.
-    const [agreedToPolicy, setAgreedToPolicy] = useState(false);
     const subjectGradePrices = useMemo(() => rawSubjectGradePrices ?? [], [rawSubjectGradePrices]);
     const packages = useMemo(() => rawPackages ?? [], [rawPackages]);
 
-    // Đóng modal = kết thúc một lần đặt lịch. Xoá luôn trạng thái đồng ý ngay tại đây thay vì
-    // đồng bộ qua effect theo `isOpen`: lần mở sau là booking khác, phải tick lại từ đầu.
-    const closeModal = () => {
-        setAgreedToPolicy(false);
-        onClose();
-    };
-
     const handleViewBookingInfo = () => {
-        closeModal();
+        onClose();
         navigate("/parent-portal/booking");
     };
 
@@ -301,7 +290,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
             setCloseConfirmOpen(true);
             return;
         }
-        closeModal();
+        onClose();
     };
 
     // Giá tính theo môn/lớp ĐANG CHỌN (pricePerHour), không dùng hourlyRate phẳng của
@@ -465,19 +454,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
                             {step === 3 && <StepReview {...stepProps} />}
                         </div>
 
-                        {step === STEPS.length - 1 && (
-                            <div className={styles.policyConsentBar}>
-                                <PolicyConsent
-                                    checked={agreedToPolicy}
-                                    onChange={setAgreedToPolicy}
-                                    docs={["terms", "community-guidelines"]}
-                                    leadText="Tôi đã đọc và đồng ý với"
-                                    hint="Bao gồm phí dịch vụ, cơ chế giữ tiền tạm và quy định hủy lịch, hoàn tiền."
-                                    disabled={submitting}
-                                />
-                            </div>
-                        )}
-
                         <footer className={styles.modalFooter}>
                             <button
                                 type="button"
@@ -503,7 +479,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                     type="button"
                                     className={styles.primaryButton}
                                     onClick={() => handleSubmit(scheduling.selectedSlots)}
-                                    disabled={submitting || !agreedToPolicy}
+                                    disabled={submitting}
                                 >
                                     {submitting ? "Đang xử lý..." : "Gửi yêu cầu"}
                                     <ArrowRight size={16} />
@@ -524,7 +500,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                     className={styles.secondaryButton}
                                     onClick={() => {
                                         setCloseConfirmOpen(false);
-                                        closeModal();
+                                        onClose();
                                     }}
                                 >
                                     Thoát, bỏ lựa chọn

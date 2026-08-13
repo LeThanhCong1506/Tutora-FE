@@ -15,11 +15,9 @@ import SessionExpiredModal from './components/SessionExpiredModal';
 import ChatAssistant from './components/ChatAssistant/ChatAssistant';
 import PageLoader from './components/PageLoader/PageLoader';
 import { ErrorBoundary } from './components/shared';
-import axios from 'axios';
-import { getCurrentUser, isTokenExpired, updateTokens, clearUserFromStorage } from './services/auth.service';
+import { getCurrentUser, isTokenExpired, clearUserFromStorage } from './services/auth.service';
+import { apiClient } from './services/apiClient';
 import { signalRService } from './services/signalr.service';
-
-const BACKEND_API = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5166') + '/api';
 import { ToastContainer, Slide } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 // TUTORA brand override — phải import SAU default CSS để cascade thắng.
@@ -184,22 +182,21 @@ function App() {
     const user = getCurrentUser();
     if (!user?.accessToken || !isTokenExpired()) return;
 
-    // Thử silent refresh trước khi show modal
-    if (user.refreshToken) {
-      try {
-        const response = await axios.post(`${BACKEND_API}/tokens/refresh`, {
-          accessToken: user.accessToken,
-          refreshToken: user.refreshToken,
-        });
-        const { token, refreshToken } = response.data.content;
-        await updateTokens(token, refreshToken);
-        return; // refresh thành công, không show modal
-      } catch {
-        await clearUserFromStorage();
-      }
+    // Không tự gọi /tokens/refresh ở đây — apiClient's response interceptor đã có
+    // mutex (isRefreshing/failedQueue) lo việc này cho MỌI request trong app. Từng có
+    // 1 đường refresh riêng ở đây, chạy song song độc lập với interceptor đó; khi cả 2
+    // cùng refresh gần như đồng thời, request thứ 2 dùng refresh token vừa bị request
+    // thứ 1 revoke (rotation single-use) → BE tưởng bị đánh cắp, revoke sạch cả family
+    // → user bị đăng xuất dù đang dùng app bình thường. Gọi qua apiClient để đi chung
+    // 1 đường, dùng endpoint nhẹ có sẵn cho mọi role (bell badge) chỉ để kích hoạt
+    // interceptor refresh nếu cần — bản thân dữ liệu trả về không dùng tới.
+    try {
+      await apiClient.get('/notifications/mine/unread-count');
+      return; // còn hạn hoặc refresh (qua interceptor) đã tự lo xong, không cần show modal
+    } catch {
+      await clearUserFromStorage();
+      setShowSessionExpired(true);
     }
-
-    setShowSessionExpired(true);
   }, []);
 
   // Check token expiry khi route thay đổi
@@ -259,7 +256,8 @@ function App() {
         pauseOnFocusLoss
         newestOnTop
         draggable
-        style={{ zIndex: 99999 }}
+        /* Trên mọi modal — xem ghi chú ở .Toastify__toast-container trong styles/toastify.css. */
+        style={{ zIndex: 100100 }}
       />
 
       <ErrorBoundary>
@@ -288,7 +286,11 @@ function App() {
             {/* Đường dẫn cũ trước khi gộp vào /about. */}
             <Route path="/terms" element={<Navigate to="/about/terms" replace />} />
             <Route path="/privacy" element={<Navigate to="/about/privacy" replace />} />
-            <Route path="/operating-rules" element={<Navigate to="/about/community-guidelines" replace />} />
+            {/* "Quy chế hoạt động" cũ nói về đặt lịch, phí dịch vụ, tạm giữ và giải ngân, đổi
+                lịch, vắng mặt, khiếu nại, rút tiền — 8/11 mục nay nằm trong Điều khoản sử dụng
+                (mục 5 và 6). Trỏ sang Quy tắc cộng đồng là sai: bên đó chỉ có chuẩn mực ứng xử,
+                người vào tra mức phí dịch vụ sẽ không thấy gì. */}
+            <Route path="/operating-rules" element={<Navigate to="/about/terms" replace />} />
             <Route path="/policies" element={<Navigate to="/about" replace />} />
             <Route path="/policies/:slug" element={<LegacyPolicyRedirect />} />
 

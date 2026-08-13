@@ -1340,11 +1340,7 @@ const StudentLessonDetail = () => {
                                 {(summaryJob?.status === 'pending' || summaryJob?.status === 'processing') && (
                                     <div style={{ ...aiBubbleAssistant, flexDirection: 'row', alignItems: 'center' }}>
                                         <Spin size="small" />
-                                        <span>
-                                            {summaryJob?.stage === 'verifying'
-                                                ? 'AI đang kiểm tra lại tóm tắt và hội thoại, đảm bảo không thiếu nội dung nào…'
-                                                : 'AI đang xem và tóm tắt video, có thể mất vài phút…'}
-                                        </span>
+                                        <span>AI đang xem và tóm tắt video…</span>
                                     </div>
                                 )}
 
