@@ -39,6 +39,31 @@
   line-height: 18px;
 }
 
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headerPagination {
+  margin: 3px 0 0 !important;
+}
+
+.headerPagination :global(.ant-pagination-item),
+.headerPagination :global(.ant-pagination-prev .ant-pagination-item-link),
+.headerPagination :global(.ant-pagination-next .ant-pagination-item-link) {
+  border-radius: 7px !important;
+}
+
+.headerPagination :global(.ant-pagination-item-active) {
+  border-color: #1a2238;
+  background: #1a2238;
+}
+
+.headerPagination :global(.ant-pagination-item-active a) {
+  color: #fff;
+}
+
 /* Bộ lọc trạng thái là chip chứ không phải tab điều hướng — chip gọn hơn và nói rõ
    "đang lọc", cùng ngôn ngữ với chip trạng thái trong bảng. */
 .statusTabs {
@@ -238,6 +263,11 @@
   border: 0;
 }
 
+.disputeTable :global(.ant-table-body) {
+  min-height: 0;
+  scrollbar-gutter: stable;
+}
+
 .disputeTable :global(.ant-table-thead > tr > th) {
   height: 48px;
   padding: 12px 18px;
@@ -270,16 +300,6 @@
   outline-offset: -2px;
 }
 
-.disputeTable :global(.ant-pagination) {
-  margin: 17px 20px !important;
-}
-
-.disputeTable :global(.ant-pagination-total-text) {
-  margin-right: auto;
-  color: rgba(62, 47, 40, 0.72);
-  font-size: 12px;
-}
-
 .disputeTable :global(.ant-pagination-item),
 .disputeTable :global(.ant-pagination-prev .ant-pagination-item-link),
 .disputeTable :global(.ant-pagination-next .ant-pagination-item-link),
@@ -298,6 +318,27 @@
 
 .clickableRow {
   cursor: pointer;
+}
+
+.paginationBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 62px;
+  padding: 12px 20px;
+  border-top: 1px solid rgba(62, 47, 40, 0.09);
+  background: #fff;
+}
+
+.paginationSummary {
+  color: rgba(62, 47, 40, 0.72);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.paginationBar :global(.ant-pagination) {
+  margin: 0;
 }
 
 .caseCell,
@@ -461,6 +502,11 @@
     padding-inline: 16px;
   }
 
+  .cardMeta {
+    flex-wrap: wrap;
+    gap: 4px 10px;
+  }
+
   .searchInput {
     flex: 1 1 100%;
   }
@@ -476,14 +522,13 @@
     padding-inline: 16px;
   }
 
-  .disputeTable :global(.ant-pagination) {
+  .paginationBar {
+    flex-direction: column;
     justify-content: center;
-    margin-inline: 12px !important;
+    padding-inline: 12px;
   }
 
-  .disputeTable :global(.ant-pagination-total-text) {
-    width: 100%;
-    margin: 0 0 4px;
+  .paginationSummary {
     text-align: center;
   }
 }
@@ -517,7 +562,4 @@
     padding-inline: 14px;
   }
 
-  .disputeTable :global(.ant-pagination-options) {
-    display: none;
-  }
 }

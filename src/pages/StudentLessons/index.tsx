@@ -76,8 +76,10 @@ const VALID_STATUSES = new Set<StatusFilter>(STATUS_FILTERS.map((filter) => filt
 const SCHEDULED_TAB_STATUSES = new Set(['scheduled', 'in_progress']);
 
 const matchesStatusFilter = (lesson: LessonSummary, status: StatusFilter): boolean => {
-  if (!status) return true;
   const lessonStatus = lesson.status.trim().toLowerCase();
+  // Tab "Tất cả" ẩn buổi đã hủy — vẫn xem được qua chi tiết đặt lịch, không cần lộn xộn
+  // trong lịch nữa.
+  if (!status) return lessonStatus !== 'cancelled';
   return status === 'scheduled' ? SCHEDULED_TAB_STATUSES.has(lessonStatus) : lessonStatus === status;
 };
 
