@@ -297,9 +297,23 @@ const TutorPortalDisputes = () => {
           <div className={styles.cardHeader}>
             <div className={styles.cardHeading}>
               <h2 className={styles.cardTitle}>Danh sách khiếu nại</h2>
-              <p className={styles.cardSubtitle} aria-live="polite">
-                {loading ? 'Đang cập nhật dữ liệu...' : `${totalItems.toLocaleString('vi-VN')} hồ sơ`}
-              </p>
+              <div className={styles.cardMeta}>
+                <p className={styles.cardSubtitle} aria-live="polite">
+                  {loading ? 'Đang cập nhật dữ liệu...' : `${totalItems.toLocaleString('vi-VN')} hồ sơ`}
+                </p>
+                {totalItems > DISPUTES_PER_PAGE && (
+                  <Pagination
+                    className={styles.headerPagination}
+                    size="small"
+                    current={currentPage}
+                    pageSize={DISPUTES_PER_PAGE}
+                    total={totalItems}
+                    showSizeChanger={false}
+                    showLessItems
+                    onChange={setCurrentPage}
+                  />
+                )}
+              </div>
             </div>
 
             <div className={styles.toolbar}>
@@ -370,7 +384,7 @@ const TutorPortalDisputes = () => {
             rowKey="disputeId"
             loading={loading}
             size="middle"
-            scroll={{ x: 'max-content' }}
+            scroll={{ x: 'max-content', y: 'calc(100dvh - 440px)' }}
             locale={{
               emptyText: (
                 <Empty

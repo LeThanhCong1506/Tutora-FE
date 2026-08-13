@@ -39,6 +39,31 @@
   line-height: 18px;
 }
 
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headerPagination {
+  margin: 3px 0 0 !important;
+}
+
+.headerPagination :global(.ant-pagination-item),
+.headerPagination :global(.ant-pagination-prev .ant-pagination-item-link),
+.headerPagination :global(.ant-pagination-next .ant-pagination-item-link) {
+  border-radius: 7px !important;
+}
+
+.headerPagination :global(.ant-pagination-item-active) {
+  border-color: #1a2238;
+  background: #1a2238;
+}
+
+.headerPagination :global(.ant-pagination-item-active a) {
+  color: #fff;
+}
+
 /* Bộ lọc trạng thái là chip chứ không phải tab điều hướng — chip gọn hơn và nói rõ
    "đang lọc", cùng ngôn ngữ với chip trạng thái trong bảng. */
 .statusTabs {
@@ -236,6 +261,11 @@
 
 .disputeTable :global(.ant-table-container) {
   border: 0;
+}
+
+.disputeTable :global(.ant-table-body) {
+  min-height: 0;
+  scrollbar-gutter: stable;
 }
 
 .disputeTable :global(.ant-table-thead > tr > th) {
@@ -470,6 +500,11 @@
 
   .statusTabs {
     padding-inline: 16px;
+  }
+
+  .cardMeta {
+    flex-wrap: wrap;
+    gap: 4px 10px;
   }
 
   .searchInput {
