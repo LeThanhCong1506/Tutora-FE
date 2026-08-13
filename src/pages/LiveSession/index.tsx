@@ -555,6 +555,22 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
           localScreenSharing={isScreenSharing}
           remoteParticipants={remoteParticipants}
         >
+          {isScreenSharing && (
+            <div className={styles.screenShareBanner} role="status">
+              <span className={styles.screenShareBannerDot} />
+              <span>Bạn đang chia sẻ màn hình</span>
+              <button
+                type="button"
+                className={styles.screenShareStopBtn}
+                onClick={() => {
+                  if (isMock) return setMockScreenSharing(false);
+                  toggleScreenShare().catch(() => toast.error('Không thể dừng chia sẻ màn hình'));
+                }}
+              >
+                Dừng chia sẻ
+              </button>
+            </div>
+          )}
           <ControlBar
             micOn={micOn}
             camOn={camOn}
