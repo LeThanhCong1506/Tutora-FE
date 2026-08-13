@@ -118,9 +118,11 @@ const isPendingReschedule = (lesson: { hasPendingReschedule?: boolean; scheduleC
   Boolean(lesson.hasPendingReschedule) || lesson.scheduleChangeStatus === 'pending';
 
 const matchesStatusFilter = (lesson: ParentLesson, status: ParentStatusFilter): boolean => {
-  if (!status) return true;
-  if (status === 'reschedule') return isPendingReschedule(lesson);
   const lessonStatus = lesson.status.trim().toLowerCase();
+  // Tab "Tất cả" ẩn buổi đã hủy — vẫn xem được qua chi tiết đặt lịch, không cần lộn xộn
+  // trong lịch nữa.
+  if (!status) return lessonStatus !== 'cancelled';
+  if (status === 'reschedule') return isPendingReschedule(lesson);
   return status === 'scheduled' ? SCHEDULED_TAB_STATUSES.has(lessonStatus) : lessonStatus === status;
 };
 
