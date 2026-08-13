@@ -71,13 +71,6 @@ const formatTime = formatLocalTime;
 const formatDate = formatLocalDate;
 const formatDateTime = formatLocalDateTime;
 
-const InfoItem: React.FC<{ label: string; value: React.ReactNode; accent?: boolean }> = ({ label, value, accent }) => (
-  <div className={styles.infoItem}>
-    <span className={styles.infoLabel}>{label}</span>
-    <span className={`${styles.infoValue} ${accent ? styles.infoAccent : ''}`}>{value}</span>
-  </div>
-);
-
 const ReportBlock: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <div className={styles.reportBlock}>
     <p className={styles.reportLabel}>{label}</p>
@@ -363,7 +356,8 @@ const ParentLessonDetail: React.FC = () => {
       )}
 
       {/* Phụ huynh chỉ xác nhận đổi giờ ở đây; phụ huynh không vào phòng học. */}
-      {scheduleChange?.requiresConfirmation && scheduleChange.requiredLearnerRole === 'Parent' && (
+      {scheduleChange?.requiredLearnerRole === 'Parent' &&
+        (scheduleChange.requiresConfirmation || scheduleChange.status === 'expired') && (
         <SectionCard
           title="Xác nhận thay đổi giờ học"
           headerAction={<CalendarClock size={18} color="#8a6116" aria-hidden="true" />}
@@ -372,26 +366,14 @@ const ParentLessonDetail: React.FC = () => {
             <p className={styles.sectionLead}>
               Gia sư và học viên đang muốn học ngoài thời gian mặc định. Phụ huynh chỉ xác nhận tại đây; học viên và gia
               sư là hai người vào phòng học.
+              {scheduleChange.requestedAt && scheduleChange.expiresAt && (
+                <>
+                  {' '}
+                  Yêu cầu lúc {formatTime(scheduleChange.requestedAt)}, hạn phản hồi{' '}
+                  {formatTime(scheduleChange.expiresAt)} {formatDate(scheduleChange.expiresAt)}.
+                </>
+              )}
             </p>
-
-            <div className={styles.infoGrid}>
-              <InfoItem label="Học viên" value={scheduleChange.studentName || lesson.student?.fullName || 'Học sinh'} />
-              <InfoItem
-                label="Gia sư"
-                value={scheduleChange.tutorName || lesson.tutorName || lesson.tutor?.fullName || 'Gia sư'}
-              />
-              <InfoItem
-                label="Lịch học ban đầu"
-                value={`${formatDate(scheduleChange.originalScheduledStart)} · ${formatTime(scheduleChange.originalScheduledStart)}–${formatTime(scheduleChange.originalScheduledEnd)}`}
-              />
-              <InfoItem label="Thời lượng giữ nguyên" value={`${scheduleChange.durationMinutes} phút`} />
-              {scheduleChange.requestedAt && (
-                <InfoItem label="Yêu cầu tạo lúc" value={formatDateTime(scheduleChange.requestedAt)} />
-              )}
-              {scheduleChange.expiresAt && (
-                <InfoItem label="Hạn phản hồi" value={formatDateTime(scheduleChange.expiresAt)} />
-              )}
-            </div>
 
             <div className={styles.confirmPair}>
               <div className={styles.confirmTile}>
@@ -403,7 +385,9 @@ const ParentLessonDetail: React.FC = () => {
                 <div>
                   <div className={styles.confirmTileLabel}>Gia sư</div>
                   <div className={styles.confirmTileValue}>
-                    {scheduleChange.tutorConfirmedAt ? 'Đã xác nhận' : 'Đang chờ xác nhận'}
+                    {scheduleChange.tutorConfirmedAt
+                      ? `Đã xác nhận lúc ${formatTime(scheduleChange.tutorConfirmedAt)}`
+                      : 'Đang chờ xác nhận'}
                   </div>
                 </div>
               </div>
@@ -416,13 +400,27 @@ const ParentLessonDetail: React.FC = () => {
                 <div>
                   <div className={styles.confirmTileLabel}>Phụ huynh</div>
                   <div className={styles.confirmTileValue}>
-                    {scheduleChange.learnerConfirmedAt ? 'Đã xác nhận' : 'Đang chờ xác nhận'}
+                    {scheduleChange.learnerConfirmedAt
+                      ? `Đã xác nhận lúc ${formatTime(scheduleChange.learnerConfirmedAt)}`
+                      : 'Đang chờ xác nhận'}
                   </div>
                 </div>
               </div>
             </div>
 
-            {scheduleChange.status === 'rejected' ? (
+            {scheduleChange.status === 'expired' ? (
+              <div className={`${styles.notice} ${styles.noticeWarning} ${styles.blockGap}`}>
+                <Clock3 size={16} aria-hidden="true" />
+                <span>
+                  <strong>
+                    Yêu cầu xác nhận đã hết hạn
+                    {scheduleChange.expiresAt ? ` lúc ${formatDateTime(scheduleChange.expiresAt)}` : ''}.
+                  </strong>{' '}
+                  Chưa đủ hai bên xác nhận trong thời gian quy định nên yêu cầu đã tự huỷ. Vui lòng nhờ gia sư mở lại
+                  phòng chờ để hệ thống tạo yêu cầu xác nhận mới.
+                </span>
+              </div>
+            ) : scheduleChange.status === 'rejected' ? (
               <div className={`${styles.notice} ${styles.noticeDanger} ${styles.blockGap}`}>
                 Yêu cầu đổi lịch đã bị từ chối. Học viên và gia sư chưa thể vào buổi học ngoài lịch này.
               </div>

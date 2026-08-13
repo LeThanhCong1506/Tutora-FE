@@ -75,8 +75,11 @@ const VIEW_OPTIONS = [
 const VALID_VIEWS = new Set<LessonViewMode>(VIEW_OPTIONS.map((option) => option.key));
 const VALID_STATUSES = new Set<StatusFilter>(STATUS_FILTERS.map((filter) => filter.key));
 const matchesStatusFilter = (lesson: LessonSummary, status: StatusFilter): boolean => {
-  if (!status) return true;
   const lessonStatus = lesson.status.trim().toLowerCase();
+  // Tab "Tất cả" ẩn buổi đã hủy — vẫn xem được qua chi tiết đặt lịch, không cần lộn xộn
+  // trong lịch nữa.
+  if (!status) return lessonStatus !== 'cancelled';
+
   const awaitingReport = isAwaitingReport(lesson);
 
   if (status === 'scheduled') {

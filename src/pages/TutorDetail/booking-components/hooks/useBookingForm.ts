@@ -92,7 +92,7 @@ export function useBookingForm({ isOpen, tutorId, tutorTeachingMode, resumeBooki
     //   form     → đang điền form đặt lịch
     //   payment  → đã tạo booking, đang mở bước thanh toán buổi đầu
     //   paid     → đã thanh toán, đang chờ gia sư xác nhận
-    //   deferred → đã tạo booking nhưng tạm hoãn thanh toán (có 30 phút để trả sau)
+    //   deferred → đã tạo booking nhưng tạm hoãn thanh toán (có 10 phút để trả sau)
     const [bookingPhase, setBookingPhase] = useState<'form' | 'payment' | 'paid' | 'deferred'>('form');
     const [successBookingId, setSuccessBookingId] = useState<number | null>(null);
     const [slotDuration, setSlotDuration] = useState(2);
@@ -274,7 +274,7 @@ export function useBookingForm({ isOpen, tutorId, tutorTeachingMode, resumeBooki
 
     // Thanh toán buổi đầu thành công → chờ gia sư xác nhận.
     const handlePaymentSuccess = () => setBookingPhase('paid');
-    // Đóng bước thanh toán mà CHƯA trả → cho phép trả sau (trong 30 phút).
+    // Đóng bước thanh toán mà CHƯA trả → cho phép trả sau (trong 10 phút).
     // QUAN TRỌNG: dùng functional update + guard chỉ chuyển 'payment' → 'deferred'.
     // PaymentModal khi thành công gọi onPaymentSuccess() (đặt 'paid') RỒI onClose()
     // ngay sau đó; nếu defer vô điều kiện sẽ ghi đè 'paid' → 'deferred' và hiện nhầm
