@@ -46,7 +46,7 @@ const TransactionsCard = ({
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <section className={styles.card}>
+    <section className={`${styles.card} ${variant === 'full' ? styles.transactionCardFull : ''}`}>
       <div className={styles.cardHeader}>
         <h3 className={styles.sectionTitle}>Lịch sử giao dịch</h3>
         {variant === 'preview' ? (

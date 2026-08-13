@@ -14,7 +14,7 @@ import styles from './NotificationDropdown.module.css';
 interface NotificationDropdownProps {
     isOpen: boolean;
     onClose: () => void;
-    onCountUpdate?: () => void;
+    onCountUpdate?: () => void | Promise<unknown>;
 }
 
 type Tab = 'unread' | 'all';
@@ -107,10 +107,10 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isOpen, onC
         try {
             await markAllAsRead();
             // Tab 'all': flip mọi item về isread=true. Tab 'unread': rỗng list.
-            setNotifications((prev) =>
-                activeTab === 'all' ? prev.map((n) => ({ ...n, isread: true })) : [],
-            );
-            onCountUpdate?.();
+            const fetcher = activeTab === 'unread' ? getUnreadNotifications : getMyNotifications;
+            setNotifications(await fetcher());
+            // Đồng bộ lại badge từ server, tránh UI local khác trạng thái đã lưu.
+            await onCountUpdate?.();
         } catch (error) {
             console.error('Failed to mark all as read:', error);
         }

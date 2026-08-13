@@ -53,11 +53,13 @@ export function useUserData() {
 /**
  * Hook to manage notification state + SignalR real-time updates
  */
-export function useNotifications() {
+export function useNotifications(enabled = true) {
     const [notificationCount, setNotificationCount] = useState(0);
     const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
 
     useEffect(() => {
+        if (!enabled) return;
+
         const fetchNotificationCount = async () => {
             try {
                 const count = await getUnreadCount();
@@ -95,14 +97,16 @@ export function useNotifications() {
             signalRService.offNotificationCountUpdated();
             signalRService.offNotificationReceived();
         };
-    }, []);
+    }, [enabled]);
 
     const handleRefreshNotificationCount = useCallback(async () => {
         try {
             const count = await getUnreadCount();
             setNotificationCount(count);
+            return count;
         } catch (error) {
             console.error('Failed to refresh notification count:', error);
+            return 0;
         }
     }, []);
 
