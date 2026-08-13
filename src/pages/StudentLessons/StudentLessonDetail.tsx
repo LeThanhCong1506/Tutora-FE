@@ -107,6 +107,23 @@ const AiMarkdown = ({ content }: { content: string }) => (
     </div>
 );
 
+// Nhớ tạm trạng thái tóm tắt AI đã xác nhận đúng qua sessionStorage (không chỉ React state) — để
+// việc rời trang rồi quay lại (unmount/mount lại component) không "quên mất" job đang biết là đúng,
+// khiến guard chống cache cũ (xem fetchSummaryStatus) mất tác dụng ngay từ lần fetch đầu tiên sau khi
+// quay lại trang.
+const summaryJobStorageKey = (lessonId?: string) => (lessonId ? `videoSummaryJob:${lessonId}` : null);
+
+const readPersistedSummaryJob = (lessonId?: string): ClassSessionAiJobResponse | null => {
+    const key = summaryJobStorageKey(lessonId);
+    if (!key) return null;
+    try {
+        const raw = sessionStorage.getItem(key);
+        return raw ? (JSON.parse(raw) as ClassSessionAiJobResponse) : null;
+    } catch {
+        return null;
+    }
+};
+
 // ─────────────────────────────────────────────────────────────────────────
 const StudentLessonDetail = () => {
     const { lessonId } = useParams<{ lessonId: string }>();
@@ -130,8 +147,8 @@ const StudentLessonDetail = () => {
     const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
     const [respondingReschedule, setRespondingReschedule] = useState(false);
     const [recordingAvailable, setRecordingAvailable] = useState(false);
-    const [summaryJob, setSummaryJob] = useState<ClassSessionAiJobResponse | null>(null);
-    const [summaryStatusLoaded, setSummaryStatusLoaded] = useState(false);
+    const [summaryJob, setSummaryJob] = useState<ClassSessionAiJobResponse | null>(() => readPersistedSummaryJob(lessonId));
+    const [summaryStatusLoaded, setSummaryStatusLoaded] = useState(() => Boolean(readPersistedSummaryJob(lessonId)));
     const [summaryViewTab, setSummaryViewTab] = useState<'summary' | 'transcript'>('summary');
     const [triggeringSummary, setTriggeringSummary] = useState(false);
     const [chatTurns, setChatTurns] = useState<VideoSummaryChatMessage[]>([]);
@@ -194,20 +211,38 @@ const StudentLessonDetail = () => {
         }
     }, [lessonId]);
 
+    const persistSummaryJob = useCallback((job: ClassSessionAiJobResponse | null) => {
+        const key = summaryJobStorageKey(lessonId);
+        if (!key) return;
+        try {
+            if (job) sessionStorage.setItem(key, JSON.stringify(job));
+            else sessionStorage.removeItem(key);
+        } catch {
+            // sessionStorage có thể bị chặn (chế độ ẩn danh nghiêm ngặt...) — bỏ qua, không nghiêm trọng.
+        }
+    }, [lessonId]);
+
     const fetchSummaryStatus = useCallback(async () => {
         if (!lessonId) return;
         try {
             const response = await getVideoSummaryStatus(parseInt(lessonId));
             const next = response.content;
             setSummaryJob((prev) => {
-                // Một khi đã xác nhận job thật tồn tại (pending/processing/completed/failed), nó không
-                // thể tự "biến mất" — nếu poll sau lại trả về "none" thì đó là dấu hiệu 1 tầng cache
-                // ngoài ứng dụng trả nhầm bản ghi cũ (đã gặp thực tế ở production), không phải sự thật
-                // mới. Bỏ qua, giữ nguyên trạng thái đã biết và thử lại sau thay vì nhảy về màn hình chào.
-                if (next?.status === 'none' && prev && prev.status !== 'none') {
+                // Job thật (đã có jobId) không thể tự "biến mất" hay đổi thành 1 job khác trong lúc
+                // đang pending/processing — nếu xảy ra, đó là dấu hiệu 1 tầng cache ngoài ứng dụng trả
+                // nhầm bản ghi cũ (đã gặp thực tế ở production, kể cả sau khi rời trang rồi quay lại —
+                // đó là lý do prev được khôi phục từ sessionStorage chứ không chỉ dựa vào React state).
+                // 2 dấu hiệu bất thường: (a) đang có job thật mà tự nhiên báo "none", hoặc (b) đang biết
+                // job X còn đang chạy mà lại nhận về 1 job Y khác hẳn (ví dụ job cũ đã complete từ trước).
+                const prevActive = prev?.status === 'pending' || prev?.status === 'processing';
+                const looksStale =
+                    (next?.status === 'none' && prev != null && prev.status !== 'none') ||
+                    (prevActive && !!prev?.jobId && !!next?.jobId && next.jobId !== prev.jobId);
+                if (looksStale) {
                     window.setTimeout(() => void fetchSummaryStatus(), 2000);
                     return prev;
                 }
+                persistSummaryJob(next);
                 return next;
             });
         } catch (requestError: unknown) {
@@ -379,6 +414,7 @@ const StudentLessonDetail = () => {
         try {
             const response = await triggerVideoSummary(parseInt(lessonId));
             setSummaryJob(response.content);
+            persistSummaryJob(response.content);
         } catch (error: any) {
             antMessage.error(error.response?.data?.message || 'Không thể tóm tắt video lúc này.');
         } finally {
