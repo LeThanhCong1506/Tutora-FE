@@ -621,9 +621,47 @@
   line-height: 1.5;
 }
 .scheduleAuditNote svg { flex: 0 0 auto; margin-top: 1px; }
+
+/* Đếm ngược tới hạn xác nhận — pill nổi ngay dưới mô tả để không phải đọc hết đoạn văn mới biết còn bao lâu. */
+.scheduleExpiryPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: -6px 0 20px;
+  padding: 5px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(244, 199, 127, 0.35);
+  background: rgba(244, 199, 127, 0.1);
+  color: #f4c77f;
+  font: 700 12px 'IBM Plex Sans', sans-serif;
+  letter-spacing: 0.1px;
+}
+.scheduleExpiryPill svg { flex: 0 0 auto; }
+.scheduleExpiryPillUrgent {
+  border-color: rgba(248, 113, 113, 0.4);
+  background: rgba(248, 113, 113, 0.1);
+  color: #fca5a5;
+}
+
 .scheduleWaiting,
 .scheduleRejected { margin: 16px 0 0; color: #fcd34d; font-size: 13px; line-height: 1.5; }
 .scheduleRejected { color: #fca5a5; }
+
+/* Khối cảnh báo hết hạn — cùng bố cục icon-trái/chữ-phải với .scheduleAuditNote để nhất quán,
+   đổi sang tông đỏ vì đây là trạng thái cần hành động lại, không chỉ là thông tin tham khảo. */
+.scheduleExpiredNote {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(248, 113, 113, 0.28);
+  background: rgba(248, 113, 113, 0.09);
+  color: #fca5a5;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.scheduleExpiredNote svg { flex: 0 0 auto; margin-top: 1px; }
 .scheduleApproved { display: flex; gap: 8px; align-items: center; margin-top: 16px; color: #86efac; font-size: 13px; }
 .scheduleModalActions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
 .scheduleRejectButton,

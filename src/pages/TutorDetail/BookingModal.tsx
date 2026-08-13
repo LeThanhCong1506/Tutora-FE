@@ -374,7 +374,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                     <span className={styles.eyebrow}>Chưa thanh toán</span>
                                     <h2>Đặt lịch đã được tạo</h2>
                                     <p>
-                                        Vui lòng thanh toán buổi học đầu tiên trong vòng <strong>30 phút</strong> để gửi yêu
+                                        Vui lòng thanh toán buổi học đầu tiên trong vòng <strong>10 phút</strong> để gửi yêu
                                         cầu tới <strong>{tutorName}</strong>. Quá hạn, booking sẽ tự động bị hủy.
                                     </p>
                                     {successBookingId != null && (

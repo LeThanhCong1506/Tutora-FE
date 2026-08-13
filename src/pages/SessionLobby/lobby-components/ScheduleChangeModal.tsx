@@ -1,4 +1,5 @@
-import { CalendarClock, Check, Clock3, ShieldCheck, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { AlertTriangle, CalendarClock, Check, Clock3, ShieldCheck, X } from 'lucide-react';
 import type { ScheduleChangeState } from './types';
 import styles from '../styles.module.css';
 
@@ -19,7 +20,33 @@ const formatDateTime = (value?: string | null): string => {
   return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short' }).format(date);
 };
 
+/** Đếm ngược tới `expiresAt` của phiếu xác nhận — báo trước cho gia sư biết cần chờ bao lâu,
+ * vì phiếu tự hết hạn sau 30 phút kể cả khi một bên đã xác nhận xong phần của mình. */
+const useExpiryCountdown = (expiresAt?: string | null): number | null => {
+  const [minutesLeft, setMinutesLeft] = useState<number | null>(null);
+
+  useEffect(() => {
+    const end = expiresAt ? new Date(expiresAt).getTime() : NaN;
+    const tick = () => {
+      if (Number.isNaN(end)) {
+        setMinutesLeft(null);
+        return;
+      }
+      const diffMs = end - Date.now();
+      setMinutesLeft(diffMs <= 0 ? 0 : Math.max(1, Math.round(diffMs / 60000)));
+    };
+
+    tick();
+    const interval = window.setInterval(tick, 15000);
+    return () => window.clearInterval(interval);
+  }, [expiresAt]);
+
+  return minutesLeft;
+};
+
 const ScheduleChangeModal = ({ open, state, currentRole, currentUserId, loading, onRespond, onClose }: Props) => {
+  const minutesLeft = useExpiryCountdown(state.status === 'pending' ? state.expiresAt : null);
+
   if (!open) return null;
 
   const normalizedRole = currentRole.toLowerCase();
@@ -54,6 +81,15 @@ const ScheduleChangeModal = ({ open, state, currentRole, currentUserId, loading,
           Buổi học đang được mở ngoài khung giờ đã đặt. Gia sư và {learnerLabel.toLowerCase()} phải đồng thuận trước khi
           phòng học được mở.
         </p>
+
+        {state.status === 'pending' && minutesLeft !== null && (
+          <span
+            className={`${styles.scheduleExpiryPill} ${minutesLeft <= 5 ? styles.scheduleExpiryPillUrgent : ''}`}
+          >
+            <Clock3 size={13} />
+            {minutesLeft > 0 ? `Còn ${minutesLeft} phút để xác nhận` : 'Sắp hết hạn'}
+          </span>
+        )}
 
         <div className={styles.scheduleSummary}>
           <div>
@@ -109,7 +145,16 @@ const ScheduleChangeModal = ({ open, state, currentRole, currentUserId, loading,
           </span>
         </div>
 
-        {rejected ? (
+        {state.status === 'expired' ? (
+          <div className={styles.scheduleExpiredNote}>
+            <AlertTriangle size={18} />
+            <span>
+              <strong>Yêu cầu xác nhận đã hết hạn.</strong> Chưa đủ hai bên xác nhận trong 30 phút nên hệ thống đã huỷ
+              yêu cầu này. Cứ giữ phòng chờ mở — hệ thống sẽ tự tạo yêu cầu mới trong giây lát; nếu không, hãy thoát và
+              vào lại phòng chờ để gửi lại.
+            </span>
+          </div>
+        ) : rejected ? (
           <p className={styles.scheduleRejected}>
             Một bên đã từ chối đổi lịch. Phòng học vẫn bị khóa và lịch ban đầu không thay đổi.
           </p>
