@@ -1,5 +1,6 @@
 import dayjs, { type Dayjs } from 'dayjs';
 import { formatLocalTime, parseUtc } from '../../../utils/datetime';
+import { isLiveSessionOverdue } from '../../../utils/liveSession';
 import type { LessonGroup, LessonSummary } from './types';
 
 export const getLessonDate = (lesson: LessonSummary): Dayjs => {
@@ -44,8 +45,14 @@ export const isCancelledLesson = (lesson: LessonSummary): boolean =>
  * gửi báo cáo (status chỉ chuyển pending_confirmation sau khi báo cáo được gửi).
  * KHÔNG được hiện "Đang diễn ra" / nút "Vào lớp" cho các buổi này.
  */
-export const isAwaitingReport = (lesson: LessonSummary): boolean =>
-  lesson.status.trim().toLowerCase() === 'in_progress' && Boolean(lesson.checkOutTime);
+export const isAwaitingReport = (lesson: {
+  status?: string | null;
+  scheduledEnd?: string | null;
+  checkOutTime?: string | null;
+  hasRecording?: boolean;
+}): boolean =>
+  lesson.status?.trim().toLowerCase() === 'in_progress'
+  && (Boolean(lesson.checkOutTime) || Boolean(lesson.hasRecording) || isLiveSessionOverdue(lesson));
 
 /** Trạng thái "nóng" của buổi học để highlight trên UI. */
 export type LessonLiveState = 'live' | 'due' | null;

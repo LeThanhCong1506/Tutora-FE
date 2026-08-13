@@ -16,6 +16,7 @@ import {
   LoadingState,
   getLessonDate,
   getMonday,
+  isAwaitingReport,
   type LessonSummary,
   type LessonViewMode,
   type StatusFilter,
@@ -79,14 +80,21 @@ const VIEW_OPTIONS = [
 
 const VALID_VIEWS = new Set<LessonViewMode>(VIEW_OPTIONS.map((option) => option.key));
 const VALID_STATUSES = new Set<StatusFilter>(STATUS_FILTERS.map((filter) => filter.key));
-const SCHEDULED_TAB_STATUSES = new Set(['scheduled', 'in_progress']);
-
 const matchesStatusFilter = (lesson: LessonSummary, status: StatusFilter): boolean => {
   const lessonStatus = lesson.status.trim().toLowerCase();
   // Tab "Tất cả" ẩn buổi đã hủy — vẫn xem được qua chi tiết đặt lịch, không cần lộn xộn
   // trong lịch nữa.
   if (!status) return lessonStatus !== 'cancelled';
-  return status === 'scheduled' ? SCHEDULED_TAB_STATUSES.has(lessonStatus) : lessonStatus === status;
+
+  const awaitingReport = isAwaitingReport(lesson);
+
+  if (status === 'scheduled') {
+    return lessonStatus === 'scheduled' || (lessonStatus === 'in_progress' && !awaitingReport);
+  }
+  if (status === 'pending_confirmation') {
+    return lessonStatus === 'pending_confirmation' || awaitingReport;
+  }
+  return lessonStatus === status;
 };
 
 const TutorPortalCalendar = () => {
