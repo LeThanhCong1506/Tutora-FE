@@ -606,6 +606,7 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
             classSessionId={parseInt(classSessionId, 10)}
             participationId={room.participationId}
             leaseId={room.leaseId}
+            displayName={localName}
             onClose={() => setWhiteboardOpen(false)}
           />
         </Suspense>
