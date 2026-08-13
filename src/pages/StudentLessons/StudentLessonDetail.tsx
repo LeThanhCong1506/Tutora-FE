@@ -45,6 +45,7 @@ import { getUserInfoFromToken } from '../../services/auth.service';
 import s from '../StudentPages.module.css';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 import { canJoinLiveSession, isWithinJoinWindow } from '../../utils/liveSession';
+import { isAwaitingReport } from './lesson-components';
 
 // ── Status definitions — nguồn duy nhất là classSessionStatus.ts (khớp BE ClassSessionStatus) ──
 type StatusInfo = { label: string; color: string; bg: string; icon: string };
@@ -446,7 +447,10 @@ const StudentLessonDetail = () => {
         );
     }
 
-    const status = getStatus(lesson.status);
+    const baseStatus = getStatus(lesson.status);
+    const status = isAwaitingReport(lesson)
+        ? { ...baseStatus, label: 'Chờ gửi báo cáo', color: '#A16207', bg: '#FFF6E5', icon: '⏳' }
+        : baseStatus;
     const isInProgress = lesson.status === 'in_progress';
     // Phòng Agora mở từ 30ph trước giờ học — không cần đợi gia sư vào trước (khớp BE AgoraController)
     const canJoin = canJoinLiveSession(lesson);

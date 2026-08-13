@@ -17,6 +17,7 @@ import {
   LoadingState,
   getLessonDate,
   getMonday,
+  isAwaitingReport,
   type LessonSummary,
   type LessonViewMode,
   type StatusFilter,
@@ -73,12 +74,23 @@ const VIEW_OPTIONS = [
 
 const VALID_VIEWS = new Set<LessonViewMode>(VIEW_OPTIONS.map((option) => option.key));
 const VALID_STATUSES = new Set<StatusFilter>(STATUS_FILTERS.map((filter) => filter.key));
-const SCHEDULED_TAB_STATUSES = new Set(['scheduled', 'in_progress']);
-
 const matchesStatusFilter = (lesson: LessonSummary, status: StatusFilter): boolean => {
   if (!status) return true;
   const lessonStatus = lesson.status.trim().toLowerCase();
-  return status === 'scheduled' ? SCHEDULED_TAB_STATUSES.has(lessonStatus) : lessonStatus === status;
+  const awaitingReport = isAwaitingReport(lesson);
+
+  if (status === 'scheduled') {
+    return lessonStatus === 'scheduled' || (lessonStatus === 'in_progress' && !awaitingReport);
+  }
+
+  // Session đã đóng/đã có bản ghi nhưng gia sư chưa gửi báo cáo không còn là buổi đang diễn ra.
+  // Giữ DB status in_progress để không mở quyền xác nhận/thanh toán trước khi có báo cáo,
+  // nhưng đặt nó trong luồng "Chờ xác nhận" để không sai vị trí trên thời khóa biểu.
+  if (status === 'pending_confirmation') {
+    return lessonStatus === 'pending_confirmation' || awaitingReport;
+  }
+
+  return lessonStatus === status;
 };
 
 const StudentLessons = () => {
