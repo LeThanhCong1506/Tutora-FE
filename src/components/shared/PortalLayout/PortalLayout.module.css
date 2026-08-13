@@ -45,44 +45,6 @@
     width: 248px;
 }
 
-/* Sidebar Logo */
-.sidebarLogo {
-    display: flex;
-    align-items: center;
-    padding: 14px 12px;
-    gap: 10.5px;
-    min-height: 64px;
-    box-sizing: border-box;
-}
-
-.logoLink {
-    display: flex;
-    align-items: center;
-    gap: 10.5px;
-    text-decoration: none;
-    color: #f2f0e4;
-}
-
-.logoText {
-    font-family: 'Bricolage Grotesque', sans-serif;
-    font-size: 21px;
-    font-weight: 700;
-    line-height: 28px;
-    letter-spacing: -0.52px;
-    color: #f2f0e4;
-    display: none;
-    white-space: nowrap;
-    transition: opacity 0.2s ease 0.05s;
-}
-
-.sidebar:hover .sidebarLogo {
-    justify-content: flex-start;
-}
-
-.sidebar:hover .logoText {
-    display: block;
-}
-
 /* Sidebar Navigation */
 .sidebarNav {
     display: flex;
@@ -737,7 +699,6 @@
     }
 
     /* Show all text on mobile (sidebar is full-width overlay) */
-    .sidebar .logoText,
     .sidebar .navText,
     .sidebar .userInfo,
     .sidebar .navBadge {

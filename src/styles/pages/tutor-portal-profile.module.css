@@ -1808,42 +1808,30 @@
   background-color: rgba(242, 240, 228, 0.5);
 }
 
-/* ===== EDIT BAR - STICKY BOTTOM ===== */
-.editBar {
-  position: fixed;
-  bottom: 0;
-  left: var(--sidebar-width, 68px);
-  right: 0;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 28px;
-  background-color: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(62, 47, 40, 0.1);
-  z-index: 50;
-  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
 .editBarLeft {
+  position: fixed;
+  left: calc(var(--sidebar-space, 80px) + 24px);
+  bottom: 28px;
+  z-index: 190;
   display: flex;
   align-items: center;
-}
-
-.editBarRight {
-  display: flex;
-  align-items: center;
-  gap: 14px;
+  width: fit-content;
+  padding: 6px;
+  border: 1px solid rgba(62, 47, 40, 0.13);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 14px 30px rgba(45, 55, 47, 0.18), 0 3px 8px rgba(45, 55, 47, 0.1);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 /* Toggle Group */
 .toggleGroup {
   display: flex;
-  padding: 3.5px;
-  border-radius: 10.5px;
+  padding: 3px;
+  border-radius: 9px;
   background-color: #f2f0e4;
-  border: 1px solid rgba(62, 47, 40, 0.05);
+  border: 1px solid rgba(62, 47, 40, 0.08);
 }
 
 .toggleBtn {
@@ -1863,7 +1851,7 @@
 .toggleBtn.active {
   background-color: #fff;
   color: #1a2238;
-  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 3px 8px rgba(45, 55, 47, 0.14);
 }
 
 /* Saved Status */
@@ -1889,24 +1877,6 @@
   line-height: 15px;
   text-transform: uppercase;
   color: rgba(62, 47, 40, 0.4);
-}
-
-/* Share Button */
-.shareBtn {
-  width: 31.5px;
-  height: 31.5px;
-  padding: 7px;
-  border-radius: 9999px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: rgba(62, 47, 40, 0.6);
-  transition: all 0.2s ease;
-}
-
-.shareBtn:hover {
-  background-color: rgba(242, 240, 228, 0.5);
-  color: #1a2238;
 }
 
 /* Save Draft Button */
@@ -2521,6 +2491,11 @@
 }
 
 @media (max-width: 1024px) {
+  .editBarLeft {
+    left: 16px;
+    bottom: 16px;
+  }
+
   .contentWrapper {
     flex-direction: column;
   }
@@ -2675,14 +2650,6 @@
 
   .outcomesGrid {
     flex-direction: column;
-  }
-
-  .editBar {
-    padding: 0 14px;
-  }
-
-  .editBarRight {
-    gap: 7px;
   }
 
   .savedStatus {

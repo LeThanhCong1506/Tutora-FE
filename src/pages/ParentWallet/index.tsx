@@ -9,7 +9,7 @@ import {
   type TransactionHistory,
   type WithdrawalItem,
 } from '../../services/wallet.service';
-import WalletSummaryCards from './WalletSummaryCards';
+import { formatCurrency, formatDateTime } from '../../utils/formatters';
 import TransactionsCard from './TransactionsCard';
 import WithdrawalRequestsCard from './WithdrawalRequestsCard';
 import styles from './styles.module.css';
@@ -82,6 +82,7 @@ const ParentWallet = () => {
 
   return (
     <div className={styles.page}>
+      <div className={styles.walletTopGrid}>
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>Tài chính của tôi</h1>
         <p className={styles.pageSubtitle}>Quản lý số dư, rút tiền và xem lịch sử giao dịch của bạn.</p>
@@ -105,23 +106,57 @@ const ParentWallet = () => {
         </div>
       </div>
 
-      <WalletSummaryCards balance={balance} loading={balanceLoading} />
+      <div className={styles.summaryRow}>
+        <section className={`${styles.summaryCard} ${styles.summaryCardPrimary}`}>
+          <div className={styles.summaryLabel}>
+            <span className={`${styles.dot} ${styles.dotGreen}`} />
+            Số tiền khả dụng
+          </div>
+          <div className={`${styles.summaryValue} ${styles.valueGreen}`}>
+            {balanceLoading ? '—' : formatCurrency(balance?.balance ?? 0)}
+          </div>
+          <div className={styles.summaryFoot}>
+            Số dư có thể dùng cho các giao dịch và yêu cầu rút tiền của bạn.
+          </div>
+        </section>
 
-      <WithdrawalRequestsCard
-        variant="preview"
-        withdrawals={withdrawals}
-        loading={withdrawalsLoading}
-        onSelect={(item) => setSelectedWithdrawalId(item.withdrawalId)}
-        onViewAll={() => navigate(`${portalBase}/wallet/withdrawals`)}
-      />
+        <section className={styles.summaryCard}>
+          <div className={styles.summaryLabel}>
+            <span className={`${styles.dot} ${styles.dotRed}`} />
+            Đang tạm giữ
+          </div>
+          <div className={`${styles.summaryValue} ${styles.valueRed}`}>
+            {balanceLoading ? '—' : formatCurrency(balance?.frozenBalance ?? 0)}
+          </div>
+          <div className={styles.summaryFoot}>
+            Số tiền đang chờ xử lý do có khiếu nại hoặc tranh chấp.
+          </div>
+          <div className={styles.summaryMeta}>
+            {balance?.lastUpdated ? `Cập nhật: ${formatDateTime(balance.lastUpdated)}` : ' '}
+          </div>
+        </section>
+      </div>
+      </div>
 
-      <TransactionsCard
-        variant="preview"
-        transactions={transactions}
-        loading={txLoading}
-        onSelect={(tx) => setSelectedTxId(tx.transactionId)}
-        onViewAll={() => navigate(`${portalBase}/wallet/transactions`)}
-      />
+      <div className={styles.walletActivityGrid}>
+        <WithdrawalRequestsCard
+          variant="preview"
+          withdrawals={withdrawals}
+          loading={withdrawalsLoading}
+          onSelect={(item) => setSelectedWithdrawalId(item.withdrawalId)}
+          onViewAll={() => navigate(`${portalBase}/wallet/withdrawals`)}
+        />
+
+        <TransactionsCard
+          variant="full"
+          transactions={transactions}
+          loading={txLoading}
+          onSelect={(tx) => setSelectedTxId(tx.transactionId)}
+          total={transactions.length}
+          page={1}
+          pageSize={PREVIEW_SIZE}
+        />
+      </div>
 
       {selectedTxId != null && (
         <Suspense fallback={null}>

@@ -25,6 +25,11 @@
 }
 
 .container {
+  /* BẮT BUỘC có width: PortalLayout bọc trang trong `.contentArea` là flex hướng cột, mà flex
+     item có auto margin ở trục phụ thì mất `stretch` và co lại vừa nội dung. Thiếu dòng này,
+     `.layout` nhận chiều rộng không xác định nên `1fr` tính theo max-content — hộp "Chọn phương
+     thức thanh toán" phình ra đúng lúc mã QR render xong. */
+  width: 100%;
   max-width: 1280px;
   margin: 0 auto;
   padding: 28px 20px 36px;
@@ -436,22 +441,18 @@
   color: #0f172a;
 }
 
-/* Xác nhận quy chế — nằm giữa danh sách phương thức và khu vực thanh toán, vì nó
-   là điều kiện để mã QR được tạo và để nút trả bằng ví mở khoá. */
-.policyConsentBox {
-  margin-top: 20px;
-  padding: 14px 16px;
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-}
-
 /* Action Area */
+/* Bề rộng chốt ở mức của khối QR (rộng nhất) và dùng chung cho MỌI phương thức. Trước đây chỉ
+   `.payosArea` bị giới hạn 760px còn khối ví thì tràn hết cột, nên đổi qua lại giữa "Quét mã QR"
+   và "Số dư ví" là nội dung thụt vào/thò ra. */
 .paymentActionArea {
   margin-top: 4px;
   padding-top: 24px;
   border-top: 1px solid #e2e8f0;
   min-width: 0;
+  width: 100%;
+  max-width: 760px;
+  margin-inline: auto;
 }
 
 .payosArea {
@@ -459,8 +460,6 @@
   flex-direction: column;
   gap: 16px;
   width: 100%;
-  max-width: 760px;
-  margin: 0 auto;
 }
 
 .qrContainer {

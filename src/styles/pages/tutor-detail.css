@@ -1674,6 +1674,12 @@
     max-height: calc(100vh - 144px);
 }
 
+/* Bản xem trước nằm trong Tutor Portal đã có header floating riêng. Đưa booking
+   sidebar lên cùng nhịp với nội dung chính để phần trống dành cho control ở đáy. */
+.tutor-detail-page.tutor-profile-preview .booking-sidebar {
+    top: 30px;
+}
+
 .tutor-detail-page .booking-card {
     box-shadow: 0px 10px 30px -10px rgba(26, 34, 56, 0.08);
     border-radius: 20px;

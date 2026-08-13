@@ -3,7 +3,16 @@ import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { Link } from 'react-router-dom';
 import { Tooltip } from 'antd';
-import { CalendarClock, CalendarDays, ChevronRight, Clapperboard, ClipboardList, Clock3, UserRound, Video } from 'lucide-react';
+import {
+  CalendarClock,
+  CalendarDays,
+  ChevronRight,
+  Clapperboard,
+  ClipboardList,
+  Clock3,
+  UserRound,
+  Video,
+} from 'lucide-react';
 import { getClassSessionStatusMeta } from '../../../utils/classSessionStatus';
 import { isWithinJoinWindow } from '../../../utils/liveSession';
 import styles from '../styles.module.css';
@@ -70,7 +79,17 @@ const getCounterpart = (lesson: LessonSummary) => ({
   name: lesson.counterpartName || lesson.tutorName || 'Chưa cập nhật',
 });
 
+/** Dòng người liên quan thứ hai (nếu trang có set) — vd phụ huynh xem lịch chung nhiều con. */
+const SecondaryPerson = ({ lesson }: { lesson: LessonSummary }) =>
+  lesson.secondaryName ? (
+    <span className={`${styles.lessonPerson} ${styles.secondaryPerson}`}>
+      {lesson.secondaryLabel ? `${lesson.secondaryLabel}: ` : ''}
+      {lesson.secondaryName}
+    </span>
+  ) : null;
+
 const canShowJoinButton = (lesson: LessonSummary) => {
+  if (lesson.canJoin === false) return false; // người xem chỉ theo dõi (phụ huynh)
   if (isAwaitingReport(lesson)) return false; // phòng đã đóng sau check-out
   const status = lesson.status.trim().toLowerCase();
   if (!['scheduled', 'in_progress'].includes(status) || !lesson.meetingLink?.trim()) return false;
@@ -100,6 +119,9 @@ const StatusPill = ({ lesson }: { lesson: LessonSummary }) => {
 // meetingLink là ID channel Agora (= classSessionId), không phải URL. Theo nghiệp vụ
 // của trang danh sách, mọi buổi scheduled đã có channel đều cho phép đi tới phòng học nội bộ.
 const MeetLink = ({ lesson, compact = false }: { lesson: LessonSummary; compact?: boolean }) => {
+  // Người xem chỉ theo dõi (phụ huynh): không có nút vào lớp lẫn nút gửi báo cáo.
+  if (lesson.canJoin === false) return null;
+
   // Buổi đã check-out chờ báo cáo: gia sư (trang có set reportPath) thấy nút "Gửi báo cáo"
   // thay cho "Vào lớp"; học sinh/phụ huynh chỉ thấy badge, không còn nút vào phòng đã đóng.
   if (isAwaitingReport(lesson)) {
@@ -183,16 +205,25 @@ const LessonHoverDetails = ({ lesson }: { lesson: LessonSummary }) => {
           <UserRound size={14} aria-hidden="true" />
           {getCounterpart(lesson).label}: <b>{getCounterpart(lesson).name}</b>
         </span>
+        {lesson.secondaryName && (
+          <span className={styles.tooltipTutor}>
+            <UserRound size={14} aria-hidden="true" />
+            {lesson.secondaryLabel || 'Liên quan'}: <b>{lesson.secondaryName}</b>
+          </span>
+        )}
       </div>
       <div className={styles.tooltipFooter}>
         <span className={styles.tooltipStatus}>
           <i className={styles.tooltipStatusDot} />
           {status.label}
         </span>
-        <span className={`${styles.tooltipMeetState} ${canJoin ? styles.tooltipMeetReady : ''}`}>
-          <Video size={12} aria-hidden="true" />
-          {canJoin ? 'Có thể vào lớp' : 'Không thể vào lớp'}
-        </span>
+        {/* Người chỉ theo dõi (phụ huynh) không vào lớp được — nói "không thể vào lớp" sẽ gây hiểu nhầm. */}
+        {lesson.canJoin !== false && (
+          <span className={`${styles.tooltipMeetState} ${canJoin ? styles.tooltipMeetReady : ''}`}>
+            <Video size={12} aria-hidden="true" />
+            {canJoin ? 'Có thể vào lớp' : 'Không thể vào lớp'}
+          </span>
+        )}
         {lesson.hasRecording && <RecordingBadge />}
         <ScheduleChangeBadge lesson={lesson} />
         {lesson.hasPendingReschedule && <ReschedulePendingBadge />}
@@ -261,6 +292,7 @@ const ListLessonRow = ({ lesson, onOpen }: { lesson: LessonSummary; onOpen: () =
         <span className={styles.listInfo}>
           <strong>{getSubject(lesson)}</strong>
           {lesson.counterpartName && <span className={styles.lessonPerson}>{lesson.counterpartName}</span>}
+          <SecondaryPerson lesson={lesson} />
         </span>
       </button>
       <div className={styles.listActions}>
@@ -405,6 +437,7 @@ export const GridLessonView = ({ lessons, onOpenLesson }: LessonViewProps) => (
                       <UserRound size={13} aria-hidden="true" /> {lesson.counterpartName}
                     </span>
                   )}
+                  <SecondaryPerson lesson={lesson} />
                   <span className={styles.gridTime}>
                     <Clock3 size={14} /> {getLessonTime(lesson)}
                   </span>

@@ -15,7 +15,6 @@ import {
 import { isZaloMiniApp } from '../../../services/zalo-env';
 import { useBookingTopup } from '../../../hooks/useBookingTopup';
 import TopupQRView from '../../../components/TopupQR/TopupQRView';
-import PolicyConsent from '../../../components/PolicyConsent';
 import { formatVNDNumber } from '../../../utils/formatters';
 import styles from './styles.module.css';
 import {
@@ -52,9 +51,6 @@ const PaymentPage = () => {
   const [isPaying, setIsPaying] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [qrImageError, setQrImageError] = useState(false);
-  // Xác nhận chính sách trước khi chuyển tiền. PayOS không có nút bấm riêng (QR tự sinh),
-  // nên tick này còn là điều kiện để effect bên dưới tạo link thanh toán.
-  const [agreedToPolicy, setAgreedToPolicy] = useState(false);
 
   const bookingId = Number(id);
 
@@ -124,7 +120,6 @@ const PaymentPage = () => {
   // được phép trả.
   useEffect(() => {
     if (paymentMethod !== 'payos' || paymentInfo || loading || remainingLocked || !otpSettled) return;
-    if (!agreedToPolicy) return;
 
     let cancelled = false;
     (async () => {
@@ -157,7 +152,7 @@ const PaymentPage = () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paymentMethod, paymentInfo, loading, remainingLocked, otpSettled, agreedToPolicy, bookingId, navigate]);
+  }, [paymentMethod, paymentInfo, loading, remainingLocked, otpSettled, bookingId, navigate]);
 
   // Polling payment status for PayOS
   useEffect(() => {
@@ -566,17 +561,6 @@ const PaymentPage = () => {
                 </label>
               </Radio.Group>
 
-              <div className={styles.policyConsentBox}>
-                <PolicyConsent
-                  checked={agreedToPolicy}
-                  onChange={setAgreedToPolicy}
-                  docs={['terms']}
-                  leadText="Tôi xác nhận đã đọc"
-                  hint="Tiền được giữ ở tài khoản tạm giữ và chỉ chuyển cho gia sư sau khi buổi học hoàn tất (mục 5 Điều khoản sử dụng)."
-                  disabled={isPaying}
-                />
-              </div>
-
               <div className={styles.paymentActionArea}>
                 {paymentMethod === 'zalopay' ? (
                   <div className={styles.walletArea}>
@@ -601,13 +585,7 @@ const PaymentPage = () => {
                   <div className={styles.payosArea}>
                     {!paymentInfo && (
                       <div className={styles.walletHint} style={{ textAlign: 'center', padding: '16px 0' }}>
-                        {!agreedToPolicy
-                          ? // Không nói "đang chuẩn bị" khi thực chất đang chờ người dùng tick —
-                            // QR chỉ được tạo sau khi có xác nhận.
-                            'Xác nhận quy chế phía trên để hiện mã QR thanh toán.'
-                          : payosLoading
-                            ? 'Đang tạo liên kết thanh toán...'
-                            : 'Đang chuẩn bị thông tin chuyển khoản...'}
+                        {payosLoading ? 'Đang tạo liên kết thanh toán...' : 'Đang chuẩn bị thông tin chuyển khoản...'}
                       </div>
                     )}
                     {paymentInfo && (
@@ -717,7 +695,6 @@ const PaymentPage = () => {
                           type="primary"
                           size="large"
                           block
-                          disabled={!agreedToPolicy}
                           loading={topup.phase === 'creating'}
                           onClick={() => topup.start()}
                           className={styles.payBtn}
@@ -736,7 +713,7 @@ const PaymentPage = () => {
                           type="primary"
                           size="large"
                           block
-                          disabled={!summary || isPaying || !agreedToPolicy}
+                          disabled={!summary || isPaying}
                           loading={isPaying}
                           onClick={handleWalletPay}
                           className={styles.payBtn}

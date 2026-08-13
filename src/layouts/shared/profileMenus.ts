@@ -18,7 +18,7 @@ export const parentProfileMenuItems: ProfileMenuItem[] = [
     { key: '/parent-portal/dashboard', label: 'Trang phụ huynh', materialIcon: 'dashboard' },
     { key: '/parent-portal/account', label: 'Tài khoản của tôi', materialIcon: 'manage_accounts' },
     { key: '/parent-portal/student', label: 'Quản lý con', materialIcon: 'family_restroom' },
-    { key: '/parent-portal/lessons', label: 'Buổi học', materialIcon: 'schedule', startsGroup: true },
+    { key: '/parent-portal/lessons', label: 'Thời khóa biểu', materialIcon: 'calendar_month', startsGroup: true },
     { key: '/parent-portal/booking', label: 'Đặt lịch học', materialIcon: 'event_available' },
     { key: '/parent-portal/messages', label: 'Tin nhắn', materialIcon: 'chat' },
     { key: '/parent-portal/wallet', label: 'Ví của tôi', materialIcon: 'account_balance_wallet' },

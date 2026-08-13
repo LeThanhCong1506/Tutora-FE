@@ -21,6 +21,8 @@ interface Props<T extends FinanceTransactionRow> {
   currentPage: number;
   onPageChange: (page: number, pageSize: number) => void;
   onRowClick?: (row: T) => void;
+  /** Chiều cao vùng cuộn của danh sách, dùng ở trang lịch sử giao dịch đầy đủ. */
+  scrollY?: number | string;
 }
 
 const TransactionTable = <T extends FinanceTransactionRow>({
@@ -31,6 +33,7 @@ const TransactionTable = <T extends FinanceTransactionRow>({
   currentPage,
   onPageChange,
   onRowClick,
+  scrollY,
 }: Props<T>) => {
   const getTransactionTone = (type: string) => {
     if (type === 'Withdrawal') return 'debit';
@@ -106,7 +109,7 @@ const TransactionTable = <T extends FinanceTransactionRow>({
       rowKey="transactionId"
       loading={loading}
       size="middle"
-      scroll={{ x: 900 }}
+      scroll={{ x: 900, ...(scrollY ? { y: scrollY } : {}) }}
       onRow={onRowClick ? (record) => ({ onClick: () => onRowClick(record), style: { cursor: 'pointer' } }) : undefined}
       locale={{
         emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Không có giao dịch phù hợp" />,
