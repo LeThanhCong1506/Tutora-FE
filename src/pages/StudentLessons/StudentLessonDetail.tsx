@@ -125,6 +125,7 @@ const StudentLessonDetail = () => {
     const [scheduleChange, setScheduleChange] = useState<SessionScheduleChangeResponse | null>(null);
     const [submittingScheduleDecision, setSubmittingScheduleDecision] = useState(false);
     const [materials, setMaterials] = useState<LearningMaterialResponse[]>([]);
+    const [showMaterialsModal, setShowMaterialsModal] = useState(false);
     const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
     const [respondingReschedule, setRespondingReschedule] = useState(false);
     const [recordingAvailable, setRecordingAvailable] = useState(false);
@@ -464,6 +465,7 @@ const StudentLessonDetail = () => {
         || currentUserInfo?.fullname?.trim().split(/\s+/).pop()
         || null;
     const renderLegacyTopSections = false;
+    const renderLegacyTopActions = false;
 
     return (
         <div className={s.page}>
@@ -529,7 +531,7 @@ const StudentLessonDetail = () => {
 
                 {/* Học sinh tự quản lý xác nhận yêu cầu đổi lịch tại đây — không cần đang ở trong
                     phòng chờ. requiredLearnerRole chỉ là 'Student' khi buổi không có phụ huynh quản lý. */}
-                {scheduleChange?.requiresConfirmation && scheduleChange.requiredLearnerRole === 'Student' && (
+                {renderLegacyTopActions && scheduleChange?.requiresConfirmation && scheduleChange.requiredLearnerRole === 'Student' && (
                     <div style={sectionCard}>
                         <div style={sectionHeaderRow}>
                             <div style={{ ...sectionIconWrap, background: 'rgba(217,119,6,0.10)' }}>
@@ -611,7 +613,7 @@ const StudentLessonDetail = () => {
                 )}
 
                 {/* ─── Đề xuất đổi lịch học (khác với cổng xác nhận vào học ngoài giờ ở trên) ─── */}
-                {canProposeReschedule && (
+                {renderLegacyTopActions && canProposeReschedule && (
                     <div style={sectionCard}>
                         <div style={sectionHeaderRow}>
                             <div style={{ ...sectionIconWrap, background: 'rgba(99,102,241,0.10)' }}>
@@ -631,7 +633,7 @@ const StudentLessonDetail = () => {
                     </div>
                 )}
 
-                {pendingReschedule && (
+                {renderLegacyTopActions && pendingReschedule && (
                     <div style={sectionCard}>
                         <div style={sectionHeaderRow}>
                             <div style={{ ...sectionIconWrap, background: 'rgba(99,102,241,0.10)' }}>
@@ -678,7 +680,7 @@ const StudentLessonDetail = () => {
                 />
 
                 {/* ─── Action card — Confirm / Feedback ─── */}
-                {lesson.status === 'pending_confirmation' && (
+                {renderLegacyTopActions && lesson.status === 'pending_confirmation' && (
                     <div style={actionCardConfirm}>
                         <div style={actionCardIconWrap}>
                             <ClipboardCheck size={20} style={{ color: '#d97706' }} />
@@ -708,134 +710,7 @@ const StudentLessonDetail = () => {
                     </div>
                 )}
 
-                {dispute && (
-                    <div style={{ background: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid rgba(26,34,56,0.06)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                            <span style={{ fontSize: '15px', fontWeight: 700, color: '#1a2238' }}>Khiếu nại của bạn</span>
-                            <span style={{
-                                fontSize: '12px', fontWeight: 600, padding: '4px 10px', borderRadius: 999,
-                                color: dispute.status === 'resolved' || dispute.status === 'confirmed_no_show' ? '#166534' : dispute.status === 'investigating' ? '#1e40af' : '#92400e',
-                                background: dispute.status === 'resolved' || dispute.status === 'confirmed_no_show' ? '#dcfce7' : dispute.status === 'investigating' ? '#dbeafe' : '#fef3c7',
-                            }}>
-                                {dispute.status === 'resolved'
-                                    ? 'Đã giải quyết'
-                                    : dispute.status === 'confirmed_no_show'
-                                        ? 'Đã xác nhận vắng mặt'
-                                        : dispute.status === 'investigating'
-                                            ? 'Đang xem xét'
-                                            : 'Chờ xử lý'}
-                            </span>
-                        </div>
-                        <div style={{ fontSize: '13px', color: '#666', marginBottom: dispute.evidence?.length ? '12px' : 0 }}>
-                            {dispute.reason || 'Không có mô tả.'}
-                        </div>
-                        {Array.isArray(dispute.evidence) && dispute.evidence.length > 0 && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                {dispute.evidence.map((url: string, index: number) => (
-                                    <a
-                                        key={`${url}-${index}`}
-                                        href={url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        style={{
-                                            display: 'flex', alignItems: 'center', gap: 10,
-                                            padding: '10px 14px', background: '#fafaf8', borderRadius: 10,
-                                            border: '1px solid rgba(26,34,56,0.06)', textDecoration: 'none',
-                                        }}
-                                    >
-                                        <Paperclip size={14} style={{ flexShrink: 0, color: TUTORA_MIDNIGHT }} />
-                                        <span style={{ flex: 1, minWidth: 0, fontSize: '13px', color: '#1a2238', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            {getFileNameFromUrl(url)}
-                                        </span>
-                                        <Download size={14} style={{ flexShrink: 0, color: '#9ca3af' }} />
-                                    </a>
-                                ))}
-                            </div>
-                        )}
-                        {Array.isArray(dispute.additionalEvidence) && dispute.additionalEvidence.length > 0 && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: dispute.evidence?.length ? 8 : 0 }}>
-                                {dispute.additionalEvidence.map((item) => (
-                                    <a
-                                        key={item.disputeEvidenceId}
-                                        href={item.fileUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        style={{
-                                            display: 'flex', alignItems: 'center', gap: 10,
-                                            padding: '10px 14px', background: '#fafaf8', borderRadius: 10,
-                                            border: '1px solid rgba(26,34,56,0.06)', textDecoration: 'none',
-                                        }}
-                                    >
-                                        <Paperclip size={14} style={{ flexShrink: 0, color: TUTORA_MIDNIGHT }} />
-                                        <span style={{ flex: 1, minWidth: 0, fontSize: '13px', color: '#1a2238', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            {item.fileUrl ? getFileNameFromUrl(item.fileUrl) : 'Bằng chứng'}
-                                        </span>
-                                        <Download size={14} style={{ flexShrink: 0, color: '#9ca3af' }} />
-                                    </a>
-                                ))}
-                            </div>
-                        )}
-                        {dispute.status === 'resolved' && (
-                            <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(26,34,56,0.06)' }}>
-                                <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Kết quả xử lý</div>
-                                <div style={{ fontSize: '14px', color: '#1a2238' }}>{dispute.resolutionNote || 'Không có ghi chú.'}</div>
-                                {typeof dispute.refundPercentage === 'number' && (
-                                    <div style={{ fontSize: '14px', color: '#1a2238', marginTop: '6px' }}>
-                                        Tỷ lệ hoàn tiền: {dispute.refundPercentage}%
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                        {dispute.status !== 'resolved' && (
-                            <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid rgba(26,34,56,0.06)' }}>
-                                <div style={{ fontSize: '13px', fontWeight: 600, color: '#1a2238', marginBottom: 8 }}>Chat riêng với admin</div>
-                                {thread.length > 0 && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10, maxHeight: 220, overflowY: 'auto' }}>
-                                        {thread.map((msg) => (
-                                            <div
-                                                key={msg.disputeMessageId}
-                                                style={{
-                                                    alignSelf: msg.senderRole === 'admin' ? 'flex-start' : 'flex-end',
-                                                    maxWidth: '80%',
-                                                    padding: '8px 12px',
-                                                    borderRadius: 8,
-                                                    background: msg.senderRole === 'admin' ? '#eef2ff' : '#f1f5f9',
-                                                }}
-                                            >
-                                                <p style={{ margin: '0 0 2px', fontSize: 11, fontWeight: 600, color: '#64748b' }}>
-                                                    {msg.senderRole === 'admin' ? 'Admin' : 'Bạn'}
-                                                </p>
-                                                <p style={{ margin: 0, fontSize: 13, whiteSpace: 'pre-wrap' }}>{msg.message}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                                <div style={{ display: 'flex', gap: 8 }}>
-                                    <input
-                                        type="text"
-                                        value={threadInput}
-                                        onChange={(event) => setThreadInput(event.target.value)}
-                                        placeholder="Nhắn cho admin..."
-                                        style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid #d9dde3', fontSize: 13 }}
-                                        onKeyDown={(event) => {
-                                            if (event.key === 'Enter') void handleSendThreadMessage();
-                                        }}
-                                    />
-                                    <button
-                                        type="button"
-                                        style={actionBtnConfirm}
-                                        disabled={sendingThreadMessage || threadInput.trim().length === 0}
-                                        onClick={() => void handleSendThreadMessage()}
-                                    >
-                                        Gửi
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {lesson.status === 'scheduled' && !isParentManaged && (
+                {renderLegacyTopActions && lesson.status === 'scheduled' && !isParentManaged && (
                     <div style={actionCardConfirm}>
                         <div style={actionCardIconWrap}>
                             <AlertCircle size={20} style={{ color: '#d97706' }} />
@@ -852,7 +727,7 @@ const StudentLessonDetail = () => {
                     </div>
                 )}
 
-                {lesson.status === 'no_show' && !isParentManaged && (
+                {renderLegacyTopActions && lesson.status === 'no_show' && !isParentManaged && (
                     <div style={actionCardConfirm}>
                         <div style={actionCardIconWrap}>
                             <AlertCircle size={20} style={{ color: '#d97706' }} />
@@ -875,7 +750,7 @@ const StudentLessonDetail = () => {
                     </div>
                 )}
 
-                {lesson.status === 'completed' && !dispute && canCreateDispute && (
+                {renderLegacyTopActions && lesson.status === 'completed' && !dispute && canCreateDispute && (
                     <div style={actionCardFeedback}>
                         <div style={{ ...actionCardIconWrap, background: 'rgba(26,34,56,0.08)' }}>
                             <Star size={20} style={{ color: '#1a2238' }} />
@@ -1019,20 +894,207 @@ const StudentLessonDetail = () => {
                     <div style={threeColLeft}>
                         <div style={sidebarCard}>
                             <div style={sidebarHeaderRow}>
-                                <div style={sidebarHeaderTitle}>{subjectName}</div>
-                                <button
-                                    type="button"
-                                    className="sld-next-btn"
-                                    style={{ ...nextBtn, padding: '8px 12px', fontSize: 12, boxShadow: 'none' }}
-                                    title="Về thời khóa biểu"
-                                    onClick={() => navigate('/student-portal/calendar')}
-                                >
-                                    <span>Về thời khóa biểu</span>
-                                    <ArrowLeft size={14} style={{ transform: 'rotate(180deg)' }} />
-                                </button>
+                                <div style={sidebarHeaderActions}>
+                                    <div style={sidebarHeaderTitle}>{subjectName}</div>
+                                    <div style={sidebarHeaderButtons}>
+                                        <button
+                                            type="button"
+                                            className="sld-next-btn"
+                                            style={{ ...nextBtn, padding: '8px 12px', fontSize: 12, boxShadow: 'none' }}
+                                            title="Về thời khóa biểu"
+                                            onClick={() => navigate('/student-portal/calendar')}
+                                        >
+                                            <ArrowLeft size={14} />
+                                            <span>Về thời khóa biểu</span>
+                                        </button>
+                                        {materials.length > 0 && (
+                                            <button
+                                                type="button"
+                                                className="sld-next-btn"
+                                                style={{ ...nextBtn, padding: '8px 12px', fontSize: 12, boxShadow: 'none' }}
+                                                title="Xem tài liệu lớp học"
+                                                onClick={() => setShowMaterialsModal(true)}
+                                            >
+                                                <BookOpen size={14} />
+                                                <span>Xem tài liệu</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
 
                             <div style={sidebarScrollBody}>
+                            {(canProposeReschedule || pendingReschedule || (scheduleChange?.requiresConfirmation && scheduleChange.requiredLearnerRole === 'Student')) && (
+                                <SidebarSection label="Đổi lịch học">
+                                    {canProposeReschedule && (
+                                        <div style={sidebarActionBlock}>
+                                            <div style={sidebarActionText}>Gửi đề xuất giờ học mới cho gia sư.</div>
+                                            <button style={sidebarPrimaryAction} onClick={() => setRescheduleModalOpen(true)}>
+                                                <CalendarClock size={15} /> Đề xuất đổi lịch
+                                            </button>
+                                        </div>
+                                    )}
+                                    {pendingReschedule && (
+                                        <div style={sidebarActionBlock}>
+                                            <div style={sidebarActionText}>
+                                                {pendingReschedule.proposedByName ?? 'Người đề xuất'} muốn dời sang {formatLongDate(pendingReschedule.proposedScheduledStart)}, {formatTime(pendingReschedule.proposedScheduledStart)}.
+                                            </div>
+                                            {isRescheduleCounterpart ? (
+                                                <div style={sidebarActionButtons}>
+                                                    <button style={sidebarSecondaryAction} disabled={respondingReschedule} onClick={() => void handleRespondReschedule(false)}><XCircle size={14} /> Từ chối</button>
+                                                    <button style={sidebarPrimaryAction} disabled={respondingReschedule} onClick={() => void handleRespondReschedule(true)}><CheckCircle2 size={14} /> Đồng ý</button>
+                                                </div>
+                                            ) : isRescheduleProposer ? <div style={sidebarActionNote}>Đang chờ phản hồi từ {pendingReschedule.counterpartName ?? 'phía còn lại'}.</div> : null}
+                                        </div>
+                                    )}
+                                    {scheduleChange?.requiresConfirmation && scheduleChange.requiredLearnerRole === 'Student' && (
+                                        <div style={sidebarActionBlock}>
+                                            <div style={sidebarActionText}>Gia sư đề nghị học ngoài khung giờ mặc định.</div>
+                                            {scheduleChange.canCurrentUserConfirm && !scheduleChange.currentUserConfirmed ? (
+                                                <div style={sidebarActionButtons}>
+                                                    <button style={sidebarSecondaryAction} disabled={submittingScheduleDecision} onClick={() => void handleScheduleChangeDecision(false)}><XCircle size={14} /> Từ chối</button>
+                                                    <button style={sidebarPrimaryAction} disabled={submittingScheduleDecision} onClick={() => void handleScheduleChangeDecision(true)}><CheckCircle2 size={14} /> Xác nhận</button>
+                                                </div>
+                                            ) : <div style={sidebarActionNote}>{scheduleChange.currentUserConfirmed ? 'Bạn đã xác nhận, đang chờ gia sư.' : 'Yêu cầu đang được xử lý.'}</div>}
+                                        </div>
+                                    )}
+                                </SidebarSection>
+                            )}
+
+                            {lesson.status === 'scheduled' && !isParentManaged && (
+                                <SidebarSection label="Gia sư chưa vào lớp">
+                                    <div style={sidebarActionBlock}>
+                                        <div style={sidebarActionText}>Nếu gia sư vắng mặt, bạn có thể báo cáo ngay.</div>
+                                        <button style={sidebarDangerAction} onClick={() => setShowNoShowModal(true)}><AlertCircle size={15} /> Báo gia sư vắng mặt</button>
+                                    </div>
+                                </SidebarSection>
+                            )}
+
+                            {lesson.status === 'pending_confirmation' && (
+                                <SidebarSection label="Xác nhận buổi học">
+                                    <div style={sidebarActionBlock}>
+                                        <div style={sidebarActionText}>Gia sư đã gửi báo cáo. Xác nhận để hoàn tất thanh toán.</div>
+                                        <div style={sidebarActionButtons}>
+                                            <button style={sidebarPrimaryAction} onClick={() => setShowConfirmModal(true)}><ClipboardCheck size={15} /> Xác nhận</button>
+                                            {canCreateDispute && <button style={sidebarSecondaryAction} onClick={() => setShowDisputeForm(true)}>Khiếu nại</button>}
+                                        </div>
+                                    </div>
+                                </SidebarSection>
+                            )}
+
+                            {lesson.status === 'completed' && !dispute && canCreateDispute && (
+                                <SidebarSection label="Hỗ trợ buổi học">
+                                    <div style={sidebarActionBlock}>
+                                        <div style={sidebarActionText}>Báo cáo nếu có vấn đề với buổi học đã hoàn thành.</div>
+                                        <button style={sidebarSecondaryAction} onClick={() => setShowDisputeForm(true)}>Báo cáo gia sư</button>
+                                    </div>
+                                </SidebarSection>
+                            )}
+
+                            {dispute && (
+                                <SidebarSection label="Khiếu nại của bạn">
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                                            <span style={{ fontSize: 12, color: '#667085' }}>Trạng thái xử lý</span>
+                                            <span style={{
+                                                flexShrink: 0,
+                                                fontSize: 11,
+                                                fontWeight: 700,
+                                                padding: '4px 8px',
+                                                borderRadius: 999,
+                                                color: dispute.status === 'resolved' || dispute.status === 'confirmed_no_show' ? '#166534' : dispute.status === 'investigating' ? '#1e40af' : '#92400e',
+                                                background: dispute.status === 'resolved' || dispute.status === 'confirmed_no_show' ? '#dcfce7' : dispute.status === 'investigating' ? '#dbeafe' : '#fef3c7',
+                                            }}>
+                                                {dispute.status === 'resolved'
+                                                    ? 'Đã giải quyết'
+                                                    : dispute.status === 'confirmed_no_show'
+                                                        ? 'Đã xác nhận vắng mặt'
+                                                        : dispute.status === 'investigating'
+                                                            ? 'Đang xem xét'
+                                                            : 'Chờ xử lý'}
+                                            </span>
+                                        </div>
+
+                                        <div style={{ ...sidebarActionText, color: '#475467' }}>
+                                            {dispute.reason || 'Không có mô tả.'}
+                                        </div>
+
+                                        {Array.isArray(dispute.evidence) && dispute.evidence.length > 0 && (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                <span style={reportLabelStyle}>Bằng chứng đã gửi</span>
+                                                {dispute.evidence.map((url: string, index: number) => (
+                                                    <a key={`${url}-${index}`} href={url} target="_blank" rel="noopener noreferrer" style={attachmentLinkStyle}>
+                                                        <Paperclip size={14} style={{ flexShrink: 0, color: TUTORA_MIDNIGHT }} />
+                                                        <span style={attachmentNameStyle}>{getFileNameFromUrl(url)}</span>
+                                                        <Download size={14} style={{ flexShrink: 0, color: '#9ca3af' }} />
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {Array.isArray(dispute.additionalEvidence) && dispute.additionalEvidence.length > 0 && (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                <span style={reportLabelStyle}>Bằng chứng bổ sung</span>
+                                                {dispute.additionalEvidence.map((item) => (
+                                                    <a key={item.disputeEvidenceId} href={item.fileUrl} target="_blank" rel="noopener noreferrer" style={attachmentLinkStyle}>
+                                                        <Paperclip size={14} style={{ flexShrink: 0, color: TUTORA_MIDNIGHT }} />
+                                                        <span style={attachmentNameStyle}>{item.fileUrl ? getFileNameFromUrl(item.fileUrl) : 'Bằng chứng'}</span>
+                                                        <Download size={14} style={{ flexShrink: 0, color: '#9ca3af' }} />
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {dispute.status === 'resolved' && (
+                                            <div style={{ padding: '10px 12px', background: '#f7f4ed', borderRadius: 10 }}>
+                                                <div style={reportLabelStyle}>Kết quả xử lý</div>
+                                                <div style={{ marginTop: 4, fontSize: 13, color: TUTORA_MIDNIGHT }}>{dispute.resolutionNote || 'Không có ghi chú.'}</div>
+                                                {typeof dispute.refundPercentage === 'number' && (
+                                                    <div style={{ marginTop: 4, fontSize: 13, color: TUTORA_MIDNIGHT }}>Tỷ lệ hoàn tiền: {dispute.refundPercentage}%</div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {dispute.status !== 'resolved' && (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                <span style={reportLabelStyle}>Trao đổi với admin</span>
+                                                {thread.length > 0 && (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 180, overflowY: 'auto', paddingRight: 2 }}>
+                                                        {thread.map((msg) => (
+                                                            <div key={msg.disputeMessageId} style={{
+                                                                alignSelf: msg.senderRole === 'admin' ? 'flex-start' : 'flex-end',
+                                                                maxWidth: '92%',
+                                                                padding: '7px 9px',
+                                                                borderRadius: 8,
+                                                                background: msg.senderRole === 'admin' ? '#eef2ff' : '#f7f4ed',
+                                                            }}>
+                                                                <div style={{ marginBottom: 2, fontSize: 10, fontWeight: 700, color: '#667085' }}>{msg.senderRole === 'admin' ? 'Admin' : 'Bạn'}</div>
+                                                                <div style={{ fontSize: 12, lineHeight: 1.45, whiteSpace: 'pre-wrap', color: TUTORA_MIDNIGHT }}>{msg.message}</div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                <div style={{ display: 'flex', gap: 6 }}>
+                                                    <input
+                                                        type="text"
+                                                        value={threadInput}
+                                                        onChange={(event) => setThreadInput(event.target.value)}
+                                                        placeholder="Nhắn cho admin..."
+                                                        style={{ flex: 1, minWidth: 0, padding: '8px 10px', borderRadius: 8, border: '1px solid #d9dde3', fontSize: 12 }}
+                                                        onKeyDown={(event) => {
+                                                            if (event.key === 'Enter') void handleSendThreadMessage();
+                                                        }}
+                                                    />
+                                                    <button type="button" style={{ ...sidebarPrimaryAction, padding: '8px 10px' }} disabled={sendingThreadMessage || threadInput.trim().length === 0} onClick={() => void handleSendThreadMessage()}>
+                                                        Gửi
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </SidebarSection>
+                            )}
+
                             {/* Tương đương "Today's goals" của Coursera — nhưng gắn dữ liệu buổi học thật */}
                             <div className="sld-hover-card" style={sidebarGoalCard}>
                                 <div style={sidebarGoalHeader}>
@@ -1152,12 +1214,6 @@ const StudentLessonDetail = () => {
                                     })}
                                 </SidebarSection>
                             )}
-                            <LessonContentCard
-                                lessonContent={lesson.lessonContent}
-                                homework={lesson.homework}
-                                attachments={report?.attachments}
-                            />
-                            <TutorReportCard report={report} materials={materials} />
                             </div>
                         </div>
                     </div>
@@ -1166,6 +1222,7 @@ const StudentLessonDetail = () => {
                     <div style={threeColMiddle}>
                     <div style={middleCard}>
                     <div style={middleScrollBody}>
+                    <div style={middleVideoSection}>
                         {canJoin && <JoinSessionBanner lessonId={lesson.lessonId} nearJoinWindow={nearJoinWindow} isInProgress={isInProgress} />}
                         <div style={videoCard}>
                             <ClassSessionRecording classSessionId={lesson.lessonId} />
@@ -1210,7 +1267,9 @@ const StudentLessonDetail = () => {
                                 )}
                             </div>
                         )}
-
+                    </div>
+                    <LessonContentCard lessonContent={lesson.lessonContent} homework={lesson.homework} attachments={report?.attachments} />
+                    <TutorReportCard report={report} materials={materials} />
                     </div>
                     </div>
                     </div>
@@ -1417,6 +1476,46 @@ const StudentLessonDetail = () => {
 
                 {/* Modals */}
                 <Modal
+                    title="Tài liệu lớp học"
+                    open={showMaterialsModal}
+                    onCancel={() => setShowMaterialsModal(false)}
+                    footer={null}
+                    width={680}
+                >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '4px 0 8px' }}>
+                        <div style={{ color: '#667085', fontSize: 13, lineHeight: 1.5 }}>
+                            Tài liệu do gia sư chia sẻ cho lớp học này.
+                        </div>
+                        {materials.map((material) => (
+                            <a
+                                key={material.materialId}
+                                href={material.fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 12,
+                                    padding: '13px 14px',
+                                    border: '1px solid #e7e1d8',
+                                    borderRadius: 12,
+                                    background: '#faf9f6',
+                                    color: TUTORA_MIDNIGHT,
+                                    textDecoration: 'none',
+                                }}
+                            >
+                                <span style={{ ...sectionIconWrap, width: 34, height: 34, flexShrink: 0 }}><BookOpen size={16} style={{ color: TUTORA_BURGUNDY }} /></span>
+                                <span style={{ flex: 1, minWidth: 0 }}>
+                                    <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 14, fontWeight: 700 }}>{material.title}</span>
+                                    {material.description && <span style={{ display: 'block', marginTop: 3, color: '#667085', fontSize: 12, lineHeight: 1.4 }}>{material.description}</span>}
+                                </span>
+                                <Download size={17} style={{ flexShrink: 0, color: '#667085' }} />
+                            </a>
+                        ))}
+                    </div>
+                </Modal>
+
+                <Modal
                     title="Xác nhận buổi học"
                     open={showConfirmModal}
                     onOk={handleConfirm}
@@ -1492,8 +1591,8 @@ const embeddedSectionCard: React.CSSProperties = {
     border: '1px solid #d9e1eb',
     borderRadius: 14,
     padding: 16,
-    marginTop: 12,
-    marginBottom: 0,
+    margin: 0,
+    minWidth: 0,
     boxShadow: '0 2px 8px rgba(16,24,40,0.06)',
 };
 
@@ -1539,9 +1638,9 @@ const TutorReportCard = ({ report, materials }: { report?: any; materials: Learn
     if (!report && materials.length === 0) return null;
     return (
         <div className="sld-hover-card" style={embeddedSectionCard}>
-            <div style={sectionHeaderRow}>
-                <div style={sectionIconWrap}><ClipboardCheck size={16} style={{ color: LESSON_RAIL_ACCENT }} /></div>
-                <div style={sectionTitleText}>Báo cáo gia sư</div>
+                <div style={sectionHeaderRow}>
+                    <div style={sectionIconWrap}><ClipboardCheck size={16} style={{ color: LESSON_RAIL_ACCENT }} /></div>
+                <div style={sectionTitleText}>Ghi chú buổi học từ gia sư</div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {report?.contentCovered && <ReportRow label="Nội dung đã dạy" value={report.contentCovered} />}
@@ -1553,11 +1652,6 @@ const TutorReportCard = ({ report, materials }: { report?: any; materials: Learn
                             <div style={ratingStars}>{[1, 2, 3, 4, 5].map((i) => <Star key={i} size={16} fill={i <= report.studentPerformanceRating ? '#fbbf24' : '#e5e7eb'} color={i <= report.studentPerformanceRating ? '#f59e0b' : '#d1d5db'} strokeWidth={1.5} />)}<span style={ratingNumber}>{report.studentPerformanceRating}/5</span></div>
                         ) : <span style={{ fontSize: 13, color: '#999' }}>Chưa đánh giá</span>}
                     </div>
-                )}
-                {materials.length > 0 && (
-                    <div><span style={reportLabelStyle}>Tài liệu lớp học</span><div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
-                        {materials.map((m) => <a key={m.materialId} href={m.fileUrl} target="_blank" rel="noopener noreferrer" style={attachmentLinkStyle}><Paperclip size={14} style={{ flexShrink: 0, color: LESSON_RAIL_ACCENT }} /><span style={attachmentNameStyle}>{m.title}{m.description ? ` · ${m.description}` : ''}</span><Download size={14} style={{ flexShrink: 0, color: '#9ca3af' }} /></a>)}
-                    </div></div>
                 )}
             </div>
         </div>
@@ -1983,11 +2077,24 @@ const sidebarCard: React.CSSProperties = {
 const sidebarHeaderRow: React.CSSProperties = {
     display: 'flex',
     alignItems: 'flex-start',
-    justifyContent: 'space-between',
     gap: 10,
     padding: '16px 18px',
     borderBottom: '1px solid #f1f1ef',
     flexShrink: 0,
+};
+
+const sidebarHeaderActions: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 10,
+};
+
+const sidebarHeaderButtons: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
 };
 
 const sidebarScrollBody: React.CSSProperties = {
@@ -2012,6 +2119,7 @@ const sidebarGoalCard: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
     gap: 12,
+    marginTop: 12,
     marginBottom: 16,
 };
 
@@ -2176,6 +2284,59 @@ const middleScrollBody: React.CSSProperties = {
     minHeight: 0,
     overflowY: 'auto',
     padding: 24,
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    alignContent: 'start',
+    gap: 14,
+};
+
+const sidebarActionBlock: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 10,
+};
+
+const sidebarActionText: React.CSSProperties = {
+    fontSize: 12.5,
+    color: '#667085',
+    lineHeight: 1.55,
+};
+
+const sidebarActionButtons: React.CSSProperties = {
+    display: 'flex',
+    gap: 8,
+    flexWrap: 'wrap',
+};
+
+const sidebarActionNote: React.CSSProperties = {
+    fontSize: 12,
+    color: '#667085',
+    lineHeight: 1.5,
+};
+
+const sidebarPrimaryAction: React.CSSProperties = {
+    ...actionBtnBase,
+    padding: '8px 10px',
+    fontSize: 12,
+    background: TUTORA_MIDNIGHT,
+    boxShadow: 'none',
+};
+
+const sidebarSecondaryAction: React.CSSProperties = {
+    ...sidebarPrimaryAction,
+    color: TUTORA_MIDNIGHT,
+    background: '#fff',
+    border: '1px solid #d0d5dd',
+};
+
+const sidebarDangerAction: React.CSSProperties = {
+    ...sidebarPrimaryAction,
+    background: TUTORA_BURGUNDY,
+};
+
+const middleVideoSection: React.CSSProperties = {
+    gridColumn: '1 / -1',
     display: 'flex',
     flexDirection: 'column',
 };
