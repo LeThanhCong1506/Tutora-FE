@@ -94,7 +94,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isOpen, onC
                           )
                         : prev.filter((n) => n.notificationid !== notification.notificationid),
                 );
-                onCountUpdate?.();
+                await onCountUpdate?.();
             }
         } catch (error) {
             console.error('Failed to mark notification as read:', error);
@@ -107,8 +107,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isOpen, onC
         try {
             await markAllAsRead();
             // Tab 'all': flip mọi item về isread=true. Tab 'unread': rỗng list.
-            const fetcher = activeTab === 'unread' ? getUnreadNotifications : getMyNotifications;
-            setNotifications(await fetcher());
+            setActiveTab('all');
+            setNotifications((previous) => previous.map((notification) => ({ ...notification, isread: true })));
             // Đồng bộ lại badge từ server, tránh UI local khác trạng thái đã lưu.
             await onCountUpdate?.();
         } catch (error) {

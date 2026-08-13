@@ -7,6 +7,10 @@
     background-color: #fff;
     border: 1.2px solid rgba(62, 47, 40, 0.1);
     overflow: hidden;
+    /* Khi đứng trực tiếp trong 1 flex-container cột (không phải bên trong .contentGrid dạng
+       grid), overflow:hidden khiến flex bỏ qua chiều cao nội dung lúc tính min-height:auto và
+       có thể co card về gần 0px. flex-shrink:0 giữ đúng chiều cao tự nhiên trong mọi trường hợp. */
+    flex-shrink: 0;
 }
 
 .sectionHeader {

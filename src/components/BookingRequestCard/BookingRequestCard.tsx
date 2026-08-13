@@ -282,7 +282,7 @@ const BookingRequestCard = ({ message, isTutor = false, onProceedToPayment }: Bo
                 <div className={styles.paymentPrompt} style={{ backgroundColor: '#fee2e2', borderColor: '#ef4444' }}>
                     <div className={styles.paymentText} style={{ color: '#b91c1c' }}>
                         <AlertCircle size={16} />
-                        <span>Yêu cầu đã hết hạn thanh toán (30 phút) và bị hủy.</span>
+                        <span>Yêu cầu đã hết hạn thanh toán (10 phút) và bị hủy.</span>
                     </div>
                 </div>
             )}
