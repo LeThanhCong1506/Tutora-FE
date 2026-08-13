@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkBreaks from 'remark-breaks';
 import remarkGfm from 'remark-gfm';
 import Header from '../../components/Header';
@@ -26,6 +26,38 @@ type PolicyLoadState =
   | { slug: string; status: 'loading'; document: null }
   | { slug: string; status: 'ready'; document: PolicyDocument }
   | { slug: string; status: 'not-found' | 'error'; document: null };
+
+/**
+ * Liên kết trong nội dung văn bản. Khai báo ngoài component để không tạo lại object mỗi lần
+ * render — ReactMarkdown coi `components` đổi là phải dựng lại toàn bộ cây.
+ *
+ * Nội dung trong DB trỏ tới nhau bằng đường dẫn nội bộ (`[Chính sách bảo mật](/about/privacy)`).
+ * Mặc định ReactMarkdown sinh ra thẻ `<a>` trơn mà router không biết tới, dẫn tới hai vấn đề:
+ * bấm vào là tải lại cả bundle, và trong Zalo Mini App (router chạy với basename
+ * `/zapps/<id>`) thì href tuyệt đối từ gốc domain làm người dùng văng khỏi mini app.
+ *
+ * Vẫn phải là thẻ `<a>` thật — `<Link>` render ra `<a>` nên giữ được bấm chuột giữa mở tab mới,
+ * copy link, và SEO đọc được; chuyển sang `useNavigate` là mất hết những thứ đó.
+ */
+const MARKDOWN_COMPONENTS: Components = {
+  a({ href, title, children }) {
+    if (href?.startsWith('/')) {
+      return (
+        <Link to={href} title={title}>
+          {children}
+        </Link>
+      );
+    }
+
+    // http(s) mở tab mới; mailto/tel/neo trong trang giữ hành vi mặc định của trình duyệt.
+    const opensNewTab = /^https?:\/\//i.test(href ?? '');
+    return (
+      <a href={href} title={title} {...(opensNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+        {children}
+      </a>
+    );
+  },
+};
 
 /**
  * Trang "Về chúng tôi": phần giới thiệu Tutora và toàn bộ văn bản pháp lý nằm chung một
@@ -194,7 +226,7 @@ const PolicyPage = () => {
                       một lần Enter phải ra một dòng mới đúng như lúc họ gõ. Markdown mặc định nuốt
                       dấu xuống dòng đơn và dồn cả đoạn thành một khối liền. */}
                   <article className={styles.doc}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} components={MARKDOWN_COMPONENTS}>
                       {activeDoc.contentMarkdown}
                     </ReactMarkdown>
                   </article>
