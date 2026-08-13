@@ -131,6 +131,7 @@ const StudentLessonDetail = () => {
     const [respondingReschedule, setRespondingReschedule] = useState(false);
     const [recordingAvailable, setRecordingAvailable] = useState(false);
     const [summaryJob, setSummaryJob] = useState<ClassSessionAiJobResponse | null>(null);
+    const [summaryStatusLoaded, setSummaryStatusLoaded] = useState(false);
     const [summaryViewTab, setSummaryViewTab] = useState<'summary' | 'transcript'>('summary');
     const [triggeringSummary, setTriggeringSummary] = useState(false);
     const [chatTurns, setChatTurns] = useState<VideoSummaryChatMessage[]>([]);
@@ -197,9 +198,22 @@ const StudentLessonDetail = () => {
         if (!lessonId) return;
         try {
             const response = await getVideoSummaryStatus(parseInt(lessonId));
-            setSummaryJob(response.content);
+            const next = response.content;
+            setSummaryJob((prev) => {
+                // Một khi đã xác nhận job thật tồn tại (pending/processing/completed/failed), nó không
+                // thể tự "biến mất" — nếu poll sau lại trả về "none" thì đó là dấu hiệu 1 tầng cache
+                // ngoài ứng dụng trả nhầm bản ghi cũ (đã gặp thực tế ở production), không phải sự thật
+                // mới. Bỏ qua, giữ nguyên trạng thái đã biết và thử lại sau thay vì nhảy về màn hình chào.
+                if (next?.status === 'none' && prev && prev.status !== 'none') {
+                    window.setTimeout(() => void fetchSummaryStatus(), 2000);
+                    return prev;
+                }
+                return next;
+            });
         } catch (requestError: unknown) {
             console.error('Failed to load video summary status', requestError);
+        } finally {
+            setSummaryStatusLoaded(true);
         }
     }, [lessonId]);
 
@@ -1304,7 +1318,14 @@ const StudentLessonDetail = () => {
                             </div>
 
                             <div style={aiPanelBody}>
-                                {(!summaryJob || summaryJob.status === 'none') && (
+                                {!summaryStatusLoaded && (
+                                    <div style={{ ...aiBubbleAssistant, flexDirection: 'row', alignItems: 'center' }}>
+                                        <Spin size="small" />
+                                        <span>Đang tải…</span>
+                                    </div>
+                                )}
+
+                                {summaryStatusLoaded && (!summaryJob || summaryJob.status === 'none') && (
                                     <>
                                         <div style={aiHeroGreeting}>
                                             {greetingName && <div style={aiGreetingHi}>Xin chào, {greetingName}.</div>}
