@@ -10,6 +10,8 @@
     "build:zalo": "tsc -b && vite build --mode zalo && node scripts/zalo-post-build.mjs",
     "lint": "eslint .",
     "test:presence": "node --experimental-strip-types --test tests/presence.test.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "preview": "vite preview",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,css,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,css,json}\""
@@ -30,8 +32,10 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-easy-crop": "^5.5.7",
+    "react-grid-layout": "^2.2.4",
     "react-infinite-scroll-component": "^6.1.1",
     "react-markdown": "^10.1.0",
+    "react-resizable": "^4.0.2",
     "react-router-dom": "^7.12.0",
     "react-toastify": "^11.0.5",
     "recharts": "^3.7.0",
@@ -42,6 +46,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",

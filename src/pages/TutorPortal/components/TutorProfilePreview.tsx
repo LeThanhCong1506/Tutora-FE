@@ -113,8 +113,10 @@ const TutorProfilePreview: React.FC<TutorProfilePreviewProps> = ({ formData }) =
 
   return (
     <div
-      className="tutor-detail-page"
-      style={{ background: 'var(--color-cream, #faf5ee)', minHeight: 'auto', width: '100%', flex: 1 }}
+      className="tutor-detail-page tutor-profile-preview"
+      /* Preview nằm trong portal nên dùng cùng canvas với header/sidebar;
+         trang hồ sơ public vẫn giữ nền --color-cream từ tutor-detail.css. */
+      style={{ background: 'var(--portal-canvas, var(--color-cream, #faf5ee))', minHeight: 'auto', width: '100%', flex: 1 }}
     >
       <main className="tutor-detail-main" style={{ paddingTop: '30px', paddingBottom: '80px' }}>
         <div className="tutor-detail-container">

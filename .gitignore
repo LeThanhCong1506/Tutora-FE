@@ -49,3 +49,9 @@ git-status-output.txt
 debug-*.js
 test_*.html
 .understand-anything
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

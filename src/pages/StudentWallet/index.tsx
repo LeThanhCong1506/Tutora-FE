@@ -89,12 +89,13 @@ const StudentWallet = () => {
 
   return (
     <div className={parentStyles.page}>
+      <div className={parentStyles.walletTopGrid}>
       <div className={parentStyles.pageHeader}>
         <h1 className={parentStyles.pageTitle}>Ví của tôi</h1>
         <p className={parentStyles.pageSubtitle}>
           Số dư được hoàn khi buổi học bị hủy. Ví học sinh không nạp tiền.
         </p>
-        <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
+        <div style={{ display: 'flex', gap: 10, marginTop: 6, flexWrap: 'wrap' }}>
           <button
             className={parentStyles.withdrawBtn}
             type="button"
@@ -144,24 +145,27 @@ const StudentWallet = () => {
           </div>
         </section>
       </div>
+      </div>
 
-      <WithdrawalRequestsCard
-        variant="preview"
-        withdrawals={withdrawals}
-        loading={withdrawalsLoading}
-        onSelect={(item) => setSelectedWithdrawalId(item.withdrawalId)}
-        onViewAll={() => navigate(`${portalBase}/wallet/withdrawals`)}
-      />
+      <div className={parentStyles.walletActivityGrid}>
+        <WithdrawalRequestsCard
+          variant="preview"
+          withdrawals={withdrawals}
+          loading={withdrawalsLoading}
+          onSelect={(item) => setSelectedWithdrawalId(item.withdrawalId)}
+          onViewAll={() => navigate(`${portalBase}/wallet/withdrawals`)}
+        />
 
-      <TransactionsCard
-        variant="full"
-        transactions={transactions}
-        loading={txLoading}
-        onSelect={(tx) => setSelectedTxId(tx.transactionId)}
-        total={transactions.length}
-        page={1}
-        pageSize={PREVIEW_SIZE}
-      />
+        <TransactionsCard
+          variant="full"
+          transactions={transactions}
+          loading={txLoading}
+          onSelect={(tx) => setSelectedTxId(tx.transactionId)}
+          total={transactions.length}
+          page={1}
+          pageSize={PREVIEW_SIZE}
+        />
+      </div>
 
       {selectedTxId != null && (
         <Suspense fallback={null}>

@@ -29,6 +29,18 @@ export interface LessonSummary {
    */
   counterpartLabel?: string;
   counterpartName?: string;
+  /**
+   * Người liên quan thứ hai, hiện thêm trên card lưới/danh sách và tooltip. Phụ huynh xem lịch
+   * chung của nhiều con: counterpart là con, secondary là gia sư (và ngược lại khi lọc theo 1 con).
+   */
+  secondaryLabel?: string;
+  secondaryName?: string;
+  /**
+   * Người đang xem có quyền vào phòng học không. Mặc định (undefined) = có, giữ nguyên hành vi
+   * cũ của trang học sinh/gia sư. Phụ huynh chỉ theo dõi lịch của con nên set `false`: ẩn hẳn
+   * nút "Vào lớp" và dòng trạng thái phòng học trong tooltip.
+   */
+  canJoin?: boolean;
   /** True nếu buổi học đã có video xem lại (đã upload xong lên Drive). */
   hasRecording?: boolean;
   /** Yêu cầu dời lịch đang hiệu lực cho buổi này — "pending"/"approved", null nếu không có. */

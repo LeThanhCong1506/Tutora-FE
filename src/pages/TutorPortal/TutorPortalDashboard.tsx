@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import ReactGridLayout from 'react-grid-layout/legacy';
+import 'react-grid-layout/css/styles.css';
 import styles from '../../styles/pages/tutor-portal-dashboard.module.css';
 import {
     getTutorDashboardStats,
@@ -135,6 +137,12 @@ const fetchRecentFeedbacks = async (tutorUserId: string): Promise<FeedbackDto[]>
 const DASHBOARD_TABS = ['today', 'tomorrow', 'week', 'date'] as const;
 type DashboardTab = (typeof DASHBOARD_TABS)[number];
 
+const defaultDashboardGridLayout = [
+    { i: 'today', x: 0, y: 0, w: 5, h: 4, minW: 3, minH: 3 },
+    { i: 'upcoming', x: 5, y: 0, w: 4, h: 5, minW: 3, minH: 4 },
+    { i: 'calendar', x: 9, y: 0, w: 3, h: 7, minW: 3, minH: 5 },
+    { i: 'feedback', x: 9, y: 7, w: 3, h: 6, minW: 3, minH: 4 },
+];
 /**
  * Cửa sổ quét "buổi chờ gửi báo cáo". Query riêng chứ không tái dùng calendar của tháng đang
  * xem: gia sư lật sang tháng khác thì buổi còn nợ báo cáo sẽ biến mất khỏi danh sách nhắc.
@@ -186,6 +194,17 @@ const TutorPortalDashboard: React.FC = () => {
     // hoặc bấm "Để sau" ở modal cuối buổi.
     const [pendingReports, setPendingReports] = useState<CalendarClassSessionResponse[]>([]);
     const [replyModal, setReplyModal] = useState<{ open: boolean; feedback: FeedbackDto | null }>({ open: false, feedback: null });
+    const [isLayoutEditing, setIsLayoutEditing] = useState(false);
+    const dashboardGridContainerRef = useRef<HTMLDivElement | null>(null);
+    const [dashboardGridWidth, setDashboardGridWidth] = useState(1200);
+    const [dashboardGridLayout, setDashboardGridLayout] = useState<any[]>(() => {
+        try {
+            const saved = JSON.parse(localStorage.getItem('tutora:tutor-dashboard:grid-layout') ?? '[]');
+            return Array.isArray(saved) && saved.length === 4 ? saved : defaultDashboardGridLayout;
+        } catch {
+            return defaultDashboardGridLayout;
+        }
+    });
 
     useEffect(() => {
         const fetchDashboardData = async () => {
@@ -235,6 +254,21 @@ const TutorPortalDashboard: React.FC = () => {
 
         fetchDashboardData();
     }, [currentMonth]);
+
+    useEffect(() => {
+        localStorage.setItem('tutora:tutor-dashboard:grid-layout', JSON.stringify(dashboardGridLayout));
+    }, [dashboardGridLayout]);
+
+    useEffect(() => {
+        const container = dashboardGridContainerRef.current;
+        if (!container) return;
+
+        const updateWidth = () => setDashboardGridWidth(Math.max(1, container.clientWidth));
+        updateWidth();
+        const observer = new ResizeObserver(updateWidth);
+        observer.observe(container);
+        return () => observer.disconnect();
+    }, []);
 
     // Tách khỏi fetchDashboardData vì cửa sổ 14 ngày không phụ thuộc tháng đang xem trên lịch —
     // gộp chung sẽ gọi lại thừa mỗi lần gia sư lật tháng.
@@ -376,6 +410,13 @@ const TutorPortalDashboard: React.FC = () => {
             month: '2-digit'
         });
     };
+
+    // API dashboard là nguồn chính. Lọc lại tại UI để không tạo một panel rỗng
+    // khi payload có phần tử null/thiếu mã buổi học.
+    const nextUpcomingLessons = (Array.isArray(stats?.nextClassSessions) ? stats.nextClassSessions : [])
+        .filter((lesson) => Number.isFinite(lesson.classSessionId) && Boolean(lesson.scheduledStart))
+        .slice(0, 5);
+
 
     const getSectionTitle = () => {
         if (selectedTab === 'today') return 'Các buổi học hôm nay';
@@ -639,60 +680,36 @@ const TutorPortalDashboard: React.FC = () => {
                     <WithdrawIcon />
                     <span>Rút tiền</span>
                 </button>
+                <button className={styles.layoutEditButton} onClick={() => setIsLayoutEditing((value) => !value)}>
+                    {isLayoutEditing ? '✓ Xong chỉnh sửa' : '⠿ Tùy chỉnh bố cục'}
+                </button>
+                {isLayoutEditing && (
+                    <button className={styles.layoutResetButton} onClick={() => setDashboardGridLayout(defaultDashboardGridLayout)}>
+                        Đặt lại
+                    </button>
+                )}
             </div>
 
-            {/* Next Upcoming Lessons from dashboard stats */}
-            {stats && stats.nextClassSessions && stats.nextClassSessions.length > 0 && (
-                <div className={styles.sectionCard} style={{ padding: '20px' }}>
-                    <div className={styles.sectionHeader} style={{ marginBottom: '14px' }}>
-                        <h2 className={styles.sectionTitle}>Buổi học sắp tới</h2>
-                        <button className={styles.outlineBtn} onClick={() => navigate('/tutor-portal/calendar')}>
-                            Xem tất cả
-                            <ArrowRightIcon />
-                        </button>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {stats.nextClassSessions.slice(0, 5).map((lesson) => (
-                            <div key={lesson.classSessionId} style={{
-                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                padding: '14px 16px', borderRadius: '12px',
-                                background: '#f9f8f3', border: '1px solid rgba(26,34,56,0.06)',
-                            }}>
-                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                                    <div style={{
-                                        display: 'flex', flexDirection: 'column', alignItems: 'center',
-                                        minWidth: '50px', padding: '6px 10px', borderRadius: '8px',
-                                        background: '#1a2238', color: '#fff',
-                                    }}>
-                                        <span style={{ fontSize: '16px', fontWeight: 700, lineHeight: 1.2 }}>
-                                            {new Date(lesson.scheduledStart).getDate()}
-                                        </span>
-                                        <span style={{ fontSize: '10px', textTransform: 'uppercase', opacity: 0.8 }}>
-                                            Th{new Date(lesson.scheduledStart).getMonth() + 1}
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <div style={{ fontWeight: 700, fontSize: '14px', color: '#1a2238', fontFamily: "'Bricolage Grotesque', sans-serif" }}>
-                                            {lesson.subjectName || 'Chưa xác định'}
-                                        </div>
-                                        <div style={{ fontSize: '12px', color: 'rgba(62,47,40,0.6)', marginTop: '2px' }}>
-                                            {lesson.studentName || 'Chưa có học sinh'} • {formatTime(lesson.scheduledStart)} - {formatTime(lesson.scheduledEnd)}
-                                        </div>
-                                    </div>
-                                </div>
-                                <button className={styles.outlineBtn} onClick={() => navigate(`/tutor-portal/class-sessions/${lesson.classSessionId}`)}>
-                                    Chi tiết
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
             {/* Main Content Grid - 3 Column Layout */}
-            <div className={styles.contentGrid}>
+            <div ref={dashboardGridContainerRef} className={styles.dashboardGridContainer}>
+            <ReactGridLayout
+                width={dashboardGridWidth}
+                layout={dashboardGridLayout}
+                cols={12}
+                rowHeight={52}
+                margin={[16, 16]}
+                containerPadding={[16, 16]}
+                isDraggable={isLayoutEditing}
+                isResizable={isLayoutEditing}
+                onLayoutChange={(layout) => setDashboardGridLayout([...layout])}
+                className={`${styles.dashboardGrid} ${isLayoutEditing ? styles.dashboardGridEditing : ''}`}
+                style={isLayoutEditing ? {
+                    '--dashboard-grid-column': `${(dashboardGridWidth - 32 - (16 * 11)) / 12 + 16}px`,
+                } as React.CSSProperties : undefined}
+                draggableCancel="button, a, input"
+            >
                 {/* Left Column - Today's Lessons */}
-                <div className={styles.leftColumn}>
+                <div key="today" className={styles.dashboardGridWidget}>
                     <div className={styles.sectionCard}>
                         <div className={styles.sectionHeader}>
                             <h2 className={styles.sectionTitle}>
@@ -813,9 +830,43 @@ const TutorPortalDashboard: React.FC = () => {
                     </div> */}
                 </div>
 
-                {/* Right Column - Calendar & Notes */}
-                <div className={styles.rightColumn}>
-                    {/* Calendar */}
+                {/* Middle Column — danh sách dọc, cao đúng theo số buổi thay vì chiếm một hàng ngang riêng. */}
+                <div key="upcoming" className={styles.dashboardGridWidget}>
+                        <section style={upcomingLessonsPanel} aria-label="Buổi học sắp tới">
+                            <div style={upcomingLessonsPanelHeader}>
+                                <div>
+                                    <span style={upcomingLessonsEyebrow}>LỊCH GIẢNG</span>
+                                    <h2 style={upcomingLessonsTitle}>Buổi học sắp tới</h2>
+                                </div>
+                                <button className={styles.outlineBtn} onClick={() => navigate('/tutor-portal/calendar')}>
+                                    Xem tất cả
+                                    <ArrowRightIcon />
+                                </button>
+                            </div>
+                            <div style={upcomingLessonsList}>
+                                {nextUpcomingLessons.length > 0 ? nextUpcomingLessons.map((lesson) => (
+                                    <div key={lesson.classSessionId} style={upcomingLessonItem}>
+                                        <div style={upcomingLessonDate}>
+                                            <span style={{ fontSize: '17px', fontWeight: 700, lineHeight: 1.1 }}>{new Date(lesson.scheduledStart).getDate()}</span>
+                                            <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.72 }}>Th {new Date(lesson.scheduledStart).getMonth() + 1}</span>
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={upcomingLessonSubject}>{lesson.subjectName || 'Chưa xác định'}</div>
+                                            <div style={upcomingLessonMeta}>{lesson.studentName || 'Chưa có học sinh'} · {formatTime(lesson.scheduledStart)} – {formatTime(lesson.scheduledEnd)}</div>
+                                        </div>
+                                        <button className={styles.outlineBtn} onClick={() => navigate(`/tutor-portal/class-sessions/${lesson.classSessionId}`)}>Chi tiết</button>
+                                    </div>
+                                )) : (
+                                    <p style={{ margin: 0, color: '#667085', fontSize: '14px', textAlign: 'center', padding: '18px 0' }}>
+                                        Chưa có buổi học sắp tới
+                                    </p>
+                                )}
+                            </div>
+                        </section>
+                </div>
+
+                {/* Calendar widget */}
+                <div key="calendar" className={styles.dashboardGridWidget}>
                     <div className={`${styles.sectionCard} ${styles.calendarSection}`} data-tour="calendar-widget">
                         <div className={styles.calendarHeader}>
                             <h3 className={styles.calendarMonth}>
@@ -866,10 +917,12 @@ const TutorPortalDashboard: React.FC = () => {
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    {/* Recent Feedbacks */}
+                {/* Feedback widget */}
+                <div key="feedback" className={styles.dashboardGridWidget}>
                     <div className={styles.sectionCard}>
-                        <div style={{ padding: '20px' }}>
+                        <div style={{ padding: '20px', height: '100%', boxSizing: 'border-box', overflowY: 'auto' }}>
                             <h2 className={styles.sectionTitle} style={{ marginBottom: '16px' }}>Đánh giá gần đây</h2>
                             {recentFeedbacks.length > 0 ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -938,35 +991,116 @@ const TutorPortalDashboard: React.FC = () => {
                             )}
                         </div>
                     </div>
-
-                    {/* Reply Feedback Modal */}
-                    <ReplyFeedbackModal
-                        open={replyModal.open}
-                        onClose={() => setReplyModal({ open: false, feedback: null })}
-                        onSuccess={async () => {
-                            setReplyModal({ open: false, feedback: null });
-                            const tutorUserId = getUserInfoFromToken()?.userId;
-                            if (tutorUserId) {
-                                try {
-                                    setRecentFeedbacks(await fetchRecentFeedbacks(tutorUserId));
-                                } catch (err) {
-                                    console.error('Error refreshing feedbacks after reply:', err);
-                                }
-                            }
-                        }}
-                        feedbackId={replyModal.feedback?.feedbackId || 0}
-                        parentName={replyModal.feedback?.parentName}
-                        reviewerRole={replyModal.feedback?.reviewerRole}
-                        rating={replyModal.feedback?.rating}
-                        comment={replyModal.feedback?.comment}
-                        createdAt={replyModal.feedback?.createdAt}
-                    />
-
-
                 </div>
+            </ReactGridLayout>
             </div>
+            <ReplyFeedbackModal
+                open={replyModal.open}
+                onClose={() => setReplyModal({ open: false, feedback: null })}
+                onSuccess={async () => {
+                    setReplyModal({ open: false, feedback: null });
+                    const tutorUserId = getUserInfoFromToken()?.userId;
+                    if (tutorUserId) {
+                        try {
+                            setRecentFeedbacks(await fetchRecentFeedbacks(tutorUserId));
+                        } catch (err) {
+                            console.error('Error refreshing feedbacks after reply:', err);
+                        }
+                    }
+                }}
+                feedbackId={replyModal.feedback?.feedbackId || 0}
+                parentName={replyModal.feedback?.parentName}
+                reviewerRole={replyModal.feedback?.reviewerRole}
+                rating={replyModal.feedback?.rating}
+                comment={replyModal.feedback?.comment}
+                createdAt={replyModal.feedback?.createdAt}
+            />
         </div>
     );
+};
+
+const upcomingLessonsPanel: React.CSSProperties = {
+    background: '#fff',
+    border: '1px solid rgba(62,47,40,0.12)',
+    borderRadius: 16,
+    boxShadow: '0 4px 14px rgba(45,55,47,0.06)',
+    padding: 16,
+    marginBottom: 0,
+    height: '100%',
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'column',
+};
+
+const upcomingLessonsPanelHeader: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
+    marginBottom: 12,
+};
+
+const upcomingLessonsEyebrow: React.CSSProperties = {
+    display: 'block',
+    color: '#64705B',
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: '.1em',
+    marginBottom: 3,
+};
+
+const upcomingLessonsTitle: React.CSSProperties = {
+    color: '#1A2238',
+    fontFamily: "'Bricolage Grotesque', sans-serif",
+    fontSize: 19,
+    lineHeight: 1.25,
+    margin: 0,
+};
+
+const upcomingLessonsList: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
+    overflowY: 'auto',
+    minHeight: 0,
+};
+
+const upcomingLessonItem: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 14,
+    padding: '11px 12px',
+    background: '#FAF9F7',
+    border: '1px solid #ECE7DF',
+    borderRadius: 12,
+};
+
+const upcomingLessonDate: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 50,
+    minHeight: 44,
+    color: '#fff',
+    background: '#2D372F',
+    borderRadius: 10,
+};
+
+const upcomingLessonSubject: React.CSSProperties = {
+    color: '#1A2238',
+    fontFamily: "'Bricolage Grotesque', sans-serif",
+    fontSize: 15,
+    fontWeight: 700,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+};
+
+const upcomingLessonMeta: React.CSSProperties = {
+    color: '#697287',
+    fontSize: 12.5,
+    marginTop: 3,
 };
 
 export default TutorPortalDashboard;

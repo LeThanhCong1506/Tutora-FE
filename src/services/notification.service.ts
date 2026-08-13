@@ -41,6 +41,14 @@ export interface ApiResponse<T> {
     content: T;
 }
 
+/** Backend đôi khi trả HTTP 200 kèm `status: Failed`; không được coi là thao tác thành công. */
+const ensureNotificationMutationSucceeded = (data: unknown) => {
+    const response = data as { status?: string; message?: string } | undefined;
+    if (response?.status?.toLowerCase() === 'failed') {
+        throw new Error(response.message || 'Không thể cập nhật trạng thái thông báo.');
+    }
+};
+
 /**
  * Get all notifications for current user
  */
@@ -110,9 +118,10 @@ export const getUnreadCountByType = async (): Promise<Record<string, number>> =>
  */
 export const markAsRead = async (notificationId: number): Promise<void> => {
     try {
-        await api.put(`/notifications/${notificationId}/read`, null, {
+        const response = await api.put(`/notifications/${notificationId}/read`, null, {
             headers: getAuthHeaders(),
         });
+        ensureNotificationMutationSucceeded(response.data);
     } catch (error: any) {
         console.error(`Error marking notification ${notificationId} as read:`, error);
         throw error;
@@ -140,9 +149,10 @@ export const markAsReadByType = async (type: string): Promise<void> => {
  */
 export const markAllAsRead = async (): Promise<void> => {
     try {
-        await api.put('/notifications/read-all', null, {
+        const response = await api.put('/notifications/read-all', null, {
             headers: getAuthHeaders(),
         });
+        ensureNotificationMutationSucceeded(response.data);
     } catch (error: any) {
         console.error('Error marking all notifications as read:', error);
         throw error;

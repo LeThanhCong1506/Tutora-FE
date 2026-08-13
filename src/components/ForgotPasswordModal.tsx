@@ -4,6 +4,7 @@
 //   B1: nhập SĐT  -> POST /auth/forgot-password (BE gửi OTP qua SMS)
 //   B2: nhập OTP + mật khẩu mới -> POST /auth/reset-password
 import React, { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "react-toastify";
 import { forgotPasswordPhone, resetPasswordPhone } from "../services/auth.service";
 import styles from "../styles/components/forgot-password-modal.module.css";
@@ -144,7 +145,12 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
 
     if (!isOpen) return null;
 
-    return (
+    // Bắt buộc render qua portal ở body: modal này được gọi từ trong `.login-form`, mà khối đó
+    // có `position: relative; z-index: 10` nên tạo ra một stacking context. Nằm trong đó thì
+    // `z-index: 100000` của overlay chỉ so với các phần tử cùng khối, còn ra ngoài nó chỉ đáng
+    // giá 10 — thua header (z-index 200). Kết quả: header phủ lên mép trên modal và ăn luôn cả
+    // nút đóng, bấm ✕ không được. Portal đưa overlay lên thẳng body nên 100000 mới có tác dụng.
+    return createPortal(
         <div className={styles.overlay}>
             {/* Backdrop */}
             <div className={styles.backdrop} onClick={handleClose} />
@@ -360,7 +366,8 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                 {/* Decorative Accent Bar */}
                 <div className={styles.accentBar} />
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 };
 

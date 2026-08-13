@@ -16,10 +16,9 @@
 }
 
 /* ── Header + section navigation ── */
-.header {
-  background: linear-gradient(135deg, #1a2238 0%, #2a3a5c 100%);
-  padding: 28px 32px 24px;
-  color: #fff;
+.stepNavigation {
+  width: 100%;
+  padding: 24px 32px 0;
 }
 
 .headerTitle {
@@ -42,8 +41,8 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
-  margin-top: 24px;
-  max-width: 980px;
+  margin: 0 auto;
+  max-width: 1100px;
 }
 
 .sectionNavItem {
@@ -54,11 +53,11 @@
   min-height: 76px;
   text-align: left;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(242, 240, 228, 0.18);
-  border-radius: 8px;
+  background: #fff;
+  border: 1px solid rgba(26, 34, 56, 0.13);
+  border-radius: 12px;
   padding: 14px;
-  color: inherit;
+  color: #1a2238;
   font-family: inherit;
   transition:
     background 0.2s ease,
@@ -68,22 +67,23 @@
 }
 
 .sectionNavItem:hover:not(:disabled):not(.sectionNavItemActive) {
-  background: rgba(255, 255, 255, 0.13);
-  border-color: rgba(242, 240, 228, 0.36);
+  background: #fff;
+  border-color: rgba(26, 34, 56, 0.3);
+  box-shadow: 0 8px 18px rgba(45, 55, 47, 0.1);
   transform: translateY(-1px);
 }
 
 .sectionNavItem:focus-visible {
-  outline: 2px solid #f2f0e4;
+  outline: 2px solid #1a2238;
   outline-offset: 3px;
 }
 
 .sectionNavItem:active:not(:disabled),
 .sectionNavItemActive {
-  background: #f2f0e4;
-  border-color: #f2f0e4;
-  color: #1a2238;
-  box-shadow: 0 16px 34px rgba(9, 15, 28, 0.22);
+  background: #1a2238;
+  border-color: #1a2238;
+  color: #fff;
+  box-shadow: 0 12px 24px rgba(26, 34, 56, 0.22);
   transform: translateY(-1px);
 }
 
@@ -101,15 +101,15 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: rgba(242, 240, 228, 0.14);
-  color: #f2f0e4;
+  background: rgba(26, 34, 56, 0.08);
+  color: #1a2238;
   font-size: 18px;
 }
 
 .sectionNavItem:active:not(:disabled) .sectionNavIcon,
 .sectionNavItemActive .sectionNavIcon {
-  background: #1a2238;
-  color: #f2f0e4;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
 }
 
 .sectionNavContent {
@@ -132,7 +132,7 @@
   min-width: 0;
   font-size: 14px;
   font-weight: 700;
-  color: #fff;
+  color: #1a2238;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -140,7 +140,7 @@
 
 .sectionNavItem:active:not(:disabled) .sectionNavTitle,
 .sectionNavItemActive .sectionNavTitle {
-  color: #1a2238;
+  color: #fff;
 }
 
 .sectionNavStatus {
@@ -148,8 +148,8 @@
   max-width: 112px;
   border-radius: 999px;
   padding: 3px 7px;
-  background: rgba(242, 240, 228, 0.12);
-  color: rgba(242, 240, 228, 0.78);
+  background: rgba(26, 34, 56, 0.08);
+  color: rgba(26, 34, 56, 0.7);
   font-size: 11px;
   font-weight: 700;
   line-height: 1.2;
@@ -160,12 +160,12 @@
 
 .sectionNavItem:active:not(:disabled) .sectionNavStatus,
 .sectionNavItemActive .sectionNavStatus {
-  background: rgba(61, 74, 62, 0.12);
-  color: #3d4a3e;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
 }
 
 .sectionNavDesc {
-  color: rgba(242, 240, 228, 0.66);
+  color: rgba(62, 47, 40, 0.66);
   font-size: 12px;
   line-height: 1.35;
   display: -webkit-box;
@@ -176,7 +176,7 @@
 
 .sectionNavItem:active:not(:disabled) .sectionNavDesc,
 .sectionNavItemActive .sectionNavDesc {
-  color: rgba(26, 34, 56, 0.72);
+  color: rgba(255, 255, 255, 0.76);
 }
 
 /* ── Body ── */
@@ -283,6 +283,21 @@
   gap: 6px;
 }
 
+/* Giữ ô đệm ở góc header mà không cần render phần tử .gridCorner. */
+.weekHeader {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  margin: 0 0 6px 62px;
+  overflow: hidden;
+  position: sticky;
+  top: var(--tabs-h);
+  z-index: 6;
+  border: 1px solid rgba(26, 34, 56, 0.1);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 7px 16px rgba(45, 55, 47, 0.1);
+}
+
 .gridCorner {
   position: sticky;
   top: var(--tabs-h);
@@ -293,10 +308,12 @@
 .colHead {
   text-align: center;
   padding: 6px 0 8px;
-  position: sticky;
-  top: var(--tabs-h);
-  z-index: 6;
-  background: #fff;
+  min-width: 0;
+  border-right: 1px solid rgba(26, 34, 56, 0.08);
+}
+
+.colHead:last-child {
+  border-right: 0;
 }
 
 .colHeadDay {
@@ -660,14 +677,6 @@
 }
 
 /* ── Footer nav ── */
-/* Ô tick quy chế ở bước cuối. Đặt ngay trên footer dính, dùng chung nền để đọc như
-   một khối với nút "Hoàn tất" đang bị khoá bên dưới. */
-.consentBar {
-  padding: 14px 32px;
-  background: rgba(242, 240, 228, 0.92);
-  border-top: 1px solid rgba(26, 34, 56, 0.1);
-}
-
 .footer {
   position: sticky;
   bottom: 0;
@@ -680,6 +689,70 @@
   background: rgba(242, 240, 228, 0.92);
   backdrop-filter: blur(8px);
   border-top: 1px solid rgba(26, 34, 56, 0.1);
+}
+
+/* Trạng thái hydrate: không render header/stepper của flow khi dữ liệu chưa sẵn sàng. */
+.loadingScreen {
+  flex: 1;
+  min-height: calc(100vh - 96px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: #fff;
+  color: #fff;
+}
+
+.loadingSpinner {
+  width: 44px;
+  height: 44px;
+  border: 3px solid rgba(45, 55, 47, 0.16);
+  border-top-color: #2d372f;
+  border-right-color: #672320;
+  border-radius: 50%;
+  animation: onboardingSpin 0.8s linear infinite;
+}
+
+.loadingCopy {
+  text-align: center;
+}
+
+.loadingCopy h1 {
+  margin: 0;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+.loadingCopy p {
+  margin: 7px 0 0;
+  font-size: 14px;
+  color: rgba(62, 47, 40, 0.62);
+}
+
+@keyframes onboardingSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* CTA duy nhất của flow: pill nổi cố định, không còn thanh footer che nội dung. */
+.footerPrimaryPill {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  z-index: 190;
+  padding: 6px;
+  border: 1px solid rgba(62, 47, 40, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 14px 30px rgba(45, 55, 47, 0.18), 0 3px 8px rgba(45, 55, 47, 0.1);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.footerPrimaryPill .btnPrimary {
+  min-width: 132px;
+  box-shadow: 0 5px 12px rgba(26, 34, 56, 0.2);
 }
 
 .footerInfo {
@@ -2981,6 +3054,11 @@
     padding-right: 16px;
   }
 
+  .footerPrimaryPill {
+    right: 16px;
+    bottom: 16px;
+  }
+
   .sectionNavItem {
     min-height: auto;
     padding: 12px;
@@ -3339,16 +3417,54 @@
 @media (min-width: 1024px) {
   .availabilityLayout {
     flex-direction: row;
-    align-items: flex-start;
+    align-items: stretch;
+    /* Chừa phần đáy tương đương khoảng hở của sidebar portal nổi. */
+    height: clamp(440px, calc(100dvh - 550px), 650px);
+    min-height: 0;
   }
+
   .availabilityMain {
     flex: 1;
+    min-height: 0;
+    display: flex;
   }
+
+  /* Các slot cuộn trong bảng, thay vì kéo toàn bộ trang dài theo lịch. */
+  .availabilityMain .gridCard {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    border-radius: 14px;
+    clip-path: inset(0 round 14px);
+  }
+
+  .availabilityMain .weekHeader {
+    top: 0;
+  }
+
+  /* Mỗi ngày là một thẻ nổi riêng để dễ quét lịch khi cuộn. */
+  .availabilityMain .colHead {
+    padding: 10px 6px;
+  }
+
+  .availabilityMain .wholeDayBtn {
+    margin-top: 5px;
+    border: 1px solid rgba(26, 34, 56, 0.08);
+    background: rgba(242, 240, 228, 0.82);
+  }
+
   .availabilityAside {
     width: 280px;
     flex-shrink: 0;
-    position: sticky;
-    top: 12px;
+    min-height: 0;
+  }
+
+  .availabilityAsideCard {
+    height: 100%;
+    box-sizing: border-box;
   }
 }
 
