@@ -14,7 +14,6 @@ import {
   Video,
 } from 'lucide-react';
 import { getClassSessionStatusMeta } from '../../../utils/classSessionStatus';
-import { isWithinJoinWindow } from '../../../utils/liveSession';
 import styles from '../styles.module.css';
 import type { LessonSummary, LessonViewProps } from './types';
 import {
@@ -88,15 +87,15 @@ const SecondaryPerson = ({ lesson }: { lesson: LessonSummary }) =>
     </span>
   ) : null;
 
+// Vào lớp được bất kỳ lúc nào (BE không chặn theo giờ, EarlyJoinToleranceMinutes chỉ quyết có cần
+// hỏi xác nhận thêm khi vào sớm/muộn chứ không chặn cứng) — nên hàm này giờ chỉ còn xét đúng những lý
+// do "thật sự không vào được": không phải người có quyền vào (phụ huynh theo dõi), phòng đã đóng sau
+// check-out, hoặc buổi không ở trạng thái có thể vào (đã huỷ/kết thúc/chưa có phòng).
 const canShowJoinButton = (lesson: LessonSummary) => {
   if (lesson.canJoin === false) return false; // người xem chỉ theo dõi (phụ huynh)
   if (isAwaitingReport(lesson)) return false; // phòng đã đóng sau check-out
   const status = lesson.status.trim().toLowerCase();
-  if (!['scheduled', 'in_progress'].includes(status) || !lesson.meetingLink?.trim()) return false;
-  // Trên lịch/danh sách (khác 2 trang chi tiết buổi học — nơi nút luôn hiện, chỉ đổi nhãn), nút
-  // chỉ hiện khi đã gần giờ học (trong vòng 15 phút, khớp BE EarlyJoinToleranceMinutes) hoặc buổi
-  // đang diễn ra — còn xa giờ học thì ẩn hẳn, tránh rối mắt trên lịch tuần/tháng.
-  return status === 'in_progress' || isWithinJoinWindow(lesson.scheduledStart);
+  return ['scheduled', 'in_progress'].includes(status) && !!lesson.meetingLink?.trim();
 };
 
 const getAttentionClass = (lesson: LessonSummary): string => {
@@ -217,11 +216,13 @@ const LessonHoverDetails = ({ lesson }: { lesson: LessonSummary }) => {
           <i className={styles.tooltipStatusDot} />
           {status.label}
         </span>
-        {/* Người chỉ theo dõi (phụ huynh) không vào lớp được — nói "không thể vào lớp" sẽ gây hiểu nhầm. */}
-        {lesson.canJoin !== false && (
-          <span className={`${styles.tooltipMeetState} ${canJoin ? styles.tooltipMeetReady : ''}`}>
+        {/* Chỉ hiện khi thật sự vào được (xem canShowJoinButton) — buổi chưa tới lúc vào được (đã
+            huỷ/kết thúc/phòng đóng) hoặc người xem chỉ theo dõi (phụ huynh) thì ẩn hẳn, không còn
+            badge "Không thể vào lớp" nữa vì giờ vào lớp được bất kỳ lúc nào. */}
+        {canJoin && (
+          <span className={`${styles.tooltipMeetState} ${styles.tooltipMeetReady}`}>
             <Video size={12} aria-hidden="true" />
-            {canJoin ? 'Có thể vào lớp' : 'Không thể vào lớp'}
+            Có thể vào lớp
           </span>
         )}
         {lesson.hasRecording && <RecordingBadge />}
