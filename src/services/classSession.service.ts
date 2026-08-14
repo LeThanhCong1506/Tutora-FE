@@ -366,10 +366,14 @@ export const submitClassSessionReport = async (
 export interface ClassSessionAiJobResponse {
     jobId?: string;
     status: 'none' | 'pending' | 'processing' | 'completed' | 'failed';
-    /** Giai đoạn con khi status="processing" (tóm tắt học sinh): "analyzing" | "verifying". */
+    /**
+     * Giai đoạn con của job tóm tắt học sinh:
+     * - "analyzing": đang nghe video viết tóm tắt (status="processing").
+     * - "transcribing": tóm tắt đã xong và trả về rồi (status="completed"), bản chép lời còn chạy nền.
+     */
     stage?: string | null;
     resultText?: string | null;
-    /** Bản chép lời (transcript) đầy đủ — chỉ có ở job tóm tắt học sinh, lấy cùng lượt gọi Gemini với tóm tắt. */
+    /** Bản chép lời (transcript) đầy đủ — sinh ở lượt gọi Gemini riêng, về sau tóm tắt nên có thể còn null. */
     transcriptText?: string | null;
     resultJson?: TutorReportAiFillResult | null;
     errorMessage?: string | null;
