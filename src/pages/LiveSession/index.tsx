@@ -37,10 +37,6 @@ import styles from './styles.module.css';
 // SDK whiteboard nặng → lazy-load để không nằm trong bundle chính (đặc biệt cho bản Zalo).
 const WhiteboardOverlay = lazy(() => import('./live-session-components/WhiteboardOverlay'));
 
-// Form báo cáo nằm trong chunk `portal-staff` (xem manualChunks ở vite.config.ts) và chỉ gia sư
-// mới dùng — PHẢI lazy-load, import tĩnh sẽ kéo cả chunk portal vào phòng học của học viên/Zalo.
-const LessonReportModal = lazy(() => import('../TutorPortal/components/LessonReportModal'));
-
 /** Bắt đầu hiện cảnh báo đếm ngược khi còn ít hơn mốc này tới lúc hệ thống tự đóng phòng. */
 const AUTO_END_WARNING_SEC = 5 * 60;
 
@@ -98,10 +94,8 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
   const [whiteboardOpen, setWhiteboardOpen] = useState(false);
   const [endModalOpen, setEndModalOpen] = useState(false);
   const [ending, setEnding] = useState(false);
-  // Khác null = gia sư vừa chốt buổi và đang ở bước viết báo cáo (phòng đã đóng).
-  const [reportSessionId, setReportSessionId] = useState<number | null>(null);
   // Gia sư tự bấm kết thúc → bỏ qua nhánh auto-điều hướng của `sessionEnded`, nếu không
-  // heartbeat trả `roomClosed` sẽ đá chính gia sư ra trước khi form báo cáo kịp mở.
+  // heartbeat trả `roomClosed` sẽ đá chính gia sư ra và chạy trùng logic rời phòng.
   const selfEndingRef = useRef(false);
   const replacementCleanupStartedRef = useRef(false);
 
@@ -327,34 +321,21 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
       navigate(-1);
       return;
     }
-    // Gia sư "Kết thúc buổi học": ghi check-out (đóng phòng) + đá mọi người còn lại ra.
-    let checkedOut = false;
+    // Gia sư "Kết thúc buổi học": ghi check-out (đóng phòng) + đá mọi người còn lại ra, rồi thoát
+    // thẳng ra ngoài. Không ép điền báo cáo tại chỗ — gia sư điền sau ở trang Chi tiết buổi học,
+    // form ở đó vẫn nhận báo cáo bình thường cho buổi đã check-out.
     if (isTutor && classSessionId) {
       selfEndingRef.current = true;
       try {
         await checkOutClassSession(parseInt(classSessionId, 10));
-        checkedOut = true;
       } catch {
         // Buổi có thể chưa từng check-in (chưa đủ 2 người vào) → vẫn cho rời phòng.
       }
       await broadcastSessionEnded();
     }
     await leave();
-
-    // Check-out xong nghĩa là buổi đã điểm danh và backend nhận báo cáo ngay — mở form tại chỗ
-    // để gia sư ghi lúc còn nhớ rõ. Check-out lỗi thì bỏ qua: báo cáo sẽ bị BE từ chối.
-    // Đây chỉ là lối đi nhanh; trang chi tiết buổi học vẫn giữ nguyên form cho ai bỏ qua/tắt trang.
-    if (checkedOut && classSessionId) {
-      setReportSessionId(parseInt(classSessionId, 10));
-      return;
-    }
     navigate(-1);
   };
-
-  const finishReportFlow = useCallback(() => {
-    setReportSessionId(null);
-    navigate(-1);
-  }, [navigate]);
 
   // Người dùng xác nhận trong modal → thực hiện kết thúc/rời phòng. handleLeave sẽ điều hướng đi;
   // reset state trong finally chỉ có tác dụng khi điều hướng chưa kịp unmount (vô hại).
@@ -377,21 +358,15 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
   }, [isMock, leave, sessionReplaced]);
 
   // Bị đá khỏi phòng: gia sư đã kết thúc buổi (nhận tín hiệu SESSION_ENDED hoặc phòng đã đóng).
-  // Không áp dụng cho chính gia sư vừa bấm kết thúc — người đó đi tiếp sang bước viết báo cáo.
+  // Không áp dụng cho chính gia sư vừa bấm kết thúc — nhánh đó đã tự rời phòng trong handleLeave.
   useEffect(() => {
     if (isMock || !sessionEnded || sessionReplaced || selfEndingRef.current) return;
     toast.info('Buổi học đã kết thúc.');
     void (async () => {
       await leave();
-      // Hết giờ, AutoEndLiveSessionJob tự đóng phòng trong lúc gia sư còn mở trang: job đã ghi
-      // check-out (Status vẫn in_progress) nên backend nhận báo cáo ngay → mở form thay vì đá ra.
-      if (isTutor && classSessionId) {
-        setReportSessionId(parseInt(classSessionId, 10));
-        return;
-      }
       navigate(-1);
     })();
-  }, [sessionEnded, sessionReplaced, isMock, isTutor, classSessionId, leave, navigate]);
+  }, [sessionEnded, sessionReplaced, isMock, leave, navigate]);
 
   const handleBack = () => {
     void (async () => {
@@ -440,24 +415,6 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
       <div className={styles.page}>
         <div className={styles.centerState}>Phiên trên thiết bị này đã được ngắt.</div>
         <SessionDeviceModal open mode="replaced" onConfirm={navigateToCalendar} />
-      </div>
-    );
-  }
-
-  // Gia sư vừa kết thúc buổi → chỉ còn bước báo cáo. Đặt TRƯỚC nhánh "đang kết nối" vì
-  // `joined` đã về false sau khi rời phòng, nhánh đó sẽ nuốt mất modal.
-  if (reportSessionId !== null) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.centerState}>Buổi học đã kết thúc.</div>
-        <Suspense fallback={null}>
-          <LessonReportModal
-            open
-            classSessionId={reportSessionId}
-            onSkip={finishReportFlow}
-            onSubmitted={finishReportFlow}
-          />
-        </Suspense>
       </div>
     );
   }
