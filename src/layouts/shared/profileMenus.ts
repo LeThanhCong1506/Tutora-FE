@@ -12,6 +12,7 @@ export const tutorProfileMenuItems: ProfileMenuItem[] = [
     { key: '/tutor-portal/finance/withdraw', label: 'Rút tiền', materialIcon: 'payments' },
     { key: '/tutor-portal/notifications', label: 'Thông báo', materialIcon: 'notifications', startsGroup: true },
     { key: '/tutor-portal/disputes', label: 'Khiếu nại', materialIcon: 'gavel' },
+    { key: '/tutor-portal/support', label: 'Hỗ trợ', materialIcon: 'support_agent' },
 ];
 
 export const parentProfileMenuItems: ProfileMenuItem[] = [
@@ -26,6 +27,7 @@ export const parentProfileMenuItems: ProfileMenuItem[] = [
     { key: '/parent-portal/wallet/bank-account', label: 'Tài khoản ngân hàng', materialIcon: 'account_balance' },
     { key: '/parent-portal/notifications', label: 'Thông báo', materialIcon: 'notifications', startsGroup: true },
     { key: '/parent-portal/disputes', label: 'Khiếu nại', materialIcon: 'gavel' },
+    { key: '/parent-portal/support', label: 'Hỗ trợ', materialIcon: 'support_agent' },
 ];
 
 /** Mục ví & khiếu nại — học sinh do phụ huynh quản lý không có. */
@@ -65,6 +67,7 @@ export const buildStudentProfileMenuItems = (
         { key: '/student-portal/messages', label: 'Tin nhắn', materialIcon: 'chat' },
         ...(showWallet ? [studentWalletMenuItem, studentBankAccountMenuItem] : []),
         { key: '/student-portal/notifications', label: 'Thông báo', materialIcon: 'notifications', startsGroup: true },
+        { key: '/student-portal/support', label: 'Hỗ trợ', materialIcon: 'support_agent' },
         ...(showDisputes ? [studentDisputesMenuItem] : []),
     ];
 };

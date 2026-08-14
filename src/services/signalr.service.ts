@@ -41,6 +41,7 @@ class SignalRService {
   private notificationSubscribers: Set<(notification: any) => void> = new Set();
   private presenceSubscribers: Set<(presence: unknown) => void> = new Set();
   private disputeMessageSubscribers: Set<(message: any) => void> = new Set();
+  private supportMessageSubscribers: Set<(message: any) => void> = new Set();
   private forceLogoutSubscribers: Set<(payload: { reason?: string }) => void> = new Set();
   private chatLifecycleSubscribers: Set<(state: ChatConnectionLifecycle) => void> = new Set();
   private notificationLifecycleSubscribers: Set<(state: NotificationConnectionLifecycle) => void> = new Set();
@@ -357,6 +358,18 @@ class SignalRService {
   }
 
   /**
+   * Multi-subscriber cho tin nhắn hỗ trợ mới ("supportMessageReceived") — dùng ở trang Hỗ
+   * trợ để chèn trực tiếp reply của Admin/Staff vào hội thoại đang mở thay vì phải refetch.
+   * Payload: { userId, supportThreadId, message }. Trả về cleanup function.
+   */
+  subscribeToSupportMessages(handler: (message: any) => void): () => void {
+    this.supportMessageSubscribers.add(handler);
+    return () => {
+      this.supportMessageSubscribers.delete(handler);
+    };
+  }
+
+  /**
    * Multi-subscriber cho sự kiện "ForceLogout" ("đăng nhập ở thiết bị khác" / "mật khẩu
    * đã đổi") — BE push qua notificationHub, group user:{userId} (xem
    * SimpleAuthService.KickOtherWebSessionsAsync / PasswordService.ChangePasswordAsync).
@@ -597,6 +610,18 @@ class SignalRService {
           fn(message);
         } catch (err) {
           console.error('dispute message subscriber failed:', err);
+        }
+      });
+    });
+
+    connection.on('supportMessageReceived', (message: any) => {
+      if (this.notificationConnection !== connection) return;
+      console.log('💬 Support message received:', message);
+      this.supportMessageSubscribers.forEach((fn) => {
+        try {
+          fn(message);
+        } catch (err) {
+          console.error('support message subscriber failed:', err);
         }
       });
     });
