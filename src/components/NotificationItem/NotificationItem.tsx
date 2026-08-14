@@ -27,10 +27,13 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onCli
 
     const getTimeAgo = () => {
         if (!notification.createdat) return '';
-        const now = new Date();
-        const utc7Offset = 7 * 60 * 60 * 1000;
-        const created = new Date(new Date(notification.createdat).getTime() + utc7Offset);
-        const diffMs = now.getTime() - created.getTime();
+        // notification.createdat là UTC từ BE — parse thẳng bằng Date rồi so với "bây giờ" (cũng
+        // là mốc UTC tuyệt đối), KHÔNG được tự cộng offset thủ công (Date đã tự quy đổi khi hiển
+        // thị qua toLocaleDateString, cộng thêm +7 ở đây làm lệch kép cho người dùng không ở UTC+7
+        // và làm sai cả phép trừ diffMs).
+        const created = new Date(notification.createdat).getTime();
+        if (Number.isNaN(created)) return '';
+        const diffMs = Date.now() - created;
         const diffMins = Math.floor(diffMs / 60000);
         const diffHours = Math.floor(diffMs / 3600000);
         const diffDays = Math.floor(diffMs / 86400000);
@@ -39,7 +42,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onCli
         if (diffMins < 60) return `${diffMins} phút trước`;
         if (diffHours < 24) return `${diffHours} giờ trước`;
         if (diffDays < 7) return `${diffDays} ngày trước`;
-        return created.toLocaleDateString('vi-VN');
+        return new Date(created).toLocaleDateString('vi-VN');
     };
 
     return (
