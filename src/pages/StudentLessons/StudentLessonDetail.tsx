@@ -264,12 +264,18 @@ const StudentLessonDetail = () => {
         void fetchSummaryStatus();
     }, [fetchRecordingStatus, fetchSummaryStatus]);
 
-    // Poll trong lúc Gemini đang xử lý (video có thể vài tiếng, mất vài phút) — dừng khi có kết quả.
+    // Tóm tắt đã trả về rồi nhưng BE còn đang chép lời chạy nền (xem ClassSessionAiJobStage.Transcribing).
+    const transcribing = summaryJob?.status === 'completed' && summaryJob?.stage === 'transcribing';
+
+    // Poll trong lúc Gemini đang xử lý (video có thể vài tiếng, mất vài phút). Chép lời chạy nền sau khi
+    // tóm tắt đã xong nên phải poll tiếp qua cả giai đoạn đó, nếu không tab "Hội thoại" sẽ kẹt ở trạng
+    // thái đang tạo tới khi người dùng F5.
     useEffect(() => {
-        if (summaryJob?.status !== 'pending' && summaryJob?.status !== 'processing') return;
+        const waiting = summaryJob?.status === 'pending' || summaryJob?.status === 'processing' || transcribing;
+        if (!waiting) return;
         const timer = window.setInterval(() => void fetchSummaryStatus(), 8000);
         return () => window.clearInterval(timer);
-    }, [summaryJob?.status, fetchSummaryStatus]);
+    }, [summaryJob?.status, transcribing, fetchSummaryStatus]);
 
     useEffect(() => {
         if (summaryJob?.status === 'completed') void fetchChatMessages();
@@ -1391,14 +1397,22 @@ const StudentLessonDetail = () => {
                                                 type="button"
                                                 onClick={() => setSummaryViewTab('transcript')}
                                                 disabled={!summaryJob.transcriptText}
-                                                title={!summaryJob.transcriptText ? 'Buổi học này chưa có hội thoại (tóm tắt trước khi có tính năng này)' : undefined}
+                                                title={
+                                                    summaryJob.transcriptText
+                                                        ? undefined
+                                                        : transcribing
+                                                            ? 'AI đang chép lời buổi học, sẽ hiện ngay khi xong'
+                                                            : 'Buổi học này chưa có hội thoại (tóm tắt trước khi có tính năng này)'
+                                                }
                                                 style={{
                                                     ...summaryTabBtnBase,
                                                     ...(summaryViewTab === 'transcript' ? summaryTabBtnActive : {}),
                                                     ...(!summaryJob.transcriptText ? { opacity: 0.45, cursor: 'not-allowed' } : {}),
                                                 }}
                                             >
-                                                Hội thoại
+                                                {transcribing && !summaryJob.transcriptText
+                                                    ? <><Spin size="small" /> Hội thoại</>
+                                                    : 'Hội thoại'}
                                             </button>
                                         </div>
 
