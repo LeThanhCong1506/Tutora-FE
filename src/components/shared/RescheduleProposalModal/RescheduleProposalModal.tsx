@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, Button, DatePicker } from 'antd';
+import viVN from 'antd/es/date-picker/locale/vi_VN';
 import { toast } from 'react-toastify';
 import dayjs, { type Dayjs } from 'dayjs';
+import 'dayjs/locale/vi';
+
+dayjs.locale('vi');
 
 export interface RescheduleProposalModalProps {
     open: boolean;
@@ -96,6 +100,8 @@ const RescheduleProposalModal: React.FC<RescheduleProposalModalProps> = ({
                     disabledDate={(current) => !!current && current.isBefore(dayjs(), 'day')}
                     onChange={(value) => setProposedScheduledStart(value)}
                     style={{ width: '100%' }}
+                    locale={viVN}
+                    popupClassName="time-picker-with-labels"
                 />
 
                 <label htmlFor="reschedule-reason" style={{ display: 'block', margin: '16px 0 8px', fontWeight: 600 }}>

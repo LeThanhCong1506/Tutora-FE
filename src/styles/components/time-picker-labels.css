@@ -1,0 +1,41 @@
+/*
+ * Nhãn "Giờ" / "Phút" cố định (sticky) phía trên 2 cột giờ-phút của AntD DatePicker
+ * showTime — mặc định AntD không có tiêu đề cột nào, 2 cột số 00-08... giống hệt
+ * nhau khiến người dùng không phân biệt được cột nào là giờ, cột nào là phút.
+ *
+ * Dùng ::before làm phần tử đầu tiên bên trong <ul> của mỗi cột (position: sticky
+ * bám theo scroll của chính cột đó). Không phá vỡ logic tự-cuộn-tới-giá-trị-đã-chọn
+ * của rc-picker vì logic đó đo offsetTop TƯƠNG ĐỐI giữa các <li>, không tính từ đỉnh
+ * <ul> — thêm nhãn ở trước không làm lệch phép tính đó.
+ *
+ * Gắn popupClassName="time-picker-with-labels" vào DatePicker để chỉ áp dụng cho các
+ * ô có showTime, không ảnh hưởng tới DatePicker/TimePicker khác trong app.
+ */
+.time-picker-with-labels .ant-picker-time-panel-column {
+  position: relative;
+}
+
+.time-picker-with-labels .ant-picker-time-panel-column::before {
+  content: '';
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: block;
+  padding: 6px 0;
+  background: #fff;
+  color: #8c8c8c;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.time-picker-with-labels .ant-picker-time-panel-column:nth-child(1)::before {
+  content: 'Giờ';
+}
+
+.time-picker-with-labels .ant-picker-time-panel-column:nth-child(2)::before {
+  content: 'Phút';
+}
