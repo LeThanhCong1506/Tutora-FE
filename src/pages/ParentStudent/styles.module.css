@@ -1,825 +1,638 @@
-/* ===== PARENT STUDENT / CHILDREN PAGE ===== */
-/* Uses global design system: cream bg, navy text, gold accents */
+/* ===== QUẢN LÝ HỌC SINH (PHỤ HUYNH) =====
+   Cùng ngôn ngữ thị giác với `pages/ParentLessons` (nền kem của portal, chữ #17213a,
+   IBM Plex Sans, bo góc 13–16px, viền mảnh + đổ bóng rất nhẹ).
+
+   Nguyên tắc chống rối: trong card KHÔNG lồng hộp nền. Chỉ có duy nhất một nền trắng,
+   các vùng ngăn nhau bằng đường kẻ 1px. Chỉ một nhãn chữ hoa, một nút đặc, một dòng
+   chữ đậm — phần còn lại là chữ xám nhỏ. */
 
 .page {
-    font-family: var(--font-primary);
-    min-height: 100%;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    color: var(--color-navy);
-    background: transparent;
-    animation: fadeIn 0.35s ease;
+  display: flex;
+  width: 100%;
+  min-height: 100%;
+  flex-direction: column;
+  padding-bottom: 40px;
+  box-sizing: border-box;
+  color: #17213a;
+  font-family:
+    'IBM Plex Sans',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
+.header,
+.body {
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 36px;
+  box-sizing: border-box;
 }
 
-/* ===== TOP BAR ===== */
-.topBar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 26px 40px 26px;
-    background: transparent;
-    gap: 32px;
-    flex-wrap: wrap;
-    max-width: 1400px;
-    margin: 0 auto;
-    width: 100%;
-    box-sizing: border-box;
+/* ===== HEADER ===== */
+.header {
+  display: flex;
+  padding-top: 20px;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  flex: 0 0 auto;
 }
 
-.pageTitle {
-    font-family: var(--font-serif);
-    font-size: 32px;
-    line-height: 1.11em;
-    font-weight: 700;
-    letter-spacing: -0.025em;
-    color: var(--color-navy);
-    margin: 0;
-    flex: 1;
+.headerCopy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.topBarActions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+.title {
+  margin: 0;
+  color: #17213a;
+  font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
 }
 
-/* Search */
+.subtitle {
+  margin: 0;
+  /* Đậm hơn #687086 của các trang khác vì nền kem của portal tối hơn nền trắng của card. */
+  color: #5f687a;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .searchWrap {
-    position: relative;
-    display: flex;
-    align-items: center;
+  display: flex;
+  min-height: 36px;
+  padding: 0 11px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #dfe3e9;
+  border-radius: 11px;
+  background: #fff;
+  color: #8b93a3;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
-.searchIconPos {
-    position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: rgba(62, 47, 40, 0.4);
-    pointer-events: none;
-    display: flex;
+.searchWrap:focus-within {
+  border-color: rgba(23, 33, 58, 0.35);
+  box-shadow: 0 0 0 3px rgba(23, 33, 58, 0.08);
 }
 
-.searchInput {
-    padding: 11px 16px 11px 44px;
-    border: 1px solid rgba(26, 34, 56, 0.1);
-    border-radius: 12px;
-    background: var(--color-white);
-    font-family: var(--font-primary);
-    font-size: 14px;
-    line-height: 1.3em;
-    color: var(--color-navy);
-    outline: none;
-    width: 256px;
-    transition: all 0.2s ease;
-    box-sizing: border-box;
+.searchWrap input {
+  width: 168px;
+  border: 0;
+  background: transparent;
+  color: #17213a;
+  font: inherit;
+  font-size: 12.5px;
+  outline: none;
 }
 
-.searchInput::placeholder {
-    color: var(--color-navy-40);
+.searchWrap input::placeholder {
+  color: #98a0af;
 }
 
-.searchInput:focus {
-    border-color: var(--color-navy);
-    box-shadow: 0 0 0 3px rgba(26, 34, 56, 0.05);
+/* ===== NÚT DÙNG CHUNG ===== */
+.primaryBtn,
+.ghostBtn {
+  display: inline-flex;
+  min-height: 36px;
+  padding: 0 15px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 11px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
-/* Add Child button */
-.addChildBtn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 10px;
-    font-family: var(--font-primary);
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 1.43em;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
+.primaryBtn {
+  border: 1px solid #17213a;
+  background: #17213a;
+  color: #fff;
 }
 
-.btnNavy {
-    background: var(--color-navy);
-    color: var(--color-cream);
-}
-.btnNavy:hover {
-    background: #2a3452;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(26, 34, 56, 0.15);
+.primaryBtn:hover {
+  background: #22304f;
+  box-shadow: 0 6px 16px rgba(23, 33, 58, 0.18);
 }
 
-.btnGold {
-    background: var(--color-gold);
-    color: var(--color-navy);
-}
-.btnGold:hover {
-    background: #e5c38e;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(212, 180, 131, 0.3);
+.primaryBtn:active {
+  transform: translateY(1px);
+  box-shadow: none;
 }
 
-/* ===== CONTENT ===== */
-.content {
-    flex: 1;
-    padding: 40px 40px 48px;
-    display: flex;
-    flex-direction: column;
-    gap: 32px;
-    max-width: 1400px;
-    margin: 0 auto;
-    width: 100%;
-    box-sizing: border-box;
+.ghostBtn {
+  border: 1px solid #dde3ea;
+  background: #fff;
+  color: #17213a;
 }
 
-/* ===== QUICK STATS ===== */
-.quickStats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
+.ghostBtn:hover {
+  border-color: rgba(23, 33, 58, 0.26);
+  background: #f5f6f8;
 }
 
-/* ===== EMPTY STATE ===== */
-.emptyState {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 80px 24px;
-    text-align: center;
-    background: var(--color-white);
-    border-radius: 16px;
-    border: 1px solid rgba(26, 34, 56, 0.06);
+.primaryBtn:focus-visible,
+.ghostBtn:focus-visible,
+.iconBtn:focus-visible,
+.account:focus-visible,
+.pendingAlert:focus-visible,
+.linkBtn:focus-visible {
+  outline: 3px solid rgba(23, 33, 58, 0.18);
+  outline-offset: 2px;
 }
 
-.emptyIcon {
-    width: 72px;
-    height: 72px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, var(--color-navy) 0%, #3d4a3e 100%);
-    border-radius: 50%;
-    margin-bottom: 24px;
-    color: var(--color-cream);
+/* ===== BODY ===== */
+.body {
+  display: flex;
+  padding-top: 18px;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1 1 auto;
 }
 
-.emptyIcon svg {
-    width: 32px;
-    height: 32px;
+.insightsNotice {
+  margin: 0;
+  padding: 10px 13px;
+  border: 1px solid rgba(217, 119, 6, 0.28);
+  border-radius: 13px;
+  background: #fffaf1;
+  color: #8a5a12;
+  font-size: 12.5px;
+  line-height: 1.45;
 }
 
-.emptyTitle {
-    font-family: var(--font-serif);
-    font-size: 24px;
-    font-weight: 600;
-    color: var(--color-navy);
-    margin: 0 0 12px 0;
+.grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  align-items: stretch;
 }
 
-.emptyText {
-    font-size: 15px;
-    color: var(--color-navy-40);
-    line-height: 1.6;
-    max-width: 400px;
-    margin: 0 0 32px 0;
+.skeletonCard {
+  height: 208px;
+  border: 1px solid rgba(23, 33, 58, 0.08);
+  border-radius: 16px;
+  background: linear-gradient(100deg, #fff 30%, #f4f5f7 50%, #fff 70%) #fff;
+  background-size: 300% 100%;
+  animation: shimmer 1.3s ease-in-out infinite;
 }
 
-/* ===== CHILDREN LIST ===== */
-.leftColumn {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+@keyframes shimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
 }
 
-/* ===== CHILD CARD ===== */
-.childCard {
-    background: var(--color-white);
-    border: 1px solid rgba(26, 34, 56, 0.06);
-    border-radius: 16px;
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    transition: all 0.2s ease;
-}
-.childCard:hover {
-    border-color: var(--color-gold);
-    box-shadow: 0 6px 20px rgba(26, 34, 56, 0.08);
-    transform: translateY(-2px);
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
-/* Card Header */
-.cardHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+/* ===== CARD ===== */
+.card {
+  display: flex;
+  padding: 16px 18px 14px;
+  flex-direction: column;
+  gap: 14px;
+  border: 1px solid rgba(23, 33, 58, 0.1);
+  border-radius: 16px;
+  background: #fff;
+  animation: cardIn 280ms cubic-bezier(0.22, 0.8, 0.3, 1) both;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
 }
 
-.cardHeaderLeft {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex: 1;
-    min-width: 0;
+.card:hover {
+  border-color: rgba(23, 33, 58, 0.2);
+  box-shadow: 0 10px 26px rgba(23, 33, 58, 0.09);
+  transform: translateY(-2px);
 }
 
-/* Avatar with verified badge */
-.avatarWrap {
-    position: relative;
-    flex-shrink: 0;
+/* ── Vùng 1: danh tính ── */
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .avatar {
-    width: 56px;
-    height: 56px;
-    border-radius: 14px;
-    overflow: hidden;
-    background: var(--color-gold-20);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid var(--color-cream);
-    position: relative;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 13px;
+  background: #eef0f4;
+  color: #17213a;
+  font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
 }
 
 .avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    position: absolute;
-    top: 0;
-    left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.avatarInitials {
-    font-family: 'Bricolage Grotesque', sans-serif;
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--color-navy);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
+.identity {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 1px;
 }
 
-.verifiedBadge {
-    position: absolute;
-    bottom: -3px;
-    left: -3px;
-    width: 18px;
-    height: 18px;
-    border-radius: 9999px;
-    background: var(--color-white);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.studentName {
+  margin: 0;
+  overflow: hidden;
+  color: #17213a;
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.verifiedBadge svg {
-    width: 18px;
-    height: 18px;
+.studentMeta {
+  margin: 0;
+  overflow: hidden;
+  color: #6b7385;
+  font-size: 12px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* Child info */
-.childInfo {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
+.menuWrap {
+  position: relative;
+  flex: 0 0 auto;
 }
 
-.childName {
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 17px;
-    line-height: 24px;
-    font-weight: 600;
-    color: var(--color-navy);
-    margin: 0;
+.iconBtn {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #98a0af;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
 }
 
-.childMeta {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 13px;
-    line-height: 18px;
+.iconBtn:hover,
+.iconBtn[aria-expanded='true'] {
+  background: #f2f4f7;
+  color: #17213a;
 }
 
-.childGrade {
-    color: var(--color-navy-40);
+.menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  min-width: 186px;
+  padding: 5px;
+  flex-direction: column;
+  border: 1px solid rgba(23, 33, 58, 0.1);
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: 0 14px 32px rgba(23, 33, 58, 0.14);
+  animation: cardIn 140ms ease both;
 }
 
-.metaDot {
-    color: #d4d4d4;
+.menu button {
+  display: flex;
+  min-height: 34px;
+  padding: 0 9px;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #475063;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 550;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 130ms ease,
+    color 130ms ease;
 }
 
-.childStatus {
-    font-weight: 600;
-    color: #16a34a;
+.menu button:hover {
+  background: #f3f5f7;
+  color: #17213a;
 }
 
-/* More menu button (horizontal dots) */
-.cardMenuWrap {
-    position: relative;
-    flex-shrink: 0;
+.menuItemDanger {
+  color: #a43732 !important;
 }
 
-.moreBtn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border: 1px solid #e5e5e5;
-    border-radius: 10px;
-    background: none;
-    cursor: pointer;
-    color: #737373;
-    transition: all 0.15s ease;
+.menuItemDanger:hover {
+  background: #fbecea !important;
+  color: #8f2e2a !important;
 }
 
-.moreBtn:hover {
-    background: #f5f5f5;
-    color: var(--color-navy);
+/* ── Nhắc xác nhận buổi học — chỉ hiện khi thật sự có việc cần làm ── */
+.pendingAlert {
+  display: flex;
+  min-height: 34px;
+  padding: 0 10px 0 12px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid rgba(217, 119, 6, 0.3);
+  border-radius: 10px;
+  background: #fffaf1;
+  color: #8a5a12;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
 }
 
-.dropdownMenu {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    margin-top: 4px;
-    background: var(--color-white);
-    border: 1px solid rgba(26, 34, 56, 0.1);
-    border-radius: 10px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-    z-index: 20;
-    min-width: 190px;
-    padding: 4px;
+.pendingAlert:hover {
+  border-color: rgba(217, 119, 6, 0.5);
+  background: #fdf3e0;
 }
 
-.dropdownItem {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    padding: 8px 12px;
-    border: none;
-    background: none;
-    cursor: pointer;
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 13px;
-    color: #525252;
-    border-radius: 6px;
-    transition: all 0.15s ease;
+.pendingAlert svg {
+  flex: 0 0 auto;
 }
 
-.dropdownItem:hover {
-    background: var(--color-cream);
-    color: var(--color-navy);
+/* ── Vùng 2: buổi học tiếp theo ── */
+.schedule {
+  display: flex;
+  min-height: 62px;
+  padding-top: 14px;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 1px solid #eef0f3;
 }
 
-.dropdownItemDanger {
-    color: #dc2626;
+.blockLabel {
+  margin-bottom: 1px;
+  color: #6b7385;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-.dropdownItemDanger:hover {
-    background: #fef2f2;
-    color: #dc2626;
+.nextTime {
+  overflow: hidden;
+  color: #17213a;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.35;
+  letter-spacing: -0.005em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* ===== Stats Row (3 cols) ===== */
-.cardStats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+.nextTimeMuted {
+  color: #6b7385;
+  font-weight: 600;
 }
 
-.cardStatItem {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    padding: 12px 8px;
-    background: #fafafa;
-    border: 1px solid #f0f0f0;
-    border-radius: 12px;
+.nextDetail {
+  overflow: hidden;
+  color: #6b7385;
+  font-size: 12.5px;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.cardStatLabel {
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 12px;
-    line-height: 16px;
-    color: #9ca3af;
-    font-weight: 500;
+/* Dòng số liệu — cố tình nhỏ và nhạt hơn mọi thứ khác, chỉ để liếc qua. */
+.summary {
+  margin-top: 5px;
+  color: #6b7385;
+  font-size: 11.5px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
 }
 
-.cardStatValue {
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 17px;
-    line-height: 22px;
-    font-weight: 700;
-    color: #1a2238;
+.linkBtn {
+  display: inline-flex;
+  padding: 0;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  border: 0;
+  background: none;
+  color: #2f4a7d;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 150ms ease;
 }
 
-/* ===== Next Lesson / School Bar ===== */
-.nextBar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    background: #faf9f6;
-    border: 1px solid #ece9e0;
-    border-radius: 12px;
+.linkBtn:hover {
+  color: #17213a;
 }
 
-.nextBar svg {
-    flex-shrink: 0;
+.linkBtn svg {
+  transition: transform 180ms ease;
 }
 
-.nextBarText {
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 13px;
-    line-height: 18px;
-    color: #525252;
+.linkBtn:hover svg {
+  transform: translateX(2px);
 }
 
-.nextBarText strong {
-    font-weight: 600;
-    color: #1a2238;
+/* ── Vùng 3: tài khoản + hành động ── */
+.cardFoot {
+  display: flex;
+  margin-top: auto;
+  padding-top: 13px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid #eef0f3;
 }
 
-/* ===== Card Actions ===== */
-.cardActions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.account {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 30px;
+  padding: 0 8px 0 2px;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: #98a0af;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
 }
 
-.viewDetailsBtn {
-    flex: 1;
-    padding: 11px 16px;
-    background: var(--color-navy);
-    color: var(--color-cream);
-    border: none;
-    border-radius: 12px;
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s ease;
-    text-align: center;
+.account:hover {
+  background: #f5f6f8;
+  color: #17213a;
 }
 
-.viewDetailsBtn:hover {
-    background: #2a3452;
+.accountName {
+  overflow: hidden;
+  color: #6b7385;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.chatBtn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 42px;
-    height: 42px;
-    border: 1px solid #e5e5e5;
-    border-radius: 12px;
-    background: none;
-    cursor: pointer;
-    color: #737373;
-    transition: all 0.15s ease;
-    flex-shrink: 0;
+.account:hover .accountName {
+  color: #17213a;
 }
 
-.chatBtn:hover {
-    background: #f5f5f5;
-    color: #1a2238;
-    border-color: #d4d4d4;
+/* ===== EMPTY STATE ===== */
+.empty {
+  display: flex;
+  padding: 52px 24px;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  border: 1px dashed rgba(23, 33, 58, 0.16);
+  border-radius: 16px;
+  background: #fff;
+  text-align: center;
 }
 
-/* ===== LOADING ===== */
-.loadingContainer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 400px;
-    gap: 20px;
+.emptyIcon {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 4px;
+  place-items: center;
+  border-radius: 14px;
+  background: #f2f4f7;
+  color: #6d7587;
 }
 
-.spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid #f2f0e4;
-    border-top-color: #1a2238;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+.empty h2 {
+  margin: 0;
+  color: #17213a;
+  font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
 }
 
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-.loadingText {
-    font-size: 14px;
-    color: #737373;
-    margin: 0;
+.empty p {
+  max-width: 400px;
+  margin: 0 0 8px;
+  color: #6b7385;
+  font-size: 12.5px;
+  line-height: 1.55;
 }
 
 /* ===== RESPONSIVE ===== */
-@media (max-width: 768px) {
-    .topBar {
-        padding: 16px;
-        gap: 12px;
-        flex-direction: column;
-        align-items: stretch;
-    }
+@media (max-width: 1080px) {
+  .header,
+  .body {
+    padding: 0 18px;
+  }
 
-    .content {
-        padding: 16px;
-        gap: 16px;
-    }
+  .header {
+    padding-top: 16px;
+  }
 
-    .topBarActions {
-        flex-direction: column;
-        width: 100%;
-        gap: 8px;
-    }
-
-    .searchWrap {
-        width: 100%;
-    }
-
-    .searchInput {
-        width: 100%;
-    }
-
-    .addChildBtn {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .quickStats {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-    }
-
-    .childCard {
-        padding: 16px;
-    }
+  .grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-@media (max-width: 480px) {
-    .quickStats {
-        grid-template-columns: 1fr;
-    }
+@media (max-width: 760px) {
+  .header,
+  .body {
+    padding: 0 11px;
+  }
 
-    .topBarActions {
-        flex-direction: column;
-    }
+  .header {
+    padding-top: 12px;
+    align-items: stretch;
+    gap: 10px;
+  }
 
-    .addChildBtn {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .cardStats {
-        grid-template-columns: 1fr;
-    }
-
-    .cardActions {
-        flex-direction: column;
-    }
-
-    .viewDetailsBtn {
-        width: 100%;
-    }
-
-    .chatBtn {
-        width: 100%;
-    }
-}
-
-/* ===== MODAL STYLES (kept for sub-components) ===== */
-.modalOverlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(23, 23, 23, 0.6);
-    backdrop-filter: blur(8px);
-    z-index: 1000;
-}
-
-.modalContent {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #ffffff;
-    border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-    max-width: 500px;
-    width: 90%;
-    max-height: 90vh;
-    overflow-y: auto;
-    z-index: 1001;
-}
-
-.modalHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 24px;
-    border-bottom: 1px solid #f5f5f5;
-}
-
-.modalTitle {
+  .title {
     font-size: 18px;
-    font-weight: 600;
-    color: #1a2238;
-    margin: 0;
-}
+  }
 
-.modalCloseBtn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border: none;
-    background: #f5f5f5;
-    border-radius: 8px;
-    cursor: pointer;
-    color: #737373;
-}
-
-.modalCloseBtn:hover {
-    background: #e5e5e5;
-    color: #1a2238;
-}
-
-.addStudentForm {
-    padding: 20px 24px 24px;
-}
-
-.formRow {
-    margin-bottom: 16px;
-}
-
-.formRow:last-child {
-    margin-bottom: 0;
-}
-
-.formLabel {
-    display: block;
-    font-size: 13px;
-    font-weight: 500;
-    color: #1a2238;
-    margin-bottom: 6px;
-}
-
-.required {
-    color: #dc2626;
-    margin-left: 2px;
-}
-
-.formInput,
-.formTextarea {
+  .headerActions {
     width: 100%;
-    padding: 10px 14px;
-    font-size: 14px;
-    color: #1a2238;
-    background: #fafafa;
-    border: 1px solid #e5e5e5;
-    border-radius: 10px;
-    transition: border-color 0.15s ease;
-    box-sizing: border-box;
+  }
+
+  .searchWrap {
+    flex: 1 1 auto;
+  }
+
+  .searchWrap input {
+    width: 100%;
+  }
+
+  .card {
+    padding: 14px 15px 12px;
+  }
 }
 
-.formInput:focus,
-.formTextarea:focus {
-    outline: none;
-    border-color: #1a2238;
-}
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .menu,
+  .skeletonCard {
+    animation: none;
+  }
 
-.formInputError {
-    border-color: #dc2626;
-}
-
-.errorMessage {
-    display: block;
-    font-size: 12px;
-    color: #dc2626;
-    margin-top: 4px;
-}
-
-.formTextarea {
-    min-height: 80px;
-    resize: vertical;
-    line-height: 1.5;
-}
-
-.modalActions {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-    padding-top: 20px;
-}
-
-.modalBtn {
-    padding: 10px 20px;
-    font-size: 13px;
-    font-weight: 500;
-    border-radius: 10px;
-    border: 1px solid #e5e5e5;
-    background: #fff;
-    color: #737373;
-    cursor: pointer;
-}
-
-.modalBtn:hover {
-    background: #f5f5f5;
-    color: #1a2238;
-}
-
-.modalBtnPrimary {
-    background: #1a2238;
-    color: #fff;
-    border-color: #1a2238;
-}
-
-.modalBtnPrimary:hover {
-    background: #253050;
-}
-
-.deleteModalContent {
-    max-width: 400px;
-}
-
-.deleteModalIcon {
-    width: 64px;
-    height: 64px;
-    margin: 0 auto 20px;
-    background: rgba(220, 38, 38, 0.1);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.deleteModalIcon svg {
-    color: #dc2626;
-    width: 32px;
-    height: 32px;
-}
-
-.deleteModalTitle {
-    font-size: 18px;
-    font-weight: 600;
-    color: #1a2238;
-    margin: 0 0 20px;
-    text-align: center;
-}
-
-.deleteModalText {
-    font-size: 14px;
-    color: #737373;
-    line-height: 1.6;
-    text-align: center;
-    margin: 0 0 12px;
-}
-
-.deleteModalText strong {
-    font-weight: 600;
-    color: #1a2238;
-}
-
-.deleteModalActions {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    padding-top: 20px;
-}
-
-.modalBtnDanger {
-    background: #dc2626;
-    color: #fff;
-    border-color: #dc2626;
-}
-
-.modalBtnDanger:hover {
-    background: #b91c1c;
+  .card:hover {
+    transform: none;
+  }
 }

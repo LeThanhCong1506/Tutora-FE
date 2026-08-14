@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styles from './AddStudentModal.module.css';
-import { Trash2, AlertCircle } from 'lucide-react';
+import { AlertCircle, UserPlus, X } from 'lucide-react';
 import type { ICreateParentStudent } from '../../../services/student.service';
 import { useGradeLevels } from '../../../hooks/useGradeLevels';
 
@@ -19,6 +19,17 @@ const FIELD_LABELS: Record<string, string> = {
     general: 'Lỗi',
 };
 
+interface SubmitError {
+    response?: {
+        data?: {
+            errors?: Record<string, string[] | string>;
+            message?: string;
+        };
+    };
+}
+
+const today = new Date().toISOString().slice(0, 10);
+
 const AddStudentModal = ({ isOpen, onClose, onSubmit }: AddStudentModalProps) => {
     const { gradeLevels } = useGradeLevels();
     const [formData, setFormData] = useState({
@@ -31,6 +42,15 @@ const AddStudentModal = ({ isOpen, onClose, onSubmit }: AddStudentModalProps) =>
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [submitting, setSubmitting] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const closeOnEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && !submitting) onClose();
+        };
+        document.addEventListener('keydown', closeOnEscape);
+        return () => document.removeEventListener('keydown', closeOnEscape);
+    }, [isOpen, onClose, submitting]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -78,7 +98,6 @@ const AddStudentModal = ({ isOpen, onClose, onSubmit }: AddStudentModalProps) =>
                 gradeLevelId: formData.gradeLevelId ? Number(formData.gradeLevelId) : undefined,
                 learninggoals: formData.learningGoals || undefined,
             });
-            // Reset form after successful submission
             setFormData({
                 fullName: '',
                 birthDate: '',
@@ -87,7 +106,9 @@ const AddStudentModal = ({ isOpen, onClose, onSubmit }: AddStudentModalProps) =>
                 learningGoals: '',
             });
             setErrors({});
-        } catch (err: any) {
+            onClose();
+        } catch (error: unknown) {
+            const err = error as SubmitError;
             console.error('Error in modal submit:', err);
             const backendErrors = err.response?.data?.errors;
             if (backendErrors && typeof backendErrors === 'object') {
@@ -107,25 +128,48 @@ const AddStudentModal = ({ isOpen, onClose, onSubmit }: AddStudentModalProps) =>
 
     if (!isOpen) return null;
 
+    const visibleErrors = Object.entries(errors).filter((entry): entry is [string, string] => Boolean(entry[1]));
+
     return (
-        <div className={styles.modalOverlay} onClick={onClose}>
-            <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalOverlay} onClick={submitting ? undefined : onClose}>
+            <div
+                className={styles.modalContent}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="add-student-title"
+                aria-describedby="add-student-description"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className={styles.modalHeader}>
-                    <h2 className={styles.modalTitle}>Thêm học sinh mới</h2>
-                    <button className={styles.modalCloseBtn} onClick={onClose} type="button" disabled={submitting}>
-                        <Trash2 size={20} />
+                    <span className={styles.modalIcon} aria-hidden="true">
+                        <UserPlus size={19} />
+                    </span>
+                    <div className={styles.modalHeading}>
+                        <span className={styles.modalEyebrow}>Hồ sơ học sinh</span>
+                        <h2 className={styles.modalTitle} id="add-student-title">Thêm con</h2>
+                        <p className={styles.modalDescription} id="add-student-description">
+                            Chỉ cần thông tin cơ bản để bắt đầu đặt lịch và theo dõi việc học.
+                        </p>
+                    </div>
+                    <button
+                        className={styles.modalCloseBtn}
+                        onClick={onClose}
+                        type="button"
+                        disabled={submitting}
+                        aria-label="Đóng cửa sổ thêm học sinh"
+                    >
+                        <X size={18} />
                     </button>
                 </div>
 
                 <form className={styles.addStudentForm} onSubmit={handleSubmit} ref={formRef}>
-                    {/* Error summary banner */}
-                    {Object.keys(errors).length > 0 && (
-                        <div className={styles.errorSummary}>
+                    {visibleErrors.length > 0 && (
+                        <div className={styles.errorSummary} role="alert">
                             <AlertCircle size={16} className={styles.errorSummaryIcon} />
                             <div>
                                 <p className={styles.errorSummaryTitle}>Vui lòng kiểm tra lại thông tin:</p>
                                 <ul className={styles.errorSummaryList}>
-                                    {Object.entries(errors).map(([field, msg]) => msg && (
+                                    {visibleErrors.map(([field, msg]) => (
                                         <li key={field}>
                                             <strong>{FIELD_LABELS[field] ?? field}:</strong> {msg}
                                         </li>
@@ -135,104 +179,102 @@ const AddStudentModal = ({ isOpen, onClose, onSubmit }: AddStudentModalProps) =>
                         </div>
                     )}
 
-                    <div className={styles.formRow}>
-                        <label className={styles.formLabel}>
-                            Họ và tên <span className={styles.required}>*</span>
-                        </label>
-                        <input
-                            type="text"
-                            name="fullName"
-                            value={formData.fullName}
-                            onChange={handleChange}
-                            className={`${styles.formInput} ${errors.fullName ? styles.formInputError : ''}`}
-                            placeholder="Nhập họ tên học sinh"
-                            disabled={submitting}
-                            data-error={!!errors.fullName}
-                        />
-                        {errors.fullName && (
-                            <span className={styles.errorMessage}>
-                                <AlertCircle size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />
-                                {errors.fullName}
-                            </span>
-                        )}
-                    </div>
+                    <div className={styles.formGrid}>
+                        <div className={`${styles.formRow} ${styles.formRowWide}`}>
+                            <label className={styles.formLabel} htmlFor="add-student-full-name">
+                                Họ và tên <span className={styles.required}>*</span>
+                            </label>
+                            <input
+                                id="add-student-full-name"
+                                type="text"
+                                name="fullName"
+                                value={formData.fullName}
+                                onChange={handleChange}
+                                className={`${styles.formInput} ${errors.fullName ? styles.formInputError : ''}`}
+                                placeholder="Ví dụ: Nguyễn Minh Anh"
+                                autoComplete="name"
+                                autoFocus
+                                disabled={submitting}
+                                data-error={!!errors.fullName}
+                                aria-invalid={Boolean(errors.fullName)}
+                            />
+                            {errors.fullName && <span className={styles.errorMessage}>{errors.fullName}</span>}
+                        </div>
 
-                    <div className={styles.formRow}>
-                        <label className={styles.formLabel}>
-                            Ngày sinh <span className={styles.required}>*</span>
-                        </label>
-                        <input
-                            type="date"
-                            name="birthDate"
-                            value={formData.birthDate}
-                            onChange={handleChange}
-                            className={`${styles.formInput} ${errors.birthDate ? styles.formInputError : ''}`}
-                            disabled={submitting}
-                            data-error={!!errors.birthDate}
-                        />
-                        {errors.birthDate && (
-                            <span className={styles.errorMessage}>
-                                <AlertCircle size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />
-                                {errors.birthDate}
-                            </span>
-                        )}
-                    </div>
+                        <div className={styles.formRow}>
+                            <label className={styles.formLabel} htmlFor="add-student-birth-date">
+                                Ngày sinh <span className={styles.required}>*</span>
+                            </label>
+                            <input
+                                id="add-student-birth-date"
+                                type="date"
+                                name="birthDate"
+                                max={today}
+                                value={formData.birthDate}
+                                onChange={handleChange}
+                                className={`${styles.formInput} ${errors.birthDate ? styles.formInputError : ''}`}
+                                disabled={submitting}
+                                data-error={!!errors.birthDate}
+                                aria-invalid={Boolean(errors.birthDate)}
+                            />
+                            {errors.birthDate && <span className={styles.errorMessage}>{errors.birthDate}</span>}
+                        </div>
 
-                    <div className={styles.formRow}>
-                        <label className={styles.formLabel}>
-                            Trường
-                        </label>
-                        <input
-                            type="text"
-                            name="school"
-                            value={formData.school}
-                            onChange={handleChange}
-                            className={`${styles.formInput} ${errors.school ? styles.formInputError : ''}`}
-                            placeholder="Nhập tên trường"
-                            disabled={submitting}
-                            data-error={!!errors.school}
-                        />
-                        {errors.school && (
-                            <span className={styles.errorMessage}>
-                                <AlertCircle size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />
-                                {errors.school}
-                            </span>
-                        )}
-                    </div>
+                        <div className={styles.formRow}>
+                            <label className={styles.formLabel} htmlFor="add-student-grade">
+                                Khối lớp <span className={styles.optional}>Tuỳ chọn</span>
+                            </label>
+                            <select
+                                id="add-student-grade"
+                                name="gradeLevelId"
+                                value={formData.gradeLevelId}
+                                onChange={handleChange}
+                                className={styles.formInput}
+                                disabled={submitting}
+                            >
+                                <option value="">Chọn khối lớp</option>
+                                {gradeLevels.map((grade) => (
+                                    <option key={grade.gradeLevelId} value={grade.gradeLevelId}>
+                                        {grade.gradeName}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
 
-                    <div className={styles.formRow}>
-                        <label className={styles.formLabel}>
-                            Khối lớp
-                        </label>
-                        <select
-                            name="gradeLevelId"
-                            value={formData.gradeLevelId}
-                            onChange={handleChange}
-                            className={styles.formInput}
-                            disabled={submitting}
-                        >
-                            <option value="">-- Chọn khối lớp --</option>
-                            {gradeLevels.map((grade) => (
-                                <option key={grade.gradeLevelId} value={grade.gradeLevelId}>
-                                    {grade.gradeName}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                        <div className={`${styles.formRow} ${styles.formRowWide}`}>
+                            <label className={styles.formLabel} htmlFor="add-student-school">
+                                Trường đang học <span className={styles.optional}>Tuỳ chọn</span>
+                            </label>
+                            <input
+                                id="add-student-school"
+                                type="text"
+                                name="school"
+                                value={formData.school}
+                                onChange={handleChange}
+                                className={`${styles.formInput} ${errors.school ? styles.formInputError : ''}`}
+                                placeholder="Ví dụ: THCS Nguyễn Du"
+                                disabled={submitting}
+                                data-error={!!errors.school}
+                                aria-invalid={Boolean(errors.school)}
+                            />
+                            {errors.school && <span className={styles.errorMessage}>{errors.school}</span>}
+                        </div>
 
-                    <div className={styles.formRow}>
-                        <label className={styles.formLabel}>
-                            Mục tiêu học tập
-                        </label>
-                        <textarea
-                            name="learningGoals"
-                            value={formData.learningGoals}
-                            onChange={handleChange}
-                            className={styles.formTextarea}
-                            placeholder="Nhập mục tiêu học tập..."
-                            rows={3}
-                            disabled={submitting}
-                        />
+                        <div className={`${styles.formRow} ${styles.formRowWide}`}>
+                            <label className={styles.formLabel} htmlFor="add-student-goals">
+                                Điều con đang cần hỗ trợ <span className={styles.optional}>Tuỳ chọn</span>
+                            </label>
+                            <textarea
+                                id="add-student-goals"
+                                name="learningGoals"
+                                value={formData.learningGoals}
+                                onChange={handleChange}
+                                className={styles.formTextarea}
+                                placeholder="Ví dụ: Củng cố Toán lớp 8 và tự tin hơn khi làm bài"
+                                rows={3}
+                                disabled={submitting}
+                            />
+                        </div>
                     </div>
 
                     <div className={styles.modalActions}>
