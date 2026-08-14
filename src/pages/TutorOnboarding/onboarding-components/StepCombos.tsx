@@ -12,6 +12,7 @@ interface StepCombosProps {
   onUpdatePackage?: (comboId: string, combo: FixedCombo) => Promise<FixedCombo | null>;
   onDeactivatePackage?: (comboId: string) => Promise<boolean>;
   onActivatePackage?: (comboId: string) => Promise<FixedCombo | null>;
+  onDeletePackage?: (comboId: string) => Promise<boolean>;
 }
 
 const StepCombos: React.FC<StepCombosProps> = ({
@@ -21,6 +22,7 @@ const StepCombos: React.FC<StepCombosProps> = ({
   onUpdatePackage,
   onDeactivatePackage,
   onActivatePackage,
+  onDeletePackage,
 }) => {
   const { state, addCombo, updateCombo, removeCombo } = onboarding;
 
@@ -64,6 +66,7 @@ const StepCombos: React.FC<StepCombosProps> = ({
         onUpdatePackage={onUpdatePackage}
         onDeactivatePackage={onDeactivatePackage}
         onActivatePackage={handleActivate}
+        onDeletePackage={onDeletePackage}
       />
     </div>
   );

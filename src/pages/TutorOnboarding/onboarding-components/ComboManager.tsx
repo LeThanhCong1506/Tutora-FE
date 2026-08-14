@@ -3,6 +3,7 @@ import { Popconfirm, Tooltip } from 'antd';
 import {
   CalendarOutlined,
   ClockCircleOutlined,
+  DeleteOutlined,
   EditOutlined,
   EyeInvisibleOutlined,
   EyeOutlined,
@@ -26,6 +27,7 @@ interface ComboManagerProps {
   onUpdatePackage?: (comboId: string, combo: FixedCombo) => Promise<FixedCombo | null>;
   onDeactivatePackage?: (comboId: string) => Promise<boolean>;
   onActivatePackage?: (comboId: string) => Promise<FixedCombo | null>;
+  onDeletePackage?: (comboId: string) => Promise<boolean>;
 }
 
 const dayLabel = (dow: number) => DAY_COLUMNS.find((c) => c.dayOfWeek === dow)?.full ?? `Ngày ${dow}`;
@@ -54,12 +56,14 @@ const ComboManager: React.FC<ComboManagerProps> = ({
   onUpdatePackage,
   onDeactivatePackage,
   onActivatePackage,
+  onDeletePackage,
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<FixedCombo | null>(null);
   const [savingPackage, setSavingPackage] = useState(false);
   const [removingComboId, setRemovingComboId] = useState<string | null>(null);
   const [restoringComboId, setRestoringComboId] = useState<string | null>(null);
+  const [deletingComboId, setDeletingComboId] = useState<string | null>(null);
   const requiredDurationHours = useMemo(
     () => Math.max(1, ...subjectRecords.map((record) => record.hoursPerSession || 0)),
     [subjectRecords],
@@ -121,6 +125,13 @@ const ComboManager: React.FC<ComboManagerProps> = ({
     setRestoringComboId(comboId);
     await onActivatePackage(comboId);
     setRestoringComboId(null);
+  };
+
+  const handleDelete = async (comboId: string) => {
+    if (!onDeletePackage) return;
+    setDeletingComboId(comboId);
+    await onDeletePackage(comboId);
+    setDeletingComboId(null);
   };
 
   return (
@@ -272,6 +283,28 @@ const ComboManager: React.FC<ComboManagerProps> = ({
                             </button>
                           </span>
                         </Tooltip>
+                        <Popconfirm
+                          title="Xóa vĩnh viễn gói lịch học này?"
+                          description="Không thể hoàn tác. Chỉ xóa được nếu gói này chưa từng có buổi dạy nào được đặt."
+                          onConfirm={() => handleDelete(combo.id)}
+                          okText="Xóa vĩnh viễn"
+                          cancelText="Hủy"
+                          okButtonProps={{ danger: true, loading: deletingComboId === combo.id }}
+                        >
+                          <Tooltip title="Xóa vĩnh viễn gói lịch học">
+                            <span className={styles.iconBtnWrap}>
+                              <button
+                                type="button"
+                                className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
+                                disabled={deletingComboId === combo.id}
+                                aria-label={`Xóa vĩnh viễn ${combo.name}`}
+                                title="Xóa vĩnh viễn gói lịch học"
+                              >
+                                <DeleteOutlined />
+                              </button>
+                            </span>
+                          </Tooltip>
+                        </Popconfirm>
                       </div>
                     </div>
 
