@@ -288,7 +288,7 @@ const StudentProfile = () => {
       // cho tới khi người dùng tự F5, vì myCccd chỉ được lấy một lần lúc mở trang.
       await Promise.all([refresh(), refreshEligibility(), refreshMyCccd()]);
     } catch (err) {
-      // 422 = nghiệp vụ (ảnh mờ/giả, chưa đủ 16, tên không khớp, CCCD trùng); 400 = file; message sẵn tiếng Việt.
+      // 422 = nghiệp vụ (ảnh mờ/giả, chưa đủ 16, CCCD trùng); 400 = file; message sẵn tiếng Việt.
       const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
         'Xác minh độ tuổi thất bại. Vui lòng thử lại.';
