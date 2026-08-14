@@ -17,6 +17,30 @@ import styles from './LessonReportForm.module.css';
 
 const { TextArea } = Input;
 
+// Khớp đúng StringLength ở SubmitReportRequest.cs bên BE — tránh FE cho qua rồi BE từ chối.
+const LESSON_CONTENT_MAX = 2000;
+const HOMEWORK_MAX = 1000;
+const TUTOR_NOTES_MAX = 1000;
+// homework/tutorNotes không bắt buộc nhập, nhưng đã nhập thì phải đủ dài để có ý nghĩa — cùng mốc
+// 10 ký tự đang dùng cho các trường lý do/mô tả tự do khác trong app (modal Từ chối yêu cầu, Báo
+// cáo vắng mặt).
+const MIN_MEANINGFUL_LENGTH = 10;
+
+/** Rule cho field KHÔNG bắt buộc: bỏ trống thì qua, đã nhập thì phải đủ ngắn/dài. */
+const optionalLengthRule = (fieldLabel: string, max: number) => ({
+  validator: (_: unknown, value: string) => {
+    const trimmed = (value || '').trim();
+    if (trimmed.length === 0) return Promise.resolve();
+    if (trimmed.length < MIN_MEANINGFUL_LENGTH) {
+      return Promise.reject(new Error(`${fieldLabel} phải có ít nhất ${MIN_MEANINGFUL_LENGTH} ký tự`));
+    }
+    if (trimmed.length > max) {
+      return Promise.reject(new Error(`${fieldLabel} không được vượt quá ${max} ký tự`));
+    }
+    return Promise.resolve();
+  },
+});
+
 interface LessonReportFormProps {
   classSessionId: number;
   attachments?: ReportAttachment[];
@@ -200,13 +224,21 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
         <Form.Item
           name="lessonContent"
           label={renderLabel('lessonContent', 'Nội dung đã dạy')}
-          rules={[{ required: true, message: 'Vui lòng nhập nội dung đã dạy' }]}
+          rules={[
+            { required: true, message: 'Vui lòng nhập nội dung đã dạy' },
+            { min: MIN_MEANINGFUL_LENGTH, message: `Nội dung phải có ít nhất ${MIN_MEANINGFUL_LENGTH} ký tự` },
+            { max: LESSON_CONTENT_MAX, message: `Nội dung không được vượt quá ${LESSON_CONTENT_MAX} ký tự` },
+          ]}
         >
-          <TextArea rows={4} placeholder="Mô tả nội dung buổi học..." />
+          <TextArea rows={4} placeholder="Mô tả nội dung buổi học..." maxLength={LESSON_CONTENT_MAX} showCount />
         </Form.Item>
 
-        <Form.Item name="homework" label={renderLabel('homework', 'Bài tập về nhà')}>
-          <TextArea rows={3} placeholder="Bài tập giao cho học sinh (nếu có)..." />
+        <Form.Item
+          name="homework"
+          label={renderLabel('homework', 'Bài tập về nhà')}
+          rules={[optionalLengthRule('Bài tập về nhà', HOMEWORK_MAX)]}
+        >
+          <TextArea rows={3} placeholder="Bài tập giao cho học sinh (nếu có)..." maxLength={HOMEWORK_MAX} showCount />
         </Form.Item>
 
         <div className={styles.attachmentSection}>
@@ -218,8 +250,12 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
           />
         </div>
 
-        <Form.Item name="tutorNotes" label={renderLabel('tutorNotes', 'Ghi chú')}>
-          <TextArea rows={2} placeholder="Ghi chú thêm về buổi học..." />
+        <Form.Item
+          name="tutorNotes"
+          label={renderLabel('tutorNotes', 'Ghi chú')}
+          rules={[optionalLengthRule('Ghi chú', TUTOR_NOTES_MAX)]}
+        >
+          <TextArea rows={2} placeholder="Ghi chú thêm về buổi học..." maxLength={TUTOR_NOTES_MAX} showCount />
         </Form.Item>
 
         <div className={styles.actions}>
