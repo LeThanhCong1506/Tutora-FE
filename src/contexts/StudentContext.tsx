@@ -30,16 +30,15 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         try {
             setLoading(true);
             const response = await getStudents();
-            if (response.content && response.content.length > 0) {
-                setStudents(response.content);
+            // Ghi cả khi danh sách rỗng: phụ huynh xoá hồ sơ cuối cùng thì state phải trống theo,
+            // nếu không cả app vẫn thấy học sinh đã bị xoá cho tới lần tải lại trang.
+            const list = response.content ?? [];
+            setStudents(list);
 
-                // Restore previously selected student from storage, or pick first
-                const savedId = await storageAdapter.get('selectedStudentId');
-                const savedStudent = savedId
-                    ? response.content.find(s => s.studentId === savedId)
-                    : null;
-                setSelectedStudent(savedStudent || response.content[0]);
-            }
+            // Restore previously selected student from storage, or pick first
+            const savedId = list.length > 0 ? await storageAdapter.get('selectedStudentId') : null;
+            const savedStudent = savedId ? list.find(s => s.studentId === savedId) : null;
+            setSelectedStudent(savedStudent ?? list[0] ?? null);
         } catch (error) {
             console.error('❌ StudentContext - Error loading students:', error);
         } finally {
