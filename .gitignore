@@ -55,3 +55,10 @@ test_*.html
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# E2E automation & tooling chụp ảnh cho Report 6 — chạy local, không đưa lên repo
+/e2e/
+/playwright.config.ts
+/.github/workflows/e2e.yml
+/scripts/capture-workflow*.mjs
+/docs/screenshots/

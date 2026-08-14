@@ -41,6 +41,55 @@ export interface ApiResponse<T> {
     content: T;
 }
 
+/** Normalize ASP.NET camelCase DTOs for older portal components. */
+type NotificationWireDTO = Partial<NotificationDTO> & {
+    notificationId?: number;
+    Notificationid?: number;
+    userId?: string;
+    Userid?: string;
+    referenceId?: string | number | null;
+    Referenceid?: string | number | null;
+    isRead?: boolean | null;
+    Isread?: boolean | null;
+    createdAt?: string | null;
+    Createdat?: string | null;
+};
+
+const unwrapNotificationPayload = (payload: unknown): unknown => {
+    if (payload && typeof payload === 'object' && 'content' in payload) {
+        return (payload as { content?: unknown }).content;
+    }
+    return payload;
+};
+
+const normalizeNotification = (value: NotificationWireDTO): NotificationDTO => ({
+    notificationid: Number(value.notificationid ?? value.notificationId ?? value.Notificationid ?? 0),
+    userid: String(value.userid ?? value.userId ?? value.Userid ?? ''),
+    title: String(value.title ?? ''),
+    message: String(value.message ?? ''),
+    type: value.type ?? null,
+    referenceid: value.referenceid != null
+        ? String(value.referenceid)
+        : (value.referenceId ?? value.Referenceid) != null
+            ? String(value.referenceId ?? value.Referenceid)
+            : null,
+    isread: value.isread ?? value.isRead ?? value.Isread ?? false,
+    createdat: value.createdat ?? value.createdAt ?? value.Createdat ?? null,
+    username: value.username,
+    userfullname: value.userfullname,
+});
+
+const normalizeNotifications = (payload: unknown): NotificationDTO[] => {
+    const items = unwrapNotificationPayload(payload);
+    return Array.isArray(items) ? items.map((item) => normalizeNotification(item as NotificationWireDTO)) : [];
+};
+
+const getUnreadCountFromPayload = (payload: unknown): number => {
+    const data = unwrapNotificationPayload(payload) as { unreadCount?: unknown } | null;
+    const count = Number(data?.unreadCount ?? 0);
+    return Number.isFinite(count) && count >= 0 ? count : 0;
+};
+
 /** Backend đôi khi trả HTTP 200 kèm `status: Failed`; không được coi là thao tác thành công. */
 const ensureNotificationMutationSucceeded = (data: unknown) => {
     const response = data as { status?: string; message?: string } | undefined;
@@ -57,7 +106,7 @@ export const getMyNotifications = async (): Promise<NotificationDTO[]> => {
         const response = await api.get('/notifications/mine', {
             headers: getAuthHeaders(),
         });
-        return Array.isArray(response.data) ? response.data : (response.data?.content || []);
+        return normalizeNotifications(response.data);
     } catch (error: any) {
         console.error('Error fetching notifications:', error);
         return [];
@@ -72,7 +121,7 @@ export const getUnreadNotifications = async (): Promise<NotificationDTO[]> => {
         const response = await api.get('/notifications/mine/unread', {
             headers: getAuthHeaders(),
         });
-        return response.data;
+        return normalizeNotifications(response.data);
     } catch (error: any) {
         console.error('Error fetching unread notifications:', error);
         throw error;
@@ -87,8 +136,7 @@ export const getUnreadCount = async (): Promise<number> => {
         const response = await api.get('/notifications/mine/unread-count', {
             headers: getAuthHeaders(),
         });
-        // Backend returns: { unreadCount, byType, total }
-        return response.data.unreadCount || 0;
+        return getUnreadCountFromPayload(response.data);
     } catch (error: any) {
         console.error('Error fetching unread count:', error);
         // Return 0 on error to prevent UI breaking
@@ -106,7 +154,8 @@ export const getUnreadCountByType = async (): Promise<Record<string, number>> =>
         const response = await api.get('/notifications/mine/unread-count', {
             headers: getAuthHeaders(),
         });
-        return response.data?.byType || {};
+        const data = unwrapNotificationPayload(response.data) as { byType?: Record<string, number> } | null;
+        return data?.byType || {};
     } catch (error: any) {
         console.error('Error fetching unread count by type:', error);
         return {};

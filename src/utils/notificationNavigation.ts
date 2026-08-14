@@ -18,7 +18,11 @@ const NOTIFICATION_TYPE = {
     LessonNoShow: 'lesson_no_show',
     LessonScheduleChange: 'lesson_schedule_change',
     LessonConfirmed: 'lesson_confirmed',
+    LessonConfirmDeadline: 'lesson_confirm_deadline',
     LessonReminder: 'lesson_reminder',
+    LessonRecordingReady: 'lesson_recording_ready',
+    LessonVideoSummaryReady: 'lesson_video_summary_ready',
+    LessonReportAiFillReady: 'lesson_report_ai_fill_ready',
     RescheduleProposed: 'reschedule_proposed',
     RescheduleAccepted: 'reschedule_accepted',
     RescheduleRejected: 'reschedule_rejected',
@@ -73,16 +77,14 @@ export function getNotificationTargetPath(notification: NotificationDTO): string
             ? lessonDetailPath(refId)
             : `/session-lobby/${refId}`;
     }
-    if (type === NOTIFICATION_TYPE.LessonCheckin && refId) {
-        return lessonDetailPath(refId);
-    }
-    if (type === NOTIFICATION_TYPE.LessonReport && refId) {
-        return lessonDetailPath(refId);
-    }
-    if (type === NOTIFICATION_TYPE.LessonConfirmed && refId) {
-        return lessonDetailPath(refId);
-    }
-    if (type === NOTIFICATION_TYPE.LessonNoShow && refId) {
+    if ((type === NOTIFICATION_TYPE.LessonCheckin
+        || type === NOTIFICATION_TYPE.LessonReport
+        || type === NOTIFICATION_TYPE.LessonConfirmed
+        || type === NOTIFICATION_TYPE.LessonConfirmDeadline
+        || type === NOTIFICATION_TYPE.LessonNoShow
+        || type === NOTIFICATION_TYPE.LessonRecordingReady
+        || type === NOTIFICATION_TYPE.LessonVideoSummaryReady
+        || type === NOTIFICATION_TYPE.LessonReportAiFillReady) && refId) {
         return lessonDetailPath(refId);
     }
     if ((type === NOTIFICATION_TYPE.RescheduleProposed

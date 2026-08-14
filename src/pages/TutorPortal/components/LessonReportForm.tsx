@@ -104,6 +104,14 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
     [saveDraft],
   );
 
+  // Ant Design chỉ bắn onValuesChange khi người dùng tự gõ, KHÔNG bắn khi code gọi setFieldsValue —
+  // nên nội dung AI điền không tự vào nháp. Không lưu tay ở đây thì gia sư F5 là mất sạch phần AI vừa
+  // điền (trừ khi tình cờ gõ thêm chữ nào đó sau đó, nên lỗi lúc gặp lúc không).
+  const applyAiPatch = useCallback((patch: Partial<ReportFormValues>) => {
+    form.setFieldsValue(patch);
+    saveDraft(form.getFieldsValue() as Partial<ReportFormValues>);
+  }, [form, saveDraft]);
+
   const applyAiJob = useCallback((job: ClassSessionAiJobResponse) => {
     setAiJobStatus(job.status === 'none' ? 'idle' : job.status);
 
@@ -120,7 +128,7 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
         fieldsToApply.forEach((field) => {
           patch[field] = job.resultJson![field];
         });
-        form.setFieldsValue(patch);
+        applyAiPatch(patch);
         setAiAppliedFields((prev) => {
           const next = new Set(prev);
           fieldsToApply.forEach((field) => next.add(field));
@@ -129,7 +137,24 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
       }
       pendingAiFieldsRef.current.clear();
     }
-  }, [form]);
+  }, [applyAiPatch]);
+
+  // Lấy trạng thái job khi mở form. Không có bước này thì job chạy nền bị "quên" mỗi lần rời trang/F5:
+  // aiJobStatus quay về 'idle' nên nút "*" sáng lại như chưa từng bấm, và kết quả xong trong lúc gia sư
+  // đi vắng cũng không được lấy về. pendingAiFieldsRef lúc này rỗng nên applyAiJob chỉ nạp sẵn aiResult
+  // chứ không tự điền — đúng ý, không đè lên nội dung gia sư đang gõ dở.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await getReportAiFillStatus(classSessionId);
+        if (!cancelled) applyAiJob(response.content);
+      } catch (error) {
+        console.error('Failed to load AI report fill status', error);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [classSessionId, applyAiJob]);
 
   // Poll trong lúc Gemini đang xử lý (video có thể vài tiếng, mất vài phút) — dừng khi có kết quả.
   useEffect(() => {
@@ -146,9 +171,10 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
   }, [aiJobStatus, classSessionId, applyAiJob]);
 
   const handleAiFillField = async (field: AiFillableField) => {
-    // Đã có kết quả sẵn (do field khác trigger trước đó) — áp dụng ngay, không cần gọi lại API.
+    // Đã có kết quả sẵn (field khác trigger trước đó, hoặc job cũ vừa nạp lúc mở form) — áp dụng ngay,
+    // không cần gọi lại API.
     if (aiResult) {
-      form.setFieldsValue({ [field]: aiResult[field] });
+      applyAiPatch({ [field]: aiResult[field] });
       setAiAppliedFields((prev) => new Set(prev).add(field));
       return;
     }

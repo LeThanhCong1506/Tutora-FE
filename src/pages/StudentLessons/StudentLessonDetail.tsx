@@ -45,6 +45,7 @@ import { getUserInfoFromToken } from '../../services/auth.service';
 import s from '../StudentPages.module.css';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 import { canJoinLiveSession, isWithinJoinWindow } from '../../utils/liveSession';
+import { isAwaitingReport } from './lesson-components';
 
 // ── Status definitions — nguồn duy nhất là classSessionStatus.ts (khớp BE ClassSessionStatus) ──
 type StatusInfo = { label: string; color: string; bg: string; icon: string };
@@ -130,6 +131,7 @@ const StudentLessonDetail = () => {
     const [respondingReschedule, setRespondingReschedule] = useState(false);
     const [recordingAvailable, setRecordingAvailable] = useState(false);
     const [summaryJob, setSummaryJob] = useState<ClassSessionAiJobResponse | null>(null);
+    const [summaryStatusLoaded, setSummaryStatusLoaded] = useState(false);
     const [summaryViewTab, setSummaryViewTab] = useState<'summary' | 'transcript'>('summary');
     const [triggeringSummary, setTriggeringSummary] = useState(false);
     const [chatTurns, setChatTurns] = useState<VideoSummaryChatMessage[]>([]);
@@ -199,6 +201,8 @@ const StudentLessonDetail = () => {
             setSummaryJob(response.content);
         } catch (requestError: unknown) {
             console.error('Failed to load video summary status', requestError);
+        } finally {
+            setSummaryStatusLoaded(true);
         }
     }, [lessonId]);
 
@@ -260,12 +264,18 @@ const StudentLessonDetail = () => {
         void fetchSummaryStatus();
     }, [fetchRecordingStatus, fetchSummaryStatus]);
 
-    // Poll trong lúc Gemini đang xử lý (video có thể vài tiếng, mất vài phút) — dừng khi có kết quả.
+    // Tóm tắt đã trả về rồi nhưng BE còn đang chép lời chạy nền (xem ClassSessionAiJobStage.Transcribing).
+    const transcribing = summaryJob?.status === 'completed' && summaryJob?.stage === 'transcribing';
+
+    // Poll trong lúc Gemini đang xử lý (video có thể vài tiếng, mất vài phút). Chép lời chạy nền sau khi
+    // tóm tắt đã xong nên phải poll tiếp qua cả giai đoạn đó, nếu không tab "Hội thoại" sẽ kẹt ở trạng
+    // thái đang tạo tới khi người dùng F5.
     useEffect(() => {
-        if (summaryJob?.status !== 'pending' && summaryJob?.status !== 'processing') return;
+        const waiting = summaryJob?.status === 'pending' || summaryJob?.status === 'processing' || transcribing;
+        if (!waiting) return;
         const timer = window.setInterval(() => void fetchSummaryStatus(), 8000);
         return () => window.clearInterval(timer);
-    }, [summaryJob?.status, fetchSummaryStatus]);
+    }, [summaryJob?.status, transcribing, fetchSummaryStatus]);
 
     useEffect(() => {
         if (summaryJob?.status === 'completed') void fetchChatMessages();
@@ -446,7 +456,10 @@ const StudentLessonDetail = () => {
         );
     }
 
-    const status = getStatus(lesson.status);
+    const baseStatus = getStatus(lesson.status);
+    const status = isAwaitingReport(lesson)
+        ? { ...baseStatus, label: 'Chờ gửi báo cáo', color: '#A16207', bg: '#FFF6E5', icon: '⏳' }
+        : baseStatus;
     const isInProgress = lesson.status === 'in_progress';
     // Phòng Agora mở từ 30ph trước giờ học — không cần đợi gia sư vào trước (khớp BE AgoraController)
     const canJoin = canJoinLiveSession(lesson);
@@ -1300,7 +1313,14 @@ const StudentLessonDetail = () => {
                             </div>
 
                             <div style={aiPanelBody}>
-                                {(!summaryJob || summaryJob.status === 'none') && (
+                                {!summaryStatusLoaded && (
+                                    <div style={{ ...aiBubbleAssistant, flexDirection: 'row', alignItems: 'center' }}>
+                                        <Spin size="small" />
+                                        <span>Đang tải…</span>
+                                    </div>
+                                )}
+
+                                {summaryStatusLoaded && (!summaryJob || summaryJob.status === 'none') && (
                                     <>
                                         <div style={aiHeroGreeting}>
                                             {greetingName && <div style={aiGreetingHi}>Xin chào, {greetingName}.</div>}
@@ -1377,14 +1397,22 @@ const StudentLessonDetail = () => {
                                                 type="button"
                                                 onClick={() => setSummaryViewTab('transcript')}
                                                 disabled={!summaryJob.transcriptText}
-                                                title={!summaryJob.transcriptText ? 'Buổi học này chưa có hội thoại (tóm tắt trước khi có tính năng này)' : undefined}
+                                                title={
+                                                    summaryJob.transcriptText
+                                                        ? undefined
+                                                        : transcribing
+                                                            ? 'AI đang chép lời buổi học, sẽ hiện ngay khi xong'
+                                                            : 'Buổi học này chưa có hội thoại (tóm tắt trước khi có tính năng này)'
+                                                }
                                                 style={{
                                                     ...summaryTabBtnBase,
                                                     ...(summaryViewTab === 'transcript' ? summaryTabBtnActive : {}),
                                                     ...(!summaryJob.transcriptText ? { opacity: 0.45, cursor: 'not-allowed' } : {}),
                                                 }}
                                             >
-                                                Hội thoại
+                                                {transcribing && !summaryJob.transcriptText
+                                                    ? <><Spin size="small" /> Hội thoại</>
+                                                    : 'Hội thoại'}
                                             </button>
                                         </div>
 
