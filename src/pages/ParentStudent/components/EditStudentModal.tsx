@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
-// message import removed
+import { useEffect, useState } from 'react';
 import styles from './AddStudentModal.module.css';
-import { X } from 'lucide-react';
+import { Pencil, X } from 'lucide-react';
 import type { StudentType } from '../../../types/student.type';
 import type { ICreateParentStudent } from '../../../services/student.service';
 import { useGradeLevels } from '../../../hooks/useGradeLevels';
@@ -13,30 +12,30 @@ interface EditStudentModalProps {
     student: StudentType | null;
 }
 
+const formStateFrom = (student: StudentType | null) => ({
+    fullName: student?.fullName ?? '',
+    birthDate: student?.birthDate ?? '',
+    school: student?.school ?? '',
+    gradeLevelId: student?.gradeLevelId != null ? String(student.gradeLevelId) : '',
+    learningGoals: student?.learningGoals ?? '',
+});
+
+const today = new Date().toISOString().slice(0, 10);
+
 const EditStudentModal = ({ isOpen, onClose, onSubmit, student }: EditStudentModalProps) => {
     const { gradeLevels } = useGradeLevels();
-    const [formData, setFormData] = useState({
-        fullName: '',
-        birthDate: '',
-        school: '',
-        gradeLevelId: '',
-        learningGoals: '',
-    });
+    const [formData, setFormData] = useState(() => formStateFrom(student));
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [submitting, setSubmitting] = useState(false);
 
-    // Pre-fill form when student changes
     useEffect(() => {
-        if (student) {
-            setFormData({
-                fullName: student.fullName,
-                birthDate: student.birthDate,
-                school: student.school ?? '',
-                gradeLevelId: student.gradeLevelId != null ? String(student.gradeLevelId) : '',
-                learningGoals: student.learningGoals || '',
-            });
-        }
-    }, [student]);
+        if (!isOpen) return;
+        const closeOnEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && !submitting) onClose();
+        };
+        document.addEventListener('keydown', closeOnEscape);
+        return () => document.removeEventListener('keydown', closeOnEscape);
+    }, [isOpen, onClose, submitting]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -54,8 +53,18 @@ const EditStudentModal = ({ isOpen, onClose, onSubmit, student }: EditStudentMod
 
         // Validate
         const newErrors: Record<string, string> = {};
-        if (!formData.fullName.trim()) newErrors.fullName = 'Họ tên là bắt buộc';
-        if (!formData.birthDate) newErrors.birthDate = 'Ngày sinh là bắt buộc';
+        if (!formData.fullName.trim()) {
+            newErrors.fullName = 'Họ tên là bắt buộc';
+        } else if (formData.fullName.trim().length < 2) {
+            newErrors.fullName = 'Họ tên phải có ít nhất 2 ký tự';
+        } else if (formData.fullName.trim().length > 100) {
+            newErrors.fullName = 'Họ tên không được vượt quá 100 ký tự';
+        }
+        if (!formData.birthDate) {
+            newErrors.birthDate = 'Ngày sinh là bắt buộc';
+        } else if (new Date(formData.birthDate) > new Date()) {
+            newErrors.birthDate = 'Ngày sinh không được là ngày trong tương lai';
+        }
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -82,96 +91,131 @@ const EditStudentModal = ({ isOpen, onClose, onSubmit, student }: EditStudentMod
     if (!isOpen) return null;
 
     return (
-        <div className={styles.modalOverlay} onClick={onClose}>
-            <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalOverlay} onClick={submitting ? undefined : onClose}>
+            <div
+                className={styles.modalContent}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="edit-student-title"
+                aria-describedby="edit-student-description"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className={styles.modalHeader}>
-                    <h2 className={styles.modalTitle}>Chỉnh sửa thông tin</h2>
-                    <button className={styles.modalCloseBtn} onClick={onClose} type="button" disabled={submitting}>
-                        <X size={20} />
+                    <span className={styles.modalIcon} aria-hidden="true">
+                        <Pencil size={18} />
+                    </span>
+                    <div className={styles.modalHeading}>
+                        <span className={styles.modalEyebrow}>Hồ sơ học sinh</span>
+                        <h2 className={styles.modalTitle} id="edit-student-title">Chỉnh sửa thông tin</h2>
+                        <p className={styles.modalDescription} id="edit-student-description">
+                            Cập nhật thông tin đang dùng để tìm gia sư và theo dõi lịch học.
+                        </p>
+                    </div>
+                    <button
+                        className={styles.modalCloseBtn}
+                        onClick={onClose}
+                        type="button"
+                        disabled={submitting}
+                        aria-label="Đóng cửa sổ chỉnh sửa học sinh"
+                    >
+                        <X size={18} />
                     </button>
                 </div>
 
                 <form className={styles.addStudentForm} onSubmit={handleSubmit}>
-                    <div className={styles.formRow}>
-                        <label className={styles.formLabel}>
-                            Họ và tên <span className={styles.required}>*</span>
-                        </label>
-                        <input
-                            type="text"
-                            name="fullName"
-                            value={formData.fullName}
-                            onChange={handleChange}
-                            className={`${styles.formInput} ${errors.fullName ? styles.formInputError : ''}`}
-                            placeholder="Nhập họ tên học sinh"
-                            disabled={submitting}
-                        />
-                        {errors.fullName && <span className={styles.errorMessage}>{errors.fullName}</span>}
-                    </div>
+                    <div className={styles.formGrid}>
+                        <div className={`${styles.formRow} ${styles.formRowWide}`}>
+                            <label className={styles.formLabel} htmlFor="edit-student-full-name">
+                                Họ và tên <span className={styles.required}>*</span>
+                            </label>
+                            <input
+                                id="edit-student-full-name"
+                                type="text"
+                                name="fullName"
+                                value={formData.fullName}
+                                onChange={handleChange}
+                                className={`${styles.formInput} ${errors.fullName ? styles.formInputError : ''}`}
+                                placeholder="Ví dụ: Nguyễn Minh Anh"
+                                autoComplete="name"
+                                autoFocus
+                                disabled={submitting}
+                                aria-invalid={Boolean(errors.fullName)}
+                            />
+                            {errors.fullName && <span className={styles.errorMessage}>{errors.fullName}</span>}
+                        </div>
 
-                    <div className={styles.formRow}>
-                        <label className={styles.formLabel}>
-                            Ngày sinh <span className={styles.required}>*</span>
-                        </label>
-                        <input
-                            type="date"
-                            name="birthDate"
-                            value={formData.birthDate}
-                            onChange={handleChange}
-                            className={`${styles.formInput} ${errors.birthDate ? styles.formInputError : ''}`}
-                            disabled={submitting}
-                        />
-                        {errors.birthDate && <span className={styles.errorMessage}>{errors.birthDate}</span>}
-                    </div>
+                        <div className={styles.formRow}>
+                            <label className={styles.formLabel} htmlFor="edit-student-birth-date">
+                                Ngày sinh <span className={styles.required}>*</span>
+                            </label>
+                            <input
+                                id="edit-student-birth-date"
+                                type="date"
+                                name="birthDate"
+                                max={today}
+                                value={formData.birthDate}
+                                onChange={handleChange}
+                                className={`${styles.formInput} ${errors.birthDate ? styles.formInputError : ''}`}
+                                disabled={submitting}
+                                aria-invalid={Boolean(errors.birthDate)}
+                            />
+                            {errors.birthDate && <span className={styles.errorMessage}>{errors.birthDate}</span>}
+                        </div>
 
-                    <div className={styles.formRow}>
-                        <label className={styles.formLabel}>
-                            Trường
-                        </label>
-                        <input
-                            type="text"
-                            name="school"
-                            value={formData.school}
-                            onChange={handleChange}
-                            className={`${styles.formInput} ${errors.school ? styles.formInputError : ''}`}
-                            placeholder="Nhập tên trường"
-                            disabled={submitting}
-                        />
-                        {errors.school && <span className={styles.errorMessage}>{errors.school}</span>}
-                    </div>
+                        <div className={styles.formRow}>
+                            <label className={styles.formLabel} htmlFor="edit-student-grade">
+                                Khối lớp <span className={styles.optional}>Tuỳ chọn</span>
+                            </label>
+                            <select
+                                id="edit-student-grade"
+                                name="gradeLevelId"
+                                value={formData.gradeLevelId}
+                                onChange={handleChange}
+                                className={styles.formInput}
+                                disabled={submitting}
+                            >
+                                <option value="">Chọn khối lớp</option>
+                                {gradeLevels.map((grade) => (
+                                    <option key={grade.gradeLevelId} value={grade.gradeLevelId}>
+                                        {grade.gradeName}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
 
-                    <div className={styles.formRow}>
-                        <label className={styles.formLabel}>
-                            Khối lớp
-                        </label>
-                        <select
-                            name="gradeLevelId"
-                            value={formData.gradeLevelId}
-                            onChange={handleChange}
-                            className={styles.formInput}
-                            disabled={submitting}
-                        >
-                            <option value="">-- Chọn khối lớp --</option>
-                            {gradeLevels.map((grade) => (
-                                <option key={grade.gradeLevelId} value={grade.gradeLevelId}>
-                                    {grade.gradeName}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                        <div className={`${styles.formRow} ${styles.formRowWide}`}>
+                            <label className={styles.formLabel} htmlFor="edit-student-school">
+                                Trường đang học <span className={styles.optional}>Tuỳ chọn</span>
+                            </label>
+                            <input
+                                id="edit-student-school"
+                                type="text"
+                                name="school"
+                                value={formData.school}
+                                onChange={handleChange}
+                                className={`${styles.formInput} ${errors.school ? styles.formInputError : ''}`}
+                                placeholder="Ví dụ: THCS Nguyễn Du"
+                                disabled={submitting}
+                                aria-invalid={Boolean(errors.school)}
+                            />
+                            {errors.school && <span className={styles.errorMessage}>{errors.school}</span>}
+                        </div>
 
-                    <div className={styles.formRow}>
-                        <label className={styles.formLabel}>
-                            Mục tiêu học tập
-                        </label>
-                        <textarea
-                            name="learningGoals"
-                            value={formData.learningGoals}
-                            onChange={handleChange}
-                            className={styles.formTextarea}
-                            placeholder="Nhập mục tiêu học tập..."
-                            rows={3}
-                            disabled={submitting}
-                        />
+                        <div className={`${styles.formRow} ${styles.formRowWide}`}>
+                            <label className={styles.formLabel} htmlFor="edit-student-goals">
+                                Điều con đang cần hỗ trợ <span className={styles.optional}>Tuỳ chọn</span>
+                            </label>
+                            <textarea
+                                id="edit-student-goals"
+                                name="learningGoals"
+                                value={formData.learningGoals}
+                                onChange={handleChange}
+                                className={styles.formTextarea}
+                                placeholder="Ví dụ: Củng cố Toán lớp 8 và tự tin hơn khi làm bài"
+                                rows={3}
+                                disabled={submitting}
+                            />
+                        </div>
                     </div>
 
                     <div className={styles.modalActions}>
