@@ -14,6 +14,8 @@ import {
 } from '../../../services/booking.service';
 import { isZaloMiniApp } from '../../../services/zalo-env';
 import { useBookingTopup } from '../../../hooks/useBookingTopup';
+import { useCurrentTime } from '../../../hooks/useCurrentTime';
+import { getBookingResponseDeadlineState } from '../../../utils/bookingDeadline';
 import TopupQRView from '../../../components/TopupQR/TopupQRView';
 import { formatVNDNumber } from '../../../utils/formatters';
 import styles from './styles.module.css';
@@ -33,7 +35,7 @@ import {
 } from 'lucide-react';
 import { message as antMessage, Button, Radio } from 'antd';
 import { useLargeTransactionOtp } from '../../../hooks/useLargeTransactionOtp';
-import { setPendingRedirect } from '../../../services/auth.service';
+import { setPendingRedirect, getCurrentUserRole } from '../../../services/auth.service';
 import PaymentOtpStep from '../../../components/PaymentOtpStep/PaymentOtpStep';
 
 const PaymentPage = () => {
@@ -51,8 +53,18 @@ const PaymentPage = () => {
   const [isPaying, setIsPaying] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [qrImageError, setQrImageError] = useState(false);
+  // BE trả 409 BOOKING_EXPIRED nếu request lọt đúng lúc hết hạn (giữa 2 nhịp tick của đồng hồ
+  // đếm ngược) — cờ này ép sang màn "hết hạn" ngay cả khi countdown phía dưới chưa kịp về 0.
+  const [forceExpired, setForceExpired] = useState(false);
 
   const bookingId = Number(id);
+  // Trang này dùng chung cho cả /parent-portal và /student-portal (App.tsx đăng ký 2 route trỏ
+  // cùng component) — không được hard-code /parent-portal, học sinh tự đăng ký sẽ bị điều hướng
+  // sang cổng không có quyền truy cập.
+  const basePath = (getCurrentUserRole() || '').toLowerCase() === 'student' ? '/student-portal' : '/parent-portal';
+  const currentTime = useCurrentTime();
+  const deadlineState = summary?.expiredAt ? getBookingResponseDeadlineState(summary.expiredAt, currentTime) : null;
+  const paymentExpired = forceExpired || (deadlineState?.isExpired ?? false);
 
   // Chặn thanh toán đợt 2 (các buổi còn lại) khi buổi học đầu tiên CHƯA kết thúc.
   // Bắt buộc gác ở đây vì BE vẫn chấp nhận trả phần còn lại ở trạng thái deposit_paid,
@@ -88,7 +100,7 @@ const PaymentPage = () => {
 
         // Nếu đã thanh toán, redirect ngay để tránh tạo lại booking khi nhấn Back
         if (bookingRes.content.paymentStatus === 'paid') {
-          navigate(`/parent-portal/booking/${bookingId}`, { replace: true });
+          navigate(`${basePath}/booking/${bookingId}`, { replace: true });
           return;
         }
 
@@ -102,18 +114,24 @@ const PaymentPage = () => {
         // link đã PAID tại PayOS nhưng webhook lỗi, BE tự xác nhận khi mở trang. Điều hướng tới chi tiết.
         if (isAxiosError(err) && err.response?.data?.errorCode === 'BOOKING_ALREADY_PAID') {
           antMessage.success('Thanh toán của bạn đã được ghi nhận!');
-          navigate(`/parent-portal/booking/${bookingId}`, { replace: true });
+          navigate(`${basePath}/booking/${bookingId}`, { replace: true });
+          return;
+        }
+        // Mở lại link thanh toán sau khi đã hết hạn cọc (không đang xem đồng hồ đếm chạy về 0) —
+        // getPaymentSummary tự chặn ngay từ lúc tải trang, summary/booking sẽ không có dữ liệu.
+        if (isAxiosError(err) && err.response?.data?.errorCode === 'BOOKING_EXPIRED') {
+          setForceExpired(true);
           return;
         }
         antMessage.error('Không thể tải thông tin thanh toán.');
-        navigate('/parent-portal/booking');
+        navigate(`${basePath}/booking`);
       } finally {
         setLoading(false);
       }
     };
 
     if (bookingId) fetchData();
-  }, [bookingId, navigate, inMiniApp]);
+  }, [bookingId, navigate, inMiniApp, basePath]);
 
   // Tạo link PayOS (lazy) chỉ khi user thực sự chọn "chuyển khoản ngân hàng" — và (nếu là giao
   // dịch lớn của học sinh tự đăng ký) chỉ sau khi đã xác thực OTP xong, tránh tạo link trước khi
@@ -133,11 +151,15 @@ const PaymentPage = () => {
         if (cancelled) return;
         if (isAxiosError(err) && err.response?.data?.errorCode === 'BOOKING_ALREADY_PAID') {
           antMessage.success('Thanh toán của bạn đã được ghi nhận!');
-          navigate(`/parent-portal/booking/${bookingId}`, { replace: true });
+          navigate(`${basePath}/booking/${bookingId}`, { replace: true });
           return;
         }
         if (isAxiosError(err) && err.response?.data?.errorCode === 'OTP_REQUIRED') {
           otpGate.handlePaymentOtpRequired();
+          return;
+        }
+        if (isAxiosError(err) && err.response?.data?.errorCode === 'BOOKING_EXPIRED') {
+          setForceExpired(true);
           return;
         }
         antMessage.error(
@@ -198,6 +220,8 @@ const PaymentPage = () => {
     } catch (error: unknown) {
       if (isAxiosError(error) && error.response?.data?.errorCode === 'OTP_REQUIRED') {
         otpGate.handlePaymentOtpRequired();
+      } else if (isAxiosError(error) && error.response?.data?.errorCode === 'BOOKING_EXPIRED') {
+        setForceExpired(true);
       } else {
         antMessage.error((isAxiosError(error) ? error.response?.data?.message : null) || 'Có lỗi xảy ra khi thanh toán.');
       }
@@ -260,6 +284,44 @@ const PaymentPage = () => {
     );
   }
 
+  if (paymentExpired) {
+    const isRemainingPhase = summary?.paymentPhase === 'remaining';
+    return (
+      <div className={styles.pageWrapper}>
+        <div className={styles.successContainer}>
+          <div className={styles.successCard}>
+            <div className={styles.successIcon} style={{ background: '#fee2e2', color: '#b91c1c' }}>
+              <AlertCircle size={52} strokeWidth={2.2} />
+            </div>
+            <span className={styles.successEyebrow}>Đã hết hạn thanh toán</span>
+            <h1>{isRemainingPhase ? 'Đã quá hạn thanh toán các buổi còn lại' : 'Yêu cầu đặt lịch đã hết hạn'}</h1>
+            <p className={styles.successMessage}>
+              {isRemainingPhase
+                ? 'Bạn chưa thanh toán các buổi học còn lại trong thời hạn 48 giờ cho phép, nên khóa học đã được kết thúc sớm với các buổi đã hoàn thành. Vui lòng liên hệ TUTORA nếu cần hỗ trợ thêm.'
+                : 'Bạn chưa hoàn tất thanh toán tiền cọc trong thời hạn 10 phút cho phép, nên yêu cầu đặt lịch này đã tự động hết hạn. Vui lòng đặt lịch lại với gia sư để tiếp tục.'}
+            </p>
+            <div className={styles.successActions}>
+              <Button
+                type="primary"
+                size="large"
+                onClick={() => navigate(`${basePath}/booking`, { replace: true })}
+              >
+                <ListChecks size={17} />
+                Danh sách đặt lịch
+              </Button>
+              {!isRemainingPhase && (
+                <Button size="large" onClick={() => navigate('/tutor-search', { replace: true })}>
+                  <span>Tìm gia sư khác</span>
+                  <ArrowRight size={17} />
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (remainingLocked) {
     return (
       <div className={styles.pageWrapper}>
@@ -278,12 +340,12 @@ const PaymentPage = () => {
               <Button
                 type="primary"
                 size="large"
-                onClick={() => navigate(`/parent-portal/booking/${bookingId}`, { replace: true })}
+                onClick={() => navigate(`${basePath}/booking/${bookingId}`, { replace: true })}
               >
                 <span>Xem chi tiết booking</span>
                 <ArrowRight size={17} />
               </Button>
-              <Button size="large" onClick={() => navigate('/parent-portal/booking', { replace: true })}>
+              <Button size="large" onClick={() => navigate(`${basePath}/booking`, { replace: true })}>
                 <ListChecks size={17} />
                 Danh sách đặt lịch
               </Button>
@@ -329,12 +391,12 @@ const PaymentPage = () => {
               <Button
                 type="primary"
                 size="large"
-                onClick={() => navigate(`/parent-portal/booking/${bookingId}`, { replace: true })}
+                onClick={() => navigate(`${basePath}/booking/${bookingId}`, { replace: true })}
               >
                 <span>Xem lịch học</span>
                 <ArrowRight size={17} />
               </Button>
-              <Button size="large" onClick={() => navigate('/parent-portal/booking', { replace: true })}>
+              <Button size="large" onClick={() => navigate(`${basePath}/booking`, { replace: true })}>
                 <ListChecks size={17} />
                 Danh sách đặt lịch
               </Button>
@@ -365,7 +427,7 @@ const PaymentPage = () => {
   return (
     <div className={styles.container}>
       <div className={styles.topNav}>
-        <button onClick={() => navigate('/parent-portal/booking', { replace: true })} className={styles.backBtn}>
+        <button onClick={() => navigate(`${basePath}/booking`, { replace: true })} className={styles.backBtn}>
           <ChevronLeft size={20} /> Quay lại
         </button>
         <div className={styles.titleGroup}>
@@ -449,6 +511,15 @@ const PaymentPage = () => {
                         ? 'Buổi học đầu tiên (Đợt 1) đã được thanh toán trước đó — số tiền trên chỉ là phần còn lại.'
                         : `Đây là số tiền cho buổi học đầu tiên, KHÔNG phải tổng học phí toàn khóa ở trên. ${remainingSessions} buổi còn lại sẽ thanh toán riêng ở Đợt 2, sau khi buổi học đầu tiên kết thúc.`}
                     </p>
+                    {deadlineState && !deadlineState.isExpired && (
+                      <span
+                        className={`${styles.countdownBadge} ${styles[`countdownBadge_${deadlineState.urgency}`]}`}
+                      >
+                        <Clock size={13} aria-hidden="true" />
+                        Còn {deadlineState.remainingLabel} để thanh toán
+                        {isRemaining ? '' : ' — quá hạn yêu cầu sẽ tự hủy'}
+                      </span>
+                    )}
                   </div>
                 );
               })()}
