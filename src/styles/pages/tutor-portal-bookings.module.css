@@ -867,15 +867,54 @@
   line-height: 1.55;
 }
 
+.declineHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 18px;
+}
+
+.declineHeaderIcon {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #fdeceb;
+  color: #b64c46;
+}
+
+.declineHeader h2 {
+  margin: 0;
+  color: #1a2238;
+  font-family: var(--font-primary, system-ui, sans-serif);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
 .declineContent {
-  padding: 8px 0 2px;
+  padding: 0 0 2px;
 }
 
 .declineContent > p:first-child {
-  margin: 0 0 13px;
+  margin: 0 0 10px;
   color: #5f6879;
   font-size: 13px;
   line-height: 1.55;
+}
+
+.declineTextarea.declineTextarea {
+  border-radius: 10px;
+  font: inherit;
+  font-size: 13px;
+}
+
+.declineTextarea.declineTextarea:hover,
+.declineTextarea.declineTextarea:focus {
+  border-color: #b64c46;
 }
 
 .requiredMark,
@@ -883,13 +922,76 @@
   color: #d34d47;
 }
 
+.requiredMark {
+  margin-left: 3px;
+  white-space: nowrap;
+}
+
 .validationMessage {
   margin: 7px 0 0;
   font-size: 11px;
 }
 
+.declineFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid #edeff3;
+}
+
+.declineCancelBtn,
+.declineConfirmBtn {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 18px;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    transform 150ms ease;
+}
+
+.declineCancelBtn {
+  border: 1px solid #d9dde5;
+  background: #fff;
+  color: #586174;
+}
+
+.declineCancelBtn:hover:not(:disabled) {
+  border-color: #9ea6b6;
+  color: #1a2238;
+}
+
+.declineConfirmBtn {
+  border: 1px solid #b64c46;
+  background: #b64c46;
+  color: #fff;
+  box-shadow: 0 3px 8px rgba(182, 76, 70, 0.22);
+}
+
+.declineConfirmBtn:hover:not(:disabled) {
+  background: #a4423c;
+  transform: translateY(-1px);
+}
+
+.declineCancelBtn:disabled,
+.declineConfirmBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+}
+
 .declineModal :global(.ant-modal-content) {
-  border-radius: 16px;
+  border-radius: 18px;
+  padding: 26px 26px 24px;
 }
 
 @media (max-width: 1180px) {
