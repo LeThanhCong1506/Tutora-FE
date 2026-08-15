@@ -869,10 +869,24 @@ export function useTutorProfileForm() {
 
     // Update identity verification
     const updateIdentityVerification = useCallback((data: IdentityVerificationData) => {
+        const fullName = data.fullNameOnId || null;
+
+        // Upload CCCD đã cập nhật user.Fullname ở BE. Cập nhật luôn state của hero để
+        // người dùng thấy tên mới ngay, không phải tải lại trang hay chờ SignalR.
         setFormData(prev => ({
             ...prev,
+            ...(fullName ? { fullName } : {}),
             identityVerification: data
         }));
+        setSavedData(prev => ({
+            ...prev,
+            ...(fullName ? { fullName } : {}),
+            identityVerification: data
+        }));
+
+        if (fullName) {
+            window.dispatchEvent(new CustomEvent('profile-name-updated', { detail: fullName }));
+        }
     }, []);
 
     // Save draft (TODO: implement with API when available)
