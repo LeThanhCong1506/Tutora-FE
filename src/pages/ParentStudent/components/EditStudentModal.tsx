@@ -97,7 +97,6 @@ const EditStudentModal = ({ isOpen, onClose, onSubmit, student }: EditStudentMod
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="edit-student-title"
-                aria-describedby="edit-student-description"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className={styles.modalHeader}>
@@ -107,9 +106,6 @@ const EditStudentModal = ({ isOpen, onClose, onSubmit, student }: EditStudentMod
                     <div className={styles.modalHeading}>
                         <span className={styles.modalEyebrow}>Hồ sơ học sinh</span>
                         <h2 className={styles.modalTitle} id="edit-student-title">Chỉnh sửa thông tin</h2>
-                        <p className={styles.modalDescription} id="edit-student-description">
-                            Cập nhật thông tin đang dùng để tìm gia sư và theo dõi lịch học.
-                        </p>
                     </div>
                     <button
                         className={styles.modalCloseBtn}

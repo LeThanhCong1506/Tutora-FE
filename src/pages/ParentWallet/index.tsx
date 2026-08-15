@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import {
@@ -11,15 +11,25 @@ import {
 } from '../../services/wallet.service';
 import { formatCurrency, formatDateTime } from '../../utils/formatters';
 import TransactionsCard from './TransactionsCard';
-import WithdrawalRequestsCard from './WithdrawalRequestsCard';
+import PendingWithdrawalCallout from './PendingWithdrawalCallout';
 import styles from './styles.module.css';
 
 const TransactionDetailModal = lazy(() => import('./TransactionDetailModal'));
 const WithdrawModal = lazy(() => import('./WithdrawModal'));
 const WithdrawalDetailModal = lazy(() => import('./WithdrawalDetailModal'));
 
-const PREVIEW_SIZE = 10;
+const PREVIEW_SIZE = 6;
 
+/** Yêu cầu chưa kết thúc — khớp điều kiện chặn tạo trùng ở BE (WalletService.CreateWithdrawalAsync). */
+const IN_PROGRESS_STATUSES = ['pending', 'pending_review', 'approved', 'delayed'];
+
+/**
+ * Trang ví phụ huynh. Không còn card danh sách "Yêu cầu rút tiền" riêng: mỗi yêu cầu rút tiền đã là
+ * một dòng trong "Lịch sử giao dịch" (BE ghi kèm Wallettransaction referenceTable='withdrawal', bấm
+ * vào là ra chi tiết đầy đủ) nên card cũ chỉ nhân đôi dữ liệu và chiếm nửa trang dù hầu hết phụ huynh
+ * không bao giờ rút tiền. Phần còn thiếu — trạng thái của yêu cầu ĐANG chạy — được đưa lên dải
+ * PendingWithdrawalCallout, còn lịch sử đầy đủ vào nút "Lịch sử rút tiền" ở header.
+ */
 const ParentWallet = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -29,6 +39,7 @@ const ParentWallet = () => {
   const [balanceLoading, setBalanceLoading] = useState(true);
 
   const [transactions, setTransactions] = useState<TransactionHistory[]>([]);
+  const [transactionsTotal, setTransactionsTotal] = useState(0);
   const [txLoading, setTxLoading] = useState(true);
 
   const [withdrawals, setWithdrawals] = useState<WithdrawalItem[]>([]);
@@ -55,6 +66,7 @@ const ParentWallet = () => {
     try {
       const res = await getTransactions(1, PREVIEW_SIZE);
       setTransactions(res.content.transactions);
+      setTransactionsTotal(res.content.totalCount);
     } catch {
       toast.error('Không thể tải lịch sử giao dịch');
     } finally {
@@ -80,20 +92,27 @@ const ParentWallet = () => {
     void loadWithdrawals();
   }, [loadBalance, loadTransactions, loadWithdrawals]);
 
+  const pendingWithdrawal = useMemo(
+    () => withdrawals.find((item) => IN_PROGRESS_STATUSES.includes((item.status || '').toLowerCase())) ?? null,
+    [withdrawals],
+  );
+
+  const available = balance?.balance ?? 0;
+  const canWithdraw = !balanceLoading && available > 0;
+
+  const amount = (value: number) =>
+    balanceLoading ? <span className={`${styles.skeleton} ${styles.skeletonValue}`} /> : formatCurrency(value);
+
   return (
     <div className={styles.page}>
-      <div className={styles.walletTopGrid}>
-      <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Tài chính của tôi</h1>
-        <p className={styles.pageSubtitle}>Quản lý số dư, rút tiền và xem lịch sử giao dịch của bạn.</p>
-        <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
-          <button
-            className={styles.withdrawBtn}
-            type="button"
-            style={{ marginTop: 0 }}
-            onClick={() => setWithdrawOpen(true)}
-            disabled={balanceLoading || (balance?.balance ?? 0) <= 0}
-          >
+      <header className={styles.walletHeader}>
+        <div className={styles.walletHeaderText}>
+          <h1 className={styles.pageTitle}>Tài chính của tôi</h1>
+          <p className={styles.pageSubtitle}>Quản lý số dư, rút tiền và xem lịch sử giao dịch của bạn.</p>
+        </div>
+
+        <div className={styles.headerActions}>
+          <button className={styles.withdrawBtn} type="button" onClick={() => setWithdrawOpen(true)} disabled={!canWithdraw}>
             Rút tiền
           </button>
           <button
@@ -103,21 +122,30 @@ const ParentWallet = () => {
           >
             Tài khoản ngân hàng
           </button>
+          <button
+            className={styles.ghostBtn}
+            type="button"
+            onClick={() => navigate(`${portalBase}/wallet/withdrawals`)}
+          >
+            Lịch sử rút tiền
+          </button>
         </div>
-      </div>
+      </header>
 
-      <div className={styles.summaryRow}>
+      {!balanceLoading && !canWithdraw && (
+        <p className={styles.headerHint}>
+          Bạn cần có số dư khả dụng lớn hơn 0 ₫ mới tạo được yêu cầu rút tiền.
+        </p>
+      )}
+
+      <div className={styles.balanceGrid}>
         <section className={`${styles.summaryCard} ${styles.summaryCardPrimary}`}>
           <div className={styles.summaryLabel}>
             <span className={`${styles.dot} ${styles.dotGreen}`} />
             Số tiền khả dụng
           </div>
-          <div className={`${styles.summaryValue} ${styles.valueGreen}`}>
-            {balanceLoading ? '—' : formatCurrency(balance?.balance ?? 0)}
-          </div>
-          <div className={styles.summaryFoot}>
-            Số dư có thể dùng cho các giao dịch và yêu cầu rút tiền của bạn.
-          </div>
+          <div className={`${styles.summaryValue} ${styles.valueGreen}`}>{amount(available)}</div>
+          <div className={styles.summaryFoot}>Số dư có thể dùng cho các giao dịch và yêu cầu rút tiền của bạn.</div>
         </section>
 
         <section className={styles.summaryCard}>
@@ -125,38 +153,37 @@ const ParentWallet = () => {
             <span className={`${styles.dot} ${styles.dotRed}`} />
             Đang tạm giữ
           </div>
-          <div className={`${styles.summaryValue} ${styles.valueRed}`}>
-            {balanceLoading ? '—' : formatCurrency(balance?.frozenBalance ?? 0)}
+          <div className={`${styles.summaryValue} ${styles.valueRed}`}>{amount(balance?.frozenBalance ?? 0)}</div>
+          <div className={styles.summaryFoot}>Số tiền đang chờ xử lý do có khiếu nại hoặc tranh chấp.</div>
+        </section>
+
+        <section className={styles.summaryCard}>
+          <div className={styles.summaryLabel}>
+            <span className={`${styles.dot} ${styles.dotNavy}`} />
+            Tổng số dư
           </div>
-          <div className={styles.summaryFoot}>
-            Số tiền đang chờ xử lý do có khiếu nại hoặc tranh chấp.
-          </div>
+          <div className={styles.summaryValue}>{amount(balance?.totalBalance ?? 0)}</div>
+          <div className={styles.summaryFoot}>Gồm cả số tiền khả dụng và số tiền đang tạm giữ.</div>
           <div className={styles.summaryMeta}>
             {balance?.lastUpdated ? `Cập nhật: ${formatDateTime(balance.lastUpdated)}` : ' '}
           </div>
         </section>
       </div>
-      </div>
 
-      <div className={styles.walletActivityGrid}>
-        <WithdrawalRequestsCard
-          variant="preview"
-          withdrawals={withdrawals}
-          loading={withdrawalsLoading}
-          onSelect={(item) => setSelectedWithdrawalId(item.withdrawalId)}
-          onViewAll={() => navigate(`${portalBase}/wallet/withdrawals`)}
+      {!withdrawalsLoading && pendingWithdrawal && (
+        <PendingWithdrawalCallout
+          withdrawal={pendingWithdrawal}
+          onViewDetail={() => setSelectedWithdrawalId(pendingWithdrawal.withdrawalId)}
         />
+      )}
 
-        <TransactionsCard
-          variant="full"
-          transactions={transactions}
-          loading={txLoading}
-          onSelect={(tx) => setSelectedTxId(tx.transactionId)}
-          total={transactions.length}
-          page={1}
-          pageSize={PREVIEW_SIZE}
-        />
-      </div>
+      <TransactionsCard
+        transactions={transactions}
+        loading={txLoading}
+        total={transactionsTotal}
+        onSelect={(tx) => setSelectedTxId(tx.transactionId)}
+        onViewAll={() => navigate(`${portalBase}/wallet/transactions`)}
+      />
 
       {selectedTxId != null && (
         <Suspense fallback={null}>
@@ -176,7 +203,7 @@ const ParentWallet = () => {
       {withdrawOpen && (
         <Suspense fallback={null}>
           <WithdrawModal
-            availableBalance={balance?.balance ?? 0}
+            availableBalance={available}
             onClose={() => setWithdrawOpen(false)}
             onSuccess={() => {
               setWithdrawOpen(false);

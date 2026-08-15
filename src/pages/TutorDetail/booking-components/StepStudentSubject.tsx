@@ -97,7 +97,14 @@ const StepStudentSubject: React.FC<StepProps> = ({
                                     className={`${styles.subjectCard} ${
                                         formData.subjectId === subj.id ? styles.selectedCard : ""
                                     }`}
-                                    onClick={() => setFormData((d) => ({ ...d, subjectId: subj.id }))}
+                                    onClick={() => setFormData((d) => ({
+                                        ...d,
+                                        subjectId: subj.id,
+                                        comboId: null,
+                                        packageId: undefined,
+                                        startDate: "",
+                                        schedule: [],
+                                    }))}
                                 >
                                     <div className={styles.subjectCardHead}>
                                         <span className={styles.subjectIcon}>

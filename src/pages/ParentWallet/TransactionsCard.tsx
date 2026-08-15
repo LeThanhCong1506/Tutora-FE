@@ -2,19 +2,19 @@ import { formatCurrency, formatDateTime, formatTransactionType } from '../../uti
 import type { TransactionHistory } from '../../services/wallet.service';
 import styles from './styles.module.css';
 
+/**
+ * Bản xem nhanh vài giao dịch gần nhất trên trang ví (Parent/Student). Danh sách đầy đủ có lọc +
+ * phân trang nằm ở AllTransactionsPage và dùng AntD `TransactionTable`, nên component này cố tình
+ * không có phân trang.
+ */
 interface Props {
   transactions: TransactionHistory[];
   loading: boolean;
   onSelect: (tx: TransactionHistory) => void;
-  /** Chế độ preview (trang ví): hiện nút "Xem toàn bộ". Chế độ full (trang riêng): phân trang. */
-  variant: 'preview' | 'full';
-  /** preview: điều hướng sang trang toàn bộ giao dịch. */
-  onViewAll?: () => void;
-  /** full: dữ liệu phân trang. */
+  /** Điều hướng sang trang toàn bộ giao dịch. */
+  onViewAll: () => void;
+  /** Tổng số giao dịch của ví (không phải số dòng đang hiển thị). */
   total?: number;
-  page?: number;
-  pageSize?: number;
-  onPageChange?: (page: number) => void;
 }
 
 const referenceLabel = (referenceTable: string | null): string => {
@@ -32,41 +32,38 @@ const referenceLabel = (referenceTable: string | null): string => {
   }
 };
 
-const TransactionsCard = ({
-  transactions,
-  loading,
-  onSelect,
-  variant,
-  onViewAll,
-  total = 0,
-  page = 1,
-  pageSize = 10,
-  onPageChange,
-}: Props) => {
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-
+const TransactionsCard = ({ transactions, loading, onSelect, onViewAll, total = 0 }: Props) => {
   return (
-    <section className={`${styles.card} ${variant === 'full' ? styles.transactionCardFull : ''}`}>
+    <section className={styles.card}>
       <div className={styles.cardHeader}>
         <h3 className={styles.sectionTitle}>Lịch sử giao dịch</h3>
-        {variant === 'preview' ? (
+        <div className={styles.cardHeaderActions}>
+          {total > 0 && <span className={styles.cardHeaderMeta}>{total} giao dịch</span>}
           <button className={styles.viewAllBtn} type="button" onClick={onViewAll}>
-            Xem toàn bộ giao dịch →
+            Xem toàn bộ →
           </button>
-        ) : (
-          <span className={styles.cardHeaderMeta}>{total} giao dịch</span>
-        )}
+        </div>
       </div>
 
       {loading ? (
         <div className={styles.emptyState}>Đang tải...</div>
       ) : transactions.length === 0 ? (
-        <div className={styles.emptyState}>Chưa có giao dịch nào.</div>
+        <div className={styles.emptyState}>
+          <span className={styles.emptyIcon} aria-hidden="true">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H17a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H6.5A2.5 2.5 0 0 1 4 17.5v-11Z" />
+              <path d="M4 8h12M16 12.5h2" strokeLinecap="round" />
+            </svg>
+          </span>
+          <p className={styles.emptyTitle}>Chưa có giao dịch nào</p>
+          <p className={styles.emptyText}>
+            Tiền thanh toán buổi học, khoản hoàn lại và yêu cầu rút tiền của bạn sẽ hiện ở đây.
+          </p>
+        </div>
       ) : (
         <div className={styles.txTable}>
           <div className={styles.txHead}>
             <span className={styles.txHeadContent}>Nội dung</span>
-            <span className={styles.txHeadMethod}>Hình thức giao dịch</span>
             <span className={styles.txHeadDate}>Ngày</span>
             <span className={styles.txHeadAmount}>Số tiền</span>
             <span className={styles.txHeadChevron} aria-hidden="true" />
@@ -91,8 +88,6 @@ const TransactionsCard = ({
                       </span>
                       <span className={styles.txMeta}>{tx.description || '—'}</span>
                     </div>
-                    {/* TODO: thay bằng dữ liệu thật khi BE bổ sung bảng transaction */}
-                    <span className={styles.txMethod}>Ví hệ thống</span>
                     <span className={styles.txDate}>{formatDateTime(tx.createdAt)}</span>
                     <span className={`${styles.txAmount} ${positive ? styles.valueGreen : styles.valueRed}`}>
                       {positive ? '+' : ''}
@@ -106,30 +101,6 @@ const TransactionsCard = ({
               );
             })}
           </ul>
-        </div>
-      )}
-
-      {variant === 'full' && totalPages > 1 && (
-        <div className={styles.pagination}>
-          <button
-            className={styles.pageBtn}
-            type="button"
-            disabled={page <= 1}
-            onClick={() => onPageChange?.(page - 1)}
-          >
-            Trước
-          </button>
-          <span className={styles.pageInfo}>
-            Trang {page} / {totalPages}
-          </span>
-          <button
-            className={styles.pageBtn}
-            type="button"
-            disabled={page >= totalPages}
-            onClick={() => onPageChange?.(page + 1)}
-          >
-            Sau
-          </button>
         </div>
       )}
     </section>

@@ -90,6 +90,8 @@ export interface TutorPackageFixedSlot {
 export interface TutorPackageResponse {
     packageId: number;
     tutorId?: string;
+    subjectId: number | null;
+    subjectName?: string | null;
     name: string;
     packageType: 1 | 2;
     isActive: boolean;
@@ -237,6 +239,8 @@ export const mapPackagesToFixedCombos = (packages: TutorPackageResponse[] | null
             return {
                 id: `pkg_${pkg.packageId}`,
                 type: 'fixed' as const,
+                subjectId: pkg.subjectId ?? undefined,
+                subjectName: pkg.subjectName ?? undefined,
                 name: pkg.name,
                 sessions,
             };

@@ -44,7 +44,9 @@ const StepSchedule: React.FC<StepProps> = ({
     const isPackageMode = formData.bookingMode === "package";
     const isAvailabilityMode = formData.bookingMode === "schedule";
     const isFixedPackage = isPackageMode && selectedCombo?.type === "fixed";
-    const fixedCombos = combos.filter((c): c is FixedCombo => c.type === "fixed");
+    const fixedCombos = combos.filter(
+        (combo): combo is FixedCombo => combo.type === "fixed" && combo.subjectId === formData.subjectId,
+    );
 
     const {
         today,
@@ -95,7 +97,7 @@ const StepSchedule: React.FC<StepProps> = ({
                     {fixedCombos.length === 0 ? (
                         <p className={styles.noFitNotice}>
                             <AlertTriangle size={15} />
-                            Gia sư chưa tạo gói cố định nào. Hãy chọn "Tự chọn lịch rảnh" để đặt theo lịch trống.
+                            Gia sư chưa tạo gói cố định cho môn học đã chọn. Hãy chọn "Tự chọn lịch rảnh" để đặt theo lịch trống.
                         </p>
                     ) : (
                         <div className={styles.comboGrid}>

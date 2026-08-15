@@ -111,7 +111,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
         return [...bySubject.values()];
     }, [subjectGradePrices, subjects]);
 
-    const selectedCombo = combos.find((c) => c.id === formData.comboId);
+    const selectedCombo = combos.find(
+        (combo) => combo.id === formData.comboId && combo.subjectId === formData.subjectId,
+    );
     const flexiblePackage = packages.find((pkg) => pkg.isActive && pkg.packageType === 1);
     const selectedPackageId =
         formData.bookingMode === "schedule" ? flexiblePackage?.packageId : packageIdFromComboId(formData.comboId);
@@ -174,6 +176,19 @@ const BookingModal: React.FC<BookingModalProps> = ({
     useEffect(() => {
         setFormData((d) => (d.packageId === selectedPackageId ? d : { ...d, packageId: selectedPackageId }));
     }, [selectedPackageId, setFormData]);
+
+    // Draft cũ hoặc dữ liệu vừa refresh có thể giữ combo của môn trước. Không để package
+    // đó tiếp tục được submit sau khi môn đã đổi.
+    useEffect(() => {
+        if (formData.bookingMode !== "package" || !formData.comboId || selectedCombo) return;
+        setFormData((current) => ({
+            ...current,
+            comboId: null,
+            packageId: undefined,
+            startDate: "",
+            schedule: [],
+        }));
+    }, [formData.bookingMode, formData.comboId, selectedCombo, setFormData]);
 
     const scheduling = useBookingSchedule({
         isOpen,
