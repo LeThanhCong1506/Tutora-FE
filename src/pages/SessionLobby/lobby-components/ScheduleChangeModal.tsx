@@ -149,9 +149,19 @@ const ScheduleChangeModal = ({ open, state, currentRole, currentUserId, loading,
           <div className={styles.scheduleExpiredNote}>
             <AlertTriangle size={18} />
             <span>
-              <strong>Yêu cầu xác nhận đã hết hạn.</strong> Chưa đủ hai bên xác nhận trong 30 phút nên hệ thống đã huỷ
-              yêu cầu này. Cứ giữ phòng chờ mở — hệ thống sẽ tự tạo yêu cầu mới trong giây lát; nếu không, hãy thoát và
-              vào lại phòng chờ để gửi lại.
+              {state.approvedAt ? (
+                <>
+                  <strong>Đã đủ xác nhận nhưng chưa kịp vào phòng.</strong> Cả hai bên đã đồng ý đổi lịch nhưng không
+                  ai vào phòng học trong 30 phút nên hệ thống đã huỷ yêu cầu này. Vui lòng thoát và vào lại phòng chờ
+                  để hệ thống tạo yêu cầu xác nhận mới.
+                </>
+              ) : (
+                <>
+                  <strong>Yêu cầu xác nhận đã hết hạn.</strong> Chưa đủ hai bên xác nhận trong 30 phút nên hệ thống đã
+                  huỷ yêu cầu này. Cứ giữ phòng chờ mở — hệ thống sẽ tự tạo yêu cầu mới trong giây lát; nếu không, hãy
+                  thoát và vào lại phòng chờ để gửi lại.
+                </>
+              )}
             </span>
           </div>
         ) : rejected ? (
