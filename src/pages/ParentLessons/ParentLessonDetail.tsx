@@ -408,7 +408,25 @@ const ParentLessonDetail: React.FC = () => {
               </div>
             </div>
 
-            {scheduleChange.status === 'expired' ? (
+            {scheduleChange.approvedAt ? (
+              scheduleChange.scheduleConflict ? (
+                <div className={`${styles.notice} ${styles.noticeWarning} ${styles.blockGap}`}>
+                  <span>
+                    <strong>Đã đủ xác nhận nhưng chưa thể bắt đầu:</strong> {scheduleChange.scheduleConflict.message}{' '}
+                    Hệ thống sẽ tự kiểm tra lại, phụ huynh không cần xác nhận lần nữa.
+                  </span>
+                </div>
+              ) : (
+                <div className={`${styles.notice} ${styles.noticeSuccess} ${styles.blockGap}`}>
+                  Đã đủ xác nhận. Học viên và gia sư có thể vào học; thời gian buổi học sẽ được cập nhật khi họ bắt
+                  đầu.
+                </div>
+              )
+            ) : scheduleChange.status === 'rejected' ? (
+              <div className={`${styles.notice} ${styles.noticeDanger} ${styles.blockGap}`}>
+                Yêu cầu đổi lịch đã bị từ chối. Học viên và gia sư chưa thể vào buổi học ngoài lịch này.
+              </div>
+            ) : scheduleChange.status === 'expired' ? (
               <div className={`${styles.notice} ${styles.noticeWarning} ${styles.blockGap}`}>
                 <Clock3 size={16} aria-hidden="true" />
                 <span>
@@ -419,21 +437,6 @@ const ParentLessonDetail: React.FC = () => {
                   Chưa đủ hai bên xác nhận trong thời gian quy định nên yêu cầu đã tự huỷ. Vui lòng nhờ gia sư mở lại
                   phòng chờ để hệ thống tạo yêu cầu xác nhận mới.
                 </span>
-              </div>
-            ) : scheduleChange.status === 'rejected' ? (
-              <div className={`${styles.notice} ${styles.noticeDanger} ${styles.blockGap}`}>
-                Yêu cầu đổi lịch đã bị từ chối. Học viên và gia sư chưa thể vào buổi học ngoài lịch này.
-              </div>
-            ) : scheduleChange.status === 'approved' && scheduleChange.scheduleConflict ? (
-              <div className={`${styles.notice} ${styles.noticeWarning} ${styles.blockGap}`}>
-                <span>
-                  <strong>Đã đủ xác nhận nhưng chưa thể bắt đầu:</strong> {scheduleChange.scheduleConflict.message} Hệ
-                  thống sẽ tự kiểm tra lại, phụ huynh không cần xác nhận lần nữa.
-                </span>
-              </div>
-            ) : scheduleChange.status === 'approved' ? (
-              <div className={`${styles.notice} ${styles.noticeSuccess} ${styles.blockGap}`}>
-                Đã đủ xác nhận. Học viên và gia sư có thể vào học; thời gian buổi học sẽ được cập nhật khi họ bắt đầu.
               </div>
             ) : scheduleChange.currentUserConfirmed ? (
               <div className={`${styles.notice} ${styles.noticeInfo} ${styles.blockGap}`}>
