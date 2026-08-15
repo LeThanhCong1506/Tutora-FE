@@ -1556,6 +1556,12 @@
         gap: 16px;
     }
 
+    /* Lưới kéo-thả desktop được render thành một cột ở component. Không chừa
+       chiều cao tối thiểu của canvas desktop để tránh khoảng trống cuối trang. */
+    .dashboardGrid {
+        min-height: 0;
+    }
+
     .leftColumn,
     .middleColumn,
     .rightColumn {

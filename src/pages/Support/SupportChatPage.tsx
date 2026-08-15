@@ -33,7 +33,13 @@ const formatDayDivider = (iso: string) => {
   return dateStr;
 };
 
-const SupportChatPage: React.FC = () => {
+interface SupportChatPageProps {
+  /** Render inside the messages split view instead of as a standalone page. */
+  embedded?: boolean;
+  onBack?: () => void;
+}
+
+const SupportChatPage: React.FC<SupportChatPageProps> = ({ embedded = false, onBack }) => {
   const [thread, setThread] = useState<SupportThread | null>(null);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState('');
@@ -42,6 +48,25 @@ const SupportChatPage: React.FC = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Tin nhắn do API trả về và SignalR broadcast là cùng một bản ghi. Hai nguồn này
+  // có thể về theo thứ tự bất kỳ, nên luôn gộp theo ID trước khi render.
+  const appendMessage = useCallback((message: SupportMessage, threadId = 0, userId = '') => {
+    setThread((prev) => {
+      if (prev?.messages.some((item) => item.supportMessageId === message.supportMessageId)) return prev;
+      if (prev) return { ...prev, messages: [...prev.messages, message] };
+      return {
+        supportThreadId: threadId,
+        userId,
+        userName: null,
+        userAvatarUrl: null,
+        userRole: null,
+        userPhone: null,
+        userEmail: null,
+        messages: [message],
+      };
+    });
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -66,26 +91,11 @@ const SupportChatPage: React.FC = () => {
   useEffect(() => {
     const unsubscribe = signalRService.subscribeToSupportMessages((raw: unknown) => {
       const broadcast = raw as SupportMessageBroadcast;
-      setThread((prev) => {
-        if (!prev) {
-          return {
-            supportThreadId: broadcast.supportThreadId,
-            userId: broadcast.userId,
-            userName: null,
-            userAvatarUrl: null,
-            userRole: null,
-            userPhone: null,
-            userEmail: null,
-            messages: [broadcast.message],
-          };
-        }
-        if (prev.messages.some((m) => m.supportMessageId === broadcast.message.supportMessageId)) return prev;
-        return { ...prev, messages: [...prev.messages, broadcast.message] };
-      });
+      appendMessage(broadcast.message, broadcast.supportThreadId, broadcast.userId);
     });
 
     return unsubscribe;
-  }, []);
+  }, [appendMessage]);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -105,11 +115,7 @@ const SupportChatPage: React.FC = () => {
     setSending(true);
     try {
       const sent: SupportMessage = await sendMySupportMessage(message);
-      setThread((prev) =>
-        prev
-          ? { ...prev, messages: [...prev.messages, sent] }
-          : { supportThreadId: 0, userId: '', userName: null, userAvatarUrl: null, userRole: null, userPhone: null, userEmail: null, messages: [sent] },
-      );
+      appendMessage(sent);
       setDraft('');
       if (textareaRef.current) textareaRef.current.style.height = 'auto';
     } catch (err) {
@@ -137,11 +143,7 @@ const SupportChatPage: React.FC = () => {
     setImageSending(true);
     try {
       const sent = await sendMySupportImage(file);
-      setThread((prev) =>
-        prev
-          ? { ...prev, messages: [...prev.messages, sent] }
-          : { supportThreadId: 0, userId: '', userName: null, userAvatarUrl: null, userRole: null, userPhone: null, userEmail: null, messages: [sent] },
-      );
+      appendMessage(sent);
     } catch (err) {
       console.error('[SupportChat] sendImage:', err);
       toast.error('Gửi hình ảnh thất bại. Vui lòng thử lại.');
@@ -152,15 +154,14 @@ const SupportChatPage: React.FC = () => {
 
   let lastDividerKey = '';
 
-  return (
-    <PageContainer title="Hỗ trợ Tutora" subtitle="Nhắn tin trực tiếp cho đội ngũ hỗ trợ Tutora.">
+  const conversation = (
       <SectionCard className={styles.card}>
         <div className={styles.thread} ref={scrollRef}>
           {loading ? (
             <div className={styles.loading}>Đang tải...</div>
           ) : !thread || thread.messages.length === 0 ? (
             <div className={styles.empty}>
-              Chưa có tin nhắn nào. Gửi tin nhắn bên dưới nếu bạn cần Tutora hỗ trợ.
+              Chưa có tin nhắn nào. Gửi tin nhắn bên dưới nếu bạn cần đội ngũ quản trị hỗ trợ.
             </div>
           ) : (
             thread.messages.map((m) => {
@@ -211,7 +212,7 @@ const SupportChatPage: React.FC = () => {
             <textarea
               ref={textareaRef}
               rows={1}
-              placeholder="Nhập tin nhắn cho đội ngũ hỗ trợ..."
+              placeholder="Nhập tin nhắn cho đội ngũ quản trị..."
               value={draft}
               onChange={handleDraftChange}
               onKeyDown={(e) => {
@@ -227,6 +228,26 @@ const SupportChatPage: React.FC = () => {
           </div>
         </div>
       </SectionCard>
+  );
+
+  if (embedded) {
+    return (
+      <section className={styles.embedded} aria-label="Trò chuyện với Admin">
+        <header className={styles.embeddedHeader}>
+          {onBack && <button type="button" className={styles.backButton} onClick={onBack}>←</button>}
+          <div>
+            <span className={styles.embeddedEyebrow}>Hỗ trợ</span>
+            <h2>Trò chuyện với Admin</h2>
+          </div>
+        </header>
+        {conversation}
+      </section>
+    );
+  }
+
+  return (
+    <PageContainer title="Hỗ trợ Tutora" subtitle="Nhắn tin trực tiếp cho đội ngũ hỗ trợ Tutora.">
+      {conversation}
     </PageContainer>
   );
 };

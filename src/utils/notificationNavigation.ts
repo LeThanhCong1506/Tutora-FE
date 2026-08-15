@@ -41,6 +41,7 @@ const NOTIFICATION_TYPE = {
     FeedbackModerated: 'feedback_moderated',
     Warning: 'warning',
     Message: 'message',
+    SupportMessage: 'support_message',
 } as const;
 
 /**
@@ -126,6 +127,9 @@ export function getNotificationTargetPath(notification: NotificationDTO): string
     }
     if (type === NOTIFICATION_TYPE.Message && refId) {
         return `${prefix}/messages`;
+    }
+    if (type === NOTIFICATION_TYPE.SupportMessage) {
+        return prefix === '/student-portal' ? `${prefix}/messages` : `${prefix}/support`;
     }
 
     if (type === NOTIFICATION_TYPE.WithdrawalRequest) {

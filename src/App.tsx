@@ -405,7 +405,8 @@ function App() {
                 <Route path="profile" element={<StudentProfile />} />
                 <Route path="account" element={<StudentAccount />} />
                 <Route path="notifications" element={<NotificationsPage />} />
-                <Route path="support" element={<SupportChatPage />} />
+                {/* Điểm vào chat Admin nằm trong cột hội thoại của trang Tin nhắn. */}
+                <Route path="support" element={<Navigate to="/student-portal/messages" replace />} />
               </Route>
             </Route>
 

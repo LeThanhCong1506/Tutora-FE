@@ -67,7 +67,6 @@ export const buildStudentProfileMenuItems = (
         { key: '/student-portal/messages', label: 'Tin nhắn', materialIcon: 'chat' },
         ...(showWallet ? [studentWalletMenuItem, studentBankAccountMenuItem] : []),
         { key: '/student-portal/notifications', label: 'Thông báo', materialIcon: 'notifications', startsGroup: true },
-        { key: '/student-portal/support', label: 'Hỗ trợ', materialIcon: 'support_agent' },
         ...(showDisputes ? [studentDisputesMenuItem] : []),
     ];
 };
