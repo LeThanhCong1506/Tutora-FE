@@ -72,6 +72,7 @@ const extractAvailabilityError = (err: unknown, fallback: string): string => {
 const fixedPackageMatchesCombo = (pkg: TutorPackageResponse, combo: FixedCombo) => {
   const payload = comboToPackagePayload(combo);
   if (pkg.packageType !== 2) return false;
+  if (pkg.subjectId !== payload.subjectId) return false;
   if ((pkg.name ?? '').trim() !== payload.name.trim()) return false;
 
   const packageSlots = (pkg.fixedSlots ?? []).map(slotKey).sort();
