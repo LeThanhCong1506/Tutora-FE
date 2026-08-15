@@ -4,7 +4,12 @@ import { toast } from 'react-toastify';
 import { UploadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { createDispute } from '../../../services/parent-lesson.service';
-import { getParentCalendar, type CalendarClassSessionResponse } from '../../../services/classSession.service';
+import {
+  createTutorClassSessionDispute,
+  getParentCalendar,
+  type CalendarClassSessionResponse,
+  type CreateDisputeRequest,
+} from '../../../services/classSession.service';
 import { getClassSessionStatusMeta } from '../../../utils/classSessionStatus';
 
 const { TextArea } = Input;
@@ -15,21 +20,32 @@ interface CreateDisputeFormProps {
   lessonId?: number;
   onSuccess: () => void;
   onCancel: () => void;
+  /** Ai đang tạo khiếu nại — quyết định API gọi và nhãn hiển thị. Mặc định 'parent' (phụ huynh/học
+   * sinh) để không phá các chỗ đang dùng form này. Khi 'tutor', bắt buộc phải kèm sẵn `lessonId`
+   * (không hỗ trợ chọn buổi học ngay trong popup ở chiều này). */
+  viewerRole?: 'parent' | 'tutor';
 }
 
-/** Chỉ những buổi học ở 2 trạng thái này mới được phép tạo khiếu nại — khớp với BE (ParentService.CreateDisputeAsync). */
+/** Chỉ những buổi học ở 2 trạng thái này mới được phép tạo khiếu nại — khớp với BE (CreateDisputeAsync). */
 const ELIGIBLE_STATUSES = ['pending_confirmation', 'completed'];
 const TERMINAL_BOOKING_STATUSES = ['completed', 'cancelled', 'cancelled_noshow'];
 
-const DISPUTE_TYPES = [
+const PARENT_DISPUTE_TYPES = [
   { value: 'no_show', label: 'Gia sư vắng mặt' },
   { value: 'quality', label: 'Chất lượng buổi học' },
   { value: 'payment', label: 'Vấn đề thanh toán' },
   { value: 'other', label: 'Khác' },
 ];
 
+const TUTOR_DISPUTE_TYPES = [
+  { value: 'no_show', label: 'Học sinh/phụ huynh vắng mặt' },
+  { value: 'quality', label: 'Vấn đề trong buổi học' },
+  { value: 'payment', label: 'Vấn đề thanh toán' },
+  { value: 'other', label: 'Khác' },
+];
+
 /** Thẻ gợi ý lý do mặc định — tick vào sẽ điền thẳng vào ô "Lý do" bên trên. */
-const DEFAULT_QUICK_REASONS = [
+const PARENT_QUICK_REASONS = [
   'Gia sư vắng mặt',
   'Gia sư đến trễ',
   'Chất lượng buổi học không tốt',
@@ -40,12 +56,24 @@ const DEFAULT_QUICK_REASONS = [
   'Bị tính phí sai',
 ];
 
+const TUTOR_QUICK_REASONS = [
+  'Học sinh vắng mặt',
+  'Học sinh/phụ huynh đến trễ',
+  'Học sinh/phụ huynh có thái độ không phù hợp',
+  'Buổi học bị gián đoạn do lỗi từ phía học sinh',
+  'Chưa thanh toán đúng hạn',
+];
+
 const CreateDisputeForm: React.FC<CreateDisputeFormProps> = ({
   open,
   lessonId,
   onSuccess,
   onCancel,
+  viewerRole = 'parent',
 }) => {
+  const isTutor = viewerRole === 'tutor';
+  const DISPUTE_TYPES = isTutor ? TUTOR_DISPUTE_TYPES : PARENT_DISPUTE_TYPES;
+  const DEFAULT_QUICK_REASONS = isTutor ? TUTOR_QUICK_REASONS : PARENT_QUICK_REASONS;
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const [evidenceFiles, setEvidenceFiles] = useState<File[]>([]);
@@ -55,7 +83,8 @@ const CreateDisputeForm: React.FC<CreateDisputeFormProps> = ({
   const [customInput, setCustomInput] = useState('');
 
   // Chọn buổi học ngay trong popup khi không có sẵn lessonId (vd bấm "+" từ trang "Khiếu nại của tôi").
-  const needsLessonPicker = lessonId == null;
+  // Chiều gia sư luôn được mở kèm sẵn lessonId (từ trang chi tiết buổi học), không hỗ trợ chọn ở đây.
+  const needsLessonPicker = !isTutor && lessonId == null;
   const [lessons, setLessons] = useState<CalendarClassSessionResponse[]>([]);
   const [lessonsLoading, setLessonsLoading] = useState(false);
 
@@ -155,10 +184,12 @@ const CreateDisputeForm: React.FC<CreateDisputeFormProps> = ({
     try {
       setSubmitting(true);
 
-      await createDispute(targetLessonId, {
-        disputeType: values.disputeType,
-        reason: values.reason,
-      }, evidenceFiles);
+      const request: CreateDisputeRequest = { disputeType: values.disputeType, reason: values.reason };
+      if (isTutor) {
+        await createTutorClassSessionDispute(targetLessonId, request, evidenceFiles);
+      } else {
+        await createDispute(targetLessonId, request, evidenceFiles);
+      }
 
       toast.success('Khiếu nại đã được gửi thành công!');
       resetDisputeState();

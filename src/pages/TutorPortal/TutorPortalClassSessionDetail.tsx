@@ -35,6 +35,7 @@ import { canJoinLiveSession, isWithinJoinWindow } from '../../utils/liveSession'
 import { useTabParam } from '../../hooks/useTabParam';
 import LessonReportForm from './components/LessonReportForm';
 import MaterialsTab from './components/MaterialsTab';
+import CreateDisputeForm from '../ParentLessons/components/CreateDisputeForm';
 import {
   AttachmentGallery,
   buildSessionTimeline,
@@ -143,6 +144,7 @@ const TutorPortalClassSessionDetail = () => {
   const [dispute, setDispute] = useState<DisputeDetailResponse | null>(null);
   const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
   const [respondingReschedule, setRespondingReschedule] = useState(false);
+  const [showDisputeForm, setShowDisputeForm] = useState(false);
 
   const loadSession = useCallback(async () => {
     if (!classSessionId) {
@@ -375,6 +377,9 @@ const TutorPortalClassSessionDetail = () => {
   const needsTutorResponse = Boolean(
     dispute && !dispute.tutorResponse && !['resolved', 'closed', 'confirmed_no_show'].includes(dispute.status ?? ''),
   );
+  // Cùng điều kiện buổi học phía BE cho phép tạo dispute (pending_confirmation/completed),
+  // và chỉ khi buổi học này chưa có dispute nào.
+  const canCreateDispute = !dispute && (status === 'pending_confirmation' || status === 'completed');
   return (
     <div className={styles.page}>
       <main className={styles.main}>
@@ -461,6 +466,16 @@ const TutorPortalClassSessionDetail = () => {
                     Đề xuất đổi lịch
                   </button>
                 )}
+                {canCreateDispute && (
+                  <button
+                    type="button"
+                    className={styles.secondaryButton}
+                    onClick={() => setShowDisputeForm(true)}
+                  >
+                    <CircleAlert size={16} />
+                    Báo cáo vấn đề
+                  </button>
+                )}
               </div>
             </div>
 
@@ -514,6 +529,17 @@ const TutorPortalClassSessionDetail = () => {
             onSubmit={handleProposeReschedule}
             onCancel={() => setRescheduleModalOpen(false)}
             accentColor="#1a2238"
+          />
+
+          <CreateDisputeForm
+            open={showDisputeForm}
+            lessonId={session.classSessionId}
+            viewerRole="tutor"
+            onCancel={() => setShowDisputeForm(false)}
+            onSuccess={() => {
+              setShowDisputeForm(false);
+              void loadDispute();
+            }}
           />
 
           <nav className={styles.tabs} aria-label="Nội dung chi tiết buổi học">
