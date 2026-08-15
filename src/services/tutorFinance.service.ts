@@ -34,6 +34,8 @@ const EMPTY_SUMMARY: FinanceSummary = {
     totalEarned: 0,
     pendingSettlement: 0,
     lastWithdrawalAt: null,
+    hasActiveDispute: false,
+    disputedAmount: 0,
 };
 
 /**

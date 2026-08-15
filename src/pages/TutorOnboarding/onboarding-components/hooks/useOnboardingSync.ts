@@ -16,6 +16,7 @@ import {
   updatePackage,
   deactivatePackage,
   activatePackage,
+  deletePackage,
   type TutorPackageResponse,
 } from '../../../../services/tutorPackages.service';
 
@@ -399,6 +400,35 @@ export function useOnboardingSync(hydrate: HydrateFn) {
     [refreshPackages],
   );
 
+  // Xóa vĩnh viễn một gói đã ẩn (BE chặn 409 nếu gói đang bật hoặc đã từng có booking).
+  const deleteFixedPackage = useCallback(
+    async (comboId: string): Promise<boolean> => {
+      const packageId = getPackageIdFromComboId(comboId);
+      if (!packageId) return true;
+
+      const userId = userIdRef.current;
+      if (!userId) {
+        toast.error('Không xác định được tài khoản gia sư.');
+        return false;
+      }
+
+      setSaving(true);
+      try {
+        await deletePackage(userId, packageId);
+        await refreshPackages(userId);
+        toast.success('Đã xóa vĩnh viễn gói lịch học');
+        return true;
+      } catch (err) {
+        console.error('[Onboarding] deleteFixedPackage:', err);
+        toast.error(extractApiError(err, 'Xóa gói lịch học thất bại.'));
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [refreshPackages],
+  );
+
   const savePackages = useCallback(
     async (combos: FixedCombo[]): Promise<boolean> => {
       const userId = userIdRef.current;
@@ -470,6 +500,7 @@ export function useOnboardingSync(hydrate: HydrateFn) {
     updateFixedPackage,
     deactivateFixedPackage,
     activateFixedPackage,
+    deleteFixedPackage,
     savePackages,
     reload: load,
   };

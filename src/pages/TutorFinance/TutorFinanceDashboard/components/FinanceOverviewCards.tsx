@@ -16,8 +16,19 @@ interface Props {
   loading: boolean;
 }
 
+interface MetricItem {
+  key: string;
+  label: string;
+  value: string;
+  note: string;
+  tooltip: string;
+  icon: React.ReactNode;
+  tone: string;
+  details?: { label: string; value: string }[];
+}
+
 const FinanceOverviewCards: React.FC<Props> = ({ summary, loading }) => {
-  const metrics = [
+  const metrics: MetricItem[] = [
     {
       key: 'total',
       label: 'Tổng số dư',
@@ -35,10 +46,20 @@ const FinanceOverviewCards: React.FC<Props> = ({ summary, loading }) => {
       tooltip: 'Tổng tiền phụ huynh đã thanh toán và hệ thống đang giữ để bảo đảm cho các buổi học',
       icon: <LockOutlined />,
       tone: 'burgundy',
-      detail: {
-        label: 'Trong đó chờ vào số dư',
-        value: formatCurrency(summary?.pendingSettlement ?? 0),
-      },
+      details: [
+        {
+          label: 'Trong đó chờ vào số dư',
+          value: formatCurrency(summary?.pendingSettlement ?? 0),
+        },
+        ...(summary?.hasActiveDispute
+          ? [
+              {
+                label: 'Đang bị giữ do có tranh chấp',
+                value: formatCurrency(summary?.disputedAmount ?? 0),
+              },
+            ]
+          : []),
+      ],
     },
     {
       key: 'earned',
@@ -100,12 +121,12 @@ const FinanceOverviewCards: React.FC<Props> = ({ summary, loading }) => {
           <span className="finance-metric-card__label">{metric.label}</span>
           <strong className="finance-metric-card__value">{metric.value}</strong>
           {metric.note && <span className="finance-metric-card__note">{metric.note}</span>}
-          {metric.detail && (
-            <div className="finance-metric-card__breakdown">
-              <span>{metric.detail.label}</span>
-              <strong>{metric.detail.value}</strong>
+          {metric.details?.map((detail) => (
+            <div className="finance-metric-card__breakdown" key={detail.label}>
+              <span>{detail.label}</span>
+              <strong>{detail.value}</strong>
             </div>
-          )}
+          ))}
         </Card>
       ))}
     </section>

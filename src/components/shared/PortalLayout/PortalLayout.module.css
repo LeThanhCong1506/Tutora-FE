@@ -674,8 +674,11 @@
 
     .sidebar {
         width: 288px;
+        left: 0;
         top: 10px;
         bottom: 14px;
+        /* Phủ lên portal header khi mở để nút đóng luôn thao tác được trên mobile. */
+        z-index: 300;
         transform: translateX(-100%);
         transition: transform 0.3s ease;
     }
@@ -743,6 +746,7 @@
 
     .sidebarOverlay {
         display: block;
+        z-index: 299;
     }
 
     .headerLeft {

@@ -310,7 +310,14 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                 className={styles.main}
                 style={inMiniApp ? { marginLeft: 0, paddingBottom: '60px' } : undefined}
             >
-                {!inMiniApp && <Header variant="portal" profileMenuItems={dropdownItems} />}
+                {!inMiniApp && (
+                    <Header
+                        variant="portal"
+                        profileMenuItems={dropdownItems}
+                        onPortalMenuToggle={() => setSidebarOpen(!sidebarOpen)}
+                        portalMenuOpen={sidebarOpen}
+                    />
+                )}
                 {/* Page Content */}
                 <div className={styles.contentArea}>
                     {children || <Outlet />}

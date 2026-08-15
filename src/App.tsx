@@ -102,6 +102,7 @@ const PaymentCallback = lazy(() => import('./pages/PaymentCallback/PaymentCallba
 // đăng nhập, vì 1 template có thể gửi cho phụ huynh HOẶC học sinh tự quản lý HOẶC gia sư.
 const GoRedirect = lazy(() => import('./pages/GoRedirect/GoRedirect'));
 const NotificationsPage = lazy(() => import('./pages/Notifications/NotificationsPage'));
+const SupportChatPage = lazy(() => import('./pages/Support/SupportChatPage'));
 
 // Live video-call session (full-screen, no portal chrome)
 const LiveSession = lazy(() => import('./pages/LiveSession'));
@@ -334,6 +335,7 @@ function App() {
                   <Route path="finance/withdrawals/:id" element={<WithdrawalDetailPage />} />
                   <Route path="account" element={<TutorAccount />} />
                   <Route path="notifications" element={<NotificationsPage />} />
+                  <Route path="support" element={<SupportChatPage />} />
                 </Route>
               </>
             )}
@@ -363,6 +365,7 @@ function App() {
               <Route path="lessons/:lessonId" element={<ParentLessonDetail />} />
               <Route path="account" element={<ParentAccount />} />
               <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="support" element={<SupportChatPage />} />
               <Route path="disputes" element={<ParentDisputes />} />
               <Route path="disputes/:classSessionId" element={<ParentDisputeDetail />} />
             </Route>
@@ -402,6 +405,8 @@ function App() {
                 <Route path="profile" element={<StudentProfile />} />
                 <Route path="account" element={<StudentAccount />} />
                 <Route path="notifications" element={<NotificationsPage />} />
+                {/* Điểm vào chat Admin nằm trong cột hội thoại của trang Tin nhắn. */}
+                <Route path="support" element={<Navigate to="/student-portal/messages" replace />} />
               </Route>
             </Route>
 

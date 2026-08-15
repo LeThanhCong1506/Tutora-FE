@@ -8,6 +8,8 @@ export interface FinanceSummary {
     totalEarned: number;
     pendingSettlement: number;
     lastWithdrawalAt: string | null;
+    hasActiveDispute: boolean;
+    disputedAmount: number;
 }
 
 /**

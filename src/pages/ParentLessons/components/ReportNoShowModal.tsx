@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { Modal, Button, DatePicker, Input, Upload } from 'antd';
+import viVN from 'antd/es/date-picker/locale/vi_VN';
 import { UploadOutlined } from '@ant-design/icons';
 import { toast } from 'react-toastify';
 import dayjs, { type Dayjs } from 'dayjs';
+import 'dayjs/locale/vi';
 import { reportNoShow } from '../../../services/parent-lesson.service';
+
+dayjs.locale('vi');
 
 const { TextArea } = Input;
 
@@ -78,6 +82,8 @@ const ReportNoShowModal: React.FC<ReportNoShowModalProps> = ({
             onChange={(value) => value && setReportedAt(value)}
             style={{ width: '100%' }}
             allowClear={false}
+            locale={viVN}
+            popupClassName="time-picker-with-labels"
           />
         </div>
 

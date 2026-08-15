@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styles from '../styles.module.css';
 import { DAY_COLUMNS, HALF_HOUR_STEPS, formatHourMinute } from './constants';
 
@@ -20,13 +20,37 @@ const HourSlotGrid: React.FC<HourSlotGridProps> = ({
   onWholeDayClick,
   hideHalfHourLabels = false,
 }) => {
+  // Desktop hiển thị cả tuần. Trên mobile chỉ hiện một ngày để mỗi ô có đủ kích
+  // thước chạm; thanh chọn ngày vẫn cho phép chuyển nhanh giữa các ngày.
+  const [activeDayOfWeek, setActiveDayOfWeek] = useState(DAY_COLUMNS[0].dayOfWeek);
+
   return (
     <div className={styles.gridCard}>
+      <div className={styles.mobileDayPicker} role="tablist" aria-label="Chọn ngày thiết lập lịch rảnh">
+        {DAY_COLUMNS.map((col) => (
+          <button
+            key={`picker-${col.dayOfWeek}`}
+            type="button"
+            role="tab"
+            aria-selected={activeDayOfWeek === col.dayOfWeek}
+            className={`${styles.mobileDayButton} ${activeDayOfWeek === col.dayOfWeek ? styles.mobileDayButtonActive : ''}`}
+            onClick={() => setActiveDayOfWeek(col.dayOfWeek)}
+          >
+            {col.label}
+          </button>
+        ))}
+      </div>
+
       <div className={styles.weekHeader}>
         {/* Header row */}
         {DAY_COLUMNS.map((col) => (
-          <div key={`head-${col.dayOfWeek}`} className={styles.colHead}>
-            <div className={styles.colHeadDay}>{col.label}</div>
+          <div
+            key={`head-${col.dayOfWeek}`}
+            className={`${styles.colHead} ${activeDayOfWeek === col.dayOfWeek ? styles.colHeadActive : ''}`}
+          >
+            <button type="button" className={styles.colHeadDay} onClick={() => setActiveDayOfWeek(col.dayOfWeek)}>
+              {col.label}
+            </button>
             {wholeDayLabel && onWholeDayClick && (
               <button type="button" className={styles.wholeDayBtn} onClick={() => onWholeDayClick(col.dayOfWeek)}>
                 {wholeDayLabel}
@@ -45,9 +69,12 @@ const HourSlotGrid: React.FC<HourSlotGridProps> = ({
             <React.Fragment key={`row-${hour}-${minute}`}>
               <div className={styles.rowTime}>{label}</div>
               {DAY_COLUMNS.map((col) => (
-                <React.Fragment key={`cell-${col.dayOfWeek}-${hour}-${minute}`}>
+                <div
+                  key={`cell-${col.dayOfWeek}-${hour}-${minute}`}
+                  className={`${styles.slotCellWrap} ${activeDayOfWeek === col.dayOfWeek ? styles.slotCellActive : ''}`}
+                >
                   {renderCell(col.dayOfWeek, hour, minute)}
-                </React.Fragment>
+                </div>
               ))}
             </React.Fragment>
           );

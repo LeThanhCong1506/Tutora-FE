@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Button } from 'antd';
+import { Modal, Button, DatePicker } from 'antd';
+import viVN from 'antd/es/date-picker/locale/vi_VN';
 import { toast } from 'react-toastify';
+import dayjs, { type Dayjs } from 'dayjs';
+import 'dayjs/locale/vi';
+
+dayjs.locale('vi');
 
 export interface RescheduleProposalModalProps {
     open: boolean;
@@ -21,7 +26,9 @@ export interface RescheduleProposalModalProps {
 /**
  * Popup đề xuất dời buổi học sang giờ khác — dùng chung cho Tutor/Student/Parent, chỉ khác
  * hàm `onSubmit` và `accentColor` mỗi portal tự truyền vào (gọi đúng endpoint `propose*Reschedule`
- * và khớp màu CTA của portal mình). Pattern datetime-local + kẹp `min` tham khảo từ `NoShowActionModal.tsx`.
+ * và khớp màu CTA của portal mình). Dùng AntD `DatePicker` (định dạng dd/mm/yyyy, giờ VN) thay vì
+ * input `datetime-local` gốc để đồng bộ style với phần còn lại của app — pattern tham khảo từ
+ * `ReportNoShowModal.tsx`.
  */
 const RescheduleProposalModal: React.FC<RescheduleProposalModalProps> = ({
     open,
@@ -30,13 +37,13 @@ const RescheduleProposalModal: React.FC<RescheduleProposalModalProps> = ({
     onCancel,
     accentColor = '#1a2238',
 }) => {
-    const [proposedScheduledStart, setProposedScheduledStart] = useState('');
+    const [proposedScheduledStart, setProposedScheduledStart] = useState<Dayjs | null>(null);
     const [reason, setReason] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         if (!open) {
-            setProposedScheduledStart('');
+            setProposedScheduledStart(null);
             setReason('');
         }
     }, [open]);
@@ -46,20 +53,14 @@ const RescheduleProposalModal: React.FC<RescheduleProposalModalProps> = ({
             toast.warn('Vui lòng chọn thời gian đề xuất.');
             return;
         }
-
-        const scheduledDate = new Date(proposedScheduledStart);
-        if (Number.isNaN(scheduledDate.getTime())) {
-            toast.warn('Thời gian không hợp lệ.');
-            return;
-        }
-        if (scheduledDate.getTime() <= Date.now()) {
+        if (proposedScheduledStart.valueOf() <= Date.now()) {
             toast.warn('Thời gian đề xuất phải ở trong tương lai.');
             return;
         }
 
         try {
             setSubmitting(true);
-            await onSubmit(scheduledDate.toISOString(), reason.trim() || undefined);
+            await onSubmit(proposedScheduledStart.toISOString(), reason.trim() || undefined);
             toast.success('Đã gửi đề xuất đổi lịch, đang chờ phản hồi.');
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Không thể gửi đề xuất đổi lịch. Vui lòng thử lại.');
@@ -90,13 +91,17 @@ const RescheduleProposalModal: React.FC<RescheduleProposalModalProps> = ({
                 <label htmlFor="reschedule-proposed-start" style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
                     Thời gian đề xuất mới
                 </label>
-                <input
+                <DatePicker
                     id="reschedule-proposed-start"
-                    type="datetime-local"
+                    showTime={{ format: 'HH:mm' }}
+                    format="HH:mm DD/MM/YYYY"
+                    placeholder="Chọn giờ và ngày học mới"
                     value={proposedScheduledStart}
-                    min={new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 16)}
-                    onChange={(event) => setProposedScheduledStart(event.target.value)}
-                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #d9d9d9', borderRadius: '6px' }}
+                    disabledDate={(current) => !!current && current.isBefore(dayjs(), 'day')}
+                    onChange={(value) => setProposedScheduledStart(value)}
+                    style={{ width: '100%' }}
+                    locale={viVN}
+                    popupClassName="time-picker-with-labels"
                 />
 
                 <label htmlFor="reschedule-reason" style={{ display: 'block', margin: '16px 0 8px', fontWeight: 600 }}>
@@ -130,7 +135,7 @@ const RescheduleProposalModal: React.FC<RescheduleProposalModalProps> = ({
                         loading={submitting}
                         onClick={handleSubmit}
                         disabled={!proposedScheduledStart}
-                        style={{ background: accentColor, borderColor: accentColor }}
+                        style={proposedScheduledStart ? { background: accentColor, borderColor: accentColor } : undefined}
                     >
                         Gửi đề xuất
                     </Button>

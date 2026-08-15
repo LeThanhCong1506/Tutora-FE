@@ -1,18 +1,23 @@
 import type { RefObject } from 'react';
-import { Mic, MicOff, Video, VideoOff } from 'lucide-react';
+import { Mic, MicOff, RefreshCw, ShieldAlert, Video, VideoOff } from 'lucide-react';
 import styles from '../styles.module.css';
+import type { MediaErrorInfo } from '../../../utils/mediaPermissionError';
 
 interface DevicePreviewProps {
   videoRef: RefObject<HTMLVideoElement | null>;
   camOn: boolean;
   micOn: boolean;
   streaming: boolean;
-  error: string | null;
+  error: MediaErrorInfo | null;
   /** Chữ cái đầu tên người dùng — hiển thị khi camera tắt/chưa sẵn sàng. */
   myInitial: string;
   onToggleCam: () => void;
   onToggleMic: () => void;
+  onRetry: () => void;
 }
+
+/** Icon theo loại lỗi — "denied" cần biểu tượng khác để người dùng nhận ra ngay đây là vấn đề quyền, không phải thiết bị hỏng. */
+const ERROR_ICON = { denied: ShieldAlert, 'not-found': VideoOff, 'in-use': VideoOff, other: VideoOff };
 
 const DevicePreview = ({
   videoRef,
@@ -23,6 +28,7 @@ const DevicePreview = ({
   myInitial,
   onToggleCam,
   onToggleMic,
+  onRetry,
 }: DevicePreviewProps) => {
   const showVideo = streaming && camOn && !error;
 
@@ -43,7 +49,7 @@ const DevicePreview = ({
           <div className={styles.previewOverlay}>
             <div className={styles.previewAvatar}>{myInitial}</div>
             <span className={styles.previewOverlayText}>
-              {error ? 'Không dùng được camera' : camOn ? 'Đang bật camera…' : 'Camera đang tắt'}
+              {error ? error.title : camOn ? 'Đang bật camera…' : 'Camera đang tắt'}
             </span>
           </div>
         )}
@@ -55,7 +61,23 @@ const DevicePreview = ({
         )}
       </div>
 
-      {error && <p className={styles.previewError}>{error}</p>}
+      {error && (
+        <div className={styles.previewErrorBanner} role="alert">
+          <div className={styles.previewErrorIcon}>
+            {(() => {
+              const Icon = ERROR_ICON[error.kind];
+              return <Icon size={18} />;
+            })()}
+          </div>
+          <div className={styles.previewErrorBody}>
+            <strong>{error.title}</strong>
+            <span>{error.message}</span>
+          </div>
+          <button type="button" className={styles.previewErrorRetryBtn} onClick={onRetry}>
+            <RefreshCw size={14} /> Thử lại
+          </button>
+        </div>
+      )}
 
       <div className={styles.deviceRow}>
         <button

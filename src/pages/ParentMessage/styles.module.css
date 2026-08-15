@@ -113,6 +113,42 @@
   gap: 1px;
 }
 
+.sidebarHeadingActions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.adminChatButton {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid rgba(61, 74, 62, 0.28);
+  border-radius: 10px;
+  color: #f8f6f1;
+  background: #3d4a3e;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.adminChatButton:hover {
+  background: #2e3a30;
+}
+
+.adminChatButton:active {
+  transform: translateY(1px);
+}
+
 .sidebarTitle {
   margin: 0;
   color: var(--messages-navy);
