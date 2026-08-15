@@ -38,6 +38,14 @@ const CreateWithdrawalPage: React.FC = () => {
         setSummary(sum);
         setBankInfo(info);
 
+        if (sum.hasActiveDispute) {
+          toast.warn('Bạn đang có buổi học bị tranh chấp, vui lòng chờ xử lý xong trước khi tạo yêu cầu rút tiền', {
+            toastId: 'active-dispute-blocked',
+          });
+          navigate('/tutor-portal/finance');
+          return;
+        }
+
         const hasBankInfo = Boolean(info?.bankName && info?.accountNumber && info?.accountHolderName);
         if (!hasBankInfo) {
           toast.warn('Bạn cần cập nhật tài khoản ngân hàng trước khi rút tiền', {

@@ -17,9 +17,17 @@ const generateAvatarUrl = (name: string) =>
 interface HeaderProps {
   profileMenuItems?: ProfileMenuItem[];
   variant?: 'default' | 'portal';
+  /** On mobile portals, the hamburger controls the portal sidebar rather than the public-site menu. */
+  onPortalMenuToggle?: () => void;
+  portalMenuOpen?: boolean;
 }
 
-const Header = ({ profileMenuItems: profileMenuItemsProp, variant = 'default' }: HeaderProps) => {
+const Header = ({
+  profileMenuItems: profileMenuItemsProp,
+  variant = 'default',
+  onPortalMenuToggle,
+  portalMenuOpen = false,
+}: HeaderProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -201,8 +209,15 @@ const Header = ({ profileMenuItems: profileMenuItemsProp, variant = 'default' }:
         {/* Mobile Menu Button */}
         <button
           className="mobile-menu-btn"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          aria-label="Toggle menu"
+          onClick={() => {
+            if (variant === 'portal' && onPortalMenuToggle) {
+              onPortalMenuToggle();
+              return;
+            }
+            setIsMenuOpen(!isMenuOpen);
+          }}
+          aria-label={variant === 'portal' ? 'Mở menu portal' : 'Mở menu'}
+          aria-expanded={variant === 'portal' ? portalMenuOpen : isMenuOpen}
         >
           <span></span>
           <span></span>
@@ -211,7 +226,7 @@ const Header = ({ profileMenuItems: profileMenuItemsProp, variant = 'default' }:
       </div>
 
       {/* Mobile Menu */}
-      {isMenuOpen && (
+      {variant !== 'portal' && isMenuOpen && (
         <div className="mobile-menu">
           <nav className="mobile-nav">
             <Link

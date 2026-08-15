@@ -419,13 +419,84 @@
   color: #fff;
 }
 
-.previewError {
+/* Banner lỗi camera/micro — cùng ngôn ngữ với .scheduleConflictBanner: khung đỏ nhạt,
+   icon-trái/chữ-phải, tiêu đề đậm + mô tả + gợi ý khắc phục nhỏ hơn. */
+.previewErrorBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
   width: 100%;
-  margin: 12px 0 0;
+  margin-top: 12px;
+  padding: 14px 16px;
+  border: 1px solid rgba(248, 113, 113, 0.38);
+  border-radius: 14px;
+  background: rgba(127, 29, 29, 0.22);
+  text-align: left;
+}
+
+.previewErrorIcon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  margin-top: 1px;
+  border-radius: 9999px;
+  color: #fca5a5;
+  background: rgba(248, 113, 113, 0.16);
+}
+
+.previewErrorBody {
+  display: grid;
+  gap: 3px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.previewErrorBody strong {
+  color: #fca5a5;
+  font-size: 14px;
+}
+
+.previewErrorBody span {
+  color: #fecaca;
   font-size: 12.5px;
   line-height: 1.5;
-  color: #fca5a5;
-  text-align: center;
+}
+
+.previewErrorRetryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 7px 12px;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  border-radius: 10px;
+  background: transparent;
+  color: #fecaca;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.previewErrorRetryBtn:hover {
+  background: rgba(248, 113, 113, 0.14);
+  border-color: rgba(248, 113, 113, 0.65);
+}
+
+@media (max-width: 420px) {
+  .previewErrorBanner {
+    flex-wrap: wrap;
+  }
+
+  .previewErrorRetryBtn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .deviceRow {

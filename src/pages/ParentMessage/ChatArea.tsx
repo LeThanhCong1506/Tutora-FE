@@ -135,19 +135,24 @@ const ChatArea = ({ selectedChannelId, currentUserId, selectedChannel, isTutor =
                 // Loại bỏ tin nhắn tạm (temp) nếu senderId trùng với user hiện tại
                 // Temp messages có messageId = Date.now() (rất lớn)
                 const senderId = newMessage.senderId;
-                if (senderId === currentUserIdRef.current) {
-                  // Tìm và xóa temp message có cùng content
-                  const filtered = prev.filter(
+                const withoutOptimistic = senderId === currentUserIdRef.current
+                  ? prev.filter(
                     (msg) =>
                       !(
                         msg.messageId > 1000000000000 &&
                         msg.content === newMessage.content &&
                         msg.senderId === senderId
                       ),
-                  );
-                  return [newMessage, ...filtered];
+                  )
+                  : prev;
+
+                // SignalR có thể replay event sau reconnect. MessageId là ID DB ổn định,
+                // nên không thêm lại message đã hiện — áp dụng chung cho Tutor/Parent/Student.
+                if (withoutOptimistic.some((msg) => msg.messageId === newMessage.messageId)) {
+                  return withoutOptimistic;
                 }
-                return [newMessage, ...prev];
+
+                return [newMessage, ...withoutOptimistic];
               });
             }
           });

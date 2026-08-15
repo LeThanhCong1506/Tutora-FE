@@ -32,6 +32,18 @@
   box-shadow: 0 0 0 3px rgba(23, 33, 58, 0.055);
 }
 
+/* Border xám ở trên có cùng độ đặc thù CSS với style lỗi mặc định của AntD (chỉ khác thứ tự nạp
+   CSS-in-JS) — ghi đè tường minh để field lỗi luôn thấy rõ viền đỏ, không phụ thuộc thứ tự nạp. */
+.form :global(.ant-input.ant-input-status-error) {
+  border-color: #ff4d4f;
+}
+
+.form :global(.ant-input.ant-input-status-error:hover),
+.form :global(.ant-input.ant-input-status-error:focus) {
+  border-color: #ff7875;
+  box-shadow: 0 0 0 3px rgba(255, 77, 79, 0.08);
+}
+
 .attachmentSection {
   margin-bottom: 16px;
 }

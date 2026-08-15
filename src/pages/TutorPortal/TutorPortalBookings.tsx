@@ -685,7 +685,7 @@ const TutorPortalBookings = () => {
                           <ChevronRight size={16} />
                         </button>
                       )}
-                      {booking.status === 'pending_tutor' && (
+                      {booking.status === 'pending_tutor' && !responseDeadline?.isExpired && (
                         <>
                           <button
                             type="button"
@@ -732,22 +732,28 @@ const TutorPortalBookings = () => {
       </main>
 
       <Modal
-        title="Từ chối yêu cầu đặt lịch"
+        title={null}
+        footer={null}
         open={declineModalVisible}
-        onOk={confirmDecline}
         onCancel={closeDeclineModal}
-        okText={processingBooking?.action === 'decline' ? 'Đang xử lý...' : 'Xác nhận từ chối'}
-        cancelText="Quay lại"
-        okButtonProps={{ danger: true, loading: processingBooking?.action === 'decline' }}
-        cancelButtonProps={{ disabled: processingBooking?.action === 'decline' }}
+        width={480}
+        centered
         className={styles.declineModal}
       >
+        <div className={styles.declineHeader}>
+          <span className={styles.declineHeaderIcon}>
+            <X size={20} />
+          </span>
+          <h2>Từ chối yêu cầu đặt lịch</h2>
+        </div>
+
         <div className={styles.declineContent}>
           <p>
             Lý do này sẽ giúp phụ huynh hiểu tình trạng và chủ động tìm lịch học khác.
-            <span className={styles.requiredMark}> *</span>
+            <span className={styles.requiredMark}>*</span>
           </p>
           <Input.TextArea
+            className={styles.declineTextarea}
             rows={4}
             placeholder="Ví dụ: Tôi hiện không còn lịch trống vào khung giờ này..."
             value={declineReason}
@@ -761,6 +767,25 @@ const TutorPortalBookings = () => {
               Vui lòng nhập ít nhất 10 ký tự ({declineReason.trim().length}/10).
             </p>
           )}
+        </div>
+
+        <div className={styles.declineFooter}>
+          <button
+            type="button"
+            className={styles.declineCancelBtn}
+            disabled={processingBooking?.action === 'decline'}
+            onClick={closeDeclineModal}
+          >
+            Quay lại
+          </button>
+          <button
+            type="button"
+            className={styles.declineConfirmBtn}
+            disabled={processingBooking?.action === 'decline'}
+            onClick={confirmDecline}
+          >
+            {processingBooking?.action === 'decline' ? 'Đang xử lý...' : 'Xác nhận từ chối'}
+          </button>
         </div>
       </Modal>
 

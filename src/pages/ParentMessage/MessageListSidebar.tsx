@@ -11,6 +11,7 @@ import { normalizePresenceUserId } from '../../utils/presence';
 interface MessageListSidebarProps {
   onChannelSelect: (channelId: number | null) => void;
   onChannelObjectSelect?: (channel: ChatChannel | null) => void;
+  onAdminChatSelect?: () => void;
   selectedChannelId: number | null;
   currentUserId?: string | null;
 }
@@ -47,6 +48,7 @@ const formatPreview = (text: string | null): string => {
 const MessageListSidebar = ({
   onChannelSelect,
   onChannelObjectSelect,
+  onAdminChatSelect,
   selectedChannelId,
   currentUserId,
 }: MessageListSidebarProps) => {
@@ -150,11 +152,20 @@ const MessageListSidebar = ({
           <span className={styles.sidebarEyebrow}>Hộp thư</span>
           <h2 className={styles.sidebarTitle}>Cuộc trò chuyện</h2>
         </div>
-        {!loading && !error && (
-          <span className={styles.conversationCount} aria-label={`${filteredChannels.length} cuộc trò chuyện`}>
-            {filteredChannels.length}
-          </span>
-        )}
+        <div className={styles.sidebarHeadingActions}>
+          <button className={styles.adminChatButton} type="button" onClick={onAdminChatSelect}>
+            <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+              <path d="M3 3.5h12v8.25a2 2 0 0 1-2 2H8l-3.5 2v-2H5a2 2 0 0 1-2-2V3.5Z" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M6 7.5h.01M9 7.5h.01M12 7.5h.01" strokeLinecap="round" strokeWidth="2" />
+            </svg>
+            Trò chuyện với Admin
+          </button>
+          {!loading && !error && (
+            <span className={styles.conversationCount} aria-label={`${filteredChannels.length} cuộc trò chuyện`}>
+              {filteredChannels.length}
+            </span>
+          )}
+        </div>
       </div>
       <MessageSearch onSearch={setSearchQuery} />
       <div className={styles.messageList}>

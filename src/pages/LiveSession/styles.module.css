@@ -567,6 +567,71 @@
   background: #ef4444;
 }
 
+/* ── Banner "Bạn đang chia sẻ màn hình" (chỉ hiện với người đang share) ── */
+.screenShareBanner {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 14px;
+  background: rgba(9, 16, 30, 0.9);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  border-radius: 9999px;
+  box-shadow: 0 12px 32px -10px rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 3;
+}
+
+.screenShareBannerDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: #34d399;
+  flex-shrink: 0;
+  animation: screenShareBannerPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes screenShareBannerPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screenShareBannerDot {
+    animation: none;
+  }
+}
+
+.screenShareStopBtn {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 9999px;
+  border: none;
+  background: #dc2626;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.screenShareStopBtn:hover {
+  background: #ef4444;
+}
+
 /* ── Side panel ── */
 .sidePanel {
   position: relative;
@@ -944,7 +1009,15 @@
   margin-bottom: 8px;
 }
 
-.errorBackBtn {
+.errorActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Nút chính: khắc phục được ngay (vd cấp lại quyền rồi thử lại) nên nổi bật hơn "Quay lại". */
+.errorRetryBtn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -956,6 +1029,30 @@
   border: none;
   border-radius: 10px;
   cursor: pointer;
+}
+
+.errorRetryBtn:hover {
+  background: rgba(255, 255, 255, 0.88);
+}
+
+/* Nút phụ: rời khỏi màn hình lỗi — viền mờ, không cần nổi bật bằng nút Thử lại. */
+.errorBackBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.errorBackBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* ── Responsive: giữ vùng học là ưu tiên, panel chuyển thành lớp nổi trên màn hình hẹp. ── */

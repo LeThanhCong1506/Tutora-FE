@@ -19,6 +19,7 @@ import {
   type SessionPresenceStatus,
 } from '../../../../services/agora.service';
 import type { LiveSessionIdentity } from '../../../../utils/liveSessionIdentity';
+import { describeMediaError, type MediaErrorInfo } from '../../../../utils/mediaPermissionError';
 import type { ChatMessage, RemoteParticipant } from '../types';
 
 /**
@@ -50,7 +51,7 @@ export interface LiveEmotionAlert {
 
 interface UseAgoraCallResult {
   joined: boolean;
-  joinError: string | null;
+  joinError: MediaErrorInfo | null;
   localVideoTrack: ICameraVideoTrack | ILocalVideoTrack | null;
   micOn: boolean;
   camOn: boolean;
@@ -124,7 +125,7 @@ export const useAgoraCall = (
   const heartbeatInFlightRef = useRef(false);
 
   const [joined, setJoined] = useState(false);
-  const [joinError, setJoinError] = useState<string | null>(null);
+  const [joinError, setJoinError] = useState<MediaErrorInfo | null>(null);
   const [localVideoTrack, setLocalVideoTrack] = useState<ICameraVideoTrack | ILocalVideoTrack | null>(null);
   const [micOn, setMicOn] = useState(initialMicOn);
   const [camOn, setCamOn] = useState(initialCamOn);
@@ -247,7 +248,11 @@ export const useAgoraCall = (
         }
         console.error('❌ Agora token renewal failed:', err);
         if (showErrorOnFailure) {
-          setJoinError('Phiên kết nối đã hết hạn. Vui lòng tải lại trang để tiếp tục.');
+          setJoinError({
+            kind: 'other',
+            title: 'Phiên kết nối đã hết hạn',
+            message: 'Tải lại trang để vào lại nhé.',
+          });
         }
       }
     };
@@ -367,11 +372,7 @@ export const useAgoraCall = (
       } catch (err) {
         console.error('❌ Agora join failed:', err);
         if (!cancelled) {
-          setJoinError(
-            err instanceof Error && err.name === 'NotAllowedError'
-              ? 'Vui lòng cấp quyền camera/micro để tham gia buổi học.'
-              : 'Không thể kết nối vào phòng học. Vui lòng thử lại.',
-          );
+          setJoinError(describeMediaError(err, 'join'));
         }
       }
     })();

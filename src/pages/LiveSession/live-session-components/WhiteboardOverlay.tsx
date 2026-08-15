@@ -12,6 +12,8 @@ interface WhiteboardOverlayProps {
   classSessionId: number;
   participationId: string;
   leaseId: string;
+  /** Tên hiển thị của người dùng hiện tại — gắn vào userPayload để SDK hiện tên thay vì uid ở nhãn con trỏ. */
+  displayName: string;
   onClose: () => void;
 }
 
@@ -20,7 +22,7 @@ interface WhiteboardOverlayProps {
  * Tự lấy room token từ BE, khởi tạo fastboard (kèm toolbar) và dọn dẹp khi đóng.
  * Được lazy-load ở LiveSession để SDK nặng không nằm trong bundle chính.
  */
-const WhiteboardOverlay = ({ classSessionId, participationId, leaseId, onClose }: WhiteboardOverlayProps) => {
+const WhiteboardOverlay = ({ classSessionId, participationId, leaseId, displayName, onClose }: WhiteboardOverlayProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,6 +54,8 @@ const WhiteboardOverlay = ({ classSessionId, participationId, leaseId, onClose }
             uid,
             uuid: room.roomUuid,
             roomToken: room.roomToken,
+            // SDK dùng userPayload.nickName để hiện tên cạnh con trỏ; không set thì rơi về hiện thẳng uid.
+            userPayload: { nickName: displayName },
           },
         });
 
@@ -81,7 +85,7 @@ const WhiteboardOverlay = ({ classSessionId, participationId, leaseId, onClose }
       ui?.destroy();
       void app?.destroy();
     };
-  }, [classSessionId, participationId, leaseId]);
+  }, [classSessionId, participationId, leaseId, displayName]);
 
   return (
     <div style={overlayStyle}>

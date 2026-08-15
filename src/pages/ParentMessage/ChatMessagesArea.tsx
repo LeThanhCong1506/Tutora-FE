@@ -2,7 +2,7 @@ import styles from './styles.module.css';
 import MessageBubble from './MessageBubble';
 import type { ChatMessage } from '../../services/chat.service';
 import InfiniteScroll from 'react-infinite-scroll-component';
-import { Loader2, Video, CheckCircle, XCircle, BookOpen, MessageCircleDashed } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, BookOpen, MessageCircleDashed } from 'lucide-react';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import BookingRequestCard from '../../components/BookingRequestCard/BookingRequestCard';
@@ -17,59 +17,6 @@ interface ChatMessagesAreaProps {
   onProceedToPayment?: (bookingId: number) => void;
   isOtherTyping?: boolean;
 }
-
-/** Renders a meet_link message as a clickable card */
-const MeetLinkCard = ({ message }: { message: ChatMessage }) => {
-  // Extract meeting link from content
-  const linkMatch = message.content.match(/https?:\/\/[^\s]+/);
-  const meetLink = linkMatch?.[0] || '';
-
-  return (
-    <div className={styles.systemMessageContainer}>
-      <div className={styles.systemCard} style={{ borderLeft: '3px solid #1a73e8' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-          <Video size={16} style={{ color: '#1a73e8' }} />
-          <span
-            style={{
-              fontWeight: 600,
-              fontSize: '13px',
-              color: '#1a73e8',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-            }}
-          >
-            Link buổi học
-          </span>
-        </div>
-        <p style={{ margin: '0 0 8px', fontSize: '13px', color: '#3e2f28', whiteSpace: 'pre-line' }}>
-          {message.content}
-        </p>
-        {meetLink && (
-          <a
-            href={meetLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 14px',
-              borderRadius: '6px',
-              background: '#1a73e8',
-              color: '#fff',
-              fontSize: '12px',
-              fontWeight: 600,
-              textDecoration: 'none',
-            }}
-          >
-            <Video size={14} />
-            Tham gia buổi học
-          </a>
-        )}
-      </div>
-    </div>
-  );
-};
 
 /** Renders a booking_accepted / booking_declined / booking_cancelled system message */
 const BookingStatusCard = ({ message, isParent }: { message: ChatMessage; isParent: boolean }) => {
@@ -223,11 +170,6 @@ const ChatMessagesArea = ({
                 </div>
               </div>
             );
-          }
-
-          // Meet link card
-          if (msg.messageType === 'meet_link') {
-            return <MeetLinkCard key={msg.messageId || index} message={msg} />;
           }
 
           // Booking accepted/declined/cancelled system cards

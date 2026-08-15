@@ -151,6 +151,7 @@ const TutorOnboarding: React.FC = () => {
             onUpdatePackage={sync.updateFixedPackage}
             onDeactivatePackage={sync.deactivateFixedPackage}
             onActivatePackage={sync.activateFixedPackage}
+            onDeletePackage={sync.deleteFixedPackage}
           />
         )}
       </div>

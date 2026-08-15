@@ -283,6 +283,20 @@
   gap: 6px;
 }
 
+.slotCellWrap {
+  min-width: 0;
+}
+
+/* Khi cell được bọc để phục vụ chế độ một-ngày trên mobile, button cần lấp
+   đầy cột ở cả desktop lẫn mobile; nếu không nó co lại theo icon dấu +/tick. */
+.slotCellWrap > .cell {
+  width: 100%;
+}
+
+.mobileDayPicker {
+  display: none;
+}
+
 /* Giữ ô đệm ở góc header mà không cần render phần tử .gridCorner. */
 .weekHeader {
   display: grid;
@@ -317,9 +331,18 @@
 }
 
 .colHeadDay {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
   font-size: 13px;
   font-weight: 700;
   color: #1a2238;
+  cursor: pointer;
 }
 
 .wholeDayBtn {
@@ -3072,13 +3095,77 @@
     max-width: 100%;
   }
 
-  /* Mobile: cho cuộn ngang lưới (sticky header ngày sẽ không áp dụng ở đây) */
+  /* Mobile: chuyển sang một ngày/lần. Không ép 7 cột vào màn hình hoặc bắt
+     người dùng cuộn ngang qua hàng chục mốc giờ. */
   .gridCard {
-    overflow-x: auto;
+    overflow: visible;
+    padding: 12px;
   }
 
   .grid {
-    min-width: 640px;
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .slotCellWrap:not(.slotCellActive) {
+    display: none;
+  }
+
+  .cell {
+    height: 44px;
+  }
+
+  .weekHeader {
+    grid-template-columns: 1fr;
+    margin-left: 0;
+    position: static;
+    overflow: visible;
+    box-shadow: none;
+  }
+
+  .colHead:not(.colHeadActive) {
+    display: none;
+  }
+
+  .colHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 12px;
+    text-align: left;
+  }
+
+  .wholeDayBtn {
+    margin: 0;
+    border: 1px solid rgba(26, 34, 56, 0.1);
+    background: rgba(242, 240, 228, 0.82);
+    font-size: 12px;
+  }
+
+  .mobileDayPicker {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .mobileDayButton {
+    min-height: 40px;
+    padding: 6px 2px;
+    border: 1px solid rgba(26, 34, 56, 0.1);
+    border-radius: 9px;
+    background: #fff;
+    color: rgba(62, 47, 40, 0.7);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .mobileDayButtonActive {
+    border-color: #3d4a3e;
+    background: #3d4a3e;
+    color: #fff;
   }
 }
 

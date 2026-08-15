@@ -192,3 +192,23 @@ export const activatePackage = async (userId: string, packageId: number): Promis
     throw error;
   }
 };
+
+/**
+ * DELETE /api/tutors/{id}/profile/packages/{packageId}/permanent — xóa vĩnh viễn package.
+ * BE trả 409 nếu package đang bật (chưa ẩn) hoặc đã từng có booking tham chiếu.
+ */
+export const deletePackage = async (userId: string, packageId: number): Promise<ApiResponse> => {
+  try {
+    const response = await api.delete(`/tutors/${userId}/profile/packages/${packageId}/permanent`, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ Error deleting package:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
+    throw error;
+  }
+};

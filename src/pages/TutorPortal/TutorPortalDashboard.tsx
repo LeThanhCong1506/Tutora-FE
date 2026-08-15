@@ -143,6 +143,16 @@ const defaultDashboardGridLayout = [
     { i: 'calendar', x: 9, y: 0, w: 3, h: 7, minW: 3, minH: 5 },
     { i: 'feedback', x: 9, y: 7, w: 3, h: 6, minW: 3, minH: 4 },
 ];
+
+// ReactGridLayout desktop dùng 12 cột và cho phép gia sư tùy chỉnh. Giữ nguyên bố cục đó,
+// nhưng không thu nhỏ các widget xuống 3–5 cột trên điện thoại: nội dung sẽ quá hẹp và
+// khó thao tác. Mobile luôn xếp một cột theo thứ tự đọc tự nhiên.
+const mobileDashboardGridLayout = [
+    { i: 'today', x: 0, y: 0, w: 1, h: 6 },
+    { i: 'upcoming', x: 0, y: 6, w: 1, h: 6 },
+    { i: 'calendar', x: 0, y: 12, w: 1, h: 7 },
+    { i: 'feedback', x: 0, y: 19, w: 1, h: 6 },
+];
 /**
  * Cửa sổ quét "buổi chờ gửi báo cáo". Query riêng chứ không tái dùng calendar của tháng đang
  * xem: gia sư lật sang tháng khác thì buổi còn nợ báo cáo sẽ biến mất khỏi danh sách nhắc.
@@ -197,6 +207,7 @@ const TutorPortalDashboard: React.FC = () => {
     const [isLayoutEditing, setIsLayoutEditing] = useState(false);
     const dashboardGridContainerRef = useRef<HTMLDivElement | null>(null);
     const [dashboardGridWidth, setDashboardGridWidth] = useState(1200);
+    const isMobileDashboard = dashboardGridWidth <= 768;
     const [dashboardGridLayout, setDashboardGridLayout] = useState<any[]>(() => {
         try {
             const saved = JSON.parse(localStorage.getItem('tutora:tutor-dashboard:grid-layout') ?? '[]');
@@ -694,13 +705,13 @@ const TutorPortalDashboard: React.FC = () => {
             <div ref={dashboardGridContainerRef} className={styles.dashboardGridContainer}>
             <ReactGridLayout
                 width={dashboardGridWidth}
-                layout={dashboardGridLayout}
-                cols={12}
+                layout={isMobileDashboard ? mobileDashboardGridLayout : dashboardGridLayout}
+                cols={isMobileDashboard ? 1 : 12}
                 rowHeight={52}
-                margin={[16, 16]}
-                containerPadding={[16, 16]}
-                isDraggable={isLayoutEditing}
-                isResizable={isLayoutEditing}
+                margin={isMobileDashboard ? [0, 12] : [16, 16]}
+                containerPadding={isMobileDashboard ? [0, 0] : [16, 16]}
+                isDraggable={!isMobileDashboard && isLayoutEditing}
+                isResizable={!isMobileDashboard && isLayoutEditing}
                 onLayoutChange={(layout) => setDashboardGridLayout([...layout])}
                 className={`${styles.dashboardGrid} ${isLayoutEditing ? styles.dashboardGridEditing : ''}`}
                 style={isLayoutEditing ? {
