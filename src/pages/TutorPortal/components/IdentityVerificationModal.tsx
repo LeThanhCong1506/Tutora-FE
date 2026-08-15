@@ -90,6 +90,7 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
     const [formData, setFormData] = useState<IdentityVerificationData>(initialData || defaultData);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = useState(false);
+    const [showProfileUpdateNotice, setShowProfileUpdateNotice] = useState(false);
     const [previews, setPreviews] = useState<{
         front: string | null;
         back: string | null;
@@ -103,16 +104,17 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
 
     // Reset form when modal opens
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen && !showProfileUpdateNotice) {
             setFormData(initialData || defaultData);
             setPreviews({
                 front: initialData?.idFrontImageUrl || null,
                 back: initialData?.idBackImageUrl || null
             });
             setErrors({});
+            setShowProfileUpdateNotice(false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen, initialData]);
+    }, [isOpen, initialData, showProfileUpdateNotice]);
 
     // Pick a file → validate + preview locally. Ảnh chỉ được upload khi bấm "Gửi xác minh"
     // (endpoint CCCD yêu cầu cả 2 mặt cùng lúc).
@@ -187,7 +189,7 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
             }
 
             if (kyc.ocrSuccess) {
-                // Đọc được CCCD và tên khớp hồ sơ (BE đã chặn nếu lệch) → đã xác minh.
+                // CCCD là nguồn định danh chuẩn; BE đã đồng bộ họ tên, ngày sinh và giới tính.
                 toast.success('Xác minh danh tính thành công!');
                 onSave({
                     ...formData,
@@ -198,6 +200,10 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
                     address: kyc.address || '',
                     verificationStatus: 'verified',
                 });
+                if (kyc.profileDataUpdated) {
+                    setShowProfileUpdateNotice(true);
+                    return;
+                }
             } else {
                 // Không đọc được CCCD → ảnh đã lưu, chờ admin xác minh thủ công.
                 toast.success(kyc.message || 'Đã gửi CCCD. Admin sẽ xác minh trong 24-48 giờ.');
@@ -208,13 +214,18 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
             }
             onClose();
         } catch (error) {
-            // BE trả message thân thiện cho lỗi 400 (vd: tên trên CCCD không khớp hồ sơ).
+            // BE trả message thân thiện cho lỗi file hoặc xác minh CCCD.
             const e = error as { response?: { data?: { message?: string } } };
             console.error('Upload CCCD error:', error);
             toast.error(e.response?.data?.message || 'Không thể kết nối với server. Vui lòng thử lại.');
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const acknowledgeProfileUpdate = () => {
+        setShowProfileUpdateNotice(false);
+        onClose();
     };
 
     const getStatusBadge = () => {
@@ -317,8 +328,9 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
     };
 
     return (
+        <>
         <EditModal
-            isOpen={isOpen}
+            isOpen={isOpen && !showProfileUpdateNotice}
             onClose={onClose}
             onSave={handleSaveOrClose}
             title="Xác minh danh tính"
@@ -403,6 +415,29 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
                 </div>
             </div>
         </EditModal>
+
+        {showProfileUpdateNotice && (
+            <div className={styles.profileUpdateOverlay} role="presentation">
+                <div
+                    className={styles.profileUpdateDialog}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="identity-profile-update-title"
+                    aria-describedby="identity-profile-update-description"
+                >
+                    <div className={styles.profileUpdateIcon} aria-hidden="true"><CheckIcon /></div>
+                    <h2 id="identity-profile-update-title">Thông tin đã được cập nhật</h2>
+                    <p id="identity-profile-update-description">
+                        Họ tên, ngày sinh và giới tính của bạn đã được cập nhật theo CCCD để đảm bảo
+                        tính minh bạch và xác thực cho tài khoản.
+                    </p>
+                    <button type="button" className={styles.profileUpdateConfirm} onClick={acknowledgeProfileUpdate}>
+                        Đồng ý
+                    </button>
+                </div>
+            </div>
+        )}
+        </>
     );
 };
 

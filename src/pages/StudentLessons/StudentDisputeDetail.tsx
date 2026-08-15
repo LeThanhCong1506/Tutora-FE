@@ -5,6 +5,8 @@ import {
   getClassSessionDispute,
   getClassSessionDisputeThread,
   sendClassSessionDisputeThreadMessage,
+  submitParentDisputeResponse,
+  uploadParentDisputeEvidence,
 } from '../../services/classSession.service';
 import { getStudentLessonDetail } from '../../services/student-lesson.service';
 
@@ -50,6 +52,15 @@ const StudentDisputeDetail = () => {
     await sendClassSessionDisputeThreadMessage(id, message);
   }, []);
 
+  const submitResponse = useCallback(async (id: number, message: string) => {
+    const result = await submitParentDisputeResponse(id, message);
+    return result.content ?? null;
+  }, []);
+
+  const uploadEvidence = useCallback(async (id: number, file: File) => {
+    await uploadParentDisputeEvidence(id, file);
+  }, []);
+
   return (
     <DisputeDetailView
       classSessionId={classSessionId}
@@ -59,6 +70,8 @@ const StudentDisputeDetail = () => {
         fetchContext,
         fetchThread,
         sendThreadMessage,
+        submitResponse,
+        uploadEvidence,
         listPath: '/student-portal/disputes',
         sessionPath: (id) => `/student-portal/calendar/${id}`,
       }}

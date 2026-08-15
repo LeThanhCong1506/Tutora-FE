@@ -263,12 +263,13 @@ export const updateVideo = async (userId: string, videoUrl: string): Promise<Api
 /**
  * Kết quả xác minh CCCD trả về từ BE. BE lưu ảnh private (VPS) VÀ chạy OCR/eKYC ngay
  * trong cùng 1 request — không cần gọi thêm verify nữa.
- * - ocrSuccess = true: đọc được CCCD và tên khớp hồ sơ → đã xác minh.
+ * - ocrSuccess = true: đọc được CCCD → dữ liệu định danh hồ sơ được đồng bộ theo CCCD.
  * - ocrSuccess = false: không đọc được → ảnh đã lưu, chờ admin xác minh thủ công.
  * Lưu ý: response upload KHÔNG trả URL ảnh — gọi getMyCccdUrls() riêng để xem lại ảnh đã upload.
  */
 export interface CccdUploadResult {
   ocrSuccess: boolean;
+  profileDataUpdated: boolean;
   identityNumber: string | null;
   fullName: string | null;
   dateOfBirth: string | null;
@@ -280,7 +281,7 @@ export interface CccdUploadResult {
 /**
  * Upload + xác minh CCCD chỉ với MỘT request duy nhất.
  * POST /api/tutors/{id}/profile/cccd — multipart: FrontImage + BackImage (JPG/PNG, ≤5MB mỗi ảnh).
- * BE tự upload Cloudinary, chạy OCR và đối chiếu tên với hồ sơ.
+ * BE tự upload file private, chạy OCR và đồng bộ dữ liệu định danh theo CCCD.
  *
  * @param userId - User ID (cũng là tutor ID, phải khớp người đang đăng nhập)
  * @param frontImage - Ảnh mặt trước CCCD

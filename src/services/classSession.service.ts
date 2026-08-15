@@ -679,6 +679,9 @@ export interface DisputeDetailResponse {
     refundPercentage?: number;
     tutorResponse?: string;
     tutorRespondedAt?: string;
+    /** Phản hồi của phụ huynh/học sinh khi dispute do GIA SƯ tạo (chiều ngược với tutorResponse). */
+    respondentResponse?: string;
+    respondentRespondedAt?: string;
     additionalEvidence?: DisputeEvidenceItem[];
     createdBy?: DisputeUserInfo;
     resolvedBy?: DisputeUserInfo;
@@ -976,6 +979,55 @@ export const uploadTutorDisputeEvidence = async (id: number, file: File): Promis
     const formData = new FormData();
     formData.append('file', file);
     const response = await api.post(`/tutor/class-sessions/${id}/dispute/evidence`, formData, {
+        headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return response.data;
+};
+
+// ── Tutor creates a dispute / parent-student responds — mirror of the two blocks above,
+// reversed. Same endpoints/entities, gia sư giờ cũng mở dispute mới được. ──
+
+/** Gia sư tự mở dispute mới cho buổi học của mình. Cùng điều kiện session (pending_confirmation/completed, chưa có dispute) như phía phụ huynh/học sinh. */
+export const createTutorClassSessionDispute = async (
+    id: number,
+    request: CreateDisputeRequest,
+    files: File[] = [],
+): Promise<ApiResponse<DisputeDetailResponse>> => {
+    const formData = new FormData();
+    formData.append('disputeType', request.disputeType);
+    formData.append('reason', request.reason);
+    files.forEach((file) => formData.append('files', file));
+
+    const response = await api.post(`/tutor/class-sessions/${id}/dispute`, formData, {
+        headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return response.data;
+};
+
+/** Phụ huynh/học sinh phản hồi 1 dispute do GIA SƯ tạo — đối xứng submitTutorDisputeResponse. */
+export const submitParentDisputeResponse = async (
+    id: number,
+    responseText: string,
+): Promise<ApiResponse<DisputeDetailResponse>> => {
+    const result = await api.post(
+        `/parent/class-sessions/${id}/dispute/response`,
+        { response: responseText },
+        { headers: getAuthHeaders() },
+    );
+    return result.data;
+};
+
+/** Đối xứng uploadTutorDisputeEvidence, dùng khi gia sư là người tạo dispute. */
+export const uploadParentDisputeEvidence = async (id: number, file: File): Promise<ApiResponse<string>> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post(`/parent/class-sessions/${id}/dispute/evidence`, formData, {
         headers: {
             ...getAuthHeaders(),
             'Content-Type': 'multipart/form-data',
