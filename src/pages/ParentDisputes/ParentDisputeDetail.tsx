@@ -5,12 +5,15 @@ import {
   getClassSessionDispute,
   getClassSessionDisputeThread,
   sendClassSessionDisputeThreadMessage,
+  submitParentDisputeResponse,
+  uploadParentDisputeEvidence,
 } from '../../services/classSession.service';
 import { getParentLessonDetail } from '../../services/parent-lesson.service';
 
 /**
- * Chi tiết khiếu nại phía phụ huynh. Không có khu vực phản hồi/nộp bằng chứng — đó là
- * phần của gia sư; phụ huynh trao đổi thêm qua kênh riêng với quản trị viên.
+ * Chi tiết khiếu nại phía phụ huynh. Khu vực phản hồi/nộp bằng chứng chỉ hiện khi dispute này
+ * do GIA SƯ tạo (DisputeDetailView tự quyết định dựa trên dispute.createdBy) — nếu chính phụ
+ * huynh/học sinh là người tạo, họ chỉ trao đổi thêm qua kênh riêng với quản trị viên.
  */
 const ParentDisputeDetail = () => {
   const { classSessionId: rawId } = useParams<{ classSessionId: string }>();
@@ -51,6 +54,15 @@ const ParentDisputeDetail = () => {
     await sendClassSessionDisputeThreadMessage(id, message);
   }, []);
 
+  const submitResponse = useCallback(async (id: number, message: string) => {
+    const result = await submitParentDisputeResponse(id, message);
+    return result.content ?? null;
+  }, []);
+
+  const uploadEvidence = useCallback(async (id: number, file: File) => {
+    await uploadParentDisputeEvidence(id, file);
+  }, []);
+
   return (
     <DisputeDetailView
       classSessionId={classSessionId}
@@ -60,6 +72,8 @@ const ParentDisputeDetail = () => {
         fetchContext,
         fetchThread,
         sendThreadMessage,
+        submitResponse,
+        uploadEvidence,
         listPath: '/parent-portal/disputes',
         sessionPath: (id) => `/parent-portal/lessons/${id}`,
       }}

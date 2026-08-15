@@ -127,7 +127,8 @@ const DisputeDetailView = ({ classSessionId, adapter }: DisputeDetailViewProps) 
         reportCreatedAt: context?.reportCreatedAt,
         confirmDeadline: context?.confirmDeadline,
         disputeCreatedAt: dispute?.createdAt,
-        disputeTutorRespondedAt: dispute?.tutorRespondedAt,
+        // Chỉ 1 trong 2 trường có giá trị tuỳ chiều dispute — an toàn để gộp bằng ??.
+        disputeTutorRespondedAt: dispute?.tutorRespondedAt ?? dispute?.respondentRespondedAt,
         disputeResolvedAt: dispute?.resolvedAt,
       }),
     [context, dispute],
@@ -201,8 +202,15 @@ const DisputeDetailView = ({ classSessionId, adapter }: DisputeDetailViewProps) 
   const statusMeta = getDisputeStatusMeta(dispute.status);
   const isClosed = CLOSED_STATUSES.includes(dispute.status ?? '');
   const isTutorViewer = adapter.viewerRole === 'tutor';
-  const canRespond = isTutorViewer && Boolean(adapter.submitResponse) && !isClosed && !dispute.tutorResponse;
-  const canUploadEvidence = isTutorViewer && Boolean(adapter.uploadEvidence) && !isClosed;
+  // Trước đây bên khiếu nại luôn là phụ huynh/học sinh và gia sư luôn là bên phản hồi — giờ gia
+  // sư cũng tạo dispute được, nên "ai phản hồi" phải suy ra từ dữ liệu thật của dispute này,
+  // không hardcode theo role của portal đang xem.
+  const createdByTutor = Boolean(dispute.createdBy?.userId) && dispute.createdBy?.userId === dispute.tutor?.tutorId;
+  const isRespondent = createdByTutor ? !isTutorViewer : isTutorViewer;
+  const responseValue = createdByTutor ? dispute.respondentResponse : dispute.tutorResponse;
+  const respondedAtValue = createdByTutor ? dispute.respondentRespondedAt : dispute.tutorRespondedAt;
+  const canRespond = isRespondent && Boolean(adapter.submitResponse) && !isClosed && !responseValue;
+  const canUploadEvidence = isRespondent && Boolean(adapter.uploadEvidence) && !isClosed;
 
   const claimantEvidence: AttachmentItem[] = (dispute.evidence ?? []).map((url, index) => ({
     key: `evidence-${index}`,
@@ -224,10 +232,13 @@ const DisputeDetailView = ({ classSessionId, adapter }: DisputeDetailViewProps) 
   const counterpartLabel = isTutorViewer ? 'Học viên' : 'Gia sư';
   const counterpart = context?.counterpart;
   const sessionId = dispute.classSessionId ?? classSessionId;
+  const counterpartFallbackName = isTutorViewer
+    ? (!createdByTutor ? dispute.createdBy?.fullName : undefined)
+    : dispute.tutor?.fullName;
 
-  // Hạn phản hồi chỉ còn ý nghĩa khi gia sư chưa trả lời và vụ việc chưa chốt.
+  // Hạn phản hồi chỉ còn ý nghĩa khi bên phải phản hồi chưa trả lời và vụ việc chưa chốt.
   const deadlineNotice = (() => {
-    if (!isTutorViewer || !dispute.tutorResponseDeadline || dispute.tutorResponse || isClosed) return null;
+    if (!isRespondent || !dispute.tutorResponseDeadline || responseValue || isClosed) return null;
     const msLeft = new Date(dispute.tutorResponseDeadline).getTime() - now;
     const hoursLeft = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60)));
     return {
@@ -302,20 +313,22 @@ const DisputeDetailView = ({ classSessionId, adapter }: DisputeDetailViewProps) 
             <p className={styles.paragraph}>{dispute.reason || 'Người gửi không mô tả thêm.'}</p>
             <div className={styles.evidenceBlock}>
               <span className={styles.fieldLabel}>
-                Bằng chứng từ {isTutorViewer ? 'người khiếu nại' : 'bạn'}
+                Bằng chứng từ {isRespondent ? 'người khiếu nại' : 'bạn'}
               </span>
               <AttachmentGallery items={claimantEvidence} emptyText="Khiếu nại này không kèm tệp nào." />
             </div>
           </section>
 
           <section className={styles.card}>
-            <h2 className={styles.cardTitle}>{isTutorViewer ? 'Phản hồi của bạn' : 'Phản hồi từ gia sư'}</h2>
+            <h2 className={styles.cardTitle}>
+              {isRespondent ? 'Phản hồi của bạn' : createdByTutor ? 'Phản hồi từ phụ huynh/học sinh' : 'Phản hồi từ gia sư'}
+            </h2>
 
-            {dispute.tutorResponse ? (
+            {responseValue ? (
               <>
-                <p className={styles.paragraph}>{dispute.tutorResponse}</p>
-                {dispute.tutorRespondedAt && (
-                  <p className={styles.meta}>Gửi lúc {formatLocalDateTime(dispute.tutorRespondedAt)}</p>
+                <p className={styles.paragraph}>{responseValue}</p>
+                {respondedAtValue && (
+                  <p className={styles.meta}>Gửi lúc {formatLocalDateTime(respondedAtValue)}</p>
                 )}
               </>
             ) : canRespond ? (
@@ -348,19 +361,21 @@ const DisputeDetailView = ({ classSessionId, adapter }: DisputeDetailViewProps) 
               </>
             ) : (
               <p className={styles.emptyText}>
-                {isTutorViewer
+                {isClosed
                   ? 'Vụ việc đã chốt nên không thể gửi thêm phản hồi.'
-                  : 'Gia sư chưa gửi phản hồi cho khiếu nại này.'}
+                  : createdByTutor
+                    ? 'Phụ huynh/học sinh chưa gửi phản hồi cho khiếu nại này.'
+                    : 'Gia sư chưa gửi phản hồi cho khiếu nại này.'}
               </p>
             )}
 
-            {(tutorEvidence.length > 0 || (canUploadEvidence && dispute.tutorResponse)) && (
+            {(tutorEvidence.length > 0 || (canUploadEvidence && responseValue)) && (
               <div className={styles.evidenceBlock}>
                 <span className={styles.fieldLabel}>
-                  Bằng chứng {isTutorViewer ? 'bạn đã nộp' : 'gia sư đã nộp'}
+                  Bằng chứng {isRespondent ? 'bạn đã nộp' : createdByTutor ? 'phụ huynh/học sinh đã nộp' : 'gia sư đã nộp'}
                 </span>
                 <AttachmentGallery items={tutorEvidence} emptyText="Chưa có tệp nào." />
-                {canUploadEvidence && dispute.tutorResponse && (
+                {canUploadEvidence && responseValue && (
                   <div className={styles.actions}>{evidenceUploadControl}</div>
                 )}
               </div>
@@ -554,16 +569,14 @@ const DisputeDetailView = ({ classSessionId, adapter }: DisputeDetailViewProps) 
             <h2 className={styles.cardTitle}>{counterpartLabel}</h2>
             <div className={styles.person}>
               <span className={styles.avatar} aria-hidden="true">
-                {(counterpart?.name || (isTutorViewer ? dispute.createdBy?.fullName : dispute.tutor?.fullName) || '?')
+                {(counterpart?.name || counterpartFallbackName || '?')
                   .trim()
                   .charAt(0)
                   .toUpperCase()}
               </span>
               <div>
                 <strong>
-                  {counterpart?.name ||
-                    (isTutorViewer ? dispute.createdBy?.fullName : dispute.tutor?.fullName) ||
-                    'Chưa cập nhật'}
+                  {counterpart?.name || counterpartFallbackName || 'Chưa cập nhật'}
                 </strong>
                 {counterpart?.subtitle && <small>{counterpart.subtitle}</small>}
               </div>
