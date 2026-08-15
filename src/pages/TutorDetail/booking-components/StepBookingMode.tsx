@@ -11,7 +11,7 @@ import styles from "./bookingModal.module.css";
  * Nếu gia sư không có gói nào → auto-pin "schedule" và khóa thẻ gói.
  */
 const StepBookingMode: React.FC<StepProps> = ({ formData, setFormData, combos }) => {
-    const hasCombos = combos.length > 0;
+    const hasCombos = combos.some((combo) => combo.type === "fixed" && combo.subjectId === formData.subjectId);
 
     useEffect(() => {
         if (!hasCombos && formData.bookingMode !== "schedule") {

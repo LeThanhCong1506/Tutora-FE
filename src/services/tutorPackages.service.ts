@@ -43,6 +43,8 @@ export interface TutorPackageFixedSlot {
 export interface TutorPackageResponse {
   packageId: number;
   tutorId?: string;
+  subjectId: number | null;
+  subjectName?: string | null;
   name: string;
   packageType: PackageType;
   isActive: boolean;
@@ -53,6 +55,8 @@ export interface TutorPackageResponse {
 
 export interface CreateTutorPackageData {
   name: string;
+  /** Required for fixed packages; optional for the legacy flexible package. */
+  subjectId?: number | null;
   packageType: PackageType;
   fixedSlots: Array<{
     dayOfWeek: number;

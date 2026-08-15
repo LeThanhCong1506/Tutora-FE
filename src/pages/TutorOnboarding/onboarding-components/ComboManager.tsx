@@ -208,6 +208,7 @@ const ComboManager: React.FC<ComboManagerProps> = ({
                   </div>
 
                   <h4 className={styles.comboName}>{combo.name}</h4>
+                  {combo.subjectName && <span className={styles.comboTypeBadge}>{combo.subjectName}</span>}
 
                   <div className={styles.comboMetaRow}>
                     <span>
@@ -276,6 +277,7 @@ const ComboManager: React.FC<ComboManagerProps> = ({
                     </div>
 
                     <h4 className={styles.comboName}>{combo.name}</h4>
+                    {combo.subjectName && <span className={styles.comboTypeBadge}>{combo.subjectName}</span>}
 
                     <div className={styles.comboMetaRow}>
                       <span>
@@ -304,6 +306,7 @@ const ComboManager: React.FC<ComboManagerProps> = ({
           }}
           onSave={handleSave}
           initial={editing}
+          subjectRecords={subjectRecords}
           availability={availability}
           requiredDurationHours={requiredDurationHours}
           requiredSessionsPerWeek={requiredSessionsPerWeek}
