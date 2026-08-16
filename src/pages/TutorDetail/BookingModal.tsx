@@ -114,7 +114,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
     const selectedCombo = combos.find(
         (combo) => combo.id === formData.comboId && combo.subjectId === formData.subjectId,
     );
+    const hasCombos = combos.some((combo) => combo.type === "fixed" && combo.subjectId === formData.subjectId);
     const flexiblePackage = packages.find((pkg) => pkg.isActive && pkg.packageType === 1);
+    const hasFlexiblePackage = Boolean(flexiblePackage);
     const selectedPackageId =
         formData.bookingMode === "schedule" ? flexiblePackage?.packageId : packageIdFromComboId(formData.comboId);
     const selectedStudent = students.find((s) => s.studentId === formData.studentId);
@@ -238,6 +240,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 }
                 return formData.studentId !== "" && formData.subjectId !== 0 && !isStudentGradeMissing;
             case 1:
+                if (!hasFlexiblePackage && !hasCombos) return false;
                 return formData.bookingMode === "schedule" || formData.bookingMode === "package";
             case 2:
                 if (formData.bookingMode === "package" && formData.comboId === null) return false;
@@ -272,7 +275,11 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     }
                     break;
                 case 1:
-                    toast.warning("Vui lòng chọn cách đặt lịch trước khi tiếp tục.");
+                    if (!hasFlexiblePackage && !hasCombos) {
+                        toast.warning("Gia sư chưa cấu hình xong gói học. Vui lòng thử lại sau hoặc chọn gia sư khác.");
+                    } else {
+                        toast.warning("Vui lòng chọn cách đặt lịch trước khi tiếp tục.");
+                    }
                     break;
                 case 2:
                     if (formData.bookingMode === "package" && formData.comboId === null) {
@@ -326,6 +333,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         userRole,
         tutorTeachingMode: tutorTeachingMode ?? null,
         combos,
+        hasFlexiblePackage,
         scheduling,
         sessionHours,
         selectedCombo,

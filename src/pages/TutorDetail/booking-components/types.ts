@@ -112,6 +112,9 @@ export interface StepProps {
     // Combos hiện có của gia sư — dùng cho step BookingMode + Schedule (package mode).
     // Hiện đang mock trong TutorDetailPage.
     combos: Combo[];
+    // Gia sư có gói "linh hoạt" (packageType 1, active) không — bắt buộc để mode
+    // "Tự chọn lịch rảnh" tạo được packageId khi submit (xem BookingModal.tsx).
+    hasFlexiblePackage: boolean;
     // Trạng thái lịch học (week-pick/lock/project) — Step Lịch học & Xác nhận dùng.
     scheduling: BookingScheduleApi;
     // Số giờ mỗi buổi đang áp dụng, lấy từ cấu hình môn/lớp của gia sư.
