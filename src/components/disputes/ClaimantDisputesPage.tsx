@@ -268,13 +268,7 @@ const ClaimantDisputesPage = ({ reloadKey, onCreate, onOpenDispute }: ClaimantDi
             >
               Làm mới
             </Button>
-            <Button
-              type="primary"
-              className={styles.createButton}
-              icon={<Plus size={16} />}
-              onClick={onCreate}
-              data-tour="disputes-create-btn"
-            >
+            <Button type="primary" className={styles.createButton} icon={<Plus size={16} />} onClick={onCreate}>
               Tạo khiếu nại
             </Button>
           </div>
@@ -319,7 +313,7 @@ const ClaimantDisputesPage = ({ reloadKey, onCreate, onOpenDispute }: ClaimantDi
             </div>
           </div>
 
-          <div className={styles.statusTabs} role="group" aria-label="Lọc khiếu nại theo trạng thái" data-tour="disputes-tabs">
+          <div className={styles.statusTabs} role="group" aria-label="Lọc khiếu nại theo trạng thái">
             {DISPUTE_STATUS_TABS.map((tab) => (
               <button
                 key={tab.key || 'all'}
@@ -352,7 +346,6 @@ const ClaimantDisputesPage = ({ reloadKey, onCreate, onOpenDispute }: ClaimantDi
 
           <Table<DisputeListResponse>
             className={styles.disputeTable}
-            data-tour="disputes-table"
             columns={columns}
             dataSource={disputes}
             rowKey="disputeId"

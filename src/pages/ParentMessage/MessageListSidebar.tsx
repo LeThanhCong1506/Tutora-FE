@@ -146,7 +146,7 @@ const MessageListSidebar = ({
   );
 
   return (
-    <aside className={styles.sidebar} aria-label="Danh sách cuộc trò chuyện" data-tour="messages-sidebar">
+    <aside className={styles.sidebar} aria-label="Danh sách cuộc trò chuyện">
       <div className={styles.sidebarHeading}>
         <div className={styles.sidebarHeadingCopy}>
           <span className={styles.sidebarEyebrow}>Hộp thư</span>

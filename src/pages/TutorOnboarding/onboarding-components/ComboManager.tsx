@@ -136,7 +136,7 @@ const ComboManager: React.FC<ComboManagerProps> = ({
 
   return (
     <>
-      <section className={styles.comboManager} data-tour="onboarding-packages">
+      <section className={styles.comboManager}>
         <div className={styles.comboManagerHead}>
           <h3 className={styles.comboManagerTitle}>Gói lịch học của bạn</h3>
           {combos.length > 0 && (

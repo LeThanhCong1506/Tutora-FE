@@ -45,7 +45,7 @@ const ChangePasswordSection: React.FC<Props> = ({
     const pwStrength = getPasswordStrength(passwordForm.newPassword);
 
     return (
-        <div className={styles.sectionCard} data-tour="account-password">
+        <div className={styles.sectionCard}>
             <div
                 style={{
                     display: "flex",

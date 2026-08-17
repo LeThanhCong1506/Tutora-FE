@@ -53,7 +53,7 @@ const PersonalInfoSection: React.FC<Props> = ({
     const identityLocked = profile?.isidentityverified === true;
 
     return (
-    <div className={styles.sectionCard} data-tour="account-personal-info">
+    <div className={styles.sectionCard}>
         <div style={sectionHeader}>
             <h3 style={sectionTitle}>Thông tin cá nhân</h3>
         </div>

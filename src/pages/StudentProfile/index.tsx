@@ -398,7 +398,7 @@ const StudentProfile = () => {
 
       <div className={`${styles.layout} ${isParentManaged ? styles.layoutSingle : ''}`}>
         <div className={styles.leftColumn}>
-          <form className={styles.card} onSubmit={handleSubmit} noValidate data-tour="student-profile-academic">
+          <form className={styles.card} onSubmit={handleSubmit} noValidate>
             <h2 className={styles.cardTitle}>Thông tin học tập</h2>
 
             <div className={styles.field}>
@@ -492,7 +492,7 @@ const StudentProfile = () => {
 
           {/* Card: xác minh CCCD (chỉ học sinh tự đăng ký) */}
           {!isParentManaged && (
-            <section className={styles.card} data-tour="student-profile-identity">
+            <section className={styles.card}>
               <div className={styles.cccdHeader}>
                 <h2 className={styles.cardTitle}>
                   <IdCard size={18} /> Xác minh độ tuổi
@@ -639,7 +639,7 @@ const StudentProfile = () => {
 
           {/* Card: SĐT phụ huynh (tùy chọn, chỉ học sinh tự đăng ký) */}
           {!isParentManaged && (
-            <section className={styles.card} data-tour="student-profile-parent-phone">
+            <section className={styles.card}>
               <h2 className={styles.cardTitle}>
                 <Phone size={18} /> Số điện thoại phụ huynh
               </h2>
@@ -680,7 +680,7 @@ const StudentProfile = () => {
         </div>
 
         {!isParentManaged && (
-        <aside className={styles.rightColumn} data-tour="student-profile-progress">
+        <aside className={styles.rightColumn}>
           <div className={styles.trackCard}>
             <div className={styles.trackHeader}>
               <span className={styles.trackLabel}>Tiến trình hoàn thiện</span>

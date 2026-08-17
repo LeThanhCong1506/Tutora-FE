@@ -260,7 +260,7 @@ const TutorPortalCalendar = () => {
               Hôm nay
             </button>
 
-            <div className={styles.periodNavigation} data-tour="calendar-nav">
+            <div className={styles.periodNavigation}>
               <button type="button" onClick={() => movePeriod(-1)} aria-label="Khoảng thời gian trước">
                 <ChevronLeft size={19} />
               </button>
@@ -312,7 +312,7 @@ const TutorPortalCalendar = () => {
               </button>
             </div>
 
-            <div className={styles.viewSwitcher} role="group" aria-label="Chế độ hiển thị buổi dạy" data-tour="calendar-view-switch">
+            <div className={styles.viewSwitcher} role="group" aria-label="Chế độ hiển thị buổi dạy">
               {VIEW_OPTIONS.map((option) => {
                 const Icon = option.icon;
                 const selected = viewMode === option.key;
@@ -334,7 +334,7 @@ const TutorPortalCalendar = () => {
           </div>
 
           <div className={styles.filterBar}>
-            <div className={styles.statusFilters} role="group" aria-label="Lọc theo trạng thái" data-tour="calendar-filters">
+            <div className={styles.statusFilters} role="group" aria-label="Lọc theo trạng thái">
               {STATUS_FILTERS.map((filter) => (
                 <button
                   key={filter.key}

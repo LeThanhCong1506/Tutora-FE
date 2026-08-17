@@ -346,7 +346,7 @@ const TutorPortalDisputes = () => {
             </div>
           </div>
 
-          <div className={styles.statusTabs} role="group" aria-label="Lọc khiếu nại theo trạng thái" data-tour="disputes-tabs">
+          <div className={styles.statusTabs} role="group" aria-label="Lọc khiếu nại theo trạng thái">
             {DISPUTE_STATUS_TABS.map((tab) => (
               <button
                 key={tab.key || 'all'}
@@ -379,7 +379,6 @@ const TutorPortalDisputes = () => {
 
           <Table<DisputeListResponse>
             className={styles.disputeTable}
-            data-tour="disputes-table"
             columns={columns}
             dataSource={visibleDisputes}
             rowKey="disputeId"

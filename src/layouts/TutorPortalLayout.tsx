@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { PortalLayout } from '../components/shared/PortalLayout';
 import type { NavItem } from '../components/shared/PortalLayout';
 import { tutorProfileMenuItems } from './shared/profileMenus';
 import styles from '../components/shared/PortalLayout/PortalLayout.module.css';
-import TutorTour from '../components/TutorTour/TutorTour';
-import TourPageMenu from '../components/TutorTour/TourPageMenu';
-import TourWelcomePrompt from '../components/TutorTour/TourWelcomePrompt';
-import { usePortalTour, guardedNavigate, type PageTour } from '../components/TutorTour/usePortalTour';
+import { getTourStatus, completeTour } from '../services/auth.service';
+import TutorTour, { type TourStep } from '../components/TutorTour/TutorTour';
 import { useUnreadMessageBadge } from '../hooks/useUnreadMessageBadge';
 import { useUnreadBadgesByTab } from '../hooks/useUnreadBadgesByTab';
 
@@ -120,470 +118,90 @@ const baseNavItems: NavItem[] = [
     { path: '/tutor-portal/account', label: 'Tài khoản', icon: AccountIcon, dataTour: 'nav-account' },
 ];
 
-// ─── Tour Steps — 1 tour riêng cho mỗi trang chính, chọn qua TourPageMenu ───
-// Mỗi tour (trừ Dashboard) theo khuôn: 1 bước định hướng (highlight mục sidebar,
-// dùng nav-* selector có sẵn) → N bước nội dung trang → 1 bước chia tay (TutorTour
-// tự nhận bước cuối là farewell modal, không cần target thật).
+// ─── Tour Steps ───
 
-// Đổi bước con của wizard onboarding — dùng guardedNavigate dùng chung (chỉ navigate khi
-// step đích khác step hiện tại, tránh chớp giật do navigate tới URL y hệt).
-const navigateOnboardingStep = (
-    navigate: ReturnType<typeof useNavigate>,
-    step: 'availability' | 'pricing' | 'packages',
-) => guardedNavigate(navigate, '/tutor-portal/onboarding', { step });
-
-// Hàm dựng thay vì hằng số cố định — tour "onboarding" cần điều hướng giữa các bước
-// con của wizard (?step=...) qua `onEnter`, nên phải nhận `navigate` từ component.
-const buildPageTours = (navigate: ReturnType<typeof useNavigate>): PageTour[] => [
+const tourSteps: TourStep[] = [
     {
-        key: 'dashboard',
-        label: 'Tổng quan',
-        description: 'Thống kê nhanh, thao tác nhanh và lịch mini.',
-        icon: <DashboardIcon />,
-        route: '/tutor-portal/dashboard',
-        steps: [
-            {
-                target: '[data-tour="sidebar"]',
-                title: '🎯 Chào mừng đến TUTORA!',
-                description: 'Đây là Bảng điều khiển của bạn. Menu bên trái giúp bạn truy cập nhanh mọi chức năng quản lý gia sư.',
-                placement: 'right',
-            },
-            {
-                target: '[data-tour="nav-dashboard"]',
-                title: '📊 Tổng quan',
-                description: 'Xem tổng quan hoạt động: thống kê buổi học, đánh giá, doanh thu, và lịch dạy.',
-                placement: 'right',
-            },
-            {
-                target: '[data-tour="stats-grid"]',
-                title: '📈 Thống kê nhanh',
-                description: 'Các thẻ thống kê giúp bạn theo dõi số buổi học, đánh giá trung bình, số dư ví, và doanh thu.',
-                placement: 'bottom',
-            },
-            {
-                target: '[data-tour="quick-actions"]',
-                title: '⚡ Thao tác nhanh',
-                description: 'Điểm danh, thêm lịch rảnh, tạo lớp học, rút tiền — chỉ 1 click!',
-                placement: 'bottom',
-            },
-            {
-                target: '[data-tour="calendar-widget"]',
-                title: '📅 Lịch mini',
-                description: 'Xem nhanh những ngày có lớp (chấm xanh). Click vào ngày để xem chi tiết lịch dạy.',
-                placement: 'left',
-            },
-            {
-                target: '[data-tour="nav-profile"]',
-                title: '🪪 Hồ sơ gia sư',
-                description: 'Chỉnh sửa hồ sơ hiển thị cho phụ huynh: ảnh đại diện, giới thiệu, bằng cấp, giá dạy, video giới thiệu.',
-                placement: 'right',
-            },
-            {
-                target: '[data-tour="nav-messages"]',
-                title: '💌 Tin nhắn',
-                description: 'Nhắn tin trực tiếp với phụ huynh và học sinh. Hỗ trợ gửi file đính kèm.',
-                placement: 'right',
-            },
-            {
-                target: '[data-tour="nav-bookings"]',
-                title: '📥 Yêu cầu đặt lịch',
-                description: 'Xem và phản hồi yêu cầu đặt lịch từ phụ huynh. Chấp nhận hoặc từ chối lịch học.',
-                placement: 'right',
-            },
-            {
-                target: '[data-tour="nav-classes"]',
-                title: '🎓 Lịch dạy',
-                description: 'Xem lịch dạy theo tuần, biết buổi nào sắp tới giờ, vào lớp online và mở chi tiết lớp học.',
-                placement: 'right',
-            },
-            {
-                target: '[data-tour="nav-finance"]',
-                title: '💳 Tài chính',
-                description: 'Xem thu nhập, lịch sử giao dịch, rút tiền về tài khoản ngân hàng của bạn.',
-                placement: 'right',
-            },
-            {
-                target: '[data-tour="nav-account"]',
-                title: '👤 Tài khoản',
-                description: 'Quản lý thông tin cá nhân, cập nhật hồ sơ và đổi mật khẩu tài khoản của bạn.',
-                placement: 'right',
-            },
-            {
-                target: '[data-tour="stats-grid"]',
-                title: '🎉 Sẵn sàng rồi!',
-                description: 'Chúc bạn có trải nghiệm làm gia sư thật tuyệt vời với TUTORA! Nếu cần hỗ trợ, đừng ngần ngại liên hệ đội ngũ của chúng tôi nhé. 💪',
-                placement: 'bottom',
-            },
-        ],
+        target: '[data-tour="sidebar"]',
+        title: '🎯 Chào mừng đến TUTORA!',
+        description: 'Đây là Bảng điều khiển của bạn. Menu bên trái giúp bạn truy cập nhanh mọi chức năng quản lý gia sư.',
+        placement: 'right',
     },
     {
-        key: 'profile',
-        label: 'Hồ sơ gia sư',
-        description: 'Thông tin hiển thị cho phụ huynh, chứng chỉ, xác minh danh tính.',
-        icon: <ProfileIcon />,
-        route: '/tutor-portal/profile',
-        steps: [
-            {
-                target: '[data-tour="nav-profile"]',
-                title: '🪪 Hồ sơ gia sư',
-                description: 'Đây là trang phụ huynh sẽ thấy khi tìm gia sư. Hãy cùng xem qua từng phần nhé.',
-                placement: 'right',
-            },
-            {
-                target: '[data-tour="profile-editbar"]',
-                title: '👀 Xem trước / Chỉnh sửa',
-                description: 'Chuyển qua lại giữa chế độ xem trước (giống góc nhìn phụ huynh) và chỉnh sửa thông tin.',
-                placement: 'top',
-            },
-            {
-                target: '[data-tour="profile-hero"]',
-                title: '📌 Thông tin cơ bản',
-                description: 'Tên, ảnh đại diện, đánh giá, khu vực dạy, hình thức dạy và trạng thái "đang nhận học viên".',
-                placement: 'bottom',
-            },
-            {
-                target: '[data-tour="profile-about"]',
-                title: '📝 Giới thiệu bản thân',
-                description: 'Bio, học vấn, GPA, kinh nghiệm giảng dạy — càng chi tiết càng dễ được phụ huynh tin tưởng.',
-                placement: 'bottom',
-            },
-            {
-                target: '[data-tour="profile-credentials"]',
-                title: '🎓 Chứng chỉ',
-                description: 'Thêm chứng chỉ, bằng cấp để tăng độ tin cậy hồ sơ. Có thể xem trước ảnh chứng chỉ đã tải lên.',
-                placement: 'top',
-            },
-            {
-                target: '[data-tour="profile-identity"]',
-                title: '✅ Xác minh danh tính',
-                description: 'Xác minh CCCD giúp hồ sơ có huy hiệu tin cậy, tăng tỷ lệ được phụ huynh chọn.',
-                placement: 'top',
-            },
-            {
-                target: '[data-tour="profile-pricing"]',
-                title: '💬 Góc nhìn phụ huynh',
-                description: 'Đây là khối "Đặt buổi học thử" / "Gửi tin nhắn" mà phụ huynh nhìn thấy khi ghé hồ sơ của bạn.',
-                placement: 'left',
-            },
-            {
-                target: '[data-tour="profile-hero"]',
-                title: '🎉 Xong rồi!',
-                description: 'Hồ sơ càng đầy đủ, càng dễ được phụ huynh chọn. Cập nhật thường xuyên nhé!',
-                placement: 'bottom',
-            },
-        ],
+        target: '[data-tour="nav-dashboard"]',
+        title: '📊 Tổng quan',
+        description: 'Xem tổng quan hoạt động: thống kê buổi học, đánh giá, doanh thu, và lịch dạy.',
+        placement: 'right',
     },
     {
-        key: 'onboarding',
-        label: 'Thiết lập giảng dạy',
-        description: 'Lịch rảnh, môn & giá, gói lịch học gợi ý.',
-        icon: <TeachingSetupIcon />,
-        route: '/tutor-portal/onboarding',
-        steps: [
-            {
-                target: '[data-tour="nav-onboarding"]',
-                title: '📐 Thiết lập giảng dạy',
-                description: 'Đây là nơi cấu hình lịch rảnh, môn dạy, học phí và gói lịch học — càng đầy đủ, phụ huynh càng dễ đặt lịch với bạn.',
-                placement: 'right',
-            },
-            {
-                target: '[data-tour="onboarding-stepper"]',
-                title: '🗺️ 3 bước thiết lập',
-                description: 'Lịch rảnh → Môn & giá → Gói lịch học. Mỗi mục hiện trạng thái riêng; bước sau chỉ mở khi bước trước đã có dữ liệu.',
-                placement: 'bottom',
-            },
-            {
-                target: '[data-tour="onboarding-body"]',
-                title: '✍️ Bước 1 — Lịch rảnh',
-                description: 'Chọn khung giờ bạn có thể nhận booking. Đây là bước bắt buộc đầu tiên — số buổi/giờ dạy tối đa ở bước sau đều tính từ lịch rảnh này.',
-                placement: 'top',
-                // Tour có thể được bấm khi tutor đang đứng sẵn ở step khác (vd packages) —
-                // luôn ép về đúng bước "availability" trước khi highlight, tránh lệch giữa
-                // nội dung tooltip và nội dung trang đang hiển thị.
-                onEnter: () => navigateOnboardingStep(navigate, 'availability'),
-            },
-            {
-                target: '[data-tour="onboarding-pricing-form"]',
-                title: '💵 Bước 2 — Thêm cấu hình môn học',
-                description: 'Chọn môn, khối lớp áp dụng, giá theo giờ, thời lượng và số buổi/tuần. Mỗi cấu hình là 1 tổ hợp môn + khối lớp riêng.',
-                placement: 'right',
-                onEnter: () => navigateOnboardingStep(navigate, 'pricing'),
-            },
-            {
-                target: '[data-tour="onboarding-pricing-list"]',
-                title: '📋 Các cấu hình đã thêm',
-                description: 'Danh sách môn/giá bạn đã lưu hiện ở đây — có thể sửa hoặc xoá bất cứ lúc nào, kể cả sau khi hồ sơ đã hoạt động.',
-                placement: 'left',
-                onEnter: () => navigateOnboardingStep(navigate, 'pricing'),
-            },
-            {
-                target: '[data-tour="onboarding-packages"]',
-                title: '📦 Bước 3 — Gói lịch học (tuỳ chọn)',
-                description: 'Tạo gói học cố định theo tháng để phụ huynh đặt lịch nhanh hơn — hệ thống tự tạo lịch dạy theo gói, không bắt buộc phải có.',
-                placement: 'top',
-                onEnter: () => navigateOnboardingStep(navigate, 'packages'),
-            },
-            {
-                target: '[data-tour="onboarding-cta"]',
-                title: '➡️ Tiếp tục / Hoàn tất',
-                description: 'Lưu bước hiện tại và chuyển sang bước kế tiếp. Ở bước cuối, nút này sẽ hoàn tất toàn bộ thiết lập.',
-                placement: 'top',
-            },
-            {
-                target: '[data-tour="onboarding-cta"]',
-                title: '🎉 Xong rồi!',
-                description: 'Thiết lập càng sớm, bạn càng sớm nhận được yêu cầu đặt lịch từ phụ huynh!',
-                placement: 'top',
-            },
-        ],
+        target: '[data-tour="stats-grid"]',
+        title: '📈 Thống kê nhanh',
+        description: 'Các thẻ thống kê giúp bạn theo dõi số buổi học, đánh giá trung bình, số dư ví, và doanh thu.',
+        placement: 'bottom',
     },
     {
-        key: 'messages',
-        label: 'Tin nhắn',
-        description: 'Trò chuyện trực tiếp với phụ huynh và học sinh.',
-        icon: <MessagesIcon />,
-        route: '/tutor-portal/messages',
-        steps: [
-            {
-                target: '[data-tour="nav-messages"]',
-                title: '💌 Tin nhắn',
-                description: 'Nơi bạn trao đổi trực tiếp với phụ huynh và học sinh về buổi học.',
-                placement: 'right',
-            },
-            {
-                target: '[data-tour="messages-sidebar"]',
-                title: '📋 Danh sách hội thoại',
-                description: 'Tất cả cuộc trò chuyện của bạn nằm ở đây. Click vào 1 hội thoại để mở khung chat bên phải.',
-                placement: 'right',
-            },
-            {
-                target: '[data-tour="messages-chat"]',
-                title: '💬 Khung chat',
-                description: 'Nhắn tin, gửi file đính kèm với phụ huynh/học sinh ngay tại đây.',
-                placement: 'left',
-            },
-            {
-                target: '[data-tour="messages-chat"]',
-                title: '🎉 Xong rồi!',
-                description: 'Phản hồi tin nhắn nhanh giúp phụ huynh yên tâm hơn khi chọn bạn làm gia sư.',
-                placement: 'left',
-            },
-        ],
+        target: '[data-tour="quick-actions"]',
+        title: '⚡ Thao tác nhanh',
+        description: 'Điểm danh, thêm lịch rảnh, tạo lớp học, rút tiền — chỉ 1 click!',
+        placement: 'bottom',
     },
     {
-        key: 'bookings',
-        label: 'Yêu cầu đặt lịch',
-        description: 'Xem và phản hồi các yêu cầu đặt lịch từ phụ huynh.',
-        icon: <BookingIcon />,
-        route: '/tutor-portal/bookings',
-        steps: [
-            {
-                target: '[data-tour="nav-bookings"]',
-                title: '📥 Yêu cầu đặt lịch',
-                description: 'Mọi yêu cầu đặt lịch từ phụ huynh đều xuất hiện ở đây, chờ bạn phản hồi.',
-                placement: 'right',
-            },
-            {
-                target: '[data-tour="bookings-tabs"]',
-                title: '🗂️ Lọc theo trạng thái',
-                description: 'Chuyển giữa Chờ xác nhận, Đã thanh toán, Hoàn thành, Đã hủy để theo dõi từng nhóm yêu cầu.',
-                placement: 'bottom',
-            },
-            {
-                target: '[data-tour="bookings-card"]',
-                title: '🗒️ Thông tin yêu cầu',
-                description: 'Mỗi thẻ hiển thị học sinh, môn học, số buổi và lịch học dự kiến do phụ huynh đề xuất.',
-                placement: 'bottom',
-            },
-            {
-                target: '[data-tour="bookings-payout"]',
-                title: '💰 Chi tiết thanh toán',
-                description: 'Xem trước số tiền bạn thực nhận sau khi trừ phí, cùng trạng thái đặt cọc.',
-                placement: 'left',
-            },
-            {
-                target: '[data-tour="bookings-actions"]',
-                title: '✅ Chấp nhận hoặc từ chối',
-                description: 'Phản hồi càng sớm, phụ huynh càng chủ động sắp xếp lịch học. Yêu cầu có thời hạn phản hồi.',
-                placement: 'top',
-            },
-            {
-                target: '[data-tour="bookings-tabs"]',
-                title: '🎉 Xong rồi!',
-                description: 'Đừng để yêu cầu quá hạn phản hồi nhé — phụ huynh rất coi trọng tốc độ phản hồi của gia sư.',
-                placement: 'bottom',
-            },
-        ],
+        target: '[data-tour="calendar-widget"]',
+        title: '📅 Lịch mini',
+        description: 'Xem nhanh những ngày có lớp (chấm xanh). Click vào ngày để xem chi tiết lịch dạy.',
+        placement: 'left',
     },
     {
-        key: 'calendar',
-        label: 'Lịch dạy',
-        description: 'Xem lịch dạy theo tuần, tháng hoặc danh sách.',
-        icon: <ClassIcon />,
-        route: '/tutor-portal/calendar',
-        steps: [
-            {
-                target: '[data-tour="nav-classes"]',
-                title: '🎓 Lịch dạy',
-                description: 'Toàn bộ buổi dạy đã lên lịch của bạn nằm ở đây.',
-                placement: 'right',
-            },
-            {
-                target: '[data-tour="calendar-nav"]',
-                title: '📅 Điều hướng thời gian',
-                description: 'Nút "Hôm nay" đưa bạn về ngày hiện tại, mũi tên hai bên để xem tuần/tháng trước hoặc sau.',
-                placement: 'bottom',
-            },
-            {
-                target: '[data-tour="calendar-view-switch"]',
-                title: '🔀 Đổi kiểu xem',
-                description: 'Chuyển đổi giữa Lịch tuần, Dạng lưới và Danh sách tùy theo bạn muốn xem tổng quan hay chi tiết.',
-                placement: 'bottom',
-            },
-            {
-                target: '[data-tour="calendar-filters"]',
-                title: '🏷️ Lọc theo trạng thái',
-                description: 'Lọc nhanh các buổi Lên lịch, Chờ xác nhận hoặc Hoàn thành.',
-                placement: 'bottom',
-            },
-            {
-                target: '[data-tour="calendar-view-switch"]',
-                title: '🎉 Xong rồi!',
-                description: 'Click vào 1 buổi học bất kỳ để xem chi tiết, vào lớp hoặc gửi báo cáo buổi học.',
-                placement: 'bottom',
-            },
-        ],
+        target: '[data-tour="nav-profile"]',
+        title: '🪪 Hồ sơ gia sư',
+        description: 'Chỉnh sửa hồ sơ hiển thị cho phụ huynh: ảnh đại diện, giới thiệu, bằng cấp, giá dạy, video giới thiệu.',
+        placement: 'right',
     },
     {
-        key: 'finance',
-        label: 'Tài chính',
-        description: 'Số dư, thu nhập và rút tiền.',
-        icon: <FinanceIcon />,
-        route: '/tutor-portal/finance',
-        steps: [
-            {
-                target: '[data-tour="nav-finance"]',
-                title: '💳 Tài chính',
-                description: 'Theo dõi thu nhập và quản lý việc rút tiền của bạn tại đây.',
-                placement: 'right',
-            },
-            {
-                target: '[data-tour="finance-overview-cards"]',
-                title: '💰 Số dư của bạn',
-                description: 'Số dư khả dụng có thể rút ngay, và tiền học đang được hệ thống tạm giữ để bảo đảm buổi học.',
-                placement: 'bottom',
-            },
-            {
-                target: '[data-tour="finance-withdraw-btn"]',
-                title: '🏦 Rút tiền',
-                description: 'Gửi yêu cầu rút tiền về tài khoản ngân hàng đã liên kết khi số dư đủ điều kiện tối thiểu.',
-                placement: 'left',
-            },
-            {
-                target: '[data-tour="finance-chart"]',
-                title: '📈 Biểu đồ thu nhập',
-                description: 'Theo dõi xu hướng thu nhập theo tuần/tháng để biết giai đoạn nào bạn dạy nhiều nhất.',
-                placement: 'bottom',
-            },
-            {
-                target: '[data-tour="finance-transactions"]',
-                title: '🧾 Giao dịch gần đây',
-                description: 'Lịch sử các khoản tiền vào/ra ví của bạn. Bấm "Xem tất cả" để xem đầy đủ lịch sử giao dịch.',
-                placement: 'top',
-            },
-            {
-                target: '[data-tour="finance-overview-cards"]',
-                title: '🎉 Xong rồi!',
-                description: 'Mọi khoản thu nhập đều được ghi nhận minh bạch — bạn có thể kiểm tra bất cứ lúc nào.',
-                placement: 'bottom',
-            },
-        ],
+        target: '[data-tour="nav-messages"]',
+        title: '💌 Tin nhắn',
+        description: 'Nhắn tin trực tiếp với phụ huynh và học sinh. Hỗ trợ gửi file đính kèm.',
+        placement: 'right',
     },
     {
-        key: 'disputes',
-        label: 'Khiếu nại',
-        description: 'Theo dõi và phản hồi các khiếu nại liên quan buổi học.',
-        icon: <DisputeIcon />,
-        route: '/tutor-portal/disputes',
-        steps: [
-            {
-                target: '[data-tour="nav-disputes"]',
-                title: '⚠️ Khiếu nại',
-                description: 'Các khiếu nại liên quan đến buổi học của bạn (từ phụ huynh hoặc do bạn báo cáo) đều hiện ở đây.',
-                placement: 'right',
-            },
-            {
-                target: '[data-tour="disputes-tabs"]',
-                title: '🗂️ Lọc theo trạng thái',
-                description: 'Lọc nhanh khiếu nại đang chờ xử lý, đang xem xét, hay đã đóng.',
-                placement: 'bottom',
-            },
-            {
-                target: '[data-tour="disputes-table"]',
-                title: '📋 Danh sách khiếu nại',
-                description: 'Xem mã hồ sơ, buổi học liên quan, mức độ ưu tiên và trạng thái xử lý. Click 1 dòng để xem chi tiết và phản hồi.',
-                placement: 'top',
-            },
-            {
-                target: '[data-tour="disputes-tabs"]',
-                title: '🎉 Xong rồi!',
-                description: 'Phản hồi khiếu nại sớm và đầy đủ thông tin giúp quá trình xử lý nhanh và công bằng hơn.',
-                placement: 'bottom',
-            },
-        ],
+        target: '[data-tour="nav-bookings"]',
+        title: '📥 Yêu cầu đặt lịch',
+        description: 'Xem và phản hồi yêu cầu đặt lịch từ phụ huynh. Chấp nhận hoặc từ chối lịch học.',
+        placement: 'right',
     },
     {
-        key: 'account',
-        label: 'Tài khoản',
-        description: 'Thông tin cá nhân và bảo mật đăng nhập.',
-        icon: <AccountIcon />,
-        route: '/tutor-portal/account',
-        steps: [
-            {
-                target: '[data-tour="nav-account"]',
-                title: '👤 Tài khoản',
-                description: 'Quản lý thông tin cá nhân và bảo mật đăng nhập của bạn tại đây.',
-                placement: 'right',
-            },
-            {
-                target: '[data-tour="account-profile-card"]',
-                title: '🖼️ Ảnh đại diện',
-                description: 'Đổi ảnh đại diện tài khoản — khác với ảnh trên hồ sơ gia sư hiển thị cho phụ huynh.',
-                placement: 'bottom',
-            },
-            {
-                target: '[data-tour="account-personal-info"]',
-                title: '📇 Thông tin cá nhân',
-                description: 'Cập nhật số điện thoại, email, địa chỉ. Họ tên và ngày sinh sẽ bị khóa sau khi xác minh CCCD.',
-                placement: 'bottom',
-            },
-            {
-                target: '[data-tour="account-password"]',
-                title: '🔒 Đổi mật khẩu',
-                description: 'Đổi mật khẩu đăng nhập định kỳ để bảo vệ tài khoản của bạn.',
-                placement: 'top',
-            },
-            {
-                target: '[data-tour="account-password"]',
-                title: '🎉 Xong rồi!',
-                description: 'Giữ thông tin tài khoản cập nhật giúp bạn không bỏ lỡ thông báo quan trọng nào.',
-                placement: 'top',
-            },
-        ],
+        target: '[data-tour="nav-classes"]',
+        title: '🎓 Lịch dạy',
+        description: 'Xem lịch dạy theo tuần, biết buổi nào sắp tới giờ, vào lớp online và mở chi tiết lớp học.',
+        placement: 'right',
+    },
+    {
+        target: '[data-tour="nav-finance"]',
+        title: '💳 Tài chính',
+        description: 'Xem thu nhập, lịch sử giao dịch, rút tiền về tài khoản ngân hàng của bạn.',
+        placement: 'right',
+    },
+    {
+        target: '[data-tour="nav-account"]',
+        title: '👤 Tài khoản',
+        description: 'Quản lý thông tin cá nhân, cập nhật hồ sơ và đổi mật khẩu tài khoản của bạn.',
+        placement: 'right',
+    },
+    {
+        target: '[data-tour="stats-grid"]',
+        title: '🎉 Sẵn sàng rồi!',
+        description: 'Chúc bạn có trải nghiệm làm gia sư thật tuyệt vời với TUTORA! Nếu cần hỗ trợ, đừng ngần ngại liên hệ đội ngũ của chúng tôi nhé. 💪',
+        placement: 'bottom',
     },
 ];
 
 // ─── Component ───
 
 const TutorPortalLayout: React.FC = () => {
-    const navigate = useNavigate();
+    const location = useLocation();
+    const [showTour, setShowTour] = useState(false);
+    const [showTourPrompt, setShowTourPrompt] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
-
-    const pageTours = useMemo(() => buildPageTours(navigate), [navigate]);
-    const tour = usePortalTour(pageTours, 'tutor', {
-        onSidebarOpen: () => setSidebarOpen(true),
-        onSidebarClose: () => setSidebarOpen(false),
-    });
 
     // Tin nhắn unread badge — fetch + SignalR real-time + auto-clear khi vào /messages.
     const unreadMessageCount = useUnreadMessageBadge(MESSAGES_PATH);
@@ -601,6 +219,40 @@ const TutorPortalLayout: React.FC = () => {
             }),
         [unreadMessageCount, badgesByPath],
     );
+
+    // Show tour prompt only on first visit to dashboard
+    useEffect(() => {
+        if (location.pathname !== '/tutor-portal/dashboard') return;
+        if (localStorage.getItem('tutorTourCompleted')) return;
+        let cancelled = false;
+        getTourStatus().then(completed => {
+            if (cancelled) return;
+            if (completed) {
+                localStorage.setItem('tutorTourCompleted', 'true');
+            } else {
+                const timer = setTimeout(() => setShowTourPrompt(true), 800);
+                cancelled = true;
+                return () => clearTimeout(timer);
+            }
+        });
+        return () => { cancelled = true; };
+    }, [location.pathname]);
+
+    const handleAcceptTour = () => {
+        setShowTourPrompt(false);
+        setShowTour(true);
+    };
+
+    const handleSkipTour = () => {
+        setShowTourPrompt(false);
+        localStorage.setItem('tutorTourCompleted', 'true');
+        completeTour();
+    };
+
+    const handleReplayTour = () => {
+        setSidebarOpen(false);
+        setShowTour(true);
+    };
 
     // Prefetch all tutor portal pages after initial load
     useEffect(() => {
@@ -627,12 +279,12 @@ const TutorPortalLayout: React.FC = () => {
         return pathname === path;
     };
 
-    // Tour menu button in sidebar nav footer
+    // Replay tour button in sidebar nav footer
     const sidebarNavFooter = (
         <div
             className={`${styles.navItem} ${styles.navFooterItem}`}
             title="Hướng dẫn sử dụng"
-            onClick={tour.handleOpenTourMenu}
+            onClick={handleReplayTour}
         >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <circle cx="9" cy="9" r="7" />
@@ -642,33 +294,70 @@ const TutorPortalLayout: React.FC = () => {
         </div>
     );
 
-    // Tour-related extras (prompt modal + picker modal + tour component)
+    // Tour-related extras (prompt modal + tour component)
     const tourExtras = (
         <>
-            {tour.showTourPrompt && (
-                <TourWelcomePrompt
-                    title="Chào mừng bạn đến TUTORA!"
-                    description="Hãy để TUTORA hướng dẫn bạn khám phá các tính năng để có trải nghiệm mượt mà nhất nhé!"
-                    onAccept={tour.handleAcceptTour}
-                    onSkip={tour.handleSkipTour}
-                />
+            {/* Tour Welcome Prompt */}
+            {showTourPrompt && (
+                <div style={{
+                    position: 'fixed', inset: 0, zIndex: 99998,
+                    background: 'rgba(0,0,0,0.5)', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center',
+                }}>
+                    <div style={{
+                        background: '#fff', borderRadius: 20, padding: '40px 36px',
+                        maxWidth: 420, width: '90%', textAlign: 'center',
+                        boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+                    }}>
+                        <div style={{ fontSize: 48, marginBottom: 16 }}>👋</div>
+                        <h2 style={{
+                            fontFamily: "'Bricolage Grotesque', sans-serif",
+                            fontSize: 22, fontWeight: 700, color: '#1a2238',
+                            margin: '0 0 12px',
+                        }}>Chào mừng bạn đến TUTORA!</h2>
+                        <p style={{
+                            fontFamily: "'IBM Plex Sans', sans-serif",
+                            fontSize: 15, color: 'rgba(62,47,40,0.7)',
+                            lineHeight: 1.6, margin: '0 0 28px',
+                        }}>
+                            Hãy để TUTORA hướng dẫn bạn khám phá các tính năng để có trải nghiệm mượt mà nhất nhé!
+                        </p>
+                        <button
+                            onClick={handleAcceptTour}
+                            style={{
+                                display: 'block', width: '100%', padding: '14px 20px',
+                                border: 'none', borderRadius: 12, background: '#1a2238',
+                                color: '#fff', fontSize: 15, fontWeight: 700,
+                                cursor: 'pointer', marginBottom: 12,
+                                fontFamily: "'IBM Plex Sans', sans-serif",
+                            }}
+                        >Bắt đầu khám phá ✨</button>
+                        <button
+                            onClick={handleSkipTour}
+                            style={{
+                                display: 'block', width: '100%', padding: '12px 20px',
+                                border: 'none', borderRadius: 12, background: 'transparent',
+                                color: 'rgba(62,47,40,0.5)', fontSize: 14, fontWeight: 500,
+                                cursor: 'pointer',
+                                fontFamily: "'IBM Plex Sans', sans-serif",
+                            }}
+                        >Bỏ qua</button>
+                    </div>
+                </div>
             )}
 
-            {tour.showTourMenu && (
-                <TourPageMenu
-                    options={tour.tourPageOptions}
-                    completedKeys={tour.completedPageTours}
-                    onSelect={tour.handleSelectPageTour}
-                    onClose={tour.closeTourMenu}
-                />
-            )}
-
-            {tour.showTour && tour.activeTour && (
+            {/* Tutor Onboarding Tour */}
+            {showTour && (
                 <TutorTour
-                    steps={tour.activeTour.steps}
-                    onComplete={tour.handleTourComplete}
-                    onSidebarOpen={tour.onSidebarOpen}
-                    onSidebarClose={tour.onSidebarClose}
+                    steps={tourSteps}
+                    onComplete={() => {
+                        setShowTour(false);
+                        setSidebarOpen(false);
+                        localStorage.setItem('tutorTourCompleted', 'true');
+                        completeTour();
+                    }}
+                    onSidebarOpen={() => setSidebarOpen(true)}
+                    onSidebarClose={() => setSidebarOpen(false)}
                 />
             )}
         </>

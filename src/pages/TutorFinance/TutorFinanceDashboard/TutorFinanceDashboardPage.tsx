@@ -58,7 +58,6 @@ const TutorFinanceDashboardPage: React.FC = () => {
               icon={<WalletOutlined />}
               onClick={() => navigate('/tutor-portal/finance/withdraw')}
               disabled={loading || !canWithdraw}
-              data-tour="finance-withdraw-btn"
             >
               Rút tiền
             </Button>
@@ -71,7 +70,7 @@ const TutorFinanceDashboardPage: React.FC = () => {
       <div className="finance-dashboard-grid">
         <EarningsChart />
 
-        <section className="finance-surface recent-transactions-section" data-tour="finance-transactions">
+        <section className="finance-surface recent-transactions-section">
           <div className="finance-section-heading">
             <div>
               <h2>Giao dịch gần đây</h2>
