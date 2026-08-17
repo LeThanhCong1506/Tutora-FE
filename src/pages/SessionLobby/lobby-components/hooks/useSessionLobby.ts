@@ -111,6 +111,25 @@ export const useSessionLobby = (classSessionId: number | null): UseSessionLobbyR
       if (!disposed) setPhase('blocked-payment');
     });
 
+    // Đề xuất đổi lịch (trang chi tiết buổi học, ngoài hub này) vừa bị từ chối — tự rời rồi vào
+    // lại lobby để gỡ banner khoá ngay, thay vì đợi RefreshState (~10s) mới tự vá.
+    connection.on('rescheduleProposalRejected', () => {
+      if (disposed) return;
+      setPhase('connecting');
+      setWaitingState(null);
+      setScheduleChangeState(null);
+      setScheduleConflict(null);
+      void (async () => {
+        try {
+          await connection.invoke('LeaveLobby');
+        } catch {
+          // best-effort — JoinLobby ngay dưới vẫn tự đồng bộ lại trạng thái dù bước này lỗi
+        }
+        if (disposed) return;
+        await joinLobby();
+      })();
+    });
+
     const joinLobby = async () => {
       try {
         await connection.invoke('JoinLobby', classSessionId);
