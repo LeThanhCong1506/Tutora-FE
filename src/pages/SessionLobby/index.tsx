@@ -341,7 +341,16 @@ const SessionLobby = () => {
           currentUserId={currentUserId}
           loading={respondingToScheduleChange}
           onRespond={(confirmed) => void handleScheduleResponse(confirmed)}
-          onClose={() => setDismissedScheduleVersion(scheduleVersion)}
+          onClose={() => {
+            // Bị từ chối → không còn gì để chờ trong lobby (buổi học vẫn giữ giờ gốc), nên thoát
+            // hẳn về trang trước đó (lịch/thời khóa biểu) thay vì chỉ đóng modal và để người dùng
+            // đứng lại trong lobby.
+            if (scheduleChangeState?.status === 'rejected') {
+              handleBack();
+            } else {
+              setDismissedScheduleVersion(scheduleVersion);
+            }
+          }}
         />
       )}
       <SessionDeviceModal

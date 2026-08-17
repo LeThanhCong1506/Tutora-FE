@@ -57,6 +57,7 @@ export interface ScheduleChangeState {
   expiresAt: string | null;
   tutorConfirmedAt: string | null;
   learnerConfirmedAt: string | null;
+  rejectedByUserId: string | null;
   approvedAt: string | null;
   appliedAt: string | null;
   adjustedScheduledStart: string | null;

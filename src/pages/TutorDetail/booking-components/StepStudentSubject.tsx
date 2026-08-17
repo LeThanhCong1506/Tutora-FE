@@ -101,7 +101,6 @@ const StepStudentSubject: React.FC<StepProps> = ({
                                         ...d,
                                         subjectId: subj.id,
                                         comboId: null,
-                                        packageId: undefined,
                                         startDate: "",
                                         schedule: [],
                                     }))}
