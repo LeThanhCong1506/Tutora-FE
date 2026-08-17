@@ -35,7 +35,7 @@ const ProfileHeaderCard: React.FC<Props> = ({
     onEditClick,
     onViewAvatar,
 }) => (
-    <div className={styles.profileCard}>
+    <div className={styles.profileCard} data-tour="account-avatar">
         <div className={styles.avatarGroup}>
             <div
                 className={styles.avatarWrapper}

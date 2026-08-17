@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import styles from '../ParentMessage/styles.module.css';
 import ChatArea from '../ParentMessage/ChatArea';
 import MessageListSidebar from '../ParentMessage/MessageListSidebar';
+import SupportChatPage from '../Support/SupportChatPage';
 import type { ChatChannel } from '../../services/chat.service';
 import { getUserIdFromToken } from '../../services/auth.service';
 
@@ -15,6 +16,7 @@ const TutorPortalMessages = () => {
     () => (location.state as { openChannel?: ChatChannel } | null)?.openChannel ?? null,
   );
   const [isMobile, setIsMobile] = useState(window.innerWidth <= MOBILE_BREAKPOINT);
+  const [showAdminChat, setShowAdminChat] = useState(false);
 
   // Track viewport size
   useEffect(() => {
@@ -26,15 +28,16 @@ const TutorPortalMessages = () => {
   // Mobile: go back to chat list
   const handleBackToList = useCallback(() => {
     setSelectedChannel(null);
+    setShowAdminChat(false);
   }, []);
 
   // On mobile: show EITHER chat list or chat area
-  const showChatList = !isMobile || !selectedChannel;
-  const showChatArea = !isMobile || !!selectedChannel;
+  const showChatList = !isMobile || (!selectedChannel && !showAdminChat);
+  const showChatArea = !isMobile || !!selectedChannel || showAdminChat;
 
   return (
     <div className={styles.page}>
-      <header className={`${styles.topBar} ${isMobile && selectedChannel ? styles.topBarHidden : ''}`}>
+      <header className={`${styles.topBar} ${isMobile && (selectedChannel || showAdminChat) ? styles.topBarHidden : ''}`}>
         <div className={styles.topBarLeft}>
           <span className={styles.pageEyebrow}>Kết nối</span>
           <h1 className={styles.pageTitle}>Tin nhắn</h1>
@@ -47,12 +50,21 @@ const TutorPortalMessages = () => {
             onChannelSelect={() => {
               // Channel selection is handled by onChannelObjectSelect
             }}
-            onChannelObjectSelect={setSelectedChannel}
+            onChannelObjectSelect={(channel) => {
+              setShowAdminChat(false);
+              setSelectedChannel(channel);
+            }}
+            onAdminChatSelect={() => {
+              setSelectedChannel(null);
+              setShowAdminChat(true);
+            }}
             selectedChannelId={selectedChannel?.channelId ?? null}
             currentUserId={userId}
           />
         )}
-        {showChatArea && (
+        {showAdminChat ? (
+          <SupportChatPage embedded onBack={isMobile ? handleBackToList : undefined} />
+        ) : showChatArea && (
           <ChatArea
             selectedChannelId={selectedChannel?.channelId ?? null}
             currentUserId={userId}
