@@ -8,16 +8,26 @@ interface SessionContextCardProps {
 }
 
 const formatStatus = (status: string) => {
+  // Phủ đủ `BookingStatus.cs`. Trước đây thiếu 7 giá trị (pending_payment, deposit_paid,
+  // pending_remaining_payment, paid, payment_timeout, ongoing, cancelled_noshow) nên fallback
+  // `?? status` đổ nguyên chuỗi tiếng Anh của BE ra thẻ ngữ cảnh trong khung chat.
   const statusLabels: Record<string, string> = {
     pending_tutor: 'Chờ gia sư xác nhận',
     accepted: 'Đã chấp nhận',
+    pending_payment: 'Chờ thanh toán',
+    deposit_paid: 'Đã thanh toán buổi đầu',
+    pending_remaining_payment: 'Chờ thanh toán còn lại',
+    paid: 'Đã thanh toán',
+    payment_timeout: 'Hết hạn thanh toán',
+    ongoing: 'Đang học',
+    completed: 'Đã hoàn thành',
+    cancelled: 'Đã hủy',
+    cancelled_noshow: 'Hủy do vắng mặt',
     confirmed: 'Đã xác nhận',
     declined: 'Đã từ chối',
-    cancelled: 'Đã hủy',
-    completed: 'Đã hoàn thành',
   };
 
-  return statusLabels[status] ?? status;
+  return statusLabels[status] ?? 'Không rõ';
 };
 
 const formatTeachingMode = (mode?: string | number | null) => {

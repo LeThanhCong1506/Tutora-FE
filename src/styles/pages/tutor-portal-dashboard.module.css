@@ -818,21 +818,6 @@
     margin-top: 4.7px;
 }
 
-.statusStartingSoon {
-    background-color: rgba(99, 27, 27, 0.1);
-    color: #631b1b;
-}
-
-.statusOngoing {
-    background-color: rgba(61, 74, 62, 0.1);
-    color: #3d4a3e;
-}
-
-.statusCompleted {
-    background-color: rgba(62, 47, 40, 0.1);
-    color: rgba(62, 47, 40, 0.6);
-}
-
 /* Lesson Actions */
 .lessonActions {
     display: flex;
