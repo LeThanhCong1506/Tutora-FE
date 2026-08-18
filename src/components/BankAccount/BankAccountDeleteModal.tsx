@@ -53,7 +53,7 @@ const BankAccountDeleteModal: React.FC<Props> = ({ open, onClose, onSuccess }) =
       open={open}
       onCancel={handleClose}
       footer={null}
-      destroyOnClose
+      destroyOnHidden
       centered
       width={480}
     >

@@ -80,7 +80,7 @@ const ReplyFeedbackModal: React.FC<ReplyFeedbackModalProps> = ({
             footer={null}
             width={500}
             centered
-            destroyOnClose
+            destroyOnHidden
         >
             <div style={{ padding: '8px 0' }}>
                 <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1a2238', margin: '0 0 20px 0' }}>
