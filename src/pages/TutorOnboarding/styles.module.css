@@ -3077,6 +3077,12 @@
     padding-right: 16px;
   }
 
+  /* Chừa chỗ cho nút "Tiếp tục" nổi (fixed) ở đáy màn hình, tránh đè lên
+     các ô giờ cuối cùng của lưới lịch rảnh. */
+  .body {
+    padding-bottom: 84px;
+  }
+
   .footerPrimaryPill {
     right: 16px;
     bottom: 16px;
