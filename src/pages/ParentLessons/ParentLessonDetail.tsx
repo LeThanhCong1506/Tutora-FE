@@ -713,7 +713,7 @@ const ParentLessonDetail: React.FC = () => {
                           }
                           shape="tag"
                         >
-                          {RESCHEDULE_PROPOSAL_STATUS_LABELS[proposal.status] || proposal.status}
+                          {RESCHEDULE_PROPOSAL_STATUS_LABELS[proposal.status] || 'Không rõ'}
                         </StatusBadge>
                         {proposal.respondedAt && (
                           <span className={styles.historyTime}>Phản hồi lúc {formatDateTime(proposal.respondedAt)}</span>
@@ -748,7 +748,7 @@ const ParentLessonDetail: React.FC = () => {
                           }
                           shape="tag"
                         >
-                          {SCHEDULE_CHANGE_STATUS_LABELS[sc.status] || sc.status}
+                          {SCHEDULE_CHANGE_STATUS_LABELS[sc.status] || 'Không rõ'}
                         </StatusBadge>
                         {sc.appliedAt && (
                           <span className={styles.historyTime}>Áp dụng lúc {formatDateTime(sc.appliedAt)}</span>

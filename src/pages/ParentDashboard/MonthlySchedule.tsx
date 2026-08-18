@@ -5,6 +5,7 @@ import { getParentCalendar, getParentLessonDetail, type CalendarLessonDto, type 
 import { createChannel } from '../../services/chat.service';
 import { formatVNDNumber } from '../../utils/formatters';
 import styles from './MonthlySchedule.module.css';
+import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 
 const WEEK_DAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 const STUDENT_COLORS = ['#1f2a40', '#846f5b', '#687783', '#9a8d70', '#59675d'];
@@ -43,23 +44,14 @@ const formatTime = (dateString: string) =>
     hour12: false,
   });
 
-const getStatusLabel = (status: string) => {
-  const labels: Record<string, string> = {
-    scheduled: 'Đã lên lịch',
-    confirmed: 'Đã xác nhận',
-    in_progress: 'Đang diễn ra',
-    checked_in: 'Đang diễn ra',
-    checked_out: 'Chờ báo cáo',
-    pending_confirmation: 'Chờ xác nhận',
-    completed: 'Đã hoàn thành',
-    disputed: 'Đang khiếu nại',
-    cancelled: 'Đã hủy',
-    cancelled_noshow: 'Đã hủy',
-    no_show: 'Vắng mặt',
-  };
-
-  return labels[status.toLowerCase()] || status || 'Đã lên lịch';
-};
+/**
+ * Nhãn trạng thái lấy từ `classSessionStatus.ts` — bản đồ duy nhất khớp `ClassSessionStatus.cs`.
+ *
+ * Bản đồ cục bộ trước đây bị lệch khỏi BE theo cả hai chiều: thiếu `reserved` (giá trị BE có
+ * thật) nên fallback `|| status` đổ nguyên chữ "reserved" ra cho phụ huynh đọc, đồng thời thừa
+ * `confirmed`/`checked_in`/`checked_out` là những giá trị BE không hề trả về.
+ */
+const getStatusLabel = (status: string) => getClassSessionStatusMeta(status).label;
 
 const ChevronIcon = ({ direction }: { direction: 'left' | 'right' }) => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
