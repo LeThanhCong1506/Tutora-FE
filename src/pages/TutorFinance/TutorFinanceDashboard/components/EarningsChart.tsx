@@ -53,7 +53,7 @@ const EarningsChart: React.FC = () => {
   const periodTotal = data.reduce((total, item) => total + item.amount, 0);
 
   return (
-    <section className="finance-surface finance-chart-section" data-tour="finance-chart">
+    <section className="finance-surface finance-chart-section">
       <div className="finance-chart-header">
         <div>
           <h2>Thu nhập theo thời gian</h2>

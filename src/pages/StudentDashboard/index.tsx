@@ -180,7 +180,7 @@ const StudentDashboard = () => {
             <div className={styles.greeting}>
               <span className={styles.welcomeGreeting}>Cổng học sinh</span>
               <h1 className={styles.greetingTitle}>Xin chào, {userName}!</h1>
-              <div className={styles.quickActions} data-tour="student-dashboard-actions">
+              <div className={styles.quickActions}>
                 <Link to="/student-portal/booking" className={styles.quickActionBtn}>
                   <div className={styles.quickActionIcon}>
                     <BookOpen size={18} />
@@ -195,7 +195,7 @@ const StudentDashboard = () => {
           </div>
         </section>
 
-        <div className={styles.metricsRow} data-tour="student-dashboard-stats">
+        <div className={styles.metricsRow}>
           <StatCard
             icon={<Clock size={20} />}
             value={upcomingLessons.length}
@@ -276,7 +276,7 @@ const StudentDashboard = () => {
         <div className={styles.dashboardGrid}>
           <div className={styles.rightSidebar}>
             {/* Upcoming Lessons (next 14 days) */}
-            <div className={styles.scheduleWidget} data-tour="student-dashboard-upcoming">
+            <div className={styles.scheduleWidget}>
               <div className={`${styles.scheduleTitle} ${styles.scheduleHeader}`}>
                 <span>Buổi học sắp tới</span>
                 <Link to="/student-portal/calendar" className={styles.scheduleLink}>

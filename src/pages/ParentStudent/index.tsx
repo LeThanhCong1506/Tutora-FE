@@ -85,12 +85,7 @@ const ParentStudent = () => {
               />
             </div>
           )}
-          <button
-            type="button"
-            className={styles.primaryBtn}
-            onClick={() => setAddOpen(true)}
-            data-tour="parent-student-add-btn"
-          >
+          <button type="button" className={styles.primaryBtn} onClick={() => setAddOpen(true)}>
             <Plus size={15} aria-hidden="true" /> Thêm con
           </button>
         </div>

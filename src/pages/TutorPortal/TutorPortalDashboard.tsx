@@ -18,6 +18,7 @@ import { useTutorProfileForm } from './hooks/useTutorProfileForm';
 import { getProfileCompletionItems } from './profileCompletion';
 import { formatVNDNumber } from '../../utils/formatters';
 import { isWithinJoinWindow } from '../../utils/liveSession';
+import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 import { useTabParam } from '../../hooks/useTabParam';
 
 // Icons
@@ -137,11 +138,26 @@ const fetchRecentFeedbacks = async (tutorUserId: string): Promise<FeedbackDto[]>
 const DASHBOARD_TABS = ['today', 'tomorrow', 'week', 'date'] as const;
 type DashboardTab = (typeof DASHBOARD_TABS)[number];
 
+type DashboardGridItem = { i: string; x: number; y: number; w: number; h: number; minW?: number; minH?: number };
+
+// Hai cột chính (danh sách buổi học) + một rail hẹp bên phải xếp lịch tháng trên, đánh giá dưới.
+//
+// Bề ngang đi theo nhu cầu thật của từng khối: `today` phải chứa [giờ][môn · học sinh][2 nút] nên
+// rộng nhất; `upcoming` có [badge ngày][text][nút Chi tiết]; lịch tháng là lưới 7 cột với ô ngày
+// cao cố định 31.5px — kéo rộng ra thì ô ngày thành bầu dục dẹt, nên giữ khổ hẹp.
+//
+// Chiều cao hai cột chính = đúng tổng chiều cao rail, nên bốn khối khép kín thành một chữ nhật
+// 12×11 không hở chỗ nào. Trước đây rail cao hơn hẳn hai cột trái, để lại một vùng chết to đùng
+// ở góc dưới trái; giờ chỗ đó thành sức chứa cho danh sách buổi học.
+const DASHBOARD_CALENDAR_ROWS = 6; // vừa khít 6 hàng ngày + chú thích
+const DASHBOARD_FEEDBACK_ROWS = 5;
+const DASHBOARD_MAIN_ROWS = DASHBOARD_CALENDAR_ROWS + DASHBOARD_FEEDBACK_ROWS;
+
 const defaultDashboardGridLayout = [
-    { i: 'today', x: 0, y: 0, w: 5, h: 4, minW: 3, minH: 3 },
-    { i: 'upcoming', x: 5, y: 0, w: 4, h: 5, minW: 3, minH: 4 },
-    { i: 'calendar', x: 9, y: 0, w: 3, h: 7, minW: 3, minH: 5 },
-    { i: 'feedback', x: 9, y: 7, w: 3, h: 6, minW: 3, minH: 4 },
+    { i: 'today', x: 0, y: 0, w: 5, h: DASHBOARD_MAIN_ROWS, minW: 3, minH: 3 },
+    { i: 'upcoming', x: 5, y: 0, w: 4, h: DASHBOARD_MAIN_ROWS, minW: 3, minH: 4 },
+    { i: 'calendar', x: 9, y: 0, w: 3, h: DASHBOARD_CALENDAR_ROWS, minW: 3, minH: 5 },
+    { i: 'feedback', x: 9, y: DASHBOARD_CALENDAR_ROWS, w: 3, h: DASHBOARD_FEEDBACK_ROWS, minW: 3, minH: 4 },
 ];
 
 // ReactGridLayout desktop dùng 12 cột và cho phép gia sư tùy chỉnh. Giữ nguyên bố cục đó,
@@ -153,6 +169,99 @@ const mobileDashboardGridLayout = [
     { i: 'calendar', x: 0, y: 12, w: 1, h: 7 },
     { i: 'feedback', x: 0, y: 19, w: 1, h: 6 },
 ];
+const DASHBOARD_GRID_COLS = 12;
+const DASHBOARD_GRID_LAYOUT_KEY = 'tutora:tutor-dashboard:grid-layout';
+
+/**
+ * Bố cục mặc định của các phiên bản trước.
+ *
+ * Code cũ ghi localStorage ngay lúc mount nên gia sư chưa từng kéo thả vẫn đang có nguyên si
+ * một trong các mảng này — hợp lệ về mọi mặt, chỉ là không phải do họ chọn. Không nhận diện
+ * thì mọi thay đổi bố cục mặc định về sau sẽ không bao giờ tới được họ. Chỉ so i/x/y/w/h vì
+ * bản lưu còn kèm các field nội bộ của ReactGridLayout (moved, static, minW…).
+ */
+const legacyDefaultLayouts: DashboardGridItem[][] = [
+    [
+        { i: 'today', x: 0, y: 0, w: 5, h: 4 },
+        { i: 'upcoming', x: 5, y: 0, w: 4, h: 5 },
+        { i: 'calendar', x: 9, y: 0, w: 3, h: 7 },
+        { i: 'feedback', x: 9, y: 7, w: 3, h: 6 },
+    ],
+    [
+        { i: 'today', x: 0, y: 0, w: 5, h: 7 },
+        { i: 'upcoming', x: 5, y: 0, w: 4, h: 7 },
+        { i: 'calendar', x: 9, y: 0, w: 3, h: 7 },
+        { i: 'feedback', x: 9, y: 7, w: 3, h: 6 },
+    ],
+];
+
+const matchesLayout = (items: DashboardGridItem[], reference: DashboardGridItem[]) =>
+    reference.every((ref) => {
+        const item = items.find((entry) => entry.i === ref.i);
+        return item?.x === ref.x && item.y === ref.y && item.w === ref.w && item.h === ref.h;
+    });
+
+const isGridItem = (value: unknown): value is DashboardGridItem => {
+    if (typeof value !== 'object' || value === null) return false;
+    const item = value as Record<string, unknown>;
+    return typeof item.i === 'string'
+        && [item.x, item.y, item.w, item.h].every((n) => typeof n === 'number' && Number.isFinite(n));
+};
+
+/**
+ * Chỉ tin bố cục đã lưu khi nó còn đủ 4 widget và vẫn nằm gọn trong lưới 12 cột của desktop.
+ *
+ * Trước đây chỗ này chỉ kiểm tra `length === 4`, nên bố cục mobile (w = 1, xếp dọc một cột) một
+ * khi đã bị ghi đè vào key này sẽ được đọc lại nguyên xi ở desktop: mỗi widget co còn 1/12 bề
+ * ngang (~128px trên màn 1080p) và chồng dọc xuống dưới. localStorage tách theo từng trình
+ * duyệt nên trình duyệt đã dính thì hỏng vĩnh viễn còn trình duyệt khác vẫn bình thường —
+ * validate ngay lúc đọc để tự chữa dữ liệu cũ thay vì bắt gia sư đi xoá localStorage.
+ */
+const readSavedDashboardLayout = (): DashboardGridItem[] => {
+    try {
+        const saved: unknown = JSON.parse(localStorage.getItem(DASHBOARD_GRID_LAYOUT_KEY) ?? '[]');
+        if (!Array.isArray(saved)) return defaultDashboardGridLayout;
+
+        const items = saved.filter(isGridItem);
+        if (items.length !== defaultDashboardGridLayout.length) return defaultDashboardGridLayout;
+
+        const isUsable = defaultDashboardGridLayout.every((fallback) => {
+            const item = items.find((entry) => entry.i === fallback.i);
+            return Boolean(
+                item
+                && item.w >= fallback.minW
+                && item.h >= fallback.minH
+                && item.x >= 0
+                && item.x + item.w <= DASHBOARD_GRID_COLS
+            );
+        });
+
+        if (!isUsable) return defaultDashboardGridLayout;
+        // Bố cục mặc định cũ = gia sư chưa tùy chỉnh → cho theo mặc định hiện tại.
+        if (legacyDefaultLayouts.some((legacy) => matchesLayout(items, legacy))) {
+            return defaultDashboardGridLayout;
+        }
+
+        return items;
+    } catch {
+        return defaultDashboardGridLayout;
+    }
+};
+
+/**
+ * Chỉ ghi localStorage khi gia sư thực sự kéo thả, KHÔNG ghi lúc mount.
+ *
+ * Trước đây effect persist chạy theo mọi thay đổi của state, kể cả lần đầu vào trang: gia sư
+ * chưa động vào gì đã có sẵn một bản ghi "bố cục tùy chỉnh" trong localStorage. Hệ quả là mỗi
+ * lần đổi bố cục mặc định (ví dụ cân bằng chiều cao ba widget hàng trên) sẽ không tới được ai
+ * đã từng mở dashboard — họ bị khóa vĩnh viễn ở mặc định cũ. Không có bản ghi = luôn theo mặc
+ * định mới nhất, và "Đặt lại" xóa hẳn bản ghi chứ không lưu đè mặc định vào đó.
+ */
+const persistDashboardLayout = (layout: DashboardGridItem[] | null) => {
+    if (layout) localStorage.setItem(DASHBOARD_GRID_LAYOUT_KEY, JSON.stringify(layout));
+    else localStorage.removeItem(DASHBOARD_GRID_LAYOUT_KEY);
+};
+
 /**
  * Cửa sổ quét "buổi chờ gửi báo cáo". Query riêng chứ không tái dùng calendar của tháng đang
  * xem: gia sư lật sang tháng khác thì buổi còn nợ báo cáo sẽ biến mất khỏi danh sách nhắc.
@@ -167,6 +276,19 @@ const PENDING_REPORT_LOOKBACK_DAYS = 14;
  */
 const isAwaitingReport = (session: CalendarClassSessionResponse) =>
     (session.status ?? '').trim().toLowerCase() === 'in_progress' && Boolean(session.checkOutTime);
+
+/**
+ * Nhãn + màu badge trạng thái của một buổi học.
+ *
+ * `getClassSessionStatusMeta` là nguồn duy nhất khớp enum BE (`ClassSessionStatus.cs`) — trước
+ * đây chỗ này đổ thẳng `lesson.status` ra UI nên gia sư đọc được "COMPLETED", "RESERVED".
+ * Riêng buổi `in_progress` đã check-out thì phòng đã đóng, hiện "Đang diễn ra" là sai — dùng
+ * "Chờ gửi báo cáo" cho khớp StudentLessons/LessonViews.
+ */
+const getLessonStatusMeta = (session: CalendarClassSessionResponse) =>
+    isAwaitingReport(session)
+        ? { ...getClassSessionStatusMeta('pending_confirmation'), label: 'Chờ gửi báo cáo' }
+        : getClassSessionStatusMeta(session.status);
 
 /** Số buổi liệt kê thẳng trong dải nhắc; dư ra thì đẩy sang link mở lịch dạy. */
 const PENDING_REPORT_VISIBLE = 3;
@@ -208,14 +330,7 @@ const TutorPortalDashboard: React.FC = () => {
     const dashboardGridContainerRef = useRef<HTMLDivElement | null>(null);
     const [dashboardGridWidth, setDashboardGridWidth] = useState(1200);
     const isMobileDashboard = dashboardGridWidth <= 768;
-    const [dashboardGridLayout, setDashboardGridLayout] = useState<any[]>(() => {
-        try {
-            const saved = JSON.parse(localStorage.getItem('tutora:tutor-dashboard:grid-layout') ?? '[]');
-            return Array.isArray(saved) && saved.length === 4 ? saved : defaultDashboardGridLayout;
-        } catch {
-            return defaultDashboardGridLayout;
-        }
-    });
+    const [dashboardGridLayout, setDashboardGridLayout] = useState<DashboardGridItem[]>(readSavedDashboardLayout);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
@@ -267,14 +382,16 @@ const TutorPortalDashboard: React.FC = () => {
     }, [currentMonth]);
 
     useEffect(() => {
-        localStorage.setItem('tutora:tutor-dashboard:grid-layout', JSON.stringify(dashboardGridLayout));
-    }, [dashboardGridLayout]);
-
-    useEffect(() => {
         const container = dashboardGridContainerRef.current;
         if (!container) return;
 
-        const updateWidth = () => setDashboardGridWidth(Math.max(1, container.clientWidth));
+        // clientWidth = 0 khi container đang bị ẩn (đổi route, tab nền, ancestor display:none).
+        // Trước đây chỗ này ép về 1 nên khoảnh khắc đó bị hiểu thành "màn hình hẹp" và dashboard
+        // nhảy sang bố cục mobile — bỏ qua hẳn, giữ nguyên bề ngang đo được lần trước.
+        const updateWidth = () => {
+            const width = container.clientWidth;
+            if (width > 0) setDashboardGridWidth(width);
+        };
         updateWidth();
         const observer = new ResizeObserver(updateWidth);
         observer.observe(container);
@@ -359,16 +476,6 @@ const TutorPortalDashboard: React.FC = () => {
 
     const calendarDays = generateCalendarDays();
     const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-
-    const getStatusClass = (status: string) => {
-        switch (status) {
-            case 'starting_soon': return styles.statusStartingSoon;
-            case 'ongoing': return styles.statusOngoing;
-            case 'completed': return styles.statusCompleted;
-            default: return '';
-        }
-    };
-
 
     // Get lessons based on selected tab
     const getFilteredLessons = (): CalendarClassSessionResponse[] => {
@@ -695,7 +802,7 @@ const TutorPortalDashboard: React.FC = () => {
                     {isLayoutEditing ? '✓ Xong chỉnh sửa' : '⠿ Tùy chỉnh bố cục'}
                 </button>
                 {isLayoutEditing && (
-                    <button className={styles.layoutResetButton} onClick={() => setDashboardGridLayout(defaultDashboardGridLayout)}>
+                    <button className={styles.layoutResetButton} onClick={() => { setDashboardGridLayout(defaultDashboardGridLayout); persistDashboardLayout(null); }}>
                         Đặt lại
                     </button>
                 )}
@@ -706,13 +813,26 @@ const TutorPortalDashboard: React.FC = () => {
             <ReactGridLayout
                 width={dashboardGridWidth}
                 layout={isMobileDashboard ? mobileDashboardGridLayout : dashboardGridLayout}
-                cols={isMobileDashboard ? 1 : 12}
+                cols={isMobileDashboard ? 1 : DASHBOARD_GRID_COLS}
                 rowHeight={52}
                 margin={isMobileDashboard ? [0, 12] : [16, 16]}
                 containerPadding={isMobileDashboard ? [0, 0] : [16, 16]}
                 isDraggable={!isMobileDashboard && isLayoutEditing}
                 isResizable={!isMobileDashboard && isLayoutEditing}
-                onLayoutChange={(layout) => setDashboardGridLayout([...layout])}
+                // Chỉ ghi lại khi gia sư đang thật sự kéo thả ở desktop.
+                //
+                // Mobile: ReactGridLayout vẫn bắn onLayoutChange với `mobileDashboardGridLayout` (lưới
+                // 1 cột, w = 1). Ghi cái đó vào state là ghi đè luôn bố cục desktop gia sư đã tự sắp —
+                // chỉ cần thu nhỏ cửa sổ hoặc mở DevTools dock bên phải một lần là hỏng vĩnh viễn.
+                //
+                // Ngoài chế độ chỉnh sửa: RGL còn bắn onLayoutChange ngay lúc mount (sau khi compact
+                // và thêm các field mặc định). Lưu lúc đó là biến mọi gia sư thành "đã tùy chỉnh".
+                onLayoutChange={(layout) => {
+                    if (isMobileDashboard || !isLayoutEditing) return;
+                    const next = [...layout];
+                    setDashboardGridLayout(next);
+                    persistDashboardLayout(next);
+                }}
                 className={`${styles.dashboardGrid} ${isLayoutEditing ? styles.dashboardGridEditing : ''}`}
                 style={isLayoutEditing ? {
                     '--dashboard-grid-column': `${(dashboardGridWidth - 32 - (16 * 11)) / 12 + 16}px`,
@@ -760,9 +880,17 @@ const TutorPortalDashboard: React.FC = () => {
                                             <div className={styles.lessonDetails}>
                                                 <h4 className={styles.lessonSubject}>{lesson.subjectName || 'Chưa xác định'}</h4>
                                                 <p className={styles.lessonStudent}>{lesson.studentName || 'Chưa có học sinh'}</p>
-                                                <span className={`${styles.lessonStatus} ${getStatusClass(lesson.status || '')}`}>
-                                                    {lesson.status || 'Đã lên lịch'}
-                                                </span>
+                                                {(() => {
+                                                    const statusMeta = getLessonStatusMeta(lesson);
+                                                    return (
+                                                        <span
+                                                            className={styles.lessonStatus}
+                                                            style={{ color: statusMeta.color, backgroundColor: statusMeta.bg }}
+                                                        >
+                                                            {statusMeta.label}
+                                                        </span>
+                                                    );
+                                                })()}
                                             </div>
                                         </div>
                                         <div className={styles.lessonActions}>
@@ -789,8 +917,8 @@ const TutorPortalDashboard: React.FC = () => {
                                     </div>
                                 ))
                             ) : (
-                                <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
-                                    <p>Không có buổi học nào trong khoảng thời gian này</p>
+                                <div style={{ ...dashboardEmptyState, color: '#666' }}>
+                                    <p style={{ margin: 0 }}>Không có buổi học nào trong khoảng thời gian này</p>
                                 </div>
                             )}
                         </div>
@@ -845,12 +973,9 @@ const TutorPortalDashboard: React.FC = () => {
                 <div key="upcoming" className={styles.dashboardGridWidget}>
                         <section style={upcomingLessonsPanel} aria-label="Buổi học sắp tới">
                             <div style={upcomingLessonsPanelHeader}>
-                                <div>
-                                    <span style={upcomingLessonsEyebrow}>LỊCH GIẢNG</span>
-                                    <h2 style={upcomingLessonsTitle}>Buổi học sắp tới</h2>
-                                </div>
+                                <h2 style={upcomingLessonsTitle}>Buổi học sắp tới</h2>
                                 <button className={styles.outlineBtn} onClick={() => navigate('/tutor-portal/calendar')}>
-                                    Xem tất cả
+                                    Xem lịch dạy
                                     <ArrowRightIcon />
                                 </button>
                             </div>
@@ -868,9 +993,9 @@ const TutorPortalDashboard: React.FC = () => {
                                         <button className={styles.outlineBtn} onClick={() => navigate(`/tutor-portal/class-sessions/${lesson.classSessionId}`)}>Chi tiết</button>
                                     </div>
                                 )) : (
-                                    <p style={{ margin: 0, color: '#667085', fontSize: '14px', textAlign: 'center', padding: '18px 0' }}>
-                                        Chưa có buổi học sắp tới
-                                    </p>
+                                    <div style={{ ...dashboardEmptyState, color: '#667085', fontSize: 14 }}>
+                                        <p style={{ margin: 0 }}>Chưa có buổi học sắp tới</p>
+                                    </div>
                                 )}
                             </div>
                         </section>
@@ -933,7 +1058,7 @@ const TutorPortalDashboard: React.FC = () => {
                 {/* Feedback widget */}
                 <div key="feedback" className={styles.dashboardGridWidget}>
                     <div className={styles.sectionCard}>
-                        <div style={{ padding: '20px', height: '100%', boxSizing: 'border-box', overflowY: 'auto' }}>
+                        <div style={{ padding: '20px', height: '100%', boxSizing: 'border-box', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
                             <h2 className={styles.sectionTitle} style={{ marginBottom: '16px' }}>Đánh giá gần đây</h2>
                             {recentFeedbacks.length > 0 ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -993,7 +1118,7 @@ const TutorPortalDashboard: React.FC = () => {
                                     ))}
                                 </div>
                             ) : (
-                                <div style={{ padding: '2rem', textAlign: 'center', color: '#999' }}>
+                                <div style={{ ...dashboardEmptyState, color: '#999' }}>
                                     <svg width="32" height="32" viewBox="0 0 18 18" fill="#e8e8e8" style={{ marginBottom: '8px' }}>
                                         <path d="M9 1L11.09 6.26L17 6.97L12.82 10.72L14.18 16.5L9 13.27L3.82 16.5L5.18 10.72L1 6.97L6.91 6.26L9 1Z" />
                                     </svg>
@@ -1051,15 +1176,6 @@ const upcomingLessonsPanelHeader: React.CSSProperties = {
     marginBottom: 12,
 };
 
-const upcomingLessonsEyebrow: React.CSSProperties = {
-    display: 'block',
-    color: '#64705B',
-    fontSize: 10,
-    fontWeight: 700,
-    letterSpacing: '.1em',
-    marginBottom: 3,
-};
-
 const upcomingLessonsTitle: React.CSSProperties = {
     color: '#1A2238',
     fontFamily: "'Bricolage Grotesque', sans-serif",
@@ -1072,8 +1188,26 @@ const upcomingLessonsList: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
     gap: 10,
+    flex: 1,
     overflowY: 'auto',
     minHeight: 0,
+};
+
+/**
+ * Trạng thái rỗng căn giữa cả hai chiều.
+ *
+ * Bốn widget giờ cao 392–732px để khép kín lưới; để nguyên kiểu dính sát mép trên như trước thì
+ * card rỗng trông như bị vỡ. Cần `flex: 1` ở đây (chứ không phải `height: 100%`) vì phần tử này
+ * nằm trong một scroll container — đặt chiều cao cứng sẽ tạo thanh cuộn thừa.
+ */
+const dashboardEmptyState: React.CSSProperties = {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+    padding: '2rem',
 };
 
 const upcomingLessonItem: React.CSSProperties = {

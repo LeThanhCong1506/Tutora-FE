@@ -122,7 +122,6 @@ const StudentWallet = () => {
             type="button"
             onClick={() => setWithdrawOpen(true)}
             disabled={!canWithdraw}
-            data-tour="wallet-withdraw-btn"
           >
             Rút tiền
           </button>
@@ -149,7 +148,7 @@ const StudentWallet = () => {
         </p>
       )}
 
-      <div className={parentStyles.balanceGrid} data-tour="wallet-balance-cards">
+      <div className={parentStyles.balanceGrid}>
         <section className={`${parentStyles.summaryCard} ${parentStyles.summaryCardPrimary}`}>
           <div className={parentStyles.summaryLabel}>
             <span className={`${parentStyles.dot} ${parentStyles.dotGreen}`} />

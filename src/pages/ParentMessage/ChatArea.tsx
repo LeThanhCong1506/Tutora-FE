@@ -371,7 +371,7 @@ const ChatArea = ({ selectedChannelId, currentUserId, selectedChannel, isTutor =
   // Nếu không có channel nào được chọn, hiển thị empty state
   if (!selectedChannelId) {
     return (
-      <section className={styles.chatArea} data-tour="messages-chat">
+      <section className={styles.chatArea}>
         <div className={styles.chatEmptyState}>
           <div className={styles.chatEmptyIcon} aria-hidden="true">
             <MessageCircleMore size={30} />

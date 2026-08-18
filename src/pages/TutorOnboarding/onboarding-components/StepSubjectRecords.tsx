@@ -227,7 +227,7 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
       {/* 2-column layout: form bên trái, list cấu hình đã thêm bên phải */}
       <div className={styles.recordsLayout}>
         <div className={styles.recordsMain}>
-          <div className={styles.recordForm} data-tour="onboarding-pricing-form">
+          <div className={styles.recordForm}>
             <div className={styles.recordFormHead}>
               <div>
                 <h3 className={styles.recordFormTitle}>
@@ -440,7 +440,7 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
           </div>
         </div>
 
-        <aside className={styles.recordsAside} data-tour="onboarding-pricing-list">
+        <aside className={styles.recordsAside}>
           <div className={styles.recordsAsideHead}>
             <h3 className={styles.recordsSectionTitle}>Cấu hình đã thêm</h3>
             <span className={styles.recordsCount}>{state.subjectRecords.length}</span>

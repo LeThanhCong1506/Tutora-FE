@@ -65,43 +65,6 @@
     transform: translateY(0);
 }
 
-/* Nút thoát — cho phép bỏ dở hướng dẫn giữa chừng thay vì bắt đi hết các bước.
-   .tutor-tour-tooltip/.tutor-tour-final-modal đều position:fixed nên absolute ở đây
-   định vị đúng theo góc của chính tooltip/modal, không cần thêm position:relative. */
-.tutor-tour-close-btn {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.6);
-    cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
-}
-
-.tutor-tour-close-btn:hover {
-    background: rgba(255, 255, 255, 0.16);
-    color: #ffffff;
-}
-
-.tutor-tour-tooltip-light .tutor-tour-close-btn,
-.tutor-tour-final-modal .tutor-tour-close-btn {
-    background: rgba(26, 34, 56, 0.06);
-    color: rgba(26, 34, 56, 0.5);
-}
-
-.tutor-tour-tooltip-light .tutor-tour-close-btn:hover,
-.tutor-tour-final-modal .tutor-tour-close-btn:hover {
-    background: rgba(26, 34, 56, 0.12);
-    color: #1a2238;
-}
-
 /* Final farewell modal — centered like the welcome prompt */
 .tutor-tour-final-modal {
     position: fixed;
@@ -170,7 +133,6 @@
 /* Title */
 .tutor-tour-title {
     margin: 0 0 8px 0;
-    padding-right: 28px; /* tránh đè lên .tutor-tour-close-btn ở góc phải trên */
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: 18px;
     font-weight: 700;

@@ -34,7 +34,7 @@ const referenceLabel = (referenceTable: string | null): string => {
 
 const TransactionsCard = ({ transactions, loading, onSelect, onViewAll, total = 0 }: Props) => {
   return (
-    <section className={styles.card} data-tour="wallet-transactions">
+    <section className={styles.card}>
       <div className={styles.cardHeader}>
         <h3 className={styles.sectionTitle}>Lịch sử giao dịch</h3>
         <div className={styles.cardHeaderActions}>

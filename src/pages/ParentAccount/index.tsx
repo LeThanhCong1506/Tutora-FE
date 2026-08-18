@@ -437,7 +437,7 @@ const ParentAccount = () => {
             )}
 
             {/* Profile Header Card */}
-            <div className={styles.profileCard} data-tour="account-avatar">
+            <div className={styles.profileCard}>
                 <div className={styles.avatarGroup}>
                     <div
                         className={styles.avatarWrapper}
@@ -499,7 +499,7 @@ const ParentAccount = () => {
             </div>
 
             {/* Personal Info Section */}
-            <div className={styles.sectionCard} data-tour="account-personal-info">
+            <div className={styles.sectionCard}>
                 <div style={sectionHeader}>
                     <h3 style={sectionTitle}>Thông tin cá nhân</h3>
                 </div>
@@ -659,7 +659,7 @@ const ParentAccount = () => {
             )}
 
             {/* Change Password Section */}
-            <div className={styles.sectionCard} data-tour="account-password">
+            <div className={styles.sectionCard}>
                 <div className={styles.securityHeader} style={{ ...(showPasswordSection ? { marginBottom: 24, paddingBottom: 16, borderBottom: '1px solid #f5f5f5' } : {}) }}>
                     <h3 style={sectionTitle}>Đổi mật khẩu</h3>
                     <button

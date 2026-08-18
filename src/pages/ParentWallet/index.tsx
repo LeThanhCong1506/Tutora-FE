@@ -112,13 +112,7 @@ const ParentWallet = () => {
         </div>
 
         <div className={styles.headerActions}>
-          <button
-            className={styles.withdrawBtn}
-            type="button"
-            onClick={() => setWithdrawOpen(true)}
-            disabled={!canWithdraw}
-            data-tour="wallet-withdraw-btn"
-          >
+          <button className={styles.withdrawBtn} type="button" onClick={() => setWithdrawOpen(true)} disabled={!canWithdraw}>
             Rút tiền
           </button>
           <button
@@ -144,7 +138,7 @@ const ParentWallet = () => {
         </p>
       )}
 
-      <div className={styles.balanceGrid} data-tour="wallet-balance-cards">
+      <div className={styles.balanceGrid}>
         <section className={`${styles.summaryCard} ${styles.summaryCardPrimary}`}>
           <div className={styles.summaryLabel}>
             <span className={`${styles.dot} ${styles.dotGreen}`} />
