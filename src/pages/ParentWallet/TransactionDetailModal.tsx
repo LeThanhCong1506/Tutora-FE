@@ -7,6 +7,7 @@ import {
   formatTransactionType,
   formatWithdrawalStatusV2,
 } from '../../utils/formatters';
+import { getDisputeStatusMeta, getDisputeTypeLabel } from '../../components/disputes';
 import {
   getTransactionDetail,
   getWithdrawalDetail,
@@ -163,9 +164,11 @@ const TransactionDetailModal = ({ transactionId, onClose }: Props) => {
                   <div className={styles.invoiceSectionTitle}>Thông tin tranh chấp</div>
                   <Row label="Mã tranh chấp" value={`#${detail.dispute.disputeId}`} />
                   {detail.dispute.disputeType && (
-                    <Row label="Loại" value={detail.dispute.disputeType} />
+                    <Row label="Loại" value={getDisputeTypeLabel(detail.dispute.disputeType)} />
                   )}
-                  {detail.dispute.status && <Row label="Trạng thái" value={detail.dispute.status} />}
+                  {detail.dispute.status && (
+                    <Row label="Trạng thái" value={getDisputeStatusMeta(detail.dispute.status).label} />
+                  )}
                   {detail.dispute.reason && <Row label="Lý do" value={detail.dispute.reason} />}
                   {detail.dispute.refundAmount != null && (
                     <Row label="Số tiền hoàn" value={formatCurrency(detail.dispute.refundAmount)} />

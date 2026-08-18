@@ -158,7 +158,9 @@ const BookingRequestCard = ({ message, isTutor = false, onProceedToPayment }: Bo
             case 'ongoing': return 'Đang diễn ra';
             case 'completed': return 'Hoàn thành';
             case 'cancelled': return 'Đã từ chối';
-            default: return s;
+            // BE có trả `cancelled_noshow`; thiếu nhánh này thì default đổ nguyên chuỗi tiếng Anh ra UI.
+            case 'cancelled_noshow': return 'Hủy do vắng mặt';
+            default: return 'Không rõ';
         }
     };
 
