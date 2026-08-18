@@ -137,6 +137,8 @@ const fetchRecentFeedbacks = async (tutorUserId: string): Promise<FeedbackDto[]>
 const DASHBOARD_TABS = ['today', 'tomorrow', 'week', 'date'] as const;
 type DashboardTab = (typeof DASHBOARD_TABS)[number];
 
+type DashboardGridItem = { i: string; x: number; y: number; w: number; h: number; minW?: number; minH?: number };
+
 const defaultDashboardGridLayout = [
     { i: 'today', x: 0, y: 0, w: 5, h: 4, minW: 3, minH: 3 },
     { i: 'upcoming', x: 5, y: 0, w: 4, h: 5, minW: 3, minH: 4 },
@@ -153,6 +155,50 @@ const mobileDashboardGridLayout = [
     { i: 'calendar', x: 0, y: 12, w: 1, h: 7 },
     { i: 'feedback', x: 0, y: 19, w: 1, h: 6 },
 ];
+const DASHBOARD_GRID_COLS = 12;
+const DASHBOARD_GRID_LAYOUT_KEY = 'tutora:tutor-dashboard:grid-layout';
+
+const isGridItem = (value: unknown): value is DashboardGridItem => {
+    if (typeof value !== 'object' || value === null) return false;
+    const item = value as Record<string, unknown>;
+    return typeof item.i === 'string'
+        && [item.x, item.y, item.w, item.h].every((n) => typeof n === 'number' && Number.isFinite(n));
+};
+
+/**
+ * Chỉ tin bố cục đã lưu khi nó còn đủ 4 widget và vẫn nằm gọn trong lưới 12 cột của desktop.
+ *
+ * Trước đây chỗ này chỉ kiểm tra `length === 4`, nên bố cục mobile (w = 1, xếp dọc một cột) một
+ * khi đã bị ghi đè vào key này sẽ được đọc lại nguyên xi ở desktop: mỗi widget co còn 1/12 bề
+ * ngang (~128px trên màn 1080p) và chồng dọc xuống dưới. localStorage tách theo từng trình
+ * duyệt nên trình duyệt đã dính thì hỏng vĩnh viễn còn trình duyệt khác vẫn bình thường —
+ * validate ngay lúc đọc để tự chữa dữ liệu cũ thay vì bắt gia sư đi xoá localStorage.
+ */
+const readSavedDashboardLayout = (): DashboardGridItem[] => {
+    try {
+        const saved: unknown = JSON.parse(localStorage.getItem(DASHBOARD_GRID_LAYOUT_KEY) ?? '[]');
+        if (!Array.isArray(saved)) return defaultDashboardGridLayout;
+
+        const items = saved.filter(isGridItem);
+        if (items.length !== defaultDashboardGridLayout.length) return defaultDashboardGridLayout;
+
+        const isUsable = defaultDashboardGridLayout.every((fallback) => {
+            const item = items.find((entry) => entry.i === fallback.i);
+            return Boolean(
+                item
+                && item.w >= fallback.minW
+                && item.h >= fallback.minH
+                && item.x >= 0
+                && item.x + item.w <= DASHBOARD_GRID_COLS
+            );
+        });
+
+        return isUsable ? items : defaultDashboardGridLayout;
+    } catch {
+        return defaultDashboardGridLayout;
+    }
+};
+
 /**
  * Cửa sổ quét "buổi chờ gửi báo cáo". Query riêng chứ không tái dùng calendar của tháng đang
  * xem: gia sư lật sang tháng khác thì buổi còn nợ báo cáo sẽ biến mất khỏi danh sách nhắc.
@@ -208,14 +254,7 @@ const TutorPortalDashboard: React.FC = () => {
     const dashboardGridContainerRef = useRef<HTMLDivElement | null>(null);
     const [dashboardGridWidth, setDashboardGridWidth] = useState(1200);
     const isMobileDashboard = dashboardGridWidth <= 768;
-    const [dashboardGridLayout, setDashboardGridLayout] = useState<any[]>(() => {
-        try {
-            const saved = JSON.parse(localStorage.getItem('tutora:tutor-dashboard:grid-layout') ?? '[]');
-            return Array.isArray(saved) && saved.length === 4 ? saved : defaultDashboardGridLayout;
-        } catch {
-            return defaultDashboardGridLayout;
-        }
-    });
+    const [dashboardGridLayout, setDashboardGridLayout] = useState<DashboardGridItem[]>(readSavedDashboardLayout);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
@@ -267,14 +306,20 @@ const TutorPortalDashboard: React.FC = () => {
     }, [currentMonth]);
 
     useEffect(() => {
-        localStorage.setItem('tutora:tutor-dashboard:grid-layout', JSON.stringify(dashboardGridLayout));
+        localStorage.setItem(DASHBOARD_GRID_LAYOUT_KEY, JSON.stringify(dashboardGridLayout));
     }, [dashboardGridLayout]);
 
     useEffect(() => {
         const container = dashboardGridContainerRef.current;
         if (!container) return;
 
-        const updateWidth = () => setDashboardGridWidth(Math.max(1, container.clientWidth));
+        // clientWidth = 0 khi container đang bị ẩn (đổi route, tab nền, ancestor display:none).
+        // Trước đây chỗ này ép về 1 nên khoảnh khắc đó bị hiểu thành "màn hình hẹp" và dashboard
+        // nhảy sang bố cục mobile — bỏ qua hẳn, giữ nguyên bề ngang đo được lần trước.
+        const updateWidth = () => {
+            const width = container.clientWidth;
+            if (width > 0) setDashboardGridWidth(width);
+        };
         updateWidth();
         const observer = new ResizeObserver(updateWidth);
         observer.observe(container);
@@ -706,13 +751,21 @@ const TutorPortalDashboard: React.FC = () => {
             <ReactGridLayout
                 width={dashboardGridWidth}
                 layout={isMobileDashboard ? mobileDashboardGridLayout : dashboardGridLayout}
-                cols={isMobileDashboard ? 1 : 12}
+                cols={isMobileDashboard ? 1 : DASHBOARD_GRID_COLS}
                 rowHeight={52}
                 margin={isMobileDashboard ? [0, 12] : [16, 16]}
                 containerPadding={isMobileDashboard ? [0, 0] : [16, 16]}
                 isDraggable={!isMobileDashboard && isLayoutEditing}
                 isResizable={!isMobileDashboard && isLayoutEditing}
-                onLayoutChange={(layout) => setDashboardGridLayout([...layout])}
+                // Ở chế độ mobile, ReactGridLayout vẫn bắn onLayoutChange với `mobileDashboardGridLayout`
+                // (lưới 1 cột, w = 1). Ghi cái đó vào state là ghi đè luôn bố cục desktop mà gia sư đã
+                // tự sắp, rồi persist xuống localStorage — chỉ cần thu nhỏ cửa sổ hoặc mở DevTools dock
+                // bên phải một lần là dashboard desktop hỏng vĩnh viễn. Mobile là bố cục cố định, không
+                // kéo thả được, nên không có gì đáng lưu.
+                onLayoutChange={(layout) => {
+                    if (isMobileDashboard) return;
+                    setDashboardGridLayout([...layout]);
+                }}
                 className={`${styles.dashboardGrid} ${isLayoutEditing ? styles.dashboardGridEditing : ''}`}
                 style={isLayoutEditing ? {
                     '--dashboard-grid-column': `${(dashboardGridWidth - 32 - (16 * 11)) / 12 + 16}px`,
