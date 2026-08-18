@@ -136,7 +136,7 @@ const ComboManager: React.FC<ComboManagerProps> = ({
 
   return (
     <>
-      <section className={styles.comboManager}>
+      <section className={styles.comboManager} data-tour="onboarding-packages">
         <div className={styles.comboManagerHead}>
           <h3 className={styles.comboManagerTitle}>Gói lịch học của bạn</h3>
           {combos.length > 0 && (
@@ -219,6 +219,7 @@ const ComboManager: React.FC<ComboManagerProps> = ({
                   </div>
 
                   <h4 className={styles.comboName}>{combo.name}</h4>
+                  {combo.subjectName && <span className={styles.comboTypeBadge}>{combo.subjectName}</span>}
 
                   <div className={styles.comboMetaRow}>
                     <span>
@@ -309,6 +310,7 @@ const ComboManager: React.FC<ComboManagerProps> = ({
                     </div>
 
                     <h4 className={styles.comboName}>{combo.name}</h4>
+                    {combo.subjectName && <span className={styles.comboTypeBadge}>{combo.subjectName}</span>}
 
                     <div className={styles.comboMetaRow}>
                       <span>
@@ -337,6 +339,7 @@ const ComboManager: React.FC<ComboManagerProps> = ({
           }}
           onSave={handleSave}
           initial={editing}
+          subjectRecords={subjectRecords}
           availability={availability}
           requiredDurationHours={requiredDurationHours}
           requiredSessionsPerWeek={requiredSessionsPerWeek}

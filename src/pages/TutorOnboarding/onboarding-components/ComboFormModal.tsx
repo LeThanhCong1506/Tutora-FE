@@ -5,13 +5,14 @@ import styles from '../styles.module.css';
 import ComboPreview from './ComboPreview';
 import { findFirstAvailableSession, getAvailableStartTimes, isSessionWithinAvailability } from './availability-utils';
 import { DAY_COLUMNS, END_HOUR, formatHourMinute, minutesOf } from './constants';
-import type { ComboSessionSlot, FixedCombo, TutorAvailabilitySlot } from './types';
+import type { ComboSessionSlot, FixedCombo, SubjectRecord, TutorAvailabilitySlot } from './types';
 
 interface ComboFormModalProps {
   open: boolean;
   onClose: () => void;
   onSave: (combo: FixedCombo) => void | Promise<void>;
   initial: FixedCombo | null;
+  subjectRecords: SubjectRecord[];
   availability: TutorAvailabilitySlot[];
   requiredDurationHours: number;
   requiredSessionsPerWeek: number;
@@ -73,6 +74,7 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
   onClose,
   onSave,
   initial,
+  subjectRecords,
   availability,
   requiredDurationHours,
   requiredSessionsPerWeek,
@@ -167,6 +169,7 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
   const fixedExceedsSessionLimit = combo.sessions.length > requiredSessionsPerWeek;
   const isValid =
     combo.name.trim().length > 0 &&
+    combo.subjectId != null &&
     !fixedHasNoSessions &&
     !fixedExceedsSessionLimit &&
     combo.sessions.every((session) => session.durationHours <= requiredDurationHours) &&
@@ -265,8 +268,21 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
                   size="large"
                 />
               </label>
+              <label className={styles.comboFormField}>
+                <span className={styles.comboFormLabel}>Môn học áp dụng</span>
+                <Select
+                  value={combo.subjectId}
+                  onChange={(subjectId) => {
+                    const subject = subjectRecords.find((record) => record.subjectId === subjectId);
+                    setCombo({ ...combo, subjectId, subjectName: subject?.subjectName });
+                  }}
+                  options={subjectRecords.map((record) => ({ value: record.subjectId, label: record.subjectName }))}
+                  placeholder="Chọn môn học"
+                  size="large"
+                />
+              </label>
               <div className={styles.comboFormHint}>
-                Giá gói sẽ được tính theo môn và khối lớp mà phụ huynh chọn khi đặt lịch.
+                Gói này chỉ hiển thị khi phụ huynh chọn đúng môn học.
               </div>
             </section>
 

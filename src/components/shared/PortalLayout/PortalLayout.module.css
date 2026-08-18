@@ -289,7 +289,11 @@
 }
 
 @media (min-width: 1025px) {
-    .portal-layout:has(.sidebar:hover) {
+    /* .portal-layout là class global gắn thẳng trong JSX (không qua styles.xxx), nên phải
+       bọc :global() ở đây — nếu không, CSS Modules sẽ hash ".portal-layout" thành một tên
+       khác, rule :has() không bao giờ khớp DOM thật, và --sidebar-space đứng yên vĩnh viễn
+       dù sidebar đã hover-mở-rộng (làm editBarLeft và nội dung chính không dịch chuyển theo). */
+    :global(.portal-layout):has(.sidebar:hover) {
         /* 12px left inset + 248px expanded rail */
         --sidebar-space: 260px;
         --sidebar-panel-width: 248px;

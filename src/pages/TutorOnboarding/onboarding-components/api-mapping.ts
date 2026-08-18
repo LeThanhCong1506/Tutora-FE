@@ -268,6 +268,8 @@ export const diffAvailability = (
 export const packageToFixedCombo = (pkg: TutorPackageResponse): FixedCombo => ({
   id: `pkg_${pkg.packageId}`,
   type: 'fixed',
+  subjectId: pkg.subjectId ?? undefined,
+  subjectName: pkg.subjectName ?? undefined,
   name: pkg.name,
   hasActiveBooking: pkg.hasActiveBooking,
   sessions: pkg.fixedSlots.map((s) => {
@@ -285,6 +287,7 @@ export const packageToFixedCombo = (pkg: TutorPackageResponse): FixedCombo => ({
 
 export const comboToPackagePayload = (combo: FixedCombo): CreateTutorPackageData => ({
   name: combo.name,
+  subjectId: combo.subjectId,
   packageType: 2,
   fixedSlots: combo.sessions.map((s) => ({
     dayOfWeek: feDayToIso(s.dayOfWeek), // FE 0-6 → BE ISO 1-7
@@ -295,6 +298,7 @@ export const comboToPackagePayload = (combo: FixedCombo): CreateTutorPackageData
 
 export const DEFAULT_FLEXIBLE_PACKAGE: CreateTutorPackageData = {
   name: 'Gói linh hoạt',
+  subjectId: null,
   packageType: 1,
   fixedSlots: [],
 };

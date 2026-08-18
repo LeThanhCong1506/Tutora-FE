@@ -109,32 +109,72 @@ const ScheduleChangeModal = ({ open, state, currentRole, currentUserId, loading,
         </div>
 
         <div className={styles.confirmationList}>
-          <div className={state.tutorConfirmedAt ? styles.confirmationDone : styles.confirmationPending}>
-            <span className={styles.confirmationStatusIcon}>
-              {state.tutorConfirmedAt ? <Check size={16} /> : <Clock3 size={16} />}
-            </span>
-            <span>
-              <strong>Gia sư · {state.tutorName || 'Gia sư'}</strong>
-              <small>
-                {state.tutorConfirmedAt ? `Đã xác nhận lúc ${formatDateTime(state.tutorConfirmedAt)}` : 'Chưa xác nhận'}
-              </small>
-            </span>
-          </div>
-          <div className={state.learnerConfirmedAt ? styles.confirmationDone : styles.confirmationPending}>
-            <span className={styles.confirmationStatusIcon}>
-              {state.learnerConfirmedAt ? <Check size={16} /> : <Clock3 size={16} />}
-            </span>
-            <span>
-              <strong>
-                {learnerLabel} · {state.requiredLearnerName || state.studentName || learnerLabel}
-              </strong>
-              <small>
-                {state.learnerConfirmedAt
-                  ? `Đã xác nhận lúc ${formatDateTime(state.learnerConfirmedAt)}`
-                  : 'Chưa xác nhận'}
-              </small>
-            </span>
-          </div>
+          {(() => {
+            const tutorRejected = Boolean(state.rejectedByUserId && state.rejectedByUserId === state.tutorUserId);
+            return (
+              <div
+                className={
+                  tutorRejected
+                    ? styles.confirmationRejected
+                    : state.tutorConfirmedAt
+                      ? styles.confirmationDone
+                      : styles.confirmationPending
+                }
+              >
+                <span className={styles.confirmationStatusIcon}>
+                  {tutorRejected ? <X size={16} /> : state.tutorConfirmedAt ? <Check size={16} /> : <Clock3 size={16} />}
+                </span>
+                <span>
+                  <strong>Gia sư · {state.tutorName || 'Gia sư'}</strong>
+                  <small>
+                    {tutorRejected
+                      ? 'Đã từ chối đổi lịch'
+                      : state.tutorConfirmedAt
+                        ? `Đã xác nhận lúc ${formatDateTime(state.tutorConfirmedAt)}`
+                        : 'Chưa xác nhận'}
+                  </small>
+                </span>
+              </div>
+            );
+          })()}
+          {(() => {
+            const learnerRejected = Boolean(
+              state.rejectedByUserId && state.rejectedByUserId === state.learnerApproverUserId,
+            );
+            return (
+              <div
+                className={
+                  learnerRejected
+                    ? styles.confirmationRejected
+                    : state.learnerConfirmedAt
+                      ? styles.confirmationDone
+                      : styles.confirmationPending
+                }
+              >
+                <span className={styles.confirmationStatusIcon}>
+                  {learnerRejected ? (
+                    <X size={16} />
+                  ) : state.learnerConfirmedAt ? (
+                    <Check size={16} />
+                  ) : (
+                    <Clock3 size={16} />
+                  )}
+                </span>
+                <span>
+                  <strong>
+                    {learnerLabel} · {state.requiredLearnerName || state.studentName || learnerLabel}
+                  </strong>
+                  <small>
+                    {learnerRejected
+                      ? 'Đã từ chối đổi lịch'
+                      : state.learnerConfirmedAt
+                        ? `Đã xác nhận lúc ${formatDateTime(state.learnerConfirmedAt)}`
+                        : 'Chưa xác nhận'}
+                  </small>
+                </span>
+              </div>
+            );
+          })()}
         </div>
 
         <div className={styles.scheduleAuditNote}>
@@ -149,9 +189,19 @@ const ScheduleChangeModal = ({ open, state, currentRole, currentUserId, loading,
           <div className={styles.scheduleExpiredNote}>
             <AlertTriangle size={18} />
             <span>
-              <strong>Yêu cầu xác nhận đã hết hạn.</strong> Chưa đủ hai bên xác nhận trong 30 phút nên hệ thống đã huỷ
-              yêu cầu này. Cứ giữ phòng chờ mở — hệ thống sẽ tự tạo yêu cầu mới trong giây lát; nếu không, hãy thoát và
-              vào lại phòng chờ để gửi lại.
+              {state.approvedAt ? (
+                <>
+                  <strong>Đã đủ xác nhận nhưng chưa kịp vào phòng.</strong> Cả hai bên đã đồng ý đổi lịch nhưng không
+                  ai vào phòng học trong 30 phút nên hệ thống đã huỷ yêu cầu này. Vui lòng thoát và vào lại phòng chờ
+                  để hệ thống tạo yêu cầu xác nhận mới.
+                </>
+              ) : (
+                <>
+                  <strong>Yêu cầu xác nhận đã hết hạn.</strong> Chưa đủ hai bên xác nhận trong 30 phút nên hệ thống đã
+                  huỷ yêu cầu này. Cứ giữ phòng chờ mở — hệ thống sẽ tự tạo yêu cầu mới trong giây lát; nếu không, hãy
+                  thoát và vào lại phòng chờ để gửi lại.
+                </>
+              )}
             </span>
           </div>
         ) : rejected ? (
