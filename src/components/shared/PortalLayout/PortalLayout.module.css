@@ -189,13 +189,46 @@
     padding: 12px 8px;
 }
 
+/* Là <button> (trigger menu tài khoản) nên phải reset border/font và trải hết bề ngang. */
 .userCard {
     display: flex;
     align-items: center;
     gap: 10.5px;
+    width: 100%;
     padding: 10.5px 8.5px;
+    border: none;
     border-radius: 10.5px;
     background-color: rgba(255, 255, 255, 0.05);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.18s ease;
+}
+
+.userCard:hover,
+.userCardOpen {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+.userCard:focus-visible {
+    outline: 2px solid rgba(242, 240, 228, 0.6);
+    outline-offset: 2px;
+}
+
+/* Chevron chỉ có nghĩa khi tên/role đang hiện (sidebar mở hoặc hover) — cùng nhịp với .userInfo. */
+.userCardChevron {
+    margin-left: auto;
+    flex-shrink: 0;
+    font-size: 18px;
+    color: rgba(242, 240, 228, 0.55);
+    opacity: 0;
+    transition: opacity 0.2s ease 0.05s;
+}
+
+.sidebar:hover .userCardChevron,
+.sidebarOpen .userCardChevron {
+    opacity: 1;
 }
 
 .sidebar:hover .userCard,
@@ -678,12 +711,17 @@
 
     .sidebar {
         width: 288px;
-        left: 0;
-        top: 10px;
-        bottom: 14px;
+        left: auto;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        border-radius: 0;
+        border: none;
+        border-left: 1px solid rgba(242, 240, 228, 0.12);
+        box-shadow: -8px 0 24px rgba(26, 34, 56, 0.18);
         /* Phủ lên portal header khi mở để nút đóng luôn thao tác được trên mobile. */
         z-index: 300;
-        transform: translateX(-100%);
+        transform: translateX(100%);
         transition: transform 0.3s ease;
     }
 
@@ -691,7 +729,7 @@
         width: 288px;
     }
 
-    .sidebarOpen {
+    .sidebar.sidebarOpen {
         transform: translateX(0);
     }
 
@@ -764,13 +802,6 @@
 
 /* Mobile: hide user info, compact header */
 @media (max-width: 768px) {
-    .sidebar {
-        top: 8px;
-        bottom: 14px;
-        height: auto;
-        max-height: calc(100vh - 68px);
-    }
-
     .main {
         padding-top: 68px;
     }

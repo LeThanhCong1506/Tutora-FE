@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Select, Button, Popconfirm, InputNumber } from 'antd';
+import { Select, Button, Popconfirm, InputNumber, Checkbox } from 'antd';
 import {
   CheckOutlined,
   CloseOutlined,
@@ -11,6 +11,7 @@ import {
 import { toast } from 'react-toastify';
 import styles from '../styles.module.css';
 import { getMaxSessionHours, getMaxSessionsPerWeek } from './availability-utils';
+import { groupGradesByStage } from './grade-stages';
 import { SUBJECTS, GRADE_LEVELS, formatPrice, formatDuration } from './constants';
 import type { UseOnboardingState } from './hooks/useOnboardingState';
 import type { SubjectOption, GradeOption } from './hooks/useLookups';
@@ -86,6 +87,43 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
   const allowedGradeLevels = useMemo(
     () => getAllowedGradeLevels(selectedSubject, gradeLevels),
     [selectedSubject, gradeLevels],
+  );
+
+  // Gom lớp theo cấp và cho phép tick nguyên cấp. Group label của antd là ReactNode nhưng
+  // bản thân nó không phải option nên không tự chọn được → tự gắn onClick; onMouseDown
+  // preventDefault để click không làm select blur rồi đóng dropdown.
+  const gradeSelectOptions = useMemo(
+    () =>
+      groupGradesByStage(allowedGradeLevels).map((group) => {
+        const values = group.options.map((g) => g.value);
+        const selectedCount = values.filter((value) => selectedGradeLevels.includes(value)).length;
+        const allSelected = selectedCount === values.length;
+
+        return {
+          title: group.stage.label,
+          label: (
+            <span
+              className={styles.gradeStageHeader}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() =>
+                setSelectedGradeLevels((prev) =>
+                  allSelected
+                    ? prev.filter((value) => !values.includes(value))
+                    : Array.from(new Set([...prev, ...values])),
+                )
+              }
+            >
+              <Checkbox checked={allSelected} indeterminate={selectedCount > 0 && !allSelected} />
+              <span className={styles.gradeStageName}>{group.stage.label}</span>
+              <span className={styles.gradeStageCount}>
+                {selectedCount}/{values.length}
+              </span>
+            </span>
+          ),
+          options: group.options.map((g) => ({ value: g.value, label: g.label })),
+        };
+      }),
+    [allowedGradeLevels, selectedGradeLevels],
   );
 
   // Đổi môn -> lọc lại các lớp đã chọn xuống phần còn hợp lệ với môn mới (giữ giao nhau thay
@@ -257,11 +295,17 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
                   allowClear
                   maxTagCount="responsive"
                   optionFilterProp="label"
+                  // showSearch mặc định bật ở mode="multiple" → render <input> thật, chạm vào
+                  // là bàn phím ảo bật lên. virtual mặc định bật → rc-virtual-list cuộn giật và
+                  // mất scrollbar trên mobile. Danh sách chỉ ~12 lớp nên tắt cả hai.
+                  showSearch={false}
+                  virtual={false}
+                  listHeight={320}
                   disabled={subjectId == null}
                   placeholder={subjectId == null ? 'Chọn môn học trước' : 'Chọn một hoặc nhiều khối lớp'}
                   value={selectedGradeLevels}
                   onChange={setSelectedGradeLevels}
-                  options={allowedGradeLevels.map((g) => ({ value: g.value, label: g.label }))}
+                  options={gradeSelectOptions}
                   className={styles.recordGradeSelect}
                   style={{ width: '100%' }}
                 />

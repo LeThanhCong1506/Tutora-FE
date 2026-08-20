@@ -4,6 +4,12 @@
     align-items: center;
 }
 
+/* Ở sidebar, container bọc nguyên user card nên phải trải hết bề ngang. */
+.containerSidebar {
+    display: block;
+    width: 100%;
+}
+
 .trigger {
     display: flex;
     align-items: center;
@@ -100,6 +106,54 @@
     padding: 6px;
     z-index: 120;
     overflow: hidden;
+}
+
+/* Skin tối cho menu mở từ user card trong sidebar drawer (nền navy #1a2238).
+   z-index phải > 300 vì .sidebar ở ≤1024px là z-index: 300.
+   Menu bật lên trên nên giới hạn chiều cao theo khoảng trống phía trên trigger. */
+.menuSidebar {
+    z-index: 400;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    background-color: #1e2842;
+    border-color: rgba(242, 240, 228, 0.14);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.42);
+}
+
+.menuSidebar .menuHeader {
+    border-bottom-color: rgba(242, 240, 228, 0.14);
+}
+
+.menuSidebar .menuName {
+    color: #f2f0e4;
+}
+
+.menuSidebar .menuSubtitle {
+    color: rgba(242, 240, 228, 0.55);
+}
+
+.menuSidebar .menuDivider {
+    background-color: rgba(242, 240, 228, 0.14);
+}
+
+.menuSidebar .menuItem {
+    color: rgba(242, 240, 228, 0.88);
+}
+
+.menuSidebar .menuItem:hover {
+    background-color: rgba(242, 240, 228, 0.1);
+}
+
+.menuSidebar .menuItemDanger {
+    color: #f08c8c;
+}
+
+.menuSidebar .menuItemDanger:hover {
+    background-color: rgba(240, 140, 140, 0.14);
+}
+
+.menuSidebar .menuHint {
+    color: rgba(242, 240, 228, 0.45);
 }
 
 .menuHeader {

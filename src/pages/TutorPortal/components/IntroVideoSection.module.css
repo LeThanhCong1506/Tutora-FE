@@ -192,6 +192,8 @@
 
 .previewPlaceholder {
   position: relative;
+  width: 100%;
+  box-sizing: border-box;
   aspect-ratio: 16 / 9;
   min-height: 260px;
   display: flex;
@@ -215,6 +217,16 @@
 .previewIcon {
   position: relative;
   z-index: 1;
+}
+
+/* Cột flex + align-items:center cho con co theo nội dung, nên trên màn hẹp hai dòng
+   text này tràn ra ngoài và bị .previewArea/.previewPlaceholder (overflow:hidden) cắt cụt.
+   Ghim max-width + cho phép ngắt dòng để chữ luôn nằm trong khung. */
+.previewPlaceholder strong,
+.previewPlaceholder span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .previewPlaceholder strong {
@@ -442,6 +454,19 @@
   border: 1px solid rgba(26, 34, 56, 0.08);
 }
 
+/* min-width:0 để div này co theo bề rộng .noVideo thay vì fit-content — nếu không,
+   ở layout cột trên mobile (align-items không stretch) nó sẽ nở theo nội dung và
+   tràn ra ngoài card giống hệt lỗi đã sửa ở .previewPlaceholder. */
+.noVideoText {
+  min-width: 0;
+}
+
+.noVideo span,
+.noVideo p {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
 .noVideo span {
   display: block;
   font-family: 'Bricolage Grotesque', serif;
@@ -526,7 +551,9 @@
   }
 }
 
-@media (max-width: 600px) {
+/* 768px = mốc mobile của cả dự án (trang cha tutor-portal-profile cũng dùng mốc này).
+   Trước đây card này dừng ở 600px nên dải 601–768px không hề có style mobile. */
+@media (max-width: 768px) {
   .videoCard,
   .urlEditCard,
   .uploadingState {
@@ -543,17 +570,18 @@
     justify-content: space-between;
   }
 
-  .urlRow {
-    flex-direction: column;
-  }
-
-  .editActions {
-    width: 100%;
-    justify-content: flex-end;
-  }
-
   .previewPlaceholder {
-    min-height: 220px;
+    min-height: 200px;
+    gap: 5px;
+    padding: 16px 12px;
+  }
+
+  .previewPlaceholder strong {
+    font-size: 17px;
+  }
+
+  .previewPlaceholder span {
+    font-size: 12.5px;
   }
 
   .helperRow {
@@ -562,7 +590,7 @@
   }
 
   .noVideo {
-    align-items: flex-start;
+    align-items: stretch;
     justify-content: flex-start;
     flex-direction: column;
   }
