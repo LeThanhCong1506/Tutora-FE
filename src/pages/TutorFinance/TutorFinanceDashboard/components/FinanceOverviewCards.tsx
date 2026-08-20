@@ -82,7 +82,7 @@ const FinanceOverviewCards: React.FC<Props> = ({ summary, loading }) => {
   ];
 
   return (
-    <section className="finance-overview-grid" aria-label="Tổng quan số dư">
+    <section className="finance-overview-grid" aria-label="Tổng quan số dư" data-tour="finance-overview-cards">
       <Card className="finance-card finance-balance-card" loading={loading}>
         <div className="finance-balance-card__header">
           <div className="finance-balance-card__label">

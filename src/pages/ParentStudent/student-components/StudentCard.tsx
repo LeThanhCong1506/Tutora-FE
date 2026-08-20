@@ -87,7 +87,11 @@ const StudentCard = ({
   ].filter(Boolean);
 
   return (
-    <article className={styles.card} style={{ animationDelay: `${Math.min(index, 5) * 45}ms` }}>
+    <article
+      className={styles.card}
+      style={{ animationDelay: `${Math.min(index, 5) * 45}ms` }}
+      data-tour="parent-student-card"
+    >
       <header className={styles.cardHead}>
         <div className={styles.avatar} aria-hidden="true">
           {showAvatar ? (

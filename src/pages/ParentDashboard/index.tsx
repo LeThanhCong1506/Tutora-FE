@@ -196,7 +196,7 @@ const ParentDashboard = () => {
               <h1 className={styles.welcomeTitle}>Xin chào, {userName}!</h1>
 
               {!inMiniApp && (
-                <div className={styles.welcomeActions}>
+                <div className={styles.welcomeActions} data-tour="parent-dashboard-actions">
                   <button
                     type="button"
                     className={styles.welcomePrimaryAction}
@@ -233,7 +233,7 @@ const ParentDashboard = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className={styles.statsGrid}>
+        <div className={styles.statsGrid} data-tour="parent-dashboard-stats">
           <StatCard
             icon={<BookingIcon />}
             value={totalBookings}

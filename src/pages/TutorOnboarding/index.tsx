@@ -121,7 +121,7 @@ const TutorOnboarding: React.FC = () => {
 
   return (
     <div className={styles.page}>
-      <div className={styles.stepNavigation}>
+      <div className={styles.stepNavigation} data-tour="onboarding-stepper">
         <OnboardingStepper
           currentStep={currentStep}
           onStepClick={goToStep}
@@ -130,7 +130,7 @@ const TutorOnboarding: React.FC = () => {
         />
       </div>
 
-      <div className={styles.body}>
+      <div className={styles.body} data-tour="onboarding-body">
         {currentStep === 1 && (
           <StepAvailability onboarding={onboarding} onSaveAvailability={sync.saveAvailability} saving={sync.saving} />
         )}
@@ -156,7 +156,7 @@ const TutorOnboarding: React.FC = () => {
         )}
       </div>
 
-      <div className={styles.footerPrimaryPill}>
+      <div className={styles.footerPrimaryPill} data-tour="onboarding-cta">
         <button
           type="button"
           className={styles.btnPrimary}
