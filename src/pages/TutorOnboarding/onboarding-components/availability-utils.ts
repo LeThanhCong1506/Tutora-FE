@@ -69,9 +69,16 @@ export const getAvailableDurations = (
     return isSessionWithinAvailability({ dayOfWeek, startHour, startMinute, durationHours }, availability);
   });
 
-// Gom các ô 30 phút rảnh thành các khối liên tục theo từng ngày, trả về độ dài (phút)
-// của từng khối. Dùng để suy ra giới hạn hợp lý cho "số giờ/buổi" và "số buổi/tuần".
-export const getContiguousBlocksMinutes = (availability: TutorAvailabilitySlot[]): number[] => {
+export interface AvailabilityRange {
+  dayOfWeek: number;
+  startMinutes: number;
+  endMinutes: number;
+}
+
+// Gom các ô 30 phút rảnh thành khoảng liên tục theo từng ngày. Availability lưu dạng
+// mảng phẳng mỗi ô 30 phút một phần tử, nên muốn hiển thị "07:00 – 09:00" cho người
+// dùng thì phải gộp lại ở đây.
+export const getAvailabilityRanges = (availability: TutorAvailabilitySlot[]): AvailabilityRange[] => {
   // day -> set các mốc startMinutes (mỗi mốc = 1 ô 30 phút đã chọn rảnh).
   const cellsByDay = new Map<number, Set<number>>();
   for (const slot of availability) {
@@ -85,24 +92,29 @@ export const getContiguousBlocksMinutes = (availability: TutorAvailabilitySlot[]
     for (let cur = start; cur < end; cur += 30) cells.add(cur);
   }
 
-  const blocks: number[] = [];
-  for (const cells of cellsByDay.values()) {
+  const ranges: AvailabilityRange[] = [];
+  for (const [dayOfWeek, cells] of cellsByDay) {
     const sorted = [...cells].sort((a, b) => a - b);
-    let runMinutes = 0;
+    let rangeStart: number | null = null;
     let prev = Number.NEGATIVE_INFINITY;
+
     for (const cell of sorted) {
-      if (cell === prev + 30) {
-        runMinutes += 30;
-      } else {
-        if (runMinutes > 0) blocks.push(runMinutes);
-        runMinutes = 30;
+      if (cell !== prev + 30) {
+        if (rangeStart !== null) ranges.push({ dayOfWeek, startMinutes: rangeStart, endMinutes: prev + 30 });
+        rangeStart = cell;
       }
       prev = cell;
     }
-    if (runMinutes > 0) blocks.push(runMinutes);
+    if (rangeStart !== null) ranges.push({ dayOfWeek, startMinutes: rangeStart, endMinutes: prev + 30 });
   }
-  return blocks;
+
+  return ranges;
 };
+
+// Độ dài (phút) của từng khối rảnh liên tục. Dùng để suy ra giới hạn hợp lý cho
+// "số giờ/buổi" và "số buổi/tuần".
+export const getContiguousBlocksMinutes = (availability: TutorAvailabilitySlot[]): number[] =>
+  getAvailabilityRanges(availability).map((range) => range.endMinutes - range.startMinutes);
 
 // Số giờ tối đa cho 1 buổi = khối rảnh liên tục dài nhất trong 1 ngày (giờ).
 // Một buổi học không thể dài hơn khoảng rảnh liên tục dài nhất tutor đã thiết lập.

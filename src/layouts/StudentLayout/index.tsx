@@ -481,7 +481,7 @@ const StudentLayoutInner: React.FC<StudentLayoutProps> = ({ children }) => {
     <PortalLayout
       navItems={navItems}
       userRole="STUDENT"
-      showSidebarUserCard={false}
+      showSidebarUserCard={true}
       showAvatarImage={false}
       profileMenuItems={profileMenuItems}
       sidebarNavFooter={sidebarNavFooter}

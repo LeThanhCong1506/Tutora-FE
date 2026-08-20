@@ -461,12 +461,14 @@ const ParentLayoutInner: React.FC<ParentLayoutProps> = ({ children }) => {
         </>
     );
 
+    // showSidebarUserCard: card đáy sidebar là trigger menu tài khoản. Trên mobile
+    // ProfileDropdown ở header bị ẩn nên tắt card = mất lối vào tài khoản.
     return (
         <PortalLayout
             navItems={navItems}
             userRole="PARENT"
             headerLeft={<NextLessonIndicator />}
-            showSidebarUserCard={false}
+            showSidebarUserCard={true}
             showAvatarImage={true}
             profileMenuItems={parentProfileMenuItems}
             sidebarNavFooter={sidebarNavFooter}
