@@ -221,7 +221,7 @@ const StudentBooking = () => {
       </header>
 
       <main className={styles.content}>
-        <div className={styles.tabBar} role="tablist" aria-label="Lọc booking theo trạng thái">
+        <div className={styles.tabBar} role="tablist" aria-label="Lọc booking theo trạng thái" data-tour="booking-tabs">
           {STATUS_TABS.map((tab) => (
             <button
               key={tab.key}
@@ -287,7 +287,7 @@ const StudentBooking = () => {
                     : '';
 
               return (
-                <article key={booking.bookingId} className={styles.bookingCard}>
+                <article key={booking.bookingId} className={styles.bookingCard} data-tour="booking-card">
                   <div className={styles.cardTop}>
                     <div className={styles.peopleInfo}>
                       <div className={styles.tutorInfo}>

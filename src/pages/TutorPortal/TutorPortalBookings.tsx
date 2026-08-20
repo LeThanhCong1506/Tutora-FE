@@ -362,7 +362,7 @@ const TutorPortalBookings = () => {
       </header>
 
       <main className={styles.content}>
-        <div className={styles.tabBar} role="tablist" aria-label="Lọc yêu cầu theo trạng thái">
+        <div className={styles.tabBar} role="tablist" aria-label="Lọc yêu cầu theo trạng thái" data-tour="bookings-tabs">
           {STATUS_TABS.map((tab) => (
             <button
               key={tab.key}
@@ -422,7 +422,7 @@ const TutorPortalBookings = () => {
                     : '';
 
               return (
-                <article key={booking.bookingId} className={styles.bookingCard}>
+                <article key={booking.bookingId} className={styles.bookingCard} data-tour="bookings-card">
                   <div className={styles.cardHeader}>
                     <div className={styles.studentInfo}>
                       <div className={styles.avatar} aria-hidden="true">
@@ -533,7 +533,7 @@ const TutorPortalBookings = () => {
                       </section>
                     </div>
 
-                    <aside className={styles.payoutCard} aria-label="Thông tin thanh toán">
+                    <aside className={styles.payoutCard} aria-label="Thông tin thanh toán" data-tour="bookings-payout">
                       <div className={styles.payoutTitle}>
                         <span>
                           <Wallet size={18} />
@@ -668,7 +668,7 @@ const TutorPortalBookings = () => {
                       </div>
                     </div>
 
-                    <div className={styles.actions}>
+                    <div className={styles.actions} data-tour="bookings-actions">
                       {booking.status !== 'pending_tutor' && (
                         <button
                           type="button"

@@ -9,8 +9,10 @@ import {
 } from '@ant-design/icons';
 import { toast } from 'react-toastify';
 import styles from '../styles.module.css';
+import { useIsMobile } from '../../../hooks/useIsMobile';
 import { DAY_COLUMNS, formatHourMinute } from './constants';
 import HourSlotGrid from './HourSlotGrid';
+import AvailabilityRangeList from './AvailabilityRangeList';
 import BulkAvailabilityModal, { type BulkSlot } from './BulkAvailabilityModal';
 import type { UseOnboardingState } from './hooks/useOnboardingState';
 import type { TutorAvailabilitySlot } from './types';
@@ -34,6 +36,31 @@ const StepAvailability: React.FC<StepAvailabilityProps> = ({ onboarding, onSaveA
   const paintModeRef = useRef<PaintMode | null>(null);
   const paintedKeysRef = useRef(new Set<string>());
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
+  // Trên mobile lưới 30 phút cao ~1500px và mỗi ô quá nhỏ để chạm chính xác —
+  // thay bằng danh sách khung giờ + modal "Thêm theo khung giờ".
+  const isMobile = useIsMobile();
+
+  // Xoá cả một khoảng: bỏ đánh dấu từng ô 30 phút bên trong rồi lưu một lần.
+  // Đi qua đúng luồng persist của handleBulkApply để không lệch trạng thái với BE.
+  const handleRemoveRange = async (dayOfWeek: number, startMinutes: number, endMinutes: number) => {
+    const removedKeys = new Set<string>();
+    for (let current = startMinutes; current < endMinutes; current += 30) {
+      removedKeys.add(slotKey(dayOfWeek, Math.floor(current / 60), current % 60));
+    }
+
+    const nextAvailability = state.availability.filter((slot) => {
+      const [hour, minute] = slot.startTime.split(':').map(Number);
+      return !removedKeys.has(slotKey(slot.dayOfWeek, hour, minute || 0));
+    });
+
+    const saved = onSaveAvailability ? await onSaveAvailability(nextAvailability) : true;
+    if (!saved) return;
+
+    for (let current = startMinutes; current < endMinutes; current += 30) {
+      setAvailable(dayOfWeek, Math.floor(current / 60), (current % 60) as 0 | 30, false);
+    }
+    toast.success('Đã xoá khung giờ');
+  };
 
   const handleBulkApply = async (slots: BulkSlot[]) => {
     // Cộng dồn: mỗi slot được set true (nếu đã rảnh sẵn thì setAvailable no-op).
@@ -182,7 +209,15 @@ const StepAvailability: React.FC<StepAvailabilityProps> = ({ onboarding, onSaveA
       {/* 2-column layout: grid bên trái, panel sticky bên phải */}
       <div className={styles.availabilityLayout}>
         <div className={styles.availabilityMain}>
-          <HourSlotGrid renderCell={renderCell} wholeDayLabel="Cả ngày" onWholeDayClick={toggleAvailabilityDay} />
+          {isMobile ? (
+            <AvailabilityRangeList
+              availability={state.availability}
+              onRemoveRange={handleRemoveRange}
+              disabled={saving}
+            />
+          ) : (
+            <HourSlotGrid renderCell={renderCell} wholeDayLabel="Cả ngày" onWholeDayClick={toggleAvailabilityDay} />
+          )}
         </div>
 
         <aside className={styles.availabilityAside}>
@@ -216,16 +251,19 @@ const StepAvailability: React.FC<StepAvailabilityProps> = ({ onboarding, onSaveA
               Thêm theo khung giờ
             </button>
 
-            <div className={styles.availabilityAsideHints}>
-              <div className={styles.availabilityAsideHint}>
-                <DragOutlined />
-                <span>Click hoặc kéo để chọn nhiều ô liền</span>
+            {/* Hint kéo-thả chỉ đúng với lưới ở desktop; trên mobile không có lưới để kéo. */}
+            {!isMobile && (
+              <div className={styles.availabilityAsideHints}>
+                <div className={styles.availabilityAsideHint}>
+                  <DragOutlined />
+                  <span>Click hoặc kéo để chọn nhiều ô liền</span>
+                </div>
+                <div className={styles.availabilityAsideHint}>
+                  <span className={`${styles.legendDot} ${styles.available}`} />
+                  <span>Ô xanh = khung bạn có thể dạy</span>
+                </div>
               </div>
-              <div className={styles.availabilityAsideHint}>
-                <span className={`${styles.legendDot} ${styles.available}`} />
-                <span>Ô xanh = khung bạn có thể dạy</span>
-              </div>
-            </div>
+            )}
 
             {!isEmpty && (
               <button type="button" className={styles.availabilityClearBtn} onClick={clearAvailability}>

@@ -372,10 +372,15 @@
   text-transform: uppercase;
 }
 
+/* flex-wrap + gap: trên màn hẹp, khối action (pill "nhận học viên") xuống dòng
+   thay vì ép tiêu đề vỡ 3 dòng rồi vẫn tràn khỏi viền card. Dùng chung cho 4 card
+   của trang hồ sơ nên sửa ở đây là fix hết. */
 .sectionHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-bottom: 28px;
 }
 
@@ -386,6 +391,7 @@
   line-height: 31.5px;
   color: #1a2238;
   margin: 0;
+  min-width: 0;
 }
 
 .editingBadge {
@@ -404,6 +410,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
+  max-width: 100%;
 }
 
 /* ===== ACCEPTING BOOKINGS PILL ===== */
@@ -2546,6 +2554,23 @@
 
   .sectionCard {
     padding: 21px;
+  }
+
+  /* Tiêu đề chiếm trọn dòng, pill trạng thái xuống dòng riêng và trải hết bề ngang
+     — nhãn bên trong vẫn white-space:nowrap nên phải cho nó cả dòng mới đủ chỗ. */
+  .sectionTitle {
+    flex: 1 1 100%;
+    font-size: 22px;
+    line-height: 27px;
+  }
+
+  .sectionHeaderActions {
+    flex: 1 1 100%;
+  }
+
+  .acceptingPill {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .identityNotSubmitted {

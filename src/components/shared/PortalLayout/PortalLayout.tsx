@@ -3,7 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import styles from './PortalLayout.module.css';
 
-import type { ProfileMenuItem } from './ProfileDropdown';
+import ProfileDropdown, { type ProfileMenuItem } from './ProfileDropdown';
 import { ConfirmDialog } from '../ConfirmDialog';
 import Header from '../../Header/Header';
 import { clearUserFromStorage, getUserInfoFromToken, getUserProfile } from '../../../services/auth.service';
@@ -271,36 +271,65 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                     {sidebarNavFooter}
                 </nav>
 
-                {/* User Card at bottom of sidebar */}
+                {/* User Card at bottom of sidebar — cũng là trigger của menu tài khoản.
+                    Trên mobile, ProfileDropdown ở header bị ẩn nên đây là lối vào duy nhất. */}
                 {showSidebarUserCard && (
                     <div className={styles.sidebarUser}>
-                        <div className={styles.userCard}>
-                            <div className={styles.userAvatar}>
-                                {showAvatarImage ? (
-                                    <>
-                                        <img
-                                            src={userData.avatar}
-                                            alt={userData.name}
-                                            className={styles.userAvatarImg}
-                                            onError={(e) => {
-                                                e.currentTarget.style.display = 'none';
-                                                const span = e.currentTarget.parentElement?.querySelector('span');
-                                                if (span) (span as HTMLElement).style.display = 'flex';
-                                            }}
-                                        />
-                                        <span className={styles.userInitials} style={{ display: 'none' }}>
-                                            {userData.initials}
-                                        </span>
-                                    </>
-                                ) : (
-                                    <span className={styles.userInitials}>{userData.initials}</span>
-                                )}
-                            </div>
-                            <div className={styles.userInfo}>
-                                <span className={styles.userName}>{userData.name}</span>
-                                <span className={styles.userRoleText}>{userData.role}</span>
-                            </div>
-                        </div>
+                        <ProfileDropdown
+                            variant="sidebar"
+                            name={userData.name}
+                            role={userData.role}
+                            initials={userData.initials}
+                            avatarUrl={userData.avatar}
+                            subtitle={userData.email}
+                            showAvatarImage={showAvatarImage}
+                            items={dropdownItems}
+                            onNavigate={(path) => navigate(path)}
+                            renderTrigger={({ open, toggle, setTriggerNode }) => (
+                                <button
+                                    type="button"
+                                    ref={setTriggerNode}
+                                    className={`${styles.userCard} ${open ? styles.userCardOpen : ''}`}
+                                    onClick={toggle}
+                                    aria-haspopup="menu"
+                                    aria-expanded={open}
+                                    aria-label="Mở menu tài khoản"
+                                >
+                                    <div className={styles.userAvatar}>
+                                        {showAvatarImage ? (
+                                            <>
+                                                <img
+                                                    src={userData.avatar}
+                                                    alt={userData.name}
+                                                    className={styles.userAvatarImg}
+                                                    onError={(e) => {
+                                                        e.currentTarget.style.display = 'none';
+                                                        const span =
+                                                            e.currentTarget.parentElement?.querySelector('span');
+                                                        if (span) (span as HTMLElement).style.display = 'flex';
+                                                    }}
+                                                />
+                                                <span className={styles.userInitials} style={{ display: 'none' }}>
+                                                    {userData.initials}
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <span className={styles.userInitials}>{userData.initials}</span>
+                                        )}
+                                    </div>
+                                    <div className={styles.userInfo}>
+                                        <span className={styles.userName}>{userData.name}</span>
+                                        <span className={styles.userRoleText}>{userData.role}</span>
+                                    </div>
+                                    <span
+                                        className={`material-symbols-outlined ${styles.userCardChevron}`}
+                                        aria-hidden="true"
+                                    >
+                                        unfold_more
+                                    </span>
+                                </button>
+                            )}
+                        />
                     </div>
                 )}
             </aside>}

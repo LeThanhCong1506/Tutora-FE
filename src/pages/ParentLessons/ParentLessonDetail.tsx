@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { isZaloMiniApp } from '../../services/zalo-env';
 
 const inMiniApp = isZaloMiniApp();
-import { ArrowLeft, CalendarClock, CheckCircle2, Clock3, XCircle } from 'lucide-react';
+import { ArrowLeft, CalendarClock, CheckCircle2, Clock3, GraduationCap, UserRound, XCircle } from 'lucide-react';
 import { getParentLessonDetail, type ParentLessonDetailDto } from '../../services/parent-lesson.service';
 import {
   getClassSessionDispute,
@@ -669,7 +669,7 @@ const ParentLessonDetail: React.FC = () => {
             <div className={styles.sectionBody}>
               <div className={styles.attendanceList}>
                 <div className={styles.attendanceRow}>
-                  <span className={styles.attendanceAvatar}>GS</span>
+                  <span className={styles.attendanceAvatar}><GraduationCap size={16} strokeWidth={2} aria-hidden /></span>
                   <span className={styles.attendanceText}>
                     <strong>Gia sư</strong>
                     <small>{getPresenceLabel(lesson.isTutorPresent)}</small>
@@ -677,7 +677,7 @@ const ParentLessonDetail: React.FC = () => {
                   <span className={`${styles.presenceDot} ${getPresenceClass(lesson.isTutorPresent)}`} />
                 </div>
                 <div className={styles.attendanceRow}>
-                  <span className={styles.attendanceAvatar}>HV</span>
+                  <span className={styles.attendanceAvatar}><UserRound size={16} strokeWidth={2} aria-hidden /></span>
                   <span className={styles.attendanceText}>
                     <strong>Học viên</strong>
                     <small>{getPresenceLabel(lesson.isStudentPresent)}</small>
