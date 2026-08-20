@@ -42,6 +42,13 @@ const NOTIFICATION_TYPE = {
     Warning: 'warning',
     Message: 'message',
     SupportMessage: 'support_message',
+    DisputeReceived: 'dispute_received',
+    DisputeResolved: 'dispute_resolved',
+    DisputeResponded: 'dispute_responded',
+    TutorVettingApproved: 'tutor_vetting_approved',
+    TutorVettingRejected: 'tutor_vetting_rejected',
+    SettlementReleased: 'settlement_released',
+    CourseCompleted: 'course_completed',
 } as const;
 
 /**
