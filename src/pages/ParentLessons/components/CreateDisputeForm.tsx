@@ -230,7 +230,7 @@ const CreateDisputeForm: React.FC<CreateDisputeFormProps> = ({
                 const meta = getClassSessionStatusMeta(l.status);
                 return {
                   value: l.classSessionId,
-                  label: `${dayjs(l.scheduledStart).format('DD/MM/YYYY HH:mm')} · ${l.subjectName || 'N/A'} · GS ${l.tutorName || 'N/A'} · ${meta.label}`,
+                  label: `${dayjs(l.scheduledStart).format('DD/MM/YYYY HH:mm')} · ${l.subjectName || 'N/A'} · Gia sư ${l.tutorName || 'N/A'} · ${meta.label}`,
                 };
               })}
             />
