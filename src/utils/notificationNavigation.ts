@@ -132,6 +132,26 @@ export function getNotificationTargetPath(notification: NotificationDTO): string
         if (prefix === '/tutor-portal') return `${prefix}/bookings`;
         return refId ? `${prefix}/booking/${refId}` : lessonListPath;
     }
+    // Khiếu nại: mọi portal đều có route `disputes/:classSessionId`, nên refId là classSessionId.
+    // `dispute_new` KHÔNG nằm ở đây — đó là loại gửi cho Admin/Staff bên CMS và refId là disputeId.
+    if ((type === NOTIFICATION_TYPE.DisputeReceived
+        || type === NOTIFICATION_TYPE.DisputeResolved
+        || type === NOTIFICATION_TYPE.DisputeResponded) && refId) {
+        return `${prefix}/disputes/${refId}`;
+    }
+    // Kết quả kiểm duyệt hồ sơ/chứng chỉ: chỉ gia sư nhận, dẫn thẳng về trang hồ sơ để sửa tiếp.
+    if (type === NOTIFICATION_TYPE.TutorVettingApproved
+        || type === NOTIFICATION_TYPE.TutorVettingRejected) {
+        return `${prefix}/profile`;
+    }
+    // Giải ngân chỉ gửi cho gia sư — về trang tài chính để đối chiếu số dư.
+    if (type === NOTIFICATION_TYPE.SettlementReleased) {
+        return `${prefix}/finance`;
+    }
+    if (type === NOTIFICATION_TYPE.CourseCompleted) {
+        if (prefix === '/tutor-portal') return `${prefix}/bookings`;
+        return refId ? `${prefix}/booking/${refId}` : `${prefix}/booking`;
+    }
     if (type === NOTIFICATION_TYPE.Message && refId) {
         return `${prefix}/messages`;
     }
