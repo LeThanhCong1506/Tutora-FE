@@ -1107,6 +1107,10 @@
   font-weight: 750;
 }
 
+.attendanceAvatar svg {
+  display: block;
+}
+
 .attendanceList > div > span:nth-child(2) {
   display: flex;
   flex-direction: column;

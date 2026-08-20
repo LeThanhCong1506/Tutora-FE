@@ -335,7 +335,7 @@ const TutorAccount = () => {
     }
 
     const displayName = profile?.fullname || 'Tutor';
-    const initials = displayName ? getInitials(displayName) : 'GS';
+    const initials = getInitials(displayName);
 
     return (
         <div className={styles.page}>
