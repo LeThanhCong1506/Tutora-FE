@@ -244,6 +244,7 @@ const IntroVideoSection: React.FC<IntroVideoSectionProps> = ({
           )}
           <label className={styles.inputLabel} htmlFor="intro-video-url">
             Link YouTube
+            <span className={styles.optionalTag}>Không bắt buộc</span>
           </label>
           <div className={styles.urlRow}>
             <div className={styles.inputWrapper}>
