@@ -1,0 +1,90 @@
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(15, 18, 28, 0.72);
+    backdrop-filter: blur(2px);
+}
+
+.dialog {
+    display: flex;
+    flex-direction: column;
+    /* Ảnh biên lai thường là ảnh chụp màn hình dọc — giới hạn theo cả 2 chiều để không
+       tràn khỏi màn hình mà vẫn tận dụng được chiều cao. */
+    max-width: min(920px, 100%);
+    max-height: 100%;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 24px 60px rgba(15, 18, 28, 0.35);
+    overflow: hidden;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(62, 47, 40, 0.1);
+}
+
+.title {
+    margin: 0;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 20px;
+    color: #1a2238;
+}
+
+.close {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: rgba(26, 34, 56, 0.06);
+    color: #1a2238;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.close:hover,
+.close:focus-visible {
+    background: rgba(26, 34, 56, 0.14);
+}
+
+.body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    /* Ảnh cao hơn khung thì cuộn trong thân modal, không đẩy header ra ngoài. */
+    overflow: auto;
+}
+
+.image {
+    display: block;
+    max-width: 100%;
+    /* Trừ đi chiều cao header + padding để ảnh luôn nằm trọn trong viewport. */
+    max-height: calc(100vh - 48px - 49px - 32px);
+    object-fit: contain;
+}
+
+@media (max-width: 600px) {
+    .overlay {
+        padding: 12px;
+    }
+
+    .image {
+        max-height: calc(100vh - 24px - 49px - 32px);
+    }
+}

@@ -16,6 +16,7 @@ import { formatCurrency, formatDateTime } from '../../utils/formatters';
 import FinanceShell from './components/FinanceShell';
 import WithdrawalStatusBadge from '../../components/Finance/WithdrawalStatusBadge';
 import '../../styles/pages/tutor-finance.css';
+import ProofImageField from '../../components/Finance/ProofImageField';
 
 const WithdrawalDetailPage = () => {
   const { id: idString } = useParams<{ id: string }>();
@@ -267,33 +268,7 @@ const WithdrawalDetailPage = () => {
                     <dd>{withdrawal.rejectionReason}</dd>
                   </div>
                 )}
-                {withdrawal.proofImageUrl && (
-                  <div className="finance-proof-image-container">
-                    <dt>Biên lai chuyển khoản</dt>
-                    <dd>
-                      <a
-                        href={withdrawal.proofImageUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="finance-proof-image-link"
-                      >
-                        <img
-                          src={withdrawal.proofImageUrl}
-                          alt="Biên lai chuyển khoản"
-                          className="finance-proof-image"
-                          loading="lazy"
-                        />
-                      </a>
-                      <button
-                        type="button"
-                        className="finance-proof-image-btn"
-                        onClick={() => window.open(withdrawal.proofImageUrl!, '_blank')}
-                      >
-                        Xem ảnh đầy đủ →
-                      </button>
-                    </dd>
-                  </div>
-                )}
+                <ProofImageField proofImageUrl={withdrawal.proofImageUrl} />
               </dl>
             </section>
           </div>

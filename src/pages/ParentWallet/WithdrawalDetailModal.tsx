@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { formatCurrency, formatDateTime, formatWithdrawalStatusV2 } from '../../utils/formatters';
 import { getWithdrawalDetail, type WithdrawalDetail } from '../../services/wallet.service';
+import { useProtectedImage } from '../../hooks/useProtectedImage';
+import { ImageLightbox } from '../../components/shared';
 import styles from './styles.module.css';
 
 interface Props {
@@ -19,6 +21,9 @@ const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
 const WithdrawalDetailModal = ({ withdrawalId, onClose }: Props) => {
   const [detail, setDetail] = useState<WithdrawalDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  // Ảnh biên lai nằm sau endpoint đòi token; thẻ <img> không gửi được nên phải tải bằng JS.
+  const { objectUrl: proofImage, failed: proofFailed } = useProtectedImage(detail?.proofImageUrl);
+  const [proofZoomed, setProofZoomed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -92,26 +97,33 @@ const WithdrawalDetailModal = ({ withdrawalId, onClose }: Props) => {
                     <div className={styles.invoiceRow}>
                       <span className={styles.invoiceLabel}>Biên lai chuyển khoản</span>
                       <div className={styles.invoiceValue}>
-                        <a
-                          href={detail.proofImageUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={styles.proofImageLink}
-                        >
-                          <img
-                            src={detail.proofImageUrl}
-                            alt="Biên lai chuyển khoản"
-                            className={styles.proofImage}
-                            loading="lazy"
-                          />
-                        </a>
-                        <button
-                          type="button"
-                          className={styles.viewFullImageBtn}
-                          onClick={() => window.open(detail.proofImageUrl!, '_blank')}
-                        >
-                          Xem ảnh đầy đủ →
-                        </button>
+                        {proofFailed ? (
+                          <span>Không tải được ảnh. Vui lòng thử lại.</span>
+                        ) : !proofImage ? (
+                          <span>Đang tải ảnh…</span>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              className={styles.proofImageLink}
+                              onClick={() => setProofZoomed(true)}
+                              aria-label="Phóng to biên lai chuyển khoản"
+                            >
+                              <img
+                                src={proofImage}
+                                alt="Biên lai chuyển khoản"
+                                className={styles.proofImage}
+                              />
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.viewFullImageBtn}
+                              onClick={() => setProofZoomed(true)}
+                            >
+                              Xem ảnh đầy đủ →
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   )}
@@ -121,6 +133,12 @@ const WithdrawalDetailModal = ({ withdrawalId, onClose }: Props) => {
           )}
         </div>
       </div>
+
+      <ImageLightbox
+        imageUrl={proofZoomed ? proofImage : null}
+        title="Biên lai chuyển khoản"
+        onClose={() => setProofZoomed(false)}
+      />
     </div>
   );
 };
