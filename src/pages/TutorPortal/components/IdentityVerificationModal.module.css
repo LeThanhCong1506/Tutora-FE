@@ -447,6 +447,15 @@
     line-height: 1.6;
 }
 
+/* Ghi chú phụ: khu vực dạy KHÔNG bị CCCD ghi đè — nhẹ hơn phần mô tả chính. */
+.profileUpdateFootnote {
+    margin-top: 10px !important;
+    padding-top: 10px;
+    border-top: 1px solid rgba(62, 47, 40, 0.12);
+    color: rgba(62, 47, 40, 0.58) !important;
+    font-size: 13px !important;
+}
+
 .profileUpdateConfirm {
     width: 100%;
     margin-top: 22px;

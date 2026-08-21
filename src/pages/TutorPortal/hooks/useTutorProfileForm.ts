@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import {
     getVerificationProgress,
@@ -19,6 +19,7 @@ import { getMyAvailability, DAY_OF_WEEK_MAP } from '../../../services/availabili
 import { getUserKYCData } from '../../../services/verification.service';
 import type { AvailabilitySlot as ApiAvailabilitySlot } from '../../../services/availability.service';
 import type { IdentityVerificationData } from '../components/IdentityVerificationModal';
+import { matchProvinceFromCccdAddress } from '../utils/cccdAddress';
 
 // Re-export for convenience
 export type { IdentityVerificationData };
@@ -294,6 +295,12 @@ function mapSectionStatuses(sections: VerificationSections): SectionStatuses {
 export function useTutorProfileForm() {
     const [formData, setFormData] = useState<TutorProfileFormData>(initialFormData);
     const [savedData, setSavedData] = useState<TutorProfileFormData>(initialFormData);
+    // Ảnh chụp formData mới nhất cho các luồng ASYNC (gợi ý khu vực dạy sau khi quét
+    // CCCD) đọc được giá trị hiện tại mà không phải đưa formData vào deps của useCallback.
+    const formDataRef = useRef(formData);
+    useEffect(() => {
+        formDataRef.current = formData;
+    }, [formData]);
     const [sectionStatuses, setSectionStatuses] = useState<SectionStatuses>(initialSectionStatuses);
     // Bảng giá theo môn × lớp (read-only) — hiển thị ở Pricing card, chỉnh sửa ở Onboarding.
     const [pricingItems, setPricingItems] = useState<SubjectGradePriceItem[]>([]);
@@ -887,6 +894,25 @@ export function useTutorProfileForm() {
         if (fullName) {
             window.dispatchEvent(new CustomEvent('profile-name-updated', { detail: fullName }));
         }
+
+        // Gợi ý KHU VỰC DẠY từ tỉnh/thành trên CCCD — chỉ khi gia sư CHƯA chọn.
+        // Thường trú và nơi dạy là 2 việc khác nhau (có thể ở Hà Nội mà dạy ở TP.HCM),
+        // nên không bao giờ ghi đè lựa chọn sẵn có, và cũng không tự lưu lên BE:
+        // giá trị chỉ được điền sẵn vào form để gia sư xác nhận ở "Thông tin cơ bản".
+        void (async () => {
+            if (formDataRef.current.teachingAreaCity) return;
+
+            const province = await matchProvinceFromCccdAddress(data.address);
+            if (!province || formDataRef.current.teachingAreaCity) return;
+
+            setFormData(prev =>
+                prev.teachingAreaCity ? prev : { ...prev, teachingAreaCity: province.name },
+            );
+            toast.info(
+                `Đã gợi ý khu vực dạy "${province.name}" theo địa chỉ trên CCCD. ` +
+                    'Mở "Thông tin cơ bản" để chọn phường/xã và lưu lại.',
+            );
+        })();
     }, []);
 
     // Save draft (TODO: implement with API when available)

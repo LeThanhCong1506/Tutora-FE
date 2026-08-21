@@ -197,6 +197,7 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
                     fullNameOnId: kyc.fullName || '',
                     dateOfBirth: kyc.dateOfBirth || '',
                     gender: kyc.gender || '',
+                    hometown: kyc.hometown || '',
                     address: kyc.address || '',
                     verificationStatus: 'verified',
                 });
@@ -398,6 +399,10 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
                                 <span className={styles.ekycValue}>{formData.gender || '—'}</span>
                             </div>
                             <div className={styles.ekycItem}>
+                                <span className={styles.ekycLabel}>Quê quán</span>
+                                <span className={styles.ekycValue}>{formData.hometown || '—'}</span>
+                            </div>
+                            <div className={styles.ekycItem}>
                                 <span className={styles.ekycLabel}>Địa chỉ thường trú</span>
                                 <span className={styles.ekycValue}>{formData.address || '—'}</span>
                             </div>
@@ -428,8 +433,12 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
                     <div className={styles.profileUpdateIcon} aria-hidden="true"><CheckIcon /></div>
                     <h2 id="identity-profile-update-title">Thông tin đã được cập nhật</h2>
                     <p id="identity-profile-update-description">
-                        Họ tên, ngày sinh và giới tính của bạn đã được cập nhật theo CCCD để đảm bảo
-                        tính minh bạch và xác thực cho tài khoản.
+                        Họ tên, ngày sinh, giới tính và địa chỉ thường trú của bạn đã được cập nhật
+                        theo CCCD để đảm bảo tính minh bạch và xác thực cho tài khoản.
+                    </p>
+                    <p id="identity-profile-update-teaching-area" className={styles.profileUpdateFootnote}>
+                        Khu vực dạy học của bạn không bị thay đổi — đây là trường riêng, bạn có thể
+                        chọn lại bất cứ lúc nào ở phần Thông tin cơ bản.
                     </p>
                     <button type="button" className={styles.profileUpdateConfirm} onClick={acknowledgeProfileUpdate}>
                         Đồng ý
