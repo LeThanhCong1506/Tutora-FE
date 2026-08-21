@@ -111,7 +111,7 @@ const IntroVideoSection: React.FC<IntroVideoSectionProps> = ({
             <div className={styles.noVideoIcon}>
               <CirclePlay size={30} strokeWidth={1.8} />
             </div>
-            <div>
+            <div className={styles.noVideoText}>
               <span>Chưa có video giới thiệu</span>
               <p>Video sẽ hiển thị ở đây sau khi gia sư cập nhật.</p>
             </div>
@@ -244,6 +244,7 @@ const IntroVideoSection: React.FC<IntroVideoSectionProps> = ({
           )}
           <label className={styles.inputLabel} htmlFor="intro-video-url">
             Link YouTube
+            <span className={styles.optionalTag}>Không bắt buộc</span>
           </label>
           <div className={styles.urlRow}>
             <div className={styles.inputWrapper}>

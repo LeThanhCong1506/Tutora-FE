@@ -35,11 +35,9 @@ export const getProfileCompletionItems = (profileData: ProfileCompletionData): P
             !!profileData.teachingAreaCity &&
             !!profileData.teachingAreaDistrict,
     },
-    {
-        key: 'video',
-        label: 'Video giới thiệu',
-        completed: !!profileData.videoIntroUrl,
-    },
+    // 'video' không còn nằm trong checklist bắt buộc: backend không chặn gửi hồ sơ
+    // hay hiển thị marketplace nếu thiếu video (xem TutorService.GetProfileCompletionAsync).
+    // Hiển thị riêng trong ProfileCompleteness dưới dạng mục "Khuyến khích".
     {
         key: 'about',
         label: 'Giới thiệu bản thân',
