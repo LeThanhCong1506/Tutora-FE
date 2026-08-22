@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import EditModal from './EditModal';
 import FormField from './FormField';
+import EducationAutocomplete from './EducationAutocomplete';
 import {
     validateBio,
     validateEducation,
@@ -151,16 +152,12 @@ const AboutMeModal: React.FC<AboutMeModalProps> = ({
                     hint="100-2000 ký tự"
                 />
 
-                {/* Education */}
-                <FormField
-                    type="text"
-                    name="education"
-                    label="Trình độ học vấn"
+                {/* Education — ô nhập tự do kèm gợi ý 447 trường ĐH/CĐ/học viện Việt Nam */}
+                <EducationAutocomplete
                     value={formData.education}
                     onChange={(value) => setFormData(prev => ({ ...prev, education: value }))}
                     placeholder="VD: Cử nhân Sư phạm Toán - Đại học Sư phạm Hà Nội"
                     maxLength={255}
-                    required
                     error={errors.education}
                 />
 

@@ -99,6 +99,8 @@ export interface WithdrawalDetail {
     completionNote: string | null;
     rejectionReason: string | null;
     transactionId: string | null;
+    /** Mã tham chiếu do ngân hàng cấp — cũng in trên ảnh biên lai, đưa ra dạng text cho dễ tra cứu. */
+    bankTransactionCode: string | null;
     paidAt: string | null;
     proofImageUrl: string | null;
 }

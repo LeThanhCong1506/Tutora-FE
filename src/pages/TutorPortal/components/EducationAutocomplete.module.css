@@ -1,0 +1,88 @@
+/* Ô "Trình độ học vấn" kèm gợi ý tên trường.
+   Phần input tái dùng FormField.module.css; file này chỉ lo dropdown. */
+
+.combobox {
+    position: relative;
+}
+
+.dropdown {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    border: 1px solid rgba(62, 47, 40, 0.15);
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 12px 28px rgba(26, 34, 56, 0.14);
+    overflow: hidden;
+}
+
+.status {
+    margin: 0;
+    padding: 14px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    line-height: 18px;
+    color: rgba(62, 47, 40, 0.6);
+}
+
+.list {
+    /* ~6 dòng rồi mới cuộn: đủ để lướt mà không nuốt hết chiều cao modal. */
+    max-height: 268px;
+    margin: 0;
+    padding: 4px;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    color: #3e2f28;
+}
+
+.optionActive {
+    background: rgba(26, 34, 56, 0.07);
+}
+
+.optionName {
+    flex: 1;
+    min-width: 0;
+}
+
+.optionAbbr {
+    flex-shrink: 0;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: rgba(26, 34, 56, 0.09);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: #1a2238;
+}
+
+.optionKind {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-style: italic;
+    color: rgba(62, 47, 40, 0.45);
+}
+
+@media (max-width: 600px) {
+    .list {
+        max-height: 200px;
+    }
+
+    /* Trên máy hẹp, tên trường đã chiếm hết chỗ — bỏ nhãn loại cho khỏi xuống dòng. */
+    .optionKind {
+        display: none;
+    }
+}

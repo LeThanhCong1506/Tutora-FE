@@ -55,3 +55,6 @@ export type {
     SessionTimelineSource,
     SessionTimelineTone,
 } from './SessionTimeline';
+
+export { ImageLightbox } from './ImageLightbox';
+export type { ImageLightboxProps } from './ImageLightbox';
