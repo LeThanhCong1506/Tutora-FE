@@ -14,6 +14,7 @@ import { toast } from 'react-toastify';
 import { getWithdrawalDetail } from '../../../services/tutorFinance.service';
 import type { WithdrawalDetail } from '../../../types/finance.types';
 import { formatCurrency, formatDateTime } from '../../../utils/formatters';
+import ProofImageField from '../../../components/Finance/ProofImageField';
 import FinancePageShell from '../components/FinancePageShell';
 import WithdrawalStatusBadge from '../../../components/Finance/WithdrawalStatusBadge';
 import '../../../styles/pages/tutor-finance.css';
@@ -238,6 +239,12 @@ const WithdrawalDetailPage: React.FC = () => {
                   <dt>Mã yêu cầu</dt>
                   <dd>#{withdrawal.withdrawalId}</dd>
                 </div>
+                {withdrawal.bankTransactionCode && (
+                  <div>
+                    <dt>Mã tham chiếu ngân hàng</dt>
+                    <dd>{withdrawal.bankTransactionCode}</dd>
+                  </div>
+                )}
                 {withdrawal.transactionId && (
                   <div>
                     <dt>Mã tham chiếu thanh toán</dt>
@@ -262,33 +269,7 @@ const WithdrawalDetailPage: React.FC = () => {
                     <dd>{withdrawal.rejectionReason}</dd>
                   </div>
                 )}
-                {withdrawal.proofImageUrl && (
-                  <div className="finance-proof-image-container">
-                    <dt>Biên lai chuyển khoản</dt>
-                    <dd>
-                      <a
-                        href={withdrawal.proofImageUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="finance-proof-image-link"
-                      >
-                        <img
-                          src={withdrawal.proofImageUrl}
-                          alt="Biên lai chuyển khoản"
-                          className="finance-proof-image"
-                          loading="lazy"
-                        />
-                      </a>
-                      <button
-                        type="button"
-                        className="finance-proof-image-btn"
-                        onClick={() => window.open(withdrawal.proofImageUrl!, '_blank')}
-                      >
-                        Xem ảnh đầy đủ →
-                      </button>
-                    </dd>
-                  </div>
-                )}
+                <ProofImageField proofImageUrl={withdrawal.proofImageUrl} />
               </dl>
             </section>
           </div>
