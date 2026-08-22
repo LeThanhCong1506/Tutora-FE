@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   CalendarClock,
@@ -133,6 +133,7 @@ const getDisplayStatus = (session: ClassSessionDetailResponse) => {
 
 const TutorPortalClassSessionDetail = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { classSessionId: rawClassSessionId } = useParams();
   const classSessionId = rawClassSessionId && /^\d+$/.test(rawClassSessionId) ? Number(rawClassSessionId) : null;
   const [session, setSession] = useState<ClassSessionDetailResponse | null>(null);
@@ -253,6 +254,14 @@ const TutorPortalClassSessionDetail = () => {
     setPendingAttachments([]);
   };
 
+  /** Quay lại đúng trang/tab người dùng vừa rời (vd tab "Hoàn thành" trên lịch dạy) thay vì luôn
+   *  văng về URL mặc định — `location.key === 'default'` nghĩa là trang này là entry đầu tiên của
+   *  history (mở thẳng link, F5, tab mới), lúc đó `navigate(-1)` sẽ văng ra khỏi app. */
+  const goBack = () => {
+    if (location.key !== 'default') navigate(-1);
+    else navigate('/tutor-portal/calendar');
+  };
+
   const handleOpenStudentProfile = () => {
     if (!session?.student?.studentId || !session.bookingId) return;
 
@@ -272,7 +281,7 @@ const TutorPortalClassSessionDetail = () => {
               <button
                 type="button"
                 className={styles.backButton}
-                onClick={() => navigate('/tutor-portal/calendar')}
+                onClick={goBack}
                 aria-label="Quay lại lịch dạy"
               >
                 <ArrowLeft size={19} />
@@ -301,7 +310,7 @@ const TutorPortalClassSessionDetail = () => {
               <button
                 type="button"
                 className={styles.backButton}
-                onClick={() => navigate('/tutor-portal/calendar')}
+                onClick={goBack}
                 aria-label="Quay lại lịch dạy"
               >
                 <ArrowLeft size={19} />
@@ -324,7 +333,7 @@ const TutorPortalClassSessionDetail = () => {
                 <button
                   type="button"
                   className={styles.primaryButton}
-                  onClick={() => navigate('/tutor-portal/calendar')}
+                  onClick={goBack}
                 >
                   Về lịch dạy
                 </button>
@@ -394,12 +403,12 @@ const TutorPortalClassSessionDetail = () => {
               <button
                 type="button"
                 className={styles.backButton}
-                onClick={() => navigate('/tutor-portal/calendar')}
+                onClick={goBack}
                 aria-label="Quay lại lịch dạy"
               >
                 <ArrowLeft size={19} />
               </button>
-              <button type="button" className={styles.breadcrumb} onClick={() => navigate('/tutor-portal/calendar')}>
+              <button type="button" className={styles.breadcrumb} onClick={goBack}>
                 Lịch dạy
               </button>
               <span className={styles.breadcrumbDivider}>/</span>

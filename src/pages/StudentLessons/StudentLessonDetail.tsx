@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import {
     ArrowLeft, BookOpen, AlertCircle, Video,
     FileText, ClipboardCheck, Star,
@@ -112,6 +112,7 @@ const AiMarkdown = ({ content }: { content: string }) => (
 const StudentLessonDetail = () => {
     const { lessonId } = useParams<{ lessonId: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
     const { isParentManaged } = useStudentProfile();
     const [lesson, setLesson] = useState<StudentLessonDetailDto | null>(null);
     const [loading, setLoading] = useState(true);
@@ -305,6 +306,14 @@ const StudentLessonDetail = () => {
 
     useLessonStartedListener(fetchDetail);
 
+    /** Quay lại đúng trang/tab người dùng vừa rời (vd tab "Hoàn thành" trên thời khóa biểu) thay vì
+     *  luôn văng về URL mặc định — `location.key === 'default'` nghĩa là trang này là entry đầu tiên
+     *  của history (mở thẳng link, F5, tab mới), lúc đó `navigate(-1)` sẽ văng ra khỏi app. */
+    const goBack = () => {
+        if (location.key !== 'default') navigate(-1);
+        else navigate('/student-portal/calendar');
+    };
+
     const handleConfirm = async () => {
         if (!lessonId) return;
         try {
@@ -453,7 +462,7 @@ const StudentLessonDetail = () => {
                         </div>
                         <div style={notFoundTitle}>Không tìm thấy buổi học</div>
                         <div style={notFoundSub}>Buổi học này có thể đã bị xóa hoặc bạn không có quyền truy cập.</div>
-                        <button style={notFoundBackBtn} onClick={() => navigate('/student-portal/calendar')}>
+                        <button style={notFoundBackBtn} onClick={goBack}>
                             <ArrowLeft size={14} /> Quay lại thời khóa biểu
                         </button>
                     </div>
@@ -503,7 +512,7 @@ const StudentLessonDetail = () => {
                 <div style={{ maxWidth: 860, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 24, flexShrink: 0 }}>
                 {/* Breadcrumb-style back nav */}
                 <div style={{ ...breadcrumbRow, display: 'none' }}>
-                    <button style={backBtnStyle} onClick={() => navigate('/student-portal/calendar')}>
+                    <button style={backBtnStyle} onClick={goBack}>
                         <ArrowLeft size={15} />
                         <span>Thời khóa biểu</span>
                     </button>
@@ -922,7 +931,7 @@ const StudentLessonDetail = () => {
                                             className="sld-next-btn"
                                             style={{ ...nextBtn, padding: '8px 12px', fontSize: 12, boxShadow: 'none' }}
                                             title="Về thời khóa biểu"
-                                            onClick={() => navigate('/student-portal/calendar')}
+                                            onClick={goBack}
                                         >
                                             <ArrowLeft size={14} />
                                             <span>Về thời khóa biểu</span>
