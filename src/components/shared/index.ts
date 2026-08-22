@@ -48,6 +48,9 @@ export type { AttachmentGalleryProps, AttachmentItem, AttachmentKind } from './A
 export { RescheduleProposalModal } from './RescheduleProposalModal';
 export type { RescheduleProposalModalProps } from './RescheduleProposalModal';
 
+export { SkipContinuationCard } from './SkipContinuationCard';
+export type { SkipContinuationCardProps } from './SkipContinuationCard';
+
 export { SessionTimeline, buildSessionTimeline } from './SessionTimeline';
 export type {
     SessionTimelineEvent,
