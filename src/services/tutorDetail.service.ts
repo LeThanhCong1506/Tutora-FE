@@ -145,6 +145,7 @@ export interface TutorFullProfile {
 
     // Introduction
     bio: string | null;
+    degree: string | null;
     education: string | null;
     gpa: number | null;
     gpaScale: number | null;

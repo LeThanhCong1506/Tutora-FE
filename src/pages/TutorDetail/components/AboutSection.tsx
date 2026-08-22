@@ -174,7 +174,9 @@ const AboutSection = ({ profile }: { profile: TutorFullProfile }) => {
                             </span>
                             <span className="credential-label">Học vấn</span>
                         </div>
-                        <b className="credential-institution">{profile.education || '—'}</b>
+                        <b className="credential-institution">
+                            {profile.degree ? `${profile.degree} - ${profile.education || '—'}` : (profile.education || '—')}
+                        </b>
                         <i className="credential-detail">GPA: {profile.gpa || '—'}/{profile.gpaScale || '—'}</i>
                     </div>
                     <div className="credential-divider"></div>

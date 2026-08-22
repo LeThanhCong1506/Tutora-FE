@@ -145,13 +145,25 @@ export const validateBio = (value: string): ValidationResult => {
 };
 
 // Education validation (1-255 chars)
-export const validateEducation = (value: string): ValidationResult => {
+export const validateDegree = (value: string): ValidationResult => {
     if (!value || value.trim().length === 0) {
-        return { isValid: false, error: 'Vui lòng nhập thông tin học vấn' };
+        return { isValid: false, error: 'Vui lòng chọn học vị' };
+    }
+
+    if (value.length > 100) {
+        return { isValid: false, error: 'Học vị không được vượt quá 100 ký tự' };
+    }
+
+    return { isValid: true };
+};
+
+export const validateSchool = (value: string): ValidationResult => {
+    if (!value || value.trim().length === 0) {
+        return { isValid: false, error: 'Vui lòng nhập trường học' };
     }
 
     if (value.length > 255) {
-        return { isValid: false, error: 'Thông tin học vấn không được vượt quá 255 ký tự' };
+        return { isValid: false, error: 'Tên trường không được vượt quá 255 ký tự' };
     }
 
     return { isValid: true };

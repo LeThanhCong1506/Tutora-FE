@@ -46,6 +46,7 @@ export interface BasicInfoSection {
 
 export interface IntroductionSection {
   bio: string | null;
+  degree: string | null;
   education: string | null;
   gpa: number | null;
   gpaScale: number | null;
@@ -435,6 +436,7 @@ export const updateBasicInfo = async (userId: string, data: BasicInfoUpdateData)
 
 export interface IntroductionUpdateData {
   bio: string;
+  degree: string;
   education: string;
   gpa: number | null;
   gpaScale: number | null; // 4 or 10

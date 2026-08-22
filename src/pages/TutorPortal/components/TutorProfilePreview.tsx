@@ -46,6 +46,7 @@ const mapFormDataToFullProfile = (data: TutorProfileFormData): TutorFullProfile 
   subjectGradePrices: null,
 
   bio: data.bio || null,
+  degree: data.degree || null,
   education: data.education || null,
   gpa: data.gpa,
   gpaScale: data.gpaScale,
