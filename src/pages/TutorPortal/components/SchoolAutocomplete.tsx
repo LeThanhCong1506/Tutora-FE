@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import fieldStyles from './FormField.module.css';
-import styles from './EducationAutocomplete.module.css';
-import { applySchoolToValue, searchSchools, splitActiveSegment } from '../utils/schoolSearch';
+import styles from './SchoolAutocomplete.module.css';
+import { searchSchools } from '../utils/schoolSearch';
 import type { School, SchoolKind } from '../../../data/vnSchools';
 
 interface Props {
@@ -16,16 +16,15 @@ interface Props {
 type KindLabels = Record<SchoolKind, string>;
 
 /**
- * Ô "Trình độ học vấn" kèm gợi ý tên trường.
+ * Ô "Trường học" kèm gợi ý tên trường.
  *
- * Vẫn là ô NHẬP TỰ DO — gia sư gõ được bằng cấp/chuyên ngành, và trường không có trong
- * danh sách (trường nước ngoài, trường mới) vẫn nhập bình thường. Danh sách chỉ để gợi ý,
- * không ép chọn.
+ * Vẫn là ô NHẬP TỰ DO — trường không có trong danh sách (trường nước ngoài, trường mới)
+ * vẫn nhập bình thường. Danh sách chỉ để gợi ý, không ép chọn.
  *
  * Dữ liệu 447 trường được nạp ĐỘNG lúc người dùng chạm vào ô lần đầu, nên không nằm trong
  * bundle chính — trang hồ sơ vẫn nhẹ với người chỉ xem mà không sửa.
  */
-const EducationAutocomplete: React.FC<Props> = ({
+const SchoolAutocomplete: React.FC<Props> = ({
     value,
     onChange,
     error,
@@ -58,20 +57,18 @@ const EducationAutocomplete: React.FC<Props> = ({
             });
     }, []);
 
-    const { query } = useMemo(() => splitActiveSegment(value), [value]);
-
     const suggestions = useMemo(
-        () => (schools ? searchSchools(schools, query) : []),
-        [schools, query],
+        () => (schools ? searchSchools(schools, value) : []),
+        [schools, value],
     );
 
     // Danh sách đổi thì con trỏ chọn phải về đầu, nếu không sẽ trỏ ra ngoài mảng.
     // Chỉnh state ngay trong lúc render (pattern React khuyến nghị cho "reset khi input
     // đổi") thay vì trong useEffect — làm ở effect sẽ render thừa một nhịp với con trỏ
     // đang trỏ sai, và vi phạm quy tắc set-state-in-effect.
-    const [lastResetKey, setLastResetKey] = useState(query);
-    if (lastResetKey !== query) {
-        setLastResetKey(query);
+    const [lastResetKey, setLastResetKey] = useState(value);
+    if (lastResetKey !== value) {
+        setLastResetKey(value);
         setHighlighted(0);
     }
 
@@ -94,8 +91,7 @@ const EducationAutocomplete: React.FC<Props> = ({
     }, [highlighted, isOpen]);
 
     const commitSchool = (school: School) => {
-        const next = applySchoolToValue(value, school.name);
-        onChange(next.slice(0, maxLength));
+        onChange(school.name.slice(0, maxLength));
         setIsOpen(false);
         inputRef.current?.focus();
     };
@@ -129,12 +125,12 @@ const EducationAutocomplete: React.FC<Props> = ({
     };
 
     const showDropdown = isOpen && !loadFailed;
-    const listboxId = 'education-school-listbox';
+    const listboxId = 'school-listbox';
 
     return (
         <div className={fieldStyles.field}>
-            <label className={fieldStyles.label} htmlFor="education">
-                Trình độ học vấn<span className={fieldStyles.required}>*</span>
+            <label className={fieldStyles.label} htmlFor="school">
+                Trường học<span className={fieldStyles.required}>*</span>
             </label>
             <span className={fieldStyles.hint}>
                 Gõ để tìm trường (không dấu hoặc viết tắt đều được), hoặc tự nhập nếu không có trong danh sách
@@ -143,8 +139,8 @@ const EducationAutocomplete: React.FC<Props> = ({
             <div className={styles.combobox} ref={wrapperRef}>
                 <div className={fieldStyles.inputWrapper}>
                     <input
-                        id="education"
-                        name="education"
+                        id="school"
+                        name="school"
                         ref={inputRef}
                         type="text"
                         role="combobox"
@@ -172,7 +168,7 @@ const EducationAutocomplete: React.FC<Props> = ({
                         onKeyDown={handleKeyDown}
                         className={`${fieldStyles.input} ${error ? fieldStyles.inputError : ''}`}
                         aria-invalid={!!error}
-                        aria-describedby={error ? 'education-error' : undefined}
+                        aria-describedby={error ? 'school-error' : undefined}
                     />
                     <span className={fieldStyles.charCounter}>
                         {value.length}/{maxLength}
@@ -185,7 +181,7 @@ const EducationAutocomplete: React.FC<Props> = ({
                             <p className={styles.status}>Đang tải danh sách trường…</p>
                         ) : suggestions.length === 0 ? (
                             <p className={styles.status}>
-                                Không tìm thấy trường khớp “{query}”. Bạn vẫn có thể tự nhập.
+                                Không tìm thấy trường khớp “{value}”. Bạn vẫn có thể tự nhập.
                             </p>
                         ) : (
                             <ul className={styles.list} id={listboxId} role="listbox" ref={listRef}>
@@ -225,7 +221,7 @@ const EducationAutocomplete: React.FC<Props> = ({
             </div>
 
             {error && (
-                <span id="education-error" className={fieldStyles.error}>
+                <span id="school-error" className={fieldStyles.error}>
                     {error}
                 </span>
             )}
@@ -233,4 +229,4 @@ const EducationAutocomplete: React.FC<Props> = ({
     );
 };
 
-export default EducationAutocomplete;
+export default SchoolAutocomplete;
