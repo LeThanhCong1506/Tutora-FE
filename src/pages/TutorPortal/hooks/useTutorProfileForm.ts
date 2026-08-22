@@ -90,6 +90,7 @@ export interface TutorProfileFormData {
 
     // About (introduction)
     bio: string;
+    degree: string;
     education: string;
     gpaScale: 4 | 10 | null;
     gpa: number | null;
@@ -127,6 +128,7 @@ const initialFormData: TutorProfileFormData = {
     allowPriceNegotiation: false,
 
     bio: '',
+    degree: '',
     education: '',
     gpaScale: null,
     gpa: null,
@@ -207,6 +209,7 @@ function mapSectionsToFormData(sections: VerificationSections): Partial<TutorPro
 
         // Introduction section
         bio: sections.introduction.bio || '',
+        degree: sections.introduction.degree || '',
         education: sections.introduction.education || '',
         gpa: sections.introduction.gpa,
         gpaScale: sections.introduction.gpaScale as 4 | 10 | null,
@@ -575,6 +578,7 @@ export function useTutorProfileForm() {
     // Update about section (calls API)
     const updateAbout = useCallback(async (data: {
         bio: string;
+        degree: string;
         education: string;
         gpaScale: 4 | 10 | null;
         gpa: number | null;
@@ -593,6 +597,7 @@ export function useTutorProfileForm() {
 
             const apiData: IntroductionUpdateData = {
                 bio: data.bio,
+                degree: data.degree,
                 education: data.education,
                 gpa: data.gpa,
                 gpaScale: data.gpaScale,

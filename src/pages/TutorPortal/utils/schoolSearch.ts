@@ -1,40 +1,6 @@
-// Tìm kiếm trường học cho ô "Trình độ học vấn".
-//
-// Ô này chứa CẢ bằng cấp, chuyên ngành và tên trường trong một chuỗi
-// ("Cử nhân Sư phạm Toán - Đại học Sư phạm Hà Nội"), nên không thể đem nguyên
-// chuỗi đi so với tên trường. Ta tách ra "đoạn đang gõ" — phần sau dấu gạch cuối
-// cùng — rồi chỉ tìm và chỉ thay thế đúng đoạn đó.
+// Tìm kiếm trường học cho ô "Trường học".
 import { removeDiacritics } from '../../../utils/vietnameseText';
 import type { School } from '../../../data/vnSchools';
-
-/** Dấu ngăn giữa "bằng cấp + chuyên ngành" và "tên trường". */
-const SEPARATOR = ' - ';
-
-export interface ActiveSegment {
-  /** Phần đứng trước đoạn đang gõ, giữ nguyên khi chọn gợi ý (kèm cả dấu ngăn). */
-  prefix: string;
-  /** Đoạn đang gõ — dùng để tìm kiếm và sẽ bị thay bằng tên trường được chọn. */
-  query: string;
-}
-
-/**
- * Tách giá trị ô thành (phần giữ nguyên, đoạn đang gõ).
- * "Cử nhân Toán - su pham" → prefix "Cử nhân Toán - ", query "su pham".
- * "su pham"                → prefix "",               query "su pham".
- */
-export function splitActiveSegment(value: string): ActiveSegment {
-  const at = value.lastIndexOf(SEPARATOR);
-  if (at === -1) return { prefix: '', query: value.trimStart() };
-  return {
-    prefix: value.slice(0, at + SEPARATOR.length),
-    query: value.slice(at + SEPARATOR.length).trimStart(),
-  };
-}
-
-/** Ghép lại giá trị ô sau khi người dùng chọn một trường từ danh sách. */
-export function applySchoolToValue(value: string, schoolName: string): string {
-  return splitActiveSegment(value).prefix + schoolName;
-}
 
 /**
  * Điểm khớp — càng NHỎ càng đúng ý người gõ. `null` = không khớp.
