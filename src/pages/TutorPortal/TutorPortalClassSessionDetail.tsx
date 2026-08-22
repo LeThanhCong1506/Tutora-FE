@@ -9,6 +9,7 @@ import {
   Clock3,
   FileText,
   GraduationCap,
+  Link2,
   MapPin,
   Paperclip,
   RefreshCw,
@@ -42,6 +43,7 @@ import {
   ClassSessionRecording,
   RescheduleProposalModal,
   SessionTimeline,
+  SkipContinuationCard,
 } from '../../components/shared';
 import styles from '../../styles/pages/tutor-portal-class-session-detail.module.css';
 
@@ -343,7 +345,7 @@ const TutorPortalClassSessionDetail = () => {
     status === 'in_progress' ? 'Vào lại lớp' : isWithinJoinWindow(session.scheduledStart) ? 'Vào học' : 'Vào học nhanh';
   const canCheckOut = status === 'in_progress' && !session.checkOutTime;
   const pendingReschedule = session.pendingRescheduleProposal;
-  const canProposeReschedule = status === 'scheduled' && !pendingReschedule;
+  const canProposeReschedule = status === 'scheduled' && !pendingReschedule && !session.skipConfirmedByBothSides;
   const isRescheduleCounterpart = pendingReschedule?.counterpartRole === 'Tutor';
   const isRescheduleProposer = pendingReschedule?.proposedByRole === 'Tutor';
   const canSubmitReport =
@@ -367,6 +369,9 @@ const TutorPortalClassSessionDetail = () => {
     disputeTutorRespondedAt: dispute?.tutorRespondedAt,
     disputeResolvedAt: dispute?.resolvedAt,
     scheduleChangeAppliedAt: session.scheduleChanges?.map((sc) => sc.appliedAt),
+    interruptedAt: session.interruptedAt,
+    interruptReason: session.interruptReason,
+    interruptedByName: session.interruptedByName,
   });
   const sessionStyle = {
     '--status-color': displayStatus.color,
@@ -410,6 +415,13 @@ const TutorPortalClassSessionDetail = () => {
                     <i />
                     {displayStatus.label}
                   </span>
+                  {(session.isContinuation || session.isDisputeRelearn) && (
+                    <span className={styles.linkChip}>
+                      <Link2 size={12} />
+                      {session.isContinuation ? 'Buổi phụ' : 'Buổi học lại'}
+                      {session.originalClassSessionId ? ` của buổi #${session.originalClassSessionId}` : ''}
+                    </span>
+                  )}
                 </div>
                 <h1>{subjectName}</h1>
                 <div className={styles.heroMeta}>
@@ -522,6 +534,25 @@ const TutorPortalClassSessionDetail = () => {
               </div>
             )}
           </header>
+
+          {/* Buổi phụ chưa diễn ra: cho tự bỏ nếu 2 bên thống nhất không học nốt. Buổi GỐC đang
+              interrupted: cho xem lại trạng thái đó + tự mở form báo cáo khi cả 2 đã đồng ý. */}
+          {session.isContinuation && status === 'scheduled' && (
+            <SkipContinuationCard
+              continuationSessionId={session.classSessionId}
+              isTutor
+              accentColor="#1a2238"
+              onBothConfirmed={() => void loadSession()}
+            />
+          )}
+          {status === 'interrupted' && session.continuationSessionId && !session.continuationSkipBothConfirmed && (
+            <SkipContinuationCard
+              continuationSessionId={session.continuationSessionId}
+              isTutor
+              accentColor="#1a2238"
+              onBothConfirmed={() => void loadSession()}
+            />
+          )}
 
           <RescheduleProposalModal
             open={rescheduleModalOpen}

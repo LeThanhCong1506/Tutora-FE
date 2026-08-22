@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { isZaloMiniApp } from '../../services/zalo-env';
 
 const inMiniApp = isZaloMiniApp();
-import { ArrowLeft, CalendarClock, CheckCircle2, Clock3, XCircle } from 'lucide-react';
+import { ArrowLeft, CalendarClock, CheckCircle2, Clock3, Link2, XCircle } from 'lucide-react';
 import { getParentLessonDetail, type ParentLessonDetailDto } from '../../services/parent-lesson.service';
 import {
   getClassSessionDispute,
@@ -33,6 +33,7 @@ import {
   RescheduleProposalModal,
   SectionCard,
   SessionTimeline,
+  SkipContinuationCard,
   StatusBadge,
 } from '../../components/shared';
 import { getDisputeStatusMeta, getDisputeTypeLabel } from '../../components/disputes';
@@ -267,6 +268,9 @@ const ParentLessonDetail: React.FC = () => {
     disputeTutorRespondedAt: dispute?.tutorRespondedAt,
     disputeResolvedAt: dispute?.resolvedAt,
     scheduleChangeAppliedAt: lesson.scheduleChanges?.map((sc) => sc.appliedAt),
+    interruptedAt: lesson.interruptedAt,
+    interruptReason: lesson.interruptReason,
+    interruptedByName: lesson.interruptedByName,
   });
 
   const showConfirmAction = lesson.status === 'pending_confirmation';
@@ -304,6 +308,26 @@ const ParentLessonDetail: React.FC = () => {
         </div>
         <div className={styles.headerActions}>
           <StatusBadge variant={status.variant}>{status.label}</StatusBadge>
+          {(lesson.isContinuation || lesson.isDisputeRelearn) && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '3px 10px',
+                borderRadius: 8,
+                border: '1px dashed #b9d6ea',
+                background: '#EAF3FA',
+                color: '#2F6F9F',
+                fontSize: 11,
+                fontWeight: 600,
+              }}
+            >
+              <Link2 size={12} />
+              {lesson.isContinuation ? 'Buổi phụ' : 'Buổi học lại'}
+              {lesson.originalClassSessionId ? ` của buổi #${lesson.originalClassSessionId}` : ''}
+            </span>
+          )}
           {showConfirmAction && (
             <>
               <Button type="primary" className={styles.primaryAction} onClick={() => setShowConfirmModal(true)}>
@@ -338,6 +362,15 @@ const ParentLessonDetail: React.FC = () => {
           )}
         </div>
       </header>
+
+      {lesson.isContinuation && lesson.status === 'scheduled' && (
+        <SkipContinuationCard
+          continuationSessionId={lesson.lessonId}
+          isTutor={false}
+          accentColor="#3e2f28"
+          onBothConfirmed={() => void fetchLesson()}
+        />
+      )}
 
       {lesson.confirmDeadline && lesson.status === 'pending_confirmation' && (
         <div className={`${styles.notice} ${styles.noticeWarning}`}>

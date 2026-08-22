@@ -218,6 +218,9 @@ const ParentLessons = () => {
             checkOutTime: session.checkOutTime,
             hasRecording: session.hasRecording,
             hasPendingReschedule: session.hasPendingReschedule,
+            isContinuation: session.isContinuation,
+            isDisputeRelearn: session.isDisputeRelearn,
+            originalClassSessionId: session.originalClassSessionId,
             // Phụ huynh chỉ theo dõi: không có nút vào lớp trên mọi khung nhìn.
             canJoin: false,
           }))
