@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Popconfirm, Tooltip } from 'antd';
 import {
   CalendarOutlined,
@@ -64,50 +64,32 @@ const ComboManager: React.FC<ComboManagerProps> = ({
   const [removingComboId, setRemovingComboId] = useState<string | null>(null);
   const [restoringComboId, setRestoringComboId] = useState<string | null>(null);
   const [deletingComboId, setDeletingComboId] = useState<string | null>(null);
-  const requiredDurationHours = useMemo(
-    () => Math.max(1, ...subjectRecords.map((record) => record.hoursPerSession || 0)),
-    [subjectRecords],
-  );
-  const requiredSessionsPerWeek = useMemo(
-    () => Math.max(1, ...subjectRecords.map((record) => record.sessionsPerWeek || 0)),
-    [subjectRecords],
-  );
-
-  const applySubjectRules = (combo: FixedCombo): FixedCombo => {
-    const next = {
-      ...combo,
-      sessions: combo.sessions.map((session) => ({ ...session, durationHours: requiredDurationHours })),
-    };
-    delete next.description;
-    return next;
-  };
 
   const openCreate = () => {
     setEditing(null);
     setModalOpen(true);
   };
   const openEdit = (combo: FixedCombo) => {
-    setEditing(applySubjectRules(combo));
+    setEditing(combo);
     setModalOpen(true);
   };
   const handleSave = async (combo: FixedCombo) => {
-    const normalized = applySubjectRules(combo);
     if (editing) {
       if (onUpdatePackage) {
         setSavingPackage(true);
-        const updatedCombo = await onUpdatePackage(editing.id, normalized).finally(() => setSavingPackage(false));
+        const updatedCombo = await onUpdatePackage(editing.id, combo).finally(() => setSavingPackage(false));
         if (!updatedCombo) return; // lỗi (vd BE 409) → giữ modal mở cho tutor sửa tiếp
         onUpdate(editing.id, updatedCombo);
       } else {
-        onUpdate(editing.id, normalized);
+        onUpdate(editing.id, combo);
       }
     } else if (onCreatePackage) {
       setSavingPackage(true);
-      const persistedCombo = await onCreatePackage(normalized).finally(() => setSavingPackage(false));
+      const persistedCombo = await onCreatePackage(combo).finally(() => setSavingPackage(false));
       if (!persistedCombo) return;
       onAdd(persistedCombo);
     } else {
-      onAdd(normalized);
+      onAdd(combo);
     }
     setModalOpen(false);
     setEditing(null);
@@ -160,7 +142,7 @@ const ComboManager: React.FC<ComboManagerProps> = ({
         ) : (
           <div className={styles.comboList}>
             {combos.map((combo) => {
-              const displayCombo = applySubjectRules(combo);
+              const displayCombo = combo;
               // Gói đang có buổi dạy được đặt & chưa hoàn tất → khóa Sửa/Xóa (BE cũng chặn 409).
               const locked = combo.hasActiveBooking === true;
 
@@ -262,7 +244,7 @@ const ComboManager: React.FC<ComboManagerProps> = ({
             <h4 className={styles.comboSectionSubheading}>Gói đã ẩn ({inactiveCombos.length})</h4>
             <div className={styles.comboList}>
               {inactiveCombos.map((combo) => {
-                const displayCombo = applySubjectRules(combo);
+                const displayCombo = combo;
                 return (
                   <div key={combo.id} className={`${styles.comboCard} ${styles.comboCardInactive}`}>
                     <div className={styles.comboCardHead}>
@@ -341,8 +323,6 @@ const ComboManager: React.FC<ComboManagerProps> = ({
           initial={editing}
           subjectRecords={subjectRecords}
           availability={availability}
-          requiredDurationHours={requiredDurationHours}
-          requiredSessionsPerWeek={requiredSessionsPerWeek}
           saving={savingPackage}
           existingCombos={editing ? combos.filter((c) => c.id !== editing.id) : combos}
         />
