@@ -235,7 +235,7 @@ const StudentLessons = () => {
     <div className={styles.page}>
       <main className={styles.main}>
         <section className={styles.workspace} aria-labelledby="lesson-workspace-title">
-          <div className={styles.toolbar}>
+          <div className={styles.toolbar} data-tour="lessons-toolbar">
             <button
               type="button"
               className={styles.todayButton}
@@ -318,7 +318,7 @@ const StudentLessons = () => {
           </div>
 
           <div className={styles.filterBar}>
-            <div className={styles.statusFilters} role="group" aria-label="Lọc theo trạng thái">
+            <div className={styles.statusFilters} role="group" aria-label="Lọc theo trạng thái" data-tour="lessons-filters">
               {STATUS_FILTERS.map((filter) => (
                 <button
                   key={filter.key}

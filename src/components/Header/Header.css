@@ -313,7 +313,10 @@
 }
 
 /* ===== HEADER RESPONSIVE ===== */
-@media (max-width: 992px) {
+/* 1024px để khớp mốc sidebar chuyển thành drawer (PortalLayout.module.css).
+   Trước đây header đổi ở 992px nên dải 993–1024px hiện đồng thời cả trigger tài
+   khoản lẫn nút hamburger. */
+@media (max-width: 1024px) {
     .main-nav {
         display: none;
     }

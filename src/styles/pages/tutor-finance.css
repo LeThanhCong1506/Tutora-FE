@@ -2134,13 +2134,26 @@
   margin-bottom: 10px;
 }
 
+/* Trạng thái chờ tải / lỗi của ảnh biên lai (ảnh phải tải qua JS vì endpoint đòi token). */
+.finance-proof-image-note {
+  margin: 0;
+  color: rgba(62, 47, 40, 0.55);
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* Trước đây là <a> mở tab mới; giờ là <button> mở lightbox nên phải tự dọn style mặc định
+   của button (padding, background, font kế thừa). */
 .finance-proof-image-link {
   display: inline-block;
   width: 100%;
   max-width: 280px;
+  padding: 0;
+  background: none;
   border: 1px solid var(--finance-border);
   border-radius: 12px;
   overflow: hidden;
+  cursor: zoom-in;
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 

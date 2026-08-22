@@ -1215,7 +1215,7 @@ const StudentLessonDetail = () => {
                                             <SidebarItemRow
                                                 key={sc.scheduleChangeId}
                                                 icon={icon}
-                                                title={statusLabel[sc.status] || sc.status}
+                                                title={statusLabel[sc.status] || 'Không rõ'}
                                                 meta={
                                                     <>
                                                         <div>
@@ -1259,7 +1259,7 @@ const StudentLessonDetail = () => {
                                             <SidebarItemRow
                                                 key={proposal.rescheduleProposalId}
                                                 icon={icon}
-                                                title={statusLabel[proposal.status] || proposal.status}
+                                                title={statusLabel[proposal.status] || 'Không rõ'}
                                                 meta={
                                                     <>
                                                         {proposal.proposedByName ?? 'Người đề xuất'} đề xuất dời sang{' '}

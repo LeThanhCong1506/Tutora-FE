@@ -37,6 +37,45 @@
     font-family: 'IBM Plex Serif', serif;
 }
 
+/* Compact onboarding-completion notice shown inline in the header, between the
+   title and the date — a quicker nudge than the full reviewBanner below. */
+.headerNotice {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    background: #fff4e5;
+    border: 1px solid rgba(214, 133, 12, 0.28);
+    color: #9a5b00;
+    font-size: 13px;
+    line-height: 1.3;
+}
+
+.headerNoticeText {
+    white-space: nowrap;
+}
+
+.headerNoticeBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: none;
+    background: #1a2238;
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.headerNoticeBtn:hover {
+    background: #2a3352;
+}
+
 /* Profile status and completion card */
 .reviewBanner {
     display: grid;
@@ -818,21 +857,6 @@
     margin-top: 4.7px;
 }
 
-.statusStartingSoon {
-    background-color: rgba(99, 27, 27, 0.1);
-    color: #631b1b;
-}
-
-.statusOngoing {
-    background-color: rgba(61, 74, 62, 0.1);
-    color: #3d4a3e;
-}
-
-.statusCompleted {
-    background-color: rgba(62, 47, 40, 0.1);
-    color: rgba(62, 47, 40, 0.6);
-}
-
 /* Lesson Actions */
 .lessonActions {
     display: flex;
@@ -1487,6 +1511,11 @@
 
     .date {
         font-size: 13px;
+    }
+
+    .headerNotice {
+        flex-wrap: wrap;
+        border-radius: 14px;
     }
 
     /* Stats: 2 columns on mobile */

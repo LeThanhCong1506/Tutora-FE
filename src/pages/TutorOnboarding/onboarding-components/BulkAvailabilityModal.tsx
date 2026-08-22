@@ -133,7 +133,7 @@ const BulkAvailabilityModal: React.FC<Props> = ({ open, onClose, onApply, saving
         </Button>,
       ]}
       width={520}
-      destroyOnClose
+      destroyOnHidden
     >
       <div className={styles.bulkAvailForm}>
         {/* Day chips */}

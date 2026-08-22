@@ -46,6 +46,7 @@ export interface BasicInfoSection {
 
 export interface IntroductionSection {
   bio: string | null;
+  degree: string | null;
   education: string | null;
   gpa: number | null;
   gpaScale: number | null;
@@ -274,6 +275,9 @@ export interface CccdUploadResult {
   fullName: string | null;
   dateOfBirth: string | null;
   gender: string | null;
+  /** Quê quán trên CCCD — chỉ hiển thị/đối chiếu, không có cột riêng ở BE. */
+  hometown: string | null;
+  /** Nơi thường trú trên CCCD. Khác với khu vực DẠY (teachingAreaCity/District). */
   address: string | null;
   message: string;
 }
@@ -432,6 +436,7 @@ export const updateBasicInfo = async (userId: string, data: BasicInfoUpdateData)
 
 export interface IntroductionUpdateData {
   bio: string;
+  degree: string;
   education: string;
   gpa: number | null;
   gpaScale: number | null; // 4 or 10

@@ -870,13 +870,18 @@
 }
 
 /* Proof image (ảnh biên lai) */
+/* Trước đây là <a> mở tab mới; giờ là <button> mở lightbox nên phải tự dọn style mặc định
+   của button (padding, background). */
 .proofImageLink {
     display: block;
     width: 100%;
     max-width: 300px;
+    padding: 0;
+    background: none;
     border: 1px solid var(--border-soft);
     border-radius: var(--radius-sm);
     overflow: hidden;
+    cursor: zoom-in;
     transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 

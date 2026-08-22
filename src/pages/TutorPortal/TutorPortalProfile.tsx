@@ -444,7 +444,7 @@ const TutorPortalProfile: React.FC = () => {
   );
   const missingAboutFields = [
     !formData.bio.trim() && 'Giới thiệu bản thân',
-    !formData.education.trim() && 'Học vấn',
+    (!formData.degree.trim() || !formData.education.trim()) && 'Học vấn',
     !formData.experience.trim() && 'Kinh nghiệm',
   ].filter((field): field is string => Boolean(field));
   const isAboutEmpty = missingAboutFields.length === 3;
@@ -868,11 +868,17 @@ const TutorPortalProfile: React.FC = () => {
                     <>
                       {formData.bio.trim() && <p className={styles.bioText}>{formData.bio}</p>}
 
-                      {(formData.education.trim() || (formData.gpa && formData.gpaScale)) && (
+                      {(formData.degree.trim() || formData.education.trim() || (formData.gpa && formData.gpaScale)) && (
                         <div className={styles.aboutDetails}>
+                          {formData.degree.trim() && (
+                            <div className={styles.detailItem}>
+                              <span className={styles.detailLabel}>Học vị</span>
+                              <span className={styles.detailValue}>{formData.degree}</span>
+                            </div>
+                          )}
                           {formData.education.trim() && (
                             <div className={styles.detailItem}>
-                              <span className={styles.detailLabel}>Học vấn</span>
+                              <span className={styles.detailLabel}>Trường học</span>
                               <span className={styles.detailValue}>{formData.education}</span>
                             </div>
                           )}
@@ -1052,9 +1058,9 @@ const TutorPortalProfile: React.FC = () => {
                       <div className={styles.identityVerified}>
                         <div className={`${styles.identityBadge} ${styles.verified}`}>
                           <CheckCircleIcon />
-                          <span>Đã xác minh</span>
+                          <span>Đã lấy thông tin</span>
                         </div>
-                        <p className={styles.identityVerifiedText}>Danh tính của bạn đã được xác minh thành công.</p>
+                        <p className={styles.identityVerifiedText}>Đã lấy thông tin CCCD của bạn thành công.</p>
                       </div>
                     )}
                     {formData.identityVerification.verificationStatus === 'pending' && (
@@ -1255,6 +1261,7 @@ const TutorPortalProfile: React.FC = () => {
         }}
         initialData={{
           bio: formData.bio,
+          degree: formData.degree,
           education: formData.education,
           gpaScale: formData.gpaScale,
           gpa: formData.gpa,

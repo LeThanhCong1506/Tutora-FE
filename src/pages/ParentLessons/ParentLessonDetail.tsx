@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { isZaloMiniApp } from '../../services/zalo-env';
 
 const inMiniApp = isZaloMiniApp();
-import { ArrowLeft, CalendarClock, CheckCircle2, Clock3, Link2, XCircle } from 'lucide-react';
+import { ArrowLeft, CalendarClock, CheckCircle2, Clock3, GraduationCap, Link2, UserRound, XCircle } from 'lucide-react';
 import { getParentLessonDetail, type ParentLessonDetailDto } from '../../services/parent-lesson.service';
 import {
   getClassSessionDispute,
@@ -702,7 +702,7 @@ const ParentLessonDetail: React.FC = () => {
             <div className={styles.sectionBody}>
               <div className={styles.attendanceList}>
                 <div className={styles.attendanceRow}>
-                  <span className={styles.attendanceAvatar}>GS</span>
+                  <span className={styles.attendanceAvatar}><GraduationCap size={16} strokeWidth={2} aria-hidden /></span>
                   <span className={styles.attendanceText}>
                     <strong>Gia sư</strong>
                     <small>{getPresenceLabel(lesson.isTutorPresent)}</small>
@@ -710,7 +710,7 @@ const ParentLessonDetail: React.FC = () => {
                   <span className={`${styles.presenceDot} ${getPresenceClass(lesson.isTutorPresent)}`} />
                 </div>
                 <div className={styles.attendanceRow}>
-                  <span className={styles.attendanceAvatar}>HV</span>
+                  <span className={styles.attendanceAvatar}><UserRound size={16} strokeWidth={2} aria-hidden /></span>
                   <span className={styles.attendanceText}>
                     <strong>Học viên</strong>
                     <small>{getPresenceLabel(lesson.isStudentPresent)}</small>
@@ -746,7 +746,7 @@ const ParentLessonDetail: React.FC = () => {
                           }
                           shape="tag"
                         >
-                          {RESCHEDULE_PROPOSAL_STATUS_LABELS[proposal.status] || proposal.status}
+                          {RESCHEDULE_PROPOSAL_STATUS_LABELS[proposal.status] || 'Không rõ'}
                         </StatusBadge>
                         {proposal.respondedAt && (
                           <span className={styles.historyTime}>Phản hồi lúc {formatDateTime(proposal.respondedAt)}</span>
@@ -781,7 +781,7 @@ const ParentLessonDetail: React.FC = () => {
                           }
                           shape="tag"
                         >
-                          {SCHEDULE_CHANGE_STATUS_LABELS[sc.status] || sc.status}
+                          {SCHEDULE_CHANGE_STATUS_LABELS[sc.status] || 'Không rõ'}
                         </StatusBadge>
                         {sc.appliedAt && (
                           <span className={styles.historyTime}>Áp dụng lúc {formatDateTime(sc.appliedAt)}</span>

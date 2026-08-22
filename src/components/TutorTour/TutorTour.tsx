@@ -6,6 +6,11 @@ export interface TourStep {
     title: string;        // Step title
     description: string;  // Step description
     placement?: 'top' | 'right' | 'bottom' | 'left'; // Tooltip position relative to target
+    /** Chạy trước khi tìm/highlight target của bước này — dùng để đổi state cần thiết
+     *  (vd chuyển bước của 1 wizard qua query param) trước khi phần tử mục tiêu xuất
+     *  hiện trên trang. Nếu target không xuất hiện sau khi onEnter chạy (dữ liệu chưa
+     *  đủ để mở khoá bước đó), bước này tự bị bỏ qua như mọi target không tìm thấy khác. */
+    onEnter?: () => void;
 }
 
 interface TutorTourProps {
@@ -137,6 +142,7 @@ const TutorTour: React.FC<TutorTourProps> = ({ steps, onComplete, onSidebarOpen,
     // Main: highlight target and position tooltip
     const highlightStep = useCallback(() => {
         if (!step) return;
+        step.onEnter?.();
 
         // Last step: farewell modal — no element to highlight
         const isLast = currentStep === steps.length - 1;
@@ -160,6 +166,13 @@ const TutorTour: React.FC<TutorTourProps> = ({ steps, onComplete, onSidebarOpen,
         } else if (isMobile && !isSidebarTarget && onSidebarClose) {
             onSidebarClose();
             setTimeout(() => findAndHighlight(step), 350);
+            return;
+        }
+
+        if (step.onEnter) {
+            // Cho React re-render sau khi onEnter đổi state (vd chuyển bước wizard qua query
+            // param) trước khi tìm target — tìm ngay có thể vẫn thấy DOM của bước cũ.
+            setTimeout(() => findAndHighlight(step), 250);
             return;
         }
 
@@ -306,6 +319,16 @@ const TutorTour: React.FC<TutorTourProps> = ({ steps, onComplete, onSidebarOpen,
                 <div
                     className={`tutor-tour-final-modal ${isVisible ? 'tutor-tour-final-modal-visible' : ''}`}
                 >
+                    <button
+                        type="button"
+                        className="tutor-tour-close-btn"
+                        onClick={onComplete}
+                        aria-label="Đóng hướng dẫn"
+                    >
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8">
+                            <path d="M2 2L12 12M12 2L2 12" strokeLinecap="round" />
+                        </svg>
+                    </button>
                     <h3 className="tutor-tour-title">{step?.title}</h3>
                     <p className="tutor-tour-description">{step?.description}</p>
                     <button className="tutor-tour-next-btn" onClick={handleNext}>
@@ -322,6 +345,16 @@ const TutorTour: React.FC<TutorTourProps> = ({ steps, onComplete, onSidebarOpen,
                         left: tooltipPos.left,
                     }}
                 >
+                    <button
+                        type="button"
+                        className="tutor-tour-close-btn"
+                        onClick={onComplete}
+                        aria-label="Đóng hướng dẫn"
+                    >
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8">
+                            <path d="M2 2L12 12M12 2L2 12" strokeLinecap="round" />
+                        </svg>
+                    </button>
                     <div className="tutor-tour-step-counter">
                         {currentStep + 1} / {steps.length - 1}
                     </div>

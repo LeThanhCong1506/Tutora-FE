@@ -99,7 +99,7 @@ const BankInfoManagementPage: React.FC = () => {
         open={isEditModalOpen}
         onCancel={() => setIsEditModalOpen(false)}
         footer={null}
-        destroyOnClose
+        destroyOnHidden
         centered
         width={620}
       >

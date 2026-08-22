@@ -899,7 +899,7 @@ const TutorPortalClassSessionDetail = () => {
                     </div>
                     <div className={styles.attendanceList}>
                       <div>
-                        <span className={styles.attendanceAvatar}>GS</span>
+                        <span className={styles.attendanceAvatar}><GraduationCap size={16} strokeWidth={2} aria-hidden /></span>
                         <span>
                           <strong>Gia sư</strong>
                           <small>{getPresenceLabel(session.isTutorPresent)}</small>
@@ -915,7 +915,7 @@ const TutorPortalClassSessionDetail = () => {
                         />
                       </div>
                       <div>
-                        <span className={styles.attendanceAvatar}>HS</span>
+                        <span className={styles.attendanceAvatar}><UserRound size={16} strokeWidth={2} aria-hidden /></span>
                         <span>
                           <strong>Học sinh</strong>
                           <small>{getPresenceLabel(session.isStudentPresent)}</small>

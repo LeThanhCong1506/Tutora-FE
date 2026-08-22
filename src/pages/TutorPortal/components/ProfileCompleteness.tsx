@@ -22,6 +22,13 @@ const AwardIcon = () => (
     </svg>
 );
 
+const VideoIcon = () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="6" width="14" height="12" rx="2.5" />
+        <path d="M16 10.5 22 7v10l-6-3.5" />
+    </svg>
+);
+
 interface ProfileCompletenessProps {
     profileData: ProfileCompletionData;
     /** Trạng thái tổng thể hồ sơ (draft / pending_approval / active / rejected). */
@@ -117,6 +124,22 @@ const ProfileCompleteness: React.FC<ProfileCompletenessProps> = ({
                         </button>
                     );
                 })}
+            </div>
+
+            {/* Video giới thiệu — khuyến khích, không bắt buộc để gửi hồ sơ hay hiển thị marketplace */}
+            <div className={styles.certBlock}>
+                <button type="button" className={styles.certRow} onClick={() => handleItemClick('video')}>
+                    <span className={styles.certDot}>
+                        {profileData.videoIntroUrl ? <CheckIcon /> : <VideoIcon />}
+                    </span>
+                    <span className={styles.certLabel}>Video giới thiệu</span>
+                    <span className={styles.certBadge}>Khuyến khích</span>
+                </button>
+                <p className={styles.certSummary}>
+                    {profileData.videoIntroUrl
+                        ? 'Đã thêm video giới thiệu.'
+                        : 'Hồ sơ có video giới thiệu thường thu hút học viên hơn.'}
+                </p>
             </div>
 
             {/* Bằng cấp, chứng chỉ — Admin duyệt riêng, không tính vào tiến trình gửi hồ sơ */}

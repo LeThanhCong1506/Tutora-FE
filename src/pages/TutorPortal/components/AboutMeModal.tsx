@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import EditModal from './EditModal';
 import FormField from './FormField';
+import SchoolAutocomplete from './SchoolAutocomplete';
+import { DEGREE_LEVELS } from '../data/degreeLevels';
 import {
     validateBio,
-    validateEducation,
+    validateDegree,
+    validateSchool,
     validateGPA,
     validateExperience
 } from '../utils/validation';
@@ -12,6 +15,7 @@ import styles from './AboutMeModal.module.css';
 
 interface AboutMeData {
     bio: string;
+    degree: string;
     education: string;
     gpaScale: 4 | 10 | null;
     gpa: number | null;
@@ -83,10 +87,16 @@ const AboutMeModal: React.FC<AboutMeModalProps> = ({
             newErrors.bio = bioValidation.error || '';
         }
 
-        // Validate education
-        const educationValidation = validateEducation(formData.education);
-        if (!educationValidation.isValid) {
-            newErrors.education = educationValidation.error || '';
+        // Validate degree
+        const degreeValidation = validateDegree(formData.degree);
+        if (!degreeValidation.isValid) {
+            newErrors.degree = degreeValidation.error || '';
+        }
+
+        // Validate school
+        const schoolValidation = validateSchool(formData.education);
+        if (!schoolValidation.isValid) {
+            newErrors.education = schoolValidation.error || '';
         }
 
         // Validate GPA
@@ -151,16 +161,25 @@ const AboutMeModal: React.FC<AboutMeModalProps> = ({
                     hint="100-2000 ký tự"
                 />
 
-                {/* Education */}
+                {/* Học vị — chọn từ danh sách cố định */}
                 <FormField
-                    type="text"
-                    name="education"
-                    label="Trình độ học vấn"
+                    type="select"
+                    name="degree"
+                    label="Học vị"
+                    value={formData.degree}
+                    onChange={(value) => setFormData(prev => ({ ...prev, degree: value }))}
+                    options={DEGREE_LEVELS}
+                    placeholder="Chọn học vị"
+                    required
+                    error={errors.degree}
+                />
+
+                {/* Trường học — ô nhập tự do kèm gợi ý 447 trường ĐH/CĐ/học viện Việt Nam */}
+                <SchoolAutocomplete
                     value={formData.education}
                     onChange={(value) => setFormData(prev => ({ ...prev, education: value }))}
-                    placeholder="VD: Cử nhân Sư phạm Toán - Đại học Sư phạm Hà Nội"
+                    placeholder="VD: Đại học Sư phạm Hà Nội"
                     maxLength={255}
-                    required
                     error={errors.education}
                 />
 

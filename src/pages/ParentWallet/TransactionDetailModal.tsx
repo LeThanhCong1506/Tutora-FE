@@ -7,6 +7,9 @@ import {
   formatTransactionType,
   formatWithdrawalStatusV2,
 } from '../../utils/formatters';
+import { getDisputeStatusMeta, getDisputeTypeLabel } from '../../components/disputes';
+import { useProtectedImage } from '../../hooks/useProtectedImage';
+import { ImageLightbox } from '../../components/shared';
 import {
   getTransactionDetail,
   getWithdrawalDetail,
@@ -33,6 +36,9 @@ const TransactionDetailModal = ({ transactionId, onClose }: Props) => {
   const portalBase = location.pathname.startsWith('/student-portal') ? '/student-portal' : '/parent-portal';
   const [detail, setDetail] = useState<TransactionDetail | null>(null);
   const [withdrawalDetail, setWithdrawalDetail] = useState<WithdrawalDetail | null>(null);
+  // Ảnh biên lai nằm sau endpoint đòi token; thẻ <img> không gửi được nên phải tải bằng JS.
+  const { objectUrl: proofImage, failed: proofFailed } = useProtectedImage(withdrawalDetail?.proofImageUrl);
+  const [proofZoomed, setProofZoomed] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -163,9 +169,11 @@ const TransactionDetailModal = ({ transactionId, onClose }: Props) => {
                   <div className={styles.invoiceSectionTitle}>Thông tin tranh chấp</div>
                   <Row label="Mã tranh chấp" value={`#${detail.dispute.disputeId}`} />
                   {detail.dispute.disputeType && (
-                    <Row label="Loại" value={detail.dispute.disputeType} />
+                    <Row label="Loại" value={getDisputeTypeLabel(detail.dispute.disputeType)} />
                   )}
-                  {detail.dispute.status && <Row label="Trạng thái" value={detail.dispute.status} />}
+                  {detail.dispute.status && (
+                    <Row label="Trạng thái" value={getDisputeStatusMeta(detail.dispute.status).label} />
+                  )}
                   {detail.dispute.reason && <Row label="Lý do" value={detail.dispute.reason} />}
                   {detail.dispute.refundAmount != null && (
                     <Row label="Số tiền hoàn" value={formatCurrency(detail.dispute.refundAmount)} />
@@ -228,26 +236,33 @@ const TransactionDetailModal = ({ transactionId, onClose }: Props) => {
                     <div className={styles.invoiceRow}>
                       <span className={styles.invoiceLabel}>Biên lai chuyển khoản</span>
                       <div className={styles.invoiceValue}>
-                        <a
-                          href={withdrawalDetail.proofImageUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={styles.proofImageLink}
-                        >
-                          <img
-                            src={withdrawalDetail.proofImageUrl}
-                            alt="Biên lai chuyển khoản"
-                            className={styles.proofImage}
-                            loading="lazy"
-                          />
-                        </a>
-                        <button
-                          type="button"
-                          className={styles.viewFullImageBtn}
-                          onClick={() => window.open(withdrawalDetail.proofImageUrl!, '_blank')}
-                        >
-                          Xem ảnh đầy đủ →
-                        </button>
+                        {proofFailed ? (
+                          <span>Không tải được ảnh. Vui lòng thử lại.</span>
+                        ) : !proofImage ? (
+                          <span>Đang tải ảnh…</span>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              className={styles.proofImageLink}
+                              onClick={() => setProofZoomed(true)}
+                              aria-label="Phóng to biên lai chuyển khoản"
+                            >
+                              <img
+                                src={proofImage}
+                                alt="Biên lai chuyển khoản"
+                                className={styles.proofImage}
+                              />
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.viewFullImageBtn}
+                              onClick={() => setProofZoomed(true)}
+                            >
+                              Xem ảnh đầy đủ →
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   )}
@@ -257,6 +272,12 @@ const TransactionDetailModal = ({ transactionId, onClose }: Props) => {
           )}
         </div>
       </div>
+
+      <ImageLightbox
+        imageUrl={proofZoomed ? proofImage : null}
+        title="Biên lai chuyển khoản"
+        onClose={() => setProofZoomed(false)}
+      />
     </div>
   );
 };

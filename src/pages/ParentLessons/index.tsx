@@ -422,7 +422,7 @@ const ParentLessons = () => {
         </div>
 
         {showChildFilter && (
-          <div className={parentStyles.childFilter} role="group" aria-label="Lọc theo học sinh">
+          <div className={parentStyles.childFilter} role="group" aria-label="Lọc theo học sinh" data-tour="lessons-child-filter">
             <span className={parentStyles.childFilterLabel}>
               <Users size={14} aria-hidden="true" />
               Học sinh
@@ -512,7 +512,7 @@ const ParentLessons = () => {
 
       <main className={styles.main}>
         <section className={styles.workspace} aria-labelledby="parent-lesson-workspace-title">
-          <div className={styles.toolbar}>
+          <div className={styles.toolbar} data-tour="lessons-toolbar">
             <button
               type="button"
               className={styles.todayButton}
@@ -595,7 +595,7 @@ const ParentLessons = () => {
           </div>
 
           <div className={styles.filterBar}>
-            <div className={styles.statusFilters} role="group" aria-label="Lọc theo trạng thái">
+            <div className={styles.statusFilters} role="group" aria-label="Lọc theo trạng thái" data-tour="lessons-filters">
               {STATUS_FILTERS.map((filter) => (
                 <button
                   key={filter.key}

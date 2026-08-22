@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Đang chuyển hướng...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+<body>
+  <p>Đang quay lại ứng dụng Tutora...</p>
+  <script>
+    // Zalo OAuth v4 chỉ chấp nhận callback URL dạng http(s), nên custom scheme
+    // của app mobile (vn.tutora.mb://zalo-callback) không thể đăng ký trực tiếp.
+    // Trang cầu nối này nhận redirect từ Zalo rồi chuyển tiếp nguyên vẹn query
+    // string (code, state) sang custom scheme để flutter_web_auth_2 bắt lại.
+    var target = 'vn.tutora.mb://zalo-callback' + window.location.search;
+    window.location.replace(target);
+  </script>
+</body>
+</html>
