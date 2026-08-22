@@ -68,6 +68,17 @@ const SessionLobby = () => {
   /** Phía mình chờ ai: gia sư chờ học sinh, học sinh/phụ huynh chờ gia sư. */
   const waitingForLabel = isTutor ? 'học sinh' : 'gia sư';
 
+  // Trang này thường được điều hướng tới bằng navigate(..., {replace: true}) từ nhiều nơi khác
+  // (LiveSession redirect khi cần xác nhận đổi lịch/trùng lịch) — navigate(-1) vì vậy không đáng
+  // tin cậy, có thể lùi lại đúng route lobby này lần nữa (luôn hiện màn mic/cam) thay vì về lịch
+  // học. Đi thẳng về đúng trang lịch của từng vai trò, giống navigateToCalendar ở LiveSession/index.tsx.
+  const calendarPath =
+    role === 'tutor'
+      ? '/tutor-portal/calendar'
+      : role === 'parent'
+        ? '/parent-portal/lessons'
+        : '/student-portal/calendar';
+
   const {
     phase: realPhase,
     info: realInfo,
@@ -172,7 +183,7 @@ const SessionLobby = () => {
 
   const handleBack = () => {
     preview.stop();
-    navigate(-1);
+    navigate(calendarPath, { replace: true });
   };
 
   const renderBody = () => {

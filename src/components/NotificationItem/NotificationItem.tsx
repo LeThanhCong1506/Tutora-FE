@@ -1,6 +1,13 @@
 import type { NotificationDTO } from '../../services/notification.service';
 import styles from './NotificationItem.module.css';
-import { ReadOutlined, MessageOutlined, CreditCardOutlined, CalendarOutlined } from '@ant-design/icons';
+import {
+    ReadOutlined,
+    MessageOutlined,
+    CreditCardOutlined,
+    CalendarOutlined,
+    DisconnectOutlined,
+    CheckCircleOutlined,
+} from '@ant-design/icons';
 
 interface NotificationItemProps {
     notification: NotificationDTO;
@@ -10,6 +17,15 @@ interface NotificationItemProps {
 const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onClick }) => {
     const getNotificationIcon = () => {
         const title = notification.title.toLowerCase();
+        if (notification.type === 'lesson_continuation_created') {
+            return <DisconnectOutlined className={styles.icon} />;
+        }
+        if (notification.type === 'lesson_interruption_auto_closed') {
+            return <CheckCircleOutlined className={styles.icon} />;
+        }
+        if (notification.type === 'dispute_relearn_scheduled') {
+            return <CalendarOutlined className={styles.icon} />;
+        }
         if (title.includes('booking') || title.includes('request')) {
             return <ReadOutlined className={styles.icon} />;
         }
