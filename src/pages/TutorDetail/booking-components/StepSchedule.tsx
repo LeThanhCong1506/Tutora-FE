@@ -74,6 +74,9 @@ const StepSchedule: React.FC<StepProps> = ({
     } = scheduling;
 
     const fixedPattern = selectedCombo?.type === "fixed" ? comboToWeeklyPattern(selectedCombo) : [];
+    // Chụp "bây giờ" tại thời điểm render — đủ để loại các ô giờ hôm nay đã trôi qua
+    // (vd 2h sáng thì ô 1h sáng phải bị khoá), khác với `today` (mốc 00:00, chỉ so ngày).
+    const now = new Date();
 
     const selectCombo = (combo: FixedCombo) => {
         if (combo.id === formData.comboId) return;
@@ -273,7 +276,9 @@ const StepSchedule: React.FC<StepProps> = ({
                                                             slot.available !== false &&
                                                             slotCoversCell(slot.startTime, slot.durationHours, cellMin),
                                                     );
-                                                    const isPast = date < today;
+                                                    const cellStart = new Date(date);
+                                                    cellStart.setHours(0, cellMin, 0, 0);
+                                                    const isPast = cellStart <= now;
                                                     const selectedCovering = selectedSlots.find(
                                                         (s) =>
                                                             s.date === dateKey &&
