@@ -190,7 +190,7 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
 
             if (kyc.ocrSuccess) {
                 // CCCD là nguồn định danh chuẩn; BE đã đồng bộ họ tên, ngày sinh và giới tính.
-                toast.success('Xác minh danh tính thành công!');
+                toast.success('Đã lấy thông tin CCCD thành công!');
                 onSave({
                     ...formData,
                     idNumber: kyc.identityNumber || '',
@@ -235,7 +235,7 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
                 return (
                     <div className={`${styles.statusBadge} ${styles.verified}`}>
                         <CheckIcon />
-                        <span>Đã xác minh</span>
+                        <span>Đã lấy thông tin</span>
                     </div>
                 );
             case 'rejected':
