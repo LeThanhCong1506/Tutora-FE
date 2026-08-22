@@ -123,6 +123,9 @@ export interface CalendarLessonDto {
   status: string;
   bookingStatus?: string;
   meetingLink?: string;
+  isContinuation?: boolean;
+  isDisputeRelearn?: boolean;
+  originalClassSessionId?: number;
 }
 
 export interface CalendarDayDto {
@@ -211,6 +214,12 @@ const mapDetail = (d: ClassSessionDetailResponse): ParentLessonDetailDto => ({
   scheduleChanges: d.scheduleChanges,
   pendingRescheduleProposal: d.pendingRescheduleProposal,
   rescheduleProposals: d.rescheduleProposals,
+  isContinuation: d.isContinuation,
+  isDisputeRelearn: d.isDisputeRelearn,
+  originalClassSessionId: d.originalClassSessionId,
+  interruptedAt: d.interruptedAt,
+  interruptReason: d.interruptReason,
+  interruptedByName: d.interruptedByName,
 });
 
 const mapSettlement = (r: SettlementResultResponse): SettlementResultDto => ({
@@ -356,6 +365,9 @@ export const getParentCalendar = async (
         status: c.status ?? '',
         bookingStatus: c.bookingStatus,
         meetingLink: c.meetingLink,
+        isContinuation: c.isContinuation,
+        isDisputeRelearn: c.isDisputeRelearn,
+        originalClassSessionId: c.originalClassSessionId,
       })),
     })),
   };
