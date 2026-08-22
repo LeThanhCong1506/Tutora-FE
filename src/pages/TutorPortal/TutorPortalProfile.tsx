@@ -1052,9 +1052,9 @@ const TutorPortalProfile: React.FC = () => {
                       <div className={styles.identityVerified}>
                         <div className={`${styles.identityBadge} ${styles.verified}`}>
                           <CheckCircleIcon />
-                          <span>Đã xác minh</span>
+                          <span>Đã lấy thông tin</span>
                         </div>
-                        <p className={styles.identityVerifiedText}>Danh tính của bạn đã được xác minh thành công.</p>
+                        <p className={styles.identityVerifiedText}>Đã lấy thông tin CCCD của bạn thành công.</p>
                       </div>
                     )}
                     {formData.identityVerification.verificationStatus === 'pending' && (
