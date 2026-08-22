@@ -37,6 +37,51 @@ export const groupLessonsByDate = (lessons: LessonSummary[]): LessonGroup[] => {
     }));
 };
 
+export type LessonRenderItem =
+  | { kind: 'single'; lesson: LessonSummary }
+  | { kind: 'chain'; lessons: LessonSummary[] };
+
+/**
+ * Gom buổi gốc bị ngắt/dispute với buổi phụ/buổi học lại của nó (originalClassSessionId) thành
+ * 1 nhóm để hiển thị nối liền nhau — chỉ gom khi CẢ 2 buổi cùng nằm trong mảng `lessons` truyền vào
+ * (cùng 1 ngày/cùng 1 view đang render); nếu buổi gốc rơi ra ngoài phạm vi đó thì vẫn hiện đơn lẻ,
+ * tránh tham chiếu tới 1 buổi không hề xuất hiện trên màn hình.
+ */
+export const groupLessonsByChain = (lessons: LessonSummary[]): LessonRenderItem[] => {
+  const byId = new Map(lessons.map((lesson) => [lesson.lessonId, lesson]));
+
+  const findRoot = (id: number): number => {
+    const seen = new Set<number>();
+    let current = id;
+    while (!seen.has(current)) {
+      seen.add(current);
+      const parentId = byId.get(current)?.originalClassSessionId;
+      if (!parentId || !byId.has(parentId)) return current;
+      current = parentId;
+    }
+    return current;
+  };
+
+  const groups = new Map<number, LessonSummary[]>();
+  lessons.forEach((lesson) => {
+    const root = findRoot(lesson.lessonId);
+    groups.set(root, [...(groups.get(root) || []), lesson]);
+  });
+
+  const emitted = new Set<number>();
+  const result: LessonRenderItem[] = [];
+  lessons.forEach((lesson) => {
+    const root = findRoot(lesson.lessonId);
+    if (emitted.has(root)) return;
+    emitted.add(root);
+    const group = [...groups.get(root)!].sort(
+      (first, second) => getLessonDate(first).valueOf() - getLessonDate(second).valueOf(),
+    );
+    result.push(group.length > 1 ? { kind: 'chain', lessons: group } : { kind: 'single', lesson: group[0] });
+  });
+  return result;
+};
+
 export const isCancelledLesson = (lesson: LessonSummary): boolean =>
   ['cancelled', 'cancelled_noshow', 'no_show'].includes(lesson.status.toLowerCase());
 

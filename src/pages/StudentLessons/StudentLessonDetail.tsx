@@ -5,7 +5,7 @@ import {
     ArrowLeft, BookOpen, AlertCircle, Video,
     FileText, ClipboardCheck, Star,
     User, PlayCircle, StopCircle, Paperclip, Download, CalendarClock,
-    CheckCircle2, Clock3, XCircle, Sparkles, ChevronDown, Plus, ArrowUp,
+    CheckCircle2, Clock3, XCircle, Sparkles, ChevronDown, Plus, ArrowUp, Link2,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import ReactMarkdown from 'react-markdown';
@@ -20,7 +20,7 @@ import {
     respondStudentScheduleChange,
     proposeStudentReschedule,
     respondStudentReschedule,
-    getClassSessionRecording,
+    getClassSessionRecordingChain,
     type DisputeDetailResponse,
     type DisputeMessage,
     type SessionScheduleChangeResponse,
@@ -36,7 +36,7 @@ import {
 import { signalRService } from '../../services/signalr.service';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
 import { message as antMessage, Spin, Modal } from 'antd';
-import { ClassSessionRecording, RescheduleProposalModal } from '../../components/shared';
+import { ClassSessionRecording, RescheduleProposalModal, SkipContinuationCard } from '../../components/shared';
 import CreateDisputeForm from '../ParentLessons/components/CreateDisputeForm';
 import ReportNoShowModal from '../ParentLessons/components/ReportNoShowModal';
 import NoShowActionModal from '../ParentLessons/components/NoShowActionModal';
@@ -60,6 +60,7 @@ const STATUS_ICON: Record<string, string> = {
     cancelled_noshow: '❌',
     no_show: '⚠️',
     disputed: '🚨',
+    interrupted: '🔌',
 };
 
 const getStatus = (status: string | null | undefined): StatusInfo => {
@@ -187,8 +188,13 @@ const StudentLessonDetail = () => {
     const fetchRecordingStatus = useCallback(async () => {
         if (!lessonId) return;
         try {
-            const response = await getClassSessionRecording(parseInt(lessonId));
-            setRecordingAvailable(Boolean(response.content?.available));
+            // Tóm tắt AI hoạt động theo CẢ CHUỖI (backend chỉ cần 1 buổi trong chuỗi có video —
+            // xem TriggerStudentSummaryAsync/chain.Any(leg => leg.Available)), không phải riêng
+            // buổi đang xem. Buổi phụ/học lại còn chưa học thì tất nhiên chưa có video RIÊNG nó,
+            // nhưng vẫn tóm tắt được dựa trên video buổi gốc đã có — nên phải check theo chuỗi,
+            // không phải theo /recording của 1 buổi.
+            const response = await getClassSessionRecordingChain(parseInt(lessonId));
+            setRecordingAvailable(Boolean(response.content?.some((leg) => leg.available)));
         } catch {
             setRecordingAvailable(false);
         }
@@ -470,7 +476,8 @@ const StudentLessonDetail = () => {
     const canCreateDispute = !isParentManaged
         && !TERMINAL_BOOKING_STATUSES.includes(String(lesson.bookingStatus || '').toLowerCase());
     const pendingReschedule = lesson.pendingRescheduleProposal;
-    const canProposeReschedule = lesson.status === 'scheduled' && !isParentManaged && !pendingReschedule;
+    const canProposeReschedule =
+        lesson.status === 'scheduled' && !isParentManaged && !pendingReschedule && !lesson.skipConfirmedByBothSides;
     const isRescheduleCounterpart = pendingReschedule?.counterpartRole === 'Student';
     const isRescheduleProposer = pendingReschedule?.proposedByRole === 'Student';
     const currentUserInfo = getUserInfoFromToken();
@@ -1116,6 +1123,26 @@ const StudentLessonDetail = () => {
                                         <span style={{ ...statusDot, background: status.color }} />
                                         {status.label}
                                     </span>
+                                    {(lesson.isContinuation || lesson.isDisputeRelearn) && (
+                                        <span
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: 6,
+                                                padding: '3px 10px',
+                                                borderRadius: 8,
+                                                border: '1px dashed #b9d6ea',
+                                                background: '#EAF3FA',
+                                                color: '#2F6F9F',
+                                                fontSize: 11,
+                                                fontWeight: 600,
+                                            }}
+                                        >
+                                            <Link2 size={12} />
+                                            {lesson.isContinuation ? 'Buổi phụ' : 'Buổi học lại'}
+                                            {lesson.originalClassSessionId ? ` của buổi #${lesson.originalClassSessionId}` : ''}
+                                        </span>
+                                    )}
                                 </div>
                                 <div style={sidebarGoalTimeline}>
                                     <div style={sidebarGoalRow}>
@@ -1134,6 +1161,15 @@ const StudentLessonDetail = () => {
                                     </div>
                                 </div>
                             </div>
+
+                            {lesson.isContinuation && (lesson.status ?? '').toLowerCase() === 'scheduled' && (
+                                <SkipContinuationCard
+                                    continuationSessionId={lesson.lessonId}
+                                    isTutor={false}
+                                    accentColor="#6366F1"
+                                    onBothConfirmed={() => void fetchDetail()}
+                                />
+                            )}
 
                             <SidebarSection label="Gia sư">
                                 <SidebarItemRow

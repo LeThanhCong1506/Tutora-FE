@@ -711,6 +711,10 @@
 }
 
 .statusPill > span {
+  /* min-width:0 bắt buộc phải có thì overflow/ellipsis mới có tác dụng trong flex item —
+     thiếu dòng này, span không co lại được và bị card cha (overflow:hidden) cắt cứng chữ,
+     không có dấu "…" — đây là nguyên nhân card "Bị ngắt giữa buổi" bị mất chữ xấu. */
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   /* line-height 1 của pill làm overflow:hidden cắt dấu tiếng Việt (ỗ, ủ) và
@@ -893,6 +897,9 @@
 }
 
 .recordingBadge span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   line-height: 1.6;
 }
 
@@ -923,6 +930,9 @@
 }
 
 .scheduleChangeBadge span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   line-height: 1.6;
 }
 
@@ -937,6 +947,85 @@
   min-height: 24px;
   padding: 3px 7px;
   font-size: 9.5px;
+}
+
+/* Chuỗi buổi học (buổi gốc bị ngắt/dispute + buổi phụ/học lại) bọc chung 1 khung, nối bằng
+   đường timeline dọc — thay vì trông như 2 buổi rời rạc trùng ngày. */
+.chainGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 7px 6px 2px;
+  border: 1px solid #dfe4e8;
+  border-radius: 13px;
+  background: #f5f6f8;
+}
+
+.chainGroupHeader {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 3px;
+  color: #687086;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.chainTimeline {
+  display: flex;
+  flex-direction: column;
+}
+
+.chainRow {
+  display: flex;
+  gap: 5px;
+}
+
+.chainRail {
+  display: flex;
+  width: 8px;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 12px;
+}
+
+.chainDot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+.chainLine {
+  width: 1px;
+  flex: 1;
+  min-height: 8px;
+  margin: 3px 0;
+  background: #d5dade;
+}
+
+.chainItem {
+  min-width: 0;
+  flex: 1;
+  padding-bottom: 6px;
+}
+
+/* Card trong chuỗi vốn đã hẹp hơn card đơn (mất bề ngang cho rail nối dấu chấm) — cho status/badge
+   luôn xếp dọc mỗi thứ 1 dòng riêng (giống pattern đã dùng cho màn hẹp 761–1400px) thay vì chen
+   chung 1 hàng rồi bị ellipsis cắt cụt, để chữ như "Bị ngắt giữa buổi" luôn đọc trọn vẹn. */
+.chainItem .calendarEventFooter {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chainItem .statusPill,
+.chainItem .scheduleChangeBadge,
+.chainItem .recordingBadge {
+  max-width: 100%;
 }
 
 .mobileCalendar {
