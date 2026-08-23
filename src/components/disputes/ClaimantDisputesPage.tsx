@@ -22,13 +22,19 @@ import styles from './DisputesTable.module.css';
 export interface ClaimantDisputesPageProps {
   reloadKey: number;
   onCreate: () => void;
+  infoText: string;
   /** Mở chi tiết một khiếu nại — mỗi portal tự dựng đường dẫn của mình. */
   onOpenDispute: (dispute: DisputeListResponse) => void;
 }
 
 const SEARCH_DEBOUNCE_MS = 350;
 
-const ClaimantDisputesPage = ({ reloadKey, onCreate, onOpenDispute }: ClaimantDisputesPageProps) => {
+const ClaimantDisputesPage = ({
+  reloadKey,
+  onCreate,
+  onOpenDispute,
+  infoText,
+}: ClaimantDisputesPageProps) => {
   const latestRequest = useRef(0);
   const skipNextAutoFetch = useRef(false);
   const [disputes, setDisputes] = useState<DisputeListResponse[]>([]);
@@ -258,6 +264,8 @@ const ClaimantDisputesPage = ({ reloadKey, onCreate, onOpenDispute }: ClaimantDi
       <PageContainer
         className={styles.page}
         title="Khiếu nại"
+        titleInfo={infoText}
+        maxWidth="wide"
         headerAction={
           <div className={styles.headerActions}>
             <Button
@@ -283,7 +291,6 @@ const ClaimantDisputesPage = ({ reloadKey, onCreate, onOpenDispute }: ClaimantDi
         <SectionCard className={styles.tableCard}>
           <div className={styles.cardHeader}>
             <div className={styles.cardHeading}>
-              <h2 className={styles.cardTitle}>Danh sách khiếu nại</h2>
               <p className={styles.cardSubtitle} aria-live="polite">
                 {loading ? 'Đang cập nhật dữ liệu...' : `${totalItems.toLocaleString('vi-VN')} hồ sơ`}
               </p>

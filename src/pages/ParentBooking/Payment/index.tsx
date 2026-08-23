@@ -37,6 +37,7 @@ import { message as antMessage, Button, Radio } from 'antd';
 import { useLargeTransactionOtp } from '../../../hooks/useLargeTransactionOtp';
 import { setPendingRedirect, getCurrentUserRole } from '../../../services/auth.service';
 import PaymentOtpStep from '../../../components/PaymentOtpStep/PaymentOtpStep';
+import { getApiErrorMessage } from '../../../utils/apiError';
 
 const PaymentPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -162,9 +163,7 @@ const PaymentPage = () => {
           setForceExpired(true);
           return;
         }
-        antMessage.error(
-          (isAxiosError(err) ? err.response?.data?.message : null) || 'Không thể tạo liên kết thanh toán.',
-        );
+        antMessage.error(getApiErrorMessage(err, 'Không thể tạo liên kết thanh toán.'));
       } finally {
         if (!cancelled) setPayosLoading(false);
       }
@@ -223,7 +222,7 @@ const PaymentPage = () => {
       } else if (isAxiosError(error) && error.response?.data?.errorCode === 'BOOKING_EXPIRED') {
         setForceExpired(true);
       } else {
-        antMessage.error((isAxiosError(error) ? error.response?.data?.message : null) || 'Có lỗi xảy ra khi thanh toán.');
+        antMessage.error(getApiErrorMessage(error, 'Có lỗi xảy ra khi thanh toán.'));
       }
     } finally {
       setIsPaying(false);

@@ -46,6 +46,7 @@ import s from '../StudentPages.module.css';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 import { canJoinLiveSession, isWithinJoinWindow } from '../../utils/liveSession';
 import { isAwaitingReport } from './lesson-components';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 // ── Status definitions — nguồn duy nhất là classSessionStatus.ts (khớp BE ClassSessionStatus) ──
 type StatusInfo = { label: string; color: string; bg: string; icon: string };
@@ -149,8 +150,8 @@ const StudentLessonDetail = () => {
             setLoading(true);
             const response = await getStudentLessonDetail(parseInt(lessonId));
             setLesson(response.content);
-        } catch {
-            antMessage.error('Không thể tải chi tiết buổi học');
+        } catch (error) {
+            antMessage.error(getApiErrorMessage(error, 'Không thể tải chi tiết buổi học'));
         } finally {
             setLoading(false);
         }
@@ -242,7 +243,7 @@ const StudentLessonDetail = () => {
             await fetchThread();
         } catch (error: any) {
             antMessage.error({
-                content: error.response?.data?.message || 'Không thể gửi tin nhắn',
+                content: getApiErrorMessage(error, 'Không thể gửi tin nhắn'),
                 key: 'dispute-thread-send-error',
             });
         } finally {
@@ -323,7 +324,7 @@ const StudentLessonDetail = () => {
             setShowConfirmModal(false);
             fetchDetail();
         } catch (error: any) {
-            antMessage.error(error.response?.data?.message || 'Không thể xác nhận buổi học');
+            antMessage.error(getApiErrorMessage(error, 'Không thể xác nhận buổi học'));
         } finally {
             setConfirming(false);
         }
@@ -355,7 +356,7 @@ const StudentLessonDetail = () => {
                 antMessage.success(confirmed ? 'Đã xác nhận đổi lịch học.' : 'Đã từ chối đổi lịch học.');
             }
         } catch (error: any) {
-            antMessage.error(error.response?.data?.message || 'Không thể xử lý yêu cầu đổi lịch.');
+            antMessage.error(getApiErrorMessage(error, 'Không thể xử lý yêu cầu đổi lịch.'));
             await fetchScheduleChange();
         } finally {
             setSubmittingScheduleDecision(false);
@@ -377,7 +378,7 @@ const StudentLessonDetail = () => {
             await fetchDetail();
             antMessage.success(accepted ? 'Đã đồng ý đổi lịch học.' : 'Đã từ chối đề xuất đổi lịch.');
         } catch (error: any) {
-            antMessage.error(error.response?.data?.message || 'Không thể xử lý yêu cầu đổi lịch.');
+            antMessage.error(getApiErrorMessage(error, 'Không thể xử lý yêu cầu đổi lịch.'));
         } finally {
             setRespondingReschedule(false);
         }
@@ -390,7 +391,7 @@ const StudentLessonDetail = () => {
             const response = await triggerVideoSummary(parseInt(lessonId));
             setSummaryJob(response.content);
         } catch (error: any) {
-            antMessage.error(error.response?.data?.message || 'Không thể tóm tắt video lúc này.');
+            antMessage.error(getApiErrorMessage(error, 'Không thể tóm tắt video lúc này.'));
         } finally {
             setTriggeringSummary(false);
         }
@@ -406,7 +407,7 @@ const StudentLessonDetail = () => {
             const response = await sendVideoSummaryFollowUp(parseInt(lessonId), question);
             setChatTurns((prev) => [...prev, { role: 'assistant', content: response.content, createdAt: new Date().toISOString() }]);
         } catch (error: any) {
-            antMessage.error(error.response?.data?.message || 'Không thể gửi câu hỏi lúc này.');
+            antMessage.error(getApiErrorMessage(error, 'Không thể gửi câu hỏi lúc này.'));
         } finally {
             setChatSending(false);
         }

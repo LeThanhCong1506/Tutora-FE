@@ -20,6 +20,7 @@ import { getUserKYCData } from '../../../services/verification.service';
 import type { AvailabilitySlot as ApiAvailabilitySlot } from '../../../services/availability.service';
 import type { IdentityVerificationData } from '../components/IdentityVerificationModal';
 import { matchProvinceFromCccdAddress } from '../utils/cccdAddress';
+import { getApiErrorMessage } from '../../../utils/apiError';
 
 // Re-export for convenience
 export type { IdentityVerificationData };
@@ -342,9 +343,9 @@ export function useTutorProfileForm() {
 
                 console.log('✅ Profile data loaded from API');
             }
-        } catch (err: any) {
+        } catch (err) {
             console.error('❌ Failed to fetch progress:', err);
-            const errorMessage = err.response?.data?.message || err.message || 'Failed to load profile data';
+            const errorMessage = getApiErrorMessage(err, 'Không tải được dữ liệu hồ sơ. Vui lòng thử lại.');
             setError(errorMessage);
             toast.error(errorMessage);
         } finally {
@@ -532,8 +533,7 @@ export function useTutorProfileForm() {
                 // source) failed — the page is still partially usable.
                 if (progressR.status === 'rejected') {
                     console.error('Failed to fetch verification progress:', progressR.reason);
-                    const reason = progressR.reason as { response?: { data?: { message?: string } }; message?: string };
-                    const message = reason?.response?.data?.message || reason?.message || 'Failed to load profile data';
+                    const message = getApiErrorMessage(progressR.reason, 'Không tải được dữ liệu hồ sơ. Vui lòng thử lại.');
                     setError(message);
                     toast.error(message);
                 }
@@ -636,9 +636,9 @@ export function useTutorProfileForm() {
                 toast.error(response.message || 'Không thể cập nhật giới thiệu');
                 return false;
             }
-        } catch (err: any) {
+        } catch (err) {
             console.error('❌ Error saving introduction:', err);
-            const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật giới thiệu';
+            const errorMessage = getApiErrorMessage(err, 'Có lỗi xảy ra khi cập nhật giới thiệu');
             setError(errorMessage);
             toast.error(errorMessage);
             return false;
@@ -689,9 +689,9 @@ export function useTutorProfileForm() {
 
             toast.error(response.message || 'Không thể cập nhật video');
             return null;
-        } catch (err: any) {
+        } catch (err) {
             console.error('❌ Error saving video:', err);
-            const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật video';
+            const errorMessage = getApiErrorMessage(err, 'Có lỗi xảy ra khi cập nhật video');
             setError(errorMessage);
             toast.error(errorMessage);
             return null;
@@ -752,9 +752,9 @@ export function useTutorProfileForm() {
                 console.error('⚠️ Avatar đã upload nhưng refetch progress lỗi:', refetchErr);
             }
             return true;
-        } catch (err: any) {
+        } catch (err) {
             console.error('❌ Error saving avatar:', err);
-            const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật ảnh đại diện';
+            const errorMessage = getApiErrorMessage(err, 'Có lỗi xảy ra khi cập nhật ảnh đại diện');
             setError(errorMessage);
             toast.error(errorMessage);
             return false;
@@ -825,9 +825,9 @@ export function useTutorProfileForm() {
                 toast.error(response.message || 'Không thể cập nhật thông tin');
                 return false;
             }
-        } catch (err: any) {
+        } catch (err) {
             console.error('❌ Error saving basic info:', err);
-            const errorMessage = err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thông tin';
+            const errorMessage = getApiErrorMessage(err, 'Có lỗi xảy ra khi cập nhật thông tin');
             setError(errorMessage);
             toast.error(errorMessage);
             return false;

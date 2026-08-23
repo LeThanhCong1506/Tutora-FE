@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Modal } from 'antd';
 import { CheckCircleFilled, InfoCircleOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
+import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '../../../utils/apiError';
 import { getBankAccount, type BankAccount } from '../../../services/bankAccount.service';
 import FinancePageShell from '../components/FinancePageShell';
 import BankAccountCard from '../../../components/BankAccount/BankAccountCard';
@@ -21,6 +23,7 @@ const BankInfoManagementPage: React.FC = () => {
       setBankInfo(info);
     } catch (error) {
       console.error('Failed to fetch bank info:', error);
+      toast.error(getApiErrorMessage(error, 'Không thể tải thông tin tài khoản ngân hàng'));
     } finally {
       setLoading(false);
     }
@@ -43,7 +46,7 @@ const BankInfoManagementPage: React.FC = () => {
   return (
     <FinancePageShell
       title="Tài khoản ngân hàng"
-      subtitle="Quản lý tài khoản nhận tiền khi yêu cầu rút thu nhập từ TUTORA."
+      titleInfo="Quản lý tài khoản nhận tiền khi yêu cầu rút thu nhập từ TUTORA."
     >
       <div className="finance-bank-layout">
         <BankAccountCard

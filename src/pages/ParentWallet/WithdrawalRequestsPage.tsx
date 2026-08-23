@@ -9,6 +9,7 @@ import { formatCurrency, formatDateTime } from '../../utils/formatters';
 import FinanceShell from './components/FinanceShell';
 import WithdrawalStatusBadge from '../../components/Finance/WithdrawalStatusBadge';
 import '../../styles/pages/tutor-finance.css';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 const WithdrawalRequestsPage = () => {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ const WithdrawalRequestsPage = () => {
       setTotal(res.content.total);
     } catch (error) {
       console.error('Failed to fetch withdrawals:', error);
-      toast.error('Không thể tải danh sách yêu cầu rút tiền');
+      toast.error(getApiErrorMessage(error, 'Không thể tải danh sách yêu cầu rút tiền'));
     } finally {
       setLoading(false);
     }
@@ -94,7 +95,7 @@ const WithdrawalRequestsPage = () => {
   return (
     <FinanceShell
       title="Lịch sử rút tiền"
-      subtitle="Theo dõi tiến độ xét duyệt và chuyển khoản của từng yêu cầu bạn đã gửi."
+      titleInfo="Theo dõi tiến độ xét duyệt và chuyển khoản của từng yêu cầu bạn đã gửi."
       actions={
         <Button size="large" icon={<SyncOutlined />} onClick={fetchWithdrawals} loading={loading}>
           Làm mới
@@ -104,7 +105,6 @@ const WithdrawalRequestsPage = () => {
       <section className="finance-surface finance-table-surface" aria-label="Danh sách yêu cầu rút tiền">
         <div className="finance-table-heading">
           <div>
-            <h2>Các yêu cầu của bạn</h2>
             <p>{total > 0 ? `${total.toLocaleString('vi-VN')} yêu cầu rút tiền` : 'Chưa có yêu cầu rút tiền'}</p>
           </div>
         </div>

@@ -93,6 +93,44 @@ const StepSchedule: React.FC<StepProps> = ({
                     <span className={styles.eyebrow}>Bước 03</span>
                     <h2>{isPackageMode && !selectedCombo ? "Chọn gói cố định" : "Chọn lịch học"}</h2>
                 </div>
+
+                {/* Thời lượng buổi + cửa sổ đặt lịch: hai thông tin tham chiếu, người dùng
+                    liếc chứ không thao tác, nên nằm gọn cùng hàng tiêu đề thay vì chiếm hai
+                    banner ngang trọn chiều rộng đẩy bảng lịch (phần thao tác chính) xuống. */}
+                {(isAvailabilityMode || selectedCombo) && (
+                    <div className={styles.headingMeta}>
+                        {isAvailabilityMode && (
+                            <span className={styles.headingMetaItem}>
+                                <Clock3 size={14} />
+                                <span>
+                                    <strong>{formatDuration(sessionHours)}</strong>/buổi
+                                </span>
+                            </span>
+                        )}
+                        <span className={styles.headingMetaItem}>
+                            <CalendarRange size={14} />
+                            <span>
+                                {pickedWeekSlots.length > 0 ? (
+                                    <>
+                                        <strong>{bookingWindowStart && formatFullDate(bookingWindowStart)}</strong> →{" "}
+                                        <strong>{bookingWindowEnd && formatFullDate(bookingWindowEnd)}</strong> ·{" "}
+                                        <strong>{selectedSlots.length} buổi</strong>
+                                    </>
+                                ) : (
+                                    <>
+                                        Chọn buổi đầu tiên trên lịch · kết thúc sau <strong>1 tháng</strong>
+                                    </>
+                                )}
+                            </span>
+                        </span>
+                        {pickedWeekSlots.length > 0 && (
+                            <button type="button" className={styles.changeWeekBtn} onClick={clearPicks}>
+                                <RotateCcw size={14} />
+                                Đổi tuần khác
+                            </button>
+                        )}
+                    </div>
+                )}
             </div>
 
             {isPackageMode && (
@@ -150,16 +188,6 @@ const StepSchedule: React.FC<StepProps> = ({
 
             {(isAvailabilityMode || selectedCombo) && (
                 <>
-                    {isAvailabilityMode && (
-                        <section className={styles.durationInfo}>
-                            <Clock3 size={15} />
-                            <span>
-                                Mỗi buổi <strong>{formatDuration(sessionHours)}</strong> · bấm buổi đầu tiên trên lịch để bắt
-                                đầu.
-                            </span>
-                        </section>
-                    )}
-
                     {bookedSlotsLoading && (
                         <section className={styles.durationInfo}>
                             <Clock3 size={15} />
@@ -180,32 +208,6 @@ const StepSchedule: React.FC<StepProps> = ({
                             Lịch đã chọn trùng với một buổi học hiện có. Vui lòng bỏ buổi đang chọn và chọn giờ khác.
                         </p>
                     )}
-
-                    <section className={styles.packageSetup}>
-                        <div className={styles.packageWindowInfo}>
-                            <CalendarRange size={15} />
-                            <span>
-                                {pickedWeekSlots.length > 0 ? (
-                                    <>
-                                        Bắt đầu <strong>{bookingWindowStart && formatFullDate(bookingWindowStart)}</strong>{" "}
-                                        → <strong>{bookingWindowEnd && formatFullDate(bookingWindowEnd)}</strong> ·{" "}
-                                        <strong>{selectedSlots.length} buổi</strong>
-                                    </>
-                                ) : (
-                                    <>
-                                        Bắt đầu từ <strong>buổi đầu tiên bạn chọn</strong> →{" "}
-                                        <strong>kết thúc sau 1 tháng</strong>
-                                    </>
-                                )}
-                            </span>
-                        </div>
-                        {pickedWeekSlots.length > 0 && (
-                            <button type="button" className={styles.changeWeekBtn} onClick={clearPicks}>
-                                <RotateCcw size={14} />
-                                Đổi tuần khác
-                            </button>
-                        )}
-                    </section>
 
                     <div className={styles.scheduleLayout}>
                         <section className={styles.calendarSection}>

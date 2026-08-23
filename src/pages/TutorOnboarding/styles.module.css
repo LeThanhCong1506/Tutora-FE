@@ -16,9 +16,19 @@
 }
 
 /* ── Header + section navigation ── */
+.pageHeader {
+  width: 100%;
+  max-width: 1164px;
+  min-height: 0;
+  margin: 0 auto;
+  padding: 24px 32px 0;
+  gap: 0;
+  flex: 0 0 auto;
+}
+
 .stepNavigation {
   width: 100%;
-  padding: 24px 32px 0;
+  padding: 16px 32px 0;
 }
 
 .headerTitle {
@@ -724,7 +734,7 @@
 /* Trạng thái hydrate: không render header/stepper của flow khi dữ liệu chưa sẵn sàng. */
 .loadingScreen {
   flex: 1;
-  min-height: calc(100vh - 96px);
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -748,8 +758,10 @@
   text-align: center;
 }
 
-.loadingCopy h1 {
+.loadingCopy strong {
+  display: block;
   margin: 0;
+  color: #1a2238;
   font-family: 'Bricolage Grotesque', sans-serif;
   font-size: 20px;
   line-height: 1.35;

@@ -34,9 +34,7 @@ const MonthSimulation: React.FC<Props> = ({ slots, windowStart, windowEnd, varia
                 <span>Lịch học theo tháng</span>
             </div>
 
-            {slots.length === 0 ? (
-                <p className={styles.monthSimEmpty}>Chọn khung giờ bên trái — lịch học sẽ tự phân bổ và hiện ở đây.</p>
-            ) : (
+            {slots.length > 0 && (
                 <div className={styles.monthSimMonths}>
                     {months.map(({ year, month }) => {
                         const daysInMonth = new Date(year, month + 1, 0).getDate();

@@ -1,23 +1,5 @@
 import type { CSSProperties } from "react";
 
-export const pageHeader: CSSProperties = {
-    marginBottom: 28,
-};
-
-export const pageTitle: CSSProperties = {
-    fontSize: 24,
-    fontWeight: 700,
-    color: "#1a2238",
-    margin: "0 0 4px",
-    fontFamily: "'Bricolage Grotesque', 'IBM Plex Sans', sans-serif",
-};
-
-export const pageSubtitle: CSSProperties = {
-    fontSize: 14,
-    color: "#737373",
-    margin: 0,
-};
-
 export const avatarImg: CSSProperties = {
     width: "100%",
     height: "100%",

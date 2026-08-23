@@ -6,6 +6,7 @@ import BankSelectDropdown from './BankSelectDropdown';
 import PaymentOtpStep from '../PaymentOtpStep/PaymentOtpStep';
 import { useBankAccountOtp } from '../../hooks/useBankAccountOtp';
 import { saveBankAccount, type BankAccount, type SaveBankAccountRequest } from '../../services/bankAccount.service';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 interface Props {
   bankInfo: BankAccount | null;
@@ -45,9 +46,7 @@ const BankAccountForm: React.FC<Props> = ({ bankInfo, onSuccess, onCancel }) => 
       toast.success('Cập nhật thông tin ngân hàng thành công.');
       onSuccess();
     } catch (error: unknown) {
-      const message =
-        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Không thể cập nhật thông tin ngân hàng. Vui lòng thử lại.';
+      const message = getApiErrorMessage(error, 'Không thể cập nhật thông tin ngân hàng. Vui lòng thử lại.');
       toast.error(message);
       otp.reset();
     } finally {

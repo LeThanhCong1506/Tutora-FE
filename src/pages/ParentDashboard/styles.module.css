@@ -5,16 +5,6 @@
   min-height: 100%;
 }
 
-.container {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  padding: 32px 24px;
-  width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
 /* ===== WELCOME BANNER ===== */
 
 @keyframes fadeSlideUp {
@@ -28,8 +18,24 @@
   }
 }
 
+/*
+ * flex-shrink: 0 — KHÔNG được bỏ, nếu bỏ là banner xẹp lại thành thanh trống như cũ.
+ *
+ * Vì sao: PortalLayout đặt `.main { height: 100vh }` → `.contentArea { flex: 1 1 auto;
+ * display: flex; flex-direction: column }` và `.contentArea > * { flex: 1 1 auto;
+ * min-height: 0 }`. Từ commit fa75ee8 trang này bọc trong PageContainer, mà PageContainer
+ * cũng là `display: flex; flex-direction: column` → banner trở thành flex item trong một
+ * cột có chiều cao xác định. Nội dung dashboard cao hơn khung nên flexbox co các item lại
+ * trước khi cho tràn ra scroll.
+ *
+ * Riêng banner bị co sạch vì nó có `overflow: hidden`: theo spec flexbox, flex item có
+ * overflow khác `visible` thì `min-height: auto` được tính bằng 0 thay vì bằng chiều cao
+ * nội dung. Các thẻ khác không có overflow nên giữ nguyên min-height = nội dung, không co
+ * — đó là lý do chỉ mỗi banner biến mất còn 4 ô thống kê vẫn bình thường.
+ */
 .welcomeBanner {
   position: relative;
+  flex-shrink: 0;
   overflow: hidden;
   background: linear-gradient(135deg, #1b2437 0%, #222f46 100%);
   border-radius: 18px;
@@ -59,22 +65,6 @@
   grid-template-columns: minmax(0, 1fr) minmax(340px, 420px);
   gap: clamp(36px, 5vw, 72px);
   align-items: center;
-}
-
-.welcomeGreeting {
-  display: inline-flex;
-  align-items: center;
-  width: fit-content;
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-family: 'IBM Plex Sans', sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(242, 234, 215, 0.92);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .welcomeTitle {
@@ -558,18 +548,9 @@
 }
 
 @media (max-width: 768px) {
-  .container {
-    padding: 20px 16px;
-    gap: 16px;
-  }
-
   .welcomeBanner {
     padding: 26px 20px;
     border-radius: 14px;
-  }
-
-  .welcomeGreeting {
-    font-size: 11px;
   }
 
   .welcomeTitle {

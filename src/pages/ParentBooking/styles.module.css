@@ -1,36 +1,14 @@
 .page {
   min-height: calc(100vh - 64px);
-  padding: 30px clamp(20px, 2.2vw, 36px) 44px;
   background: transparent;
   color: var(--color-navy, #1a2238);
   font-family: var(--font-primary, system-ui, sans-serif);
   box-sizing: border-box;
 }
 
-.header {
+.headerActions {
   display: flex;
-  width: 100%;
-  max-width: 1500px;
   align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  margin: 0 auto 24px;
-}
-
-.header h1 {
-  margin: 0;
-  color: #172033;
-  font-size: clamp(26px, 2vw, 32px);
-  font-weight: 700;
-  letter-spacing: -0.035em;
-  line-height: 1.2;
-}
-
-.header p {
-  margin: 7px 0 0;
-  color: #687083;
-  font-size: 14px;
-  line-height: 1.5;
 }
 
 .newBookingBtn {
@@ -712,14 +690,8 @@
 }
 
 @media (max-width: 680px) {
-  .page {
-    padding: 20px 12px 32px;
-  }
-
-  .header {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 15px;
+  .headerActions {
+    width: 100%;
   }
 
   .newBookingBtn {

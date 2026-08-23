@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Upload, Button, Input } from 'antd';
 import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '../../../utils/apiError';
 import { UploadOutlined, DeleteOutlined } from '@ant-design/icons';
 import { uploadClassSessionAttachment, type ReportAttachment } from '../../../services/classSession.service';
 import styles from './AttachmentUploader.module.css';
@@ -30,8 +31,8 @@ const AttachmentUploader: React.FC<AttachmentUploaderProps> = ({
       setUploadedFiles((prev) => [...prev, { name: file.name, url, description: '' }]);
       toast.success(`Tải lên ${file.name} thành công!`);
       onUploadComplete?.({ url, description: null });
-    } catch {
-      toast.error(`Tải lên ${file.name} thất bại.`);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, `Tải lên ${file.name} thất bại.`));
     } finally {
       setUploading(false);
     }

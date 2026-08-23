@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { getCurrentUserRole } from '../services/auth.service';
 import { getMyLinkStatus } from '../services/student.service';
 import { sendPaymentOtp, verifyPaymentOtp, type PaymentOtpPhase } from '../services/paymentOtp.service';
+import { getApiErrorMessage } from '../utils/apiError';
 
 /**
  * Mirror của MV.DomainLayer.Constants.LargeTransactionPolicy.ThresholdAmount ở BE. BE luôn là
@@ -144,8 +145,7 @@ export function useLargeTransactionOtp({ bookingId, amount, phase, ready, onNeed
                 setStatus('verified');
                 return { ok: true };
             } catch (err: unknown) {
-                const apiError = err as OtpApiError;
-                return { ok: false, message: apiError.response?.data?.message || 'Xác thực OTP thất bại.' };
+                return { ok: false, message: getApiErrorMessage(err, 'Xác thực OTP thất bại.') };
             } finally {
                 setVerifying(false);
             }

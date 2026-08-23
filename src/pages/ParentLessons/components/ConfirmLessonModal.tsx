@@ -3,6 +3,7 @@ import { Modal, Button } from 'antd';
 import { toast } from 'react-toastify';
 import { confirmLesson } from '../../../services/parent-lesson.service';
 import { formatVNDNumber } from '../../../utils/formatters';
+import { getApiErrorMessage } from '../../../utils/apiError';
 
 interface ConfirmLessonModalProps {
   open: boolean;
@@ -32,7 +33,7 @@ const ConfirmLessonModal: React.FC<ConfirmLessonModalProps> = ({
       toast.success('Xác nhận buổi học thành công!');
       onSuccess();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Không thể xác nhận buổi học.');
+      toast.error(getApiErrorMessage(error, 'Không thể xác nhận buổi học.'));
     } finally {
       setConfirming(false);
     }

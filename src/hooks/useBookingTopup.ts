@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { applyBookingShortfallTopup, createTopup, getTopupStatus, type TopupResponse } from '../services/wallet.service';
+import { getApiErrorMessage } from '../utils/apiError';
 
 const POLL_INTERVAL_MS = 5000;
 const MIN_TOPUP_VND = 10000; // PayOS yêu cầu tối thiểu 10,000đ
@@ -106,7 +107,7 @@ export const useBookingTopup = ({
         return;
       }
       // Các lỗi khác: tiền nạp bù đã ở trong ví và không bị tự động dùng cho phase khác.
-      setError(e.response?.data?.message || 'Không hoàn tất được thanh toán. Số dư đã được nạp, vui lòng thử lại.');
+      setError(getApiErrorMessage(err, 'Không hoàn tất được thanh toán. Số dư đã được nạp, vui lòng thử lại.'));
       setPhase('pay_error');
     }
   }, [bookingId, topup, clearPoll]);
@@ -122,8 +123,7 @@ export const useBookingTopup = ({
       setTopup(res.content);
       setPhase('awaiting_topup');
     } catch (err) {
-      const e = err as ApiErrorLike;
-      setError(e.response?.data?.message || 'Không tạo được mã nạp tiền. Vui lòng thử lại.');
+      setError(getApiErrorMessage(err, 'Không tạo được mã nạp tiền. Vui lòng thử lại.'));
       setPhase('create_error');
     } finally {
       creatingRef.current = false;

@@ -23,6 +23,7 @@ const StudentDisputes = () => {
       <ClaimantDisputesPage
         key={reloadKey}
         reloadKey={reloadKey}
+        infoText="Tạo và theo dõi khiếu nại liên quan đến các buổi học của bạn."
         onCreate={() => setCreateModalOpen(true)}
         onOpenDispute={openDispute}
       />

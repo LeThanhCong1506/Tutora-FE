@@ -238,7 +238,7 @@ const OnboardingSummary: React.FC<OnboardingSummaryProps> = ({
         <div className={styles.successIcon}>
           <CheckIcon />
         </div>
-        <h1 className={styles.headerTitle}>Thiết lập hoàn tất!</h1>
+        <h2 className={styles.headerTitle}>Thiết lập hoàn tất!</h2>
         <p className={styles.headerSubtitle}>
           Bạn đã sẵn sàng nhận booking theo lịch rảnh. Dưới đây là tổng quan môn học và gói lịch học tùy chọn.
         </p>

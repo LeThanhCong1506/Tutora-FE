@@ -91,12 +91,7 @@ const AcademicPortfolioSection = ({ certificates }: { certificates: CertificateI
     return (
         <section className="portfolio-section">
             <div className="portfolio-header">
-                <div className="portfolio-title-group">
-                    <h2 className="section-title">Hồ sơ năng lực học thuật</h2>
-                    <p className="portfolio-description">
-                        Văn bằng, chứng chỉ và hồ sơ học thuật giúp phụ huynh hiểu rõ nền tảng chuyên môn của gia sư.
-                    </p>
-                </div>
+                <h2 className="section-title">Hồ sơ năng lực học thuật</h2>
                 <div className="verified-badge-green">
                     <span className="verified-badge-icon" aria-hidden="true">
                         <CheckIcon />
@@ -164,25 +159,9 @@ const AcademicPortfolioSection = ({ certificates }: { certificates: CertificateI
                                 </div>
                                 <div className="portfolio-empty-copy">
                                     <b>Chưa có chứng chỉ được cập nhật</b>
-                                    <span>Gia sư có thể bổ sung chứng chỉ để hồ sơ đáng tin cậy hơn.</span>
-                                    <div className="portfolio-empty-actions">
-                                        <span>Chờ xét duyệt</span>
-                                        <span>Tải lên bổ sung</span>
-                                    </div>
                                 </div>
                             </div>
                         )}
-                    </div>
-                </div>
-
-                <div className="portfolio-footer">
-                    <div className="portfolio-note">
-                        <div className="note-dot green"></div>
-                        <b>Hồ sơ gốc lưu trữ bởi TUTORA</b>
-                    </div>
-                    <div className="portfolio-note">
-                        <div className="note-dot green"></div>
-                        <b>Đã kiểm tra chéo (Cross-checked)</b>
                     </div>
                 </div>
             </div>

@@ -17,6 +17,7 @@ import FinanceShell from './components/FinanceShell';
 import WithdrawalStatusBadge from '../../components/Finance/WithdrawalStatusBadge';
 import '../../styles/pages/tutor-finance.css';
 import ProofImageField from '../../components/Finance/ProofImageField';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 const WithdrawalDetailPage = () => {
   const { id: idString } = useParams<{ id: string }>();
@@ -43,7 +44,7 @@ const WithdrawalDetailPage = () => {
       setWithdrawal(res.content);
     } catch (error) {
       console.error('Failed to fetch withdrawal detail:', error);
-      toast.error('Không thể tải thông tin chi tiết yêu cầu rút tiền');
+      toast.error(getApiErrorMessage(error, 'Không thể tải thông tin chi tiết yêu cầu rút tiền'));
       navigate(`${portalBase}/wallet/withdrawals`);
     } finally {
       setLoading(false);
