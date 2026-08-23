@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Button, DatePicker, Select } from 'antd';
-import { DownloadOutlined, FilterOutlined, ReloadOutlined, SyncOutlined } from '@ant-design/icons';
+import { DownloadOutlined, ReloadOutlined, SyncOutlined } from '@ant-design/icons';
 import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '../../../utils/apiError';
 import dayjs, { type Dayjs } from 'dayjs';
 import { getTransactions } from '../../../services/tutorFinance.service';
 import type { TutorTransaction } from '../../../types/finance.types';
@@ -42,7 +43,7 @@ const TransactionHistoryPage: React.FC = () => {
       setTotal(response.totalCount);
     } catch (error) {
       console.error('Failed to fetch transactions:', error);
-      toast.error('Không thể tải lịch sử giao dịch');
+      toast.error(getApiErrorMessage(error, 'Không thể tải lịch sử giao dịch'));
     } finally {
       setLoading(false);
     }
@@ -80,7 +81,7 @@ const TransactionHistoryPage: React.FC = () => {
   return (
     <FinancePageShell
       title="Lịch sử giao dịch"
-      subtitle="Tra cứu toàn bộ khoản thu, khoản rút và các biến động số dư trong ví."
+      titleInfo="Tra cứu toàn bộ khoản thu, khoản rút và các biến động số dư trong ví."
       actions={
         <Button
           size="large"
@@ -91,61 +92,48 @@ const TransactionHistoryPage: React.FC = () => {
         </Button>
       }
     >
-      <section className="finance-surface finance-filter-card" aria-label="Bộ lọc giao dịch">
-        <div className="finance-filter-heading">
-          <div>
-            <span className="finance-filter-icon" aria-hidden="true">
-              <FilterOutlined />
-            </span>
-            <div>
-              <h2>Bộ lọc</h2>
-              <p>Kết quả được cập nhật ngay khi bạn thay đổi điều kiện.</p>
-            </div>
+      <section className="finance-surface finance-table-surface" aria-label="Danh sách giao dịch">
+        <div className="finance-table-filter-toolbar" aria-label="Bộ lọc giao dịch">
+          <div className="finance-filter-grid">
+            <label className="finance-field">
+              <span>Loại giao dịch</span>
+              <Select
+                aria-label="Loại giao dịch"
+                value={filters.type}
+                placeholder="Tất cả loại giao dịch"
+                size="large"
+                allowClear
+                onChange={handleFilterChange}
+                options={[
+                  { label: 'Nạp tiền', value: 'Deposit' },
+                  { label: 'Rút tiền', value: 'Withdrawal' },
+                  { label: 'Giữ tiền', value: 'EscrowCredit' },
+                  { label: 'Giải phóng', value: 'EscrowRelease' },
+                  { label: 'Hoàn tiền', value: 'Refund' },
+                ]}
+              />
+            </label>
+
+            <label className="finance-field finance-field--date">
+              <span>Khoảng thời gian</span>
+              <RangePicker
+                aria-label="Khoảng thời gian giao dịch"
+                value={filters.dateRange}
+                size="large"
+                onChange={handleDateChange}
+                placeholder={['Từ ngày', 'Đến ngày']}
+                disabledDate={(current) => current && current > dayjs().endOf('day')}
+                format="DD/MM/YYYY"
+              />
+            </label>
           </div>
           <Button type="text" icon={<ReloadOutlined />} onClick={clearFilters} disabled={!hasFilters}>
             Đặt lại
           </Button>
         </div>
 
-        <div className="finance-filter-grid">
-          <label className="finance-field">
-            <span>Loại giao dịch</span>
-            <Select
-              aria-label="Loại giao dịch"
-              value={filters.type}
-              placeholder="Tất cả loại giao dịch"
-              size="large"
-              allowClear
-              onChange={handleFilterChange}
-              options={[
-                { label: 'Nạp tiền', value: 'Deposit' },
-                { label: 'Rút tiền', value: 'Withdrawal' },
-                { label: 'Giữ tiền', value: 'EscrowCredit' },
-                { label: 'Giải phóng', value: 'EscrowRelease' },
-                { label: 'Hoàn tiền', value: 'Refund' },
-              ]}
-            />
-          </label>
-
-          <label className="finance-field finance-field--date">
-            <span>Khoảng thời gian</span>
-            <RangePicker
-              aria-label="Khoảng thời gian giao dịch"
-              value={filters.dateRange}
-              size="large"
-              onChange={handleDateChange}
-              placeholder={['Từ ngày', 'Đến ngày']}
-              disabledDate={(current) => current && current > dayjs().endOf('day')}
-              format="DD/MM/YYYY"
-            />
-          </label>
-        </div>
-      </section>
-
-      <section className="finance-surface finance-table-surface" aria-label="Danh sách giao dịch">
         <div className="finance-table-heading">
           <div>
-            <h2>Danh sách giao dịch</h2>
             <p>
               {total > 0 ? `${total.toLocaleString('vi-VN')} giao dịch được tìm thấy` : 'Chưa có giao dịch phù hợp'}
             </p>

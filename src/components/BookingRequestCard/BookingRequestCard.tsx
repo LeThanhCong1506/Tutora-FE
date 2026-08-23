@@ -5,6 +5,7 @@ import { acceptBooking, declineBooking, getBookingById, isFirstLessonFinished } 
 import { toast } from 'react-toastify';
 import { Modal, Input } from 'antd';
 import { formatVNDNumber } from '../../utils/formatters';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 interface BookingRequestData {
     bookingId: number;
@@ -110,7 +111,7 @@ const BookingRequestCard = ({ message, isTutor = false, onProceedToPayment }: Bo
             setStatus('accepted');
             toast.success('Đã chấp nhận yêu cầu đặt lịch!');
         } catch (error) {
-            toast.error('Không thể chấp nhận yêu cầu. Vui lòng thử lại.');
+            toast.error(getApiErrorMessage(error, 'Không thể chấp nhận yêu cầu. Vui lòng thử lại.'));
         } finally {
             setLoading(false);
         }
@@ -138,7 +139,7 @@ const BookingRequestCard = ({ message, isTutor = false, onProceedToPayment }: Bo
             setDeclineReason('');
             toast.info('Đã từ chối yêu cầu đặt lịch.');
         } catch (error) {
-            toast.error('Có lỗi xảy ra khi từ chối yêu cầu.');
+            toast.error(getApiErrorMessage(error, 'Có lỗi xảy ra khi từ chối yêu cầu.'));
         } finally {
             setLoading(false);
         }

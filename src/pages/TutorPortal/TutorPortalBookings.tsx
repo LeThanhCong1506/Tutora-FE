@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { BookOpen, Calendar, Check, ChevronRight, Clock, MessageCircle, Search, Star, User, Wallet, X } from 'lucide-react';
 import { Input, Modal, Pagination } from 'antd';
 import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '../../utils/apiError';
 import BookingMonthCalendar from '../../components/BookingMonthCalendar/BookingMonthCalendar';
 import { useCurrentTime } from '../../hooks/useCurrentTime';
 import { useTabParam } from '../../hooks/useTabParam';
@@ -18,6 +19,7 @@ import { getBookingFeedback, type FeedbackDto } from '../../services/feedback.se
 import ReplyFeedbackModal from './components/ReplyFeedbackModal';
 import { getBookingResponseDeadlineState } from '../../utils/bookingDeadline';
 import { formatVNDNumber } from '../../utils/formatters';
+import { PageContainer } from '../../components/shared';
 
 // `key` là slug hiển thị trên URL (`?tab=`), `status` là chuỗi status gửi cho API —
 // tách ra để URL không lộ danh sách status nội bộ và vẫn đọc được khi share link.
@@ -233,11 +235,11 @@ const TutorPortalBookings = () => {
       await fetchFeedbacksFor(items);
     } catch (error: unknown) {
       console.error('Fetch bookings error:', error);
-      const apiError = error as { response?: { status?: number }; message?: string };
+      const apiError = error as { response?: { status?: number } };
       if (apiError.response?.status === 403) {
         toast.error('Bạn không có quyền truy cập. Vui lòng kiểm tra lại tài khoản hoặc quyền gia sư.');
       } else {
-        toast.error(`Không thể tải danh sách yêu cầu đặt lịch: ${apiError.message || 'Lỗi không xác định'}`);
+        toast.error(getApiErrorMessage(error, 'Không thể tải danh sách yêu cầu đặt lịch. Vui lòng thử lại.'));
       }
     } finally {
       setLoading(false);
@@ -260,8 +262,8 @@ const TutorPortalBookings = () => {
       await acceptBooking(id);
       toast.success('Đã chấp nhận yêu cầu!');
       await fetchBookings();
-    } catch {
-      toast.error('Có lỗi xảy ra khi chấp nhận yêu cầu.');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Có lỗi xảy ra khi chấp nhận yêu cầu.'));
     } finally {
       setProcessingBooking(null);
     }
@@ -306,11 +308,14 @@ const TutorPortalBookings = () => {
           };
 
       navigate('/tutor-portal/messages', { state: { openChannel } });
-    } catch {
+    } catch (error) {
       toast.error(
-        isParentBooking
-          ? 'Không mở được cuộc trò chuyện với phụ huynh. Vui lòng thử lại.'
-          : 'Không mở được cuộc trò chuyện với học viên. Vui lòng thử lại.',
+        getApiErrorMessage(
+          error,
+          isParentBooking
+            ? 'Không mở được cuộc trò chuyện với phụ huynh. Vui lòng thử lại.'
+            : 'Không mở được cuộc trò chuyện với học viên. Vui lòng thử lại.',
+        ),
       );
     } finally {
       setOpeningChatId(null);
@@ -343,8 +348,8 @@ const TutorPortalBookings = () => {
       setDeclineReason('');
       setSelectedBookingId(null);
       await fetchBookings();
-    } catch {
-      toast.error('Có lỗi xảy ra khi từ chối yêu cầu.');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Có lỗi xảy ra khi từ chối yêu cầu.'));
     } finally {
       setProcessingBooking(null);
     }
@@ -353,14 +358,12 @@ const TutorPortalBookings = () => {
   const emptyCopy = activeTabConfig.empty;
 
   return (
-    <div className={styles.container}>
-      <header className={styles.header}>
-        <div className={styles.headerTitle}>
-          <h1>Yêu cầu đặt lịch</h1>
-          <p>Kiểm tra thông tin lớp học và phản hồi yêu cầu từ phụ huynh.</p>
-        </div>
-      </header>
-
+    <PageContainer
+      className={styles.container}
+      title="Yêu cầu đặt lịch"
+      titleInfo="Kiểm tra thông tin lớp học và phản hồi yêu cầu từ phụ huynh."
+      maxWidth="wide"
+    >
       <main className={styles.content}>
         <div className={styles.tabBar} role="tablist" aria-label="Lọc yêu cầu theo trạng thái" data-tour="bookings-tabs">
           {STATUS_TABS.map((tab) => (
@@ -804,7 +807,7 @@ const TutorPortalBookings = () => {
         comment={replyModal.feedback?.comment}
         createdAt={replyModal.feedback?.createdAt}
       />
-    </div>
+    </PageContainer>
   );
 };
 

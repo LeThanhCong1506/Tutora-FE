@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { updateZaloNotifyEnabled } from "../../../../services/user.service";
 import type { UserProfileData } from "../types";
+import { getApiErrorMessage } from '../../../../utils/apiError';
 
 /**
  * Track the Zalo-notify toggle state and sync it with the server. Uses an
@@ -23,9 +24,9 @@ export function useZaloNotify(profile: UserProfileData | null) {
         try {
             await updateZaloNotifyEnabled(profile.userid, newValue);
             toast.success(newValue ? "Đã bật thông báo Zalo" : "Đã tắt thông báo Zalo");
-        } catch {
+        } catch (error) {
             setZaloNotifyEnabled(!newValue);
-            toast.error("Không thể cập nhật cài đặt");
+            toast.error(getApiErrorMessage(error, "Không thể cập nhật cài đặt"));
         }
     };
 

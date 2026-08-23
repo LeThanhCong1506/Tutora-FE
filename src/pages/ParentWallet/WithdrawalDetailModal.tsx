@@ -5,6 +5,7 @@ import { getWithdrawalDetail, type WithdrawalDetail } from '../../services/walle
 import { useProtectedImage } from '../../hooks/useProtectedImage';
 import { ImageLightbox } from '../../components/shared';
 import styles from './styles.module.css';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 interface Props {
   withdrawalId: number;
@@ -33,9 +34,9 @@ const WithdrawalDetailModal = ({ withdrawalId, onClose }: Props) => {
       try {
         const res = await getWithdrawalDetail(withdrawalId);
         if (!cancelled) setDetail(res.content);
-      } catch {
+      } catch (error) {
         if (!cancelled) {
-          toast.error('Không thể tải chi tiết yêu cầu rút tiền');
+          toast.error(getApiErrorMessage(error, 'Không thể tải chi tiết yêu cầu rút tiền'));
           onClose();
         }
       } finally {

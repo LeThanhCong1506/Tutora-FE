@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import dayjs, { type Dayjs } from 'dayjs';
 import 'dayjs/locale/vi';
 import { reportNoShow } from '../../../services/parent-lesson.service';
+import { getApiErrorMessage } from '../../../utils/apiError';
 
 dayjs.locale('vi');
 
@@ -52,7 +53,7 @@ const ReportNoShowModal: React.FC<ReportNoShowModalProps> = ({
       resetForm();
       onSuccess();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Không thể báo cáo. Vui lòng thử lại.');
+      toast.error(getApiErrorMessage(error, 'Không thể báo cáo. Vui lòng thử lại.'));
     } finally {
       setSubmitting(false);
     }

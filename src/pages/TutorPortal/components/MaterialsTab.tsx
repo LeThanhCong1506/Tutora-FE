@@ -3,6 +3,7 @@ import { Upload, Button, Popconfirm } from 'antd';
 import { UploadOutlined, DeleteOutlined, FilePdfOutlined, FileWordOutlined, FileImageOutlined, FilePptOutlined, FileOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '../../../utils/apiError';
 import { getMaterials, uploadMaterial, deleteMaterial, type LearningMaterialResponse } from '../../../services/materials.service';
 import styles from '../../../styles/pages/tutor-portal-homework.module.css';
 
@@ -31,11 +32,6 @@ const formatSize = (bytes?: number) => {
     return kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.round(kb)} KB`;
 };
 
-const errorMessage = (error: unknown, fallback: string) => {
-    const e = error as { response?: { data?: { message?: string } } };
-    return e.response?.data?.message || fallback;
-};
-
 const MaterialsTab: React.FC<MaterialsTabProps> = ({ bookingId }) => {
     const [materials, setMaterials] = useState<LearningMaterialResponse[]>([]);
     const [loading, setLoading] = useState(true);
@@ -57,7 +53,7 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({ bookingId }) => {
             const response = await getMaterials(id);
             setMaterials(Array.isArray(response.content) ? response.content : []);
         } catch (error: unknown) {
-            toast.error(errorMessage(error, 'Không thể tải danh sách tài liệu.'));
+            toast.error(getApiErrorMessage(error, 'Không thể tải danh sách tài liệu.'));
         } finally {
             setLoading(false);
         }
@@ -72,7 +68,7 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({ bookingId }) => {
             setMaterials((prev) => [response.content, ...prev]);
             toast.success(`Tải lên ${file.name} thành công!`);
         } catch (error: unknown) {
-            toast.error(errorMessage(error, `Tải lên ${file.name} thất bại.`));
+            toast.error(getApiErrorMessage(error, `Tải lên ${file.name} thất bại.`));
         } finally {
             setUploading(false);
         }
@@ -85,7 +81,7 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({ bookingId }) => {
             await deleteMaterial(bookingId, materialId);
             setMaterials((prev) => prev.filter((m) => m.materialId !== materialId));
         } catch (error: unknown) {
-            toast.error(errorMessage(error, 'Không thể xoá tài liệu.'));
+            toast.error(getApiErrorMessage(error, 'Không thể xoá tài liệu.'));
         }
     };
 

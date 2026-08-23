@@ -43,7 +43,6 @@
   gap: 3px;
 }
 
-.pageEyebrow,
 .sidebarEyebrow {
   color: var(--messages-gold-strong);
   font-size: 10px;
@@ -51,6 +50,78 @@
   line-height: 16px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
+}
+
+.pageInfoButton {
+  position: relative;
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--messages-muted);
+  background: transparent;
+  cursor: help;
+}
+
+.pageInfoButton :global(.material-symbols-outlined) {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.pageInfoBubble {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 64px);
+  z-index: 30;
+  box-sizing: border-box;
+  width: 260px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--messages-navy);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: normal;
+  text-align: left;
+  text-transform: none;
+  transform: translateY(-50%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 150ms ease, visibility 150ms ease;
+}
+
+.pageInfoButton:hover .pageInfoBubble,
+.pageInfoButton:focus-visible .pageInfoBubble {
+  opacity: 1;
+  visibility: visible;
+}
+
+.pageTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Dấu ? khi đứng cạnh tiêu đề (không còn hàng eyebrow) cần to hơn và bong bóng sát hơn. */
+.pageTitleInfoButton {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+}
+
+.pageTitleInfoButton :global(.material-symbols-outlined) {
+  font-size: 20px;
+}
+
+.pageTitleInfoButton .pageInfoBubble {
+  left: calc(100% + 12px);
 }
 
 .pageTitle {
@@ -61,14 +132,6 @@
   font-weight: 750;
   line-height: 1.16;
   letter-spacing: -0.035em;
-}
-
-.pageSubtitle {
-  max-width: 620px;
-  margin: 3px 0 0;
-  color: var(--messages-muted);
-  font-size: 13px;
-  line-height: 20px;
 }
 
 .mainContent {
@@ -1469,19 +1532,15 @@
     padding: 16px 18px 14px;
   }
 
-  .pageEyebrow {
-    display: none;
-  }
-
   .pageTitle {
     font-size: 25px;
   }
 
-  .pageSubtitle {
-    max-width: 88%;
-    margin-top: 2px;
-    font-size: 11.5px;
-    line-height: 18px;
+  .pageInfoBubble {
+    position: fixed;
+    inset: auto 16px 16px;
+    width: auto;
+    transform: none;
   }
 
   .mainContent {

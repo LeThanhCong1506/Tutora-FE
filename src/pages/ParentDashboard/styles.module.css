@@ -5,16 +5,6 @@
   min-height: 100%;
 }
 
-.container {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  padding: 32px 24px;
-  width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
 /* ===== WELCOME BANNER ===== */
 
 @keyframes fadeSlideUp {
@@ -59,22 +49,6 @@
   grid-template-columns: minmax(0, 1fr) minmax(340px, 420px);
   gap: clamp(36px, 5vw, 72px);
   align-items: center;
-}
-
-.welcomeGreeting {
-  display: inline-flex;
-  align-items: center;
-  width: fit-content;
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-family: 'IBM Plex Sans', sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(242, 234, 215, 0.92);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .welcomeTitle {
@@ -558,18 +532,9 @@
 }
 
 @media (max-width: 768px) {
-  .container {
-    padding: 20px 16px;
-    gap: 16px;
-  }
-
   .welcomeBanner {
     padding: 26px 20px;
     border-radius: 14px;
-  }
-
-  .welcomeGreeting {
-    font-size: 11px;
   }
 
   .welcomeTitle {

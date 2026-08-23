@@ -7,7 +7,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Eye,
   Grid2X2,
   List,
   Users,
@@ -16,6 +15,7 @@ import { ConfigProvider, DatePicker, type ThemeConfig } from 'antd';
 import viVN from 'antd/es/date-picker/locale/vi_VN';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
+import { PageContainer } from '../../components/shared';
 import { useStudentContext } from '../../contexts/StudentContext';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
 import {
@@ -409,47 +409,45 @@ const ParentLessons = () => {
   }, [pendingAlerts]);
 
   const isFilteredEmpty = (activeStatus !== '' || Boolean(selectedChild)) && lessons.length > 0;
-  const childLabel = selectedChild ? selectedChild.fullName : students.length === 1 ? students[0].fullName : 'các con';
-
   return (
     <div className={styles.page}>
-      <div className={parentStyles.header}>
-        <div className={parentStyles.headerCopy}>
-          <h1 className={parentStyles.title}>Lịch học của {childLabel}</h1>
-          <p className={parentStyles.subtitle}>
-            <Eye size={13} aria-hidden="true" />
-            Chế độ theo dõi — bạn xem lịch, trạng thái và bản ghi buổi học; việc vào lớp do con thực hiện.
-          </p>
-        </div>
-
-        {showChildFilter && (
-          <div className={parentStyles.childFilter} role="group" aria-label="Lọc theo học sinh" data-tour="lessons-child-filter">
-            <span className={parentStyles.childFilterLabel}>
-              <Users size={14} aria-hidden="true" />
-              Học sinh
-            </span>
-            <button
-              type="button"
-              aria-pressed={!selectedChild}
-              className={!selectedChild ? parentStyles.childChipActive : ''}
-              onClick={() => updateQuery({ child: null })}
-            >
-              Tất cả
-            </button>
-            {students.map((student) => (
+      <PageContainer
+        className={parentStyles.pageHeader}
+        title="Thời khóa biểu"
+        titleInfo="Theo dõi lịch, trạng thái và bản ghi buổi học của các con; việc vào lớp do học sinh thực hiện."
+        maxWidth="full"
+        headerAction={
+          showChildFilter ? (
+            <div className={parentStyles.childFilter} role="group" aria-label="Lọc theo học sinh" data-tour="lessons-child-filter">
+              <span className={parentStyles.childFilterLabel}>
+                <Users size={14} aria-hidden="true" />
+                Học sinh
+              </span>
               <button
-                key={student.studentId}
                 type="button"
-                aria-pressed={selectedChild?.studentId === student.studentId}
-                className={selectedChild?.studentId === student.studentId ? parentStyles.childChipActive : ''}
-                onClick={() => updateQuery({ child: student.studentId })}
+                aria-pressed={!selectedChild}
+                className={!selectedChild ? parentStyles.childChipActive : ''}
+                onClick={() => updateQuery({ child: null })}
               >
-                {student.fullName}
+                Tất cả
               </button>
-            ))}
-          </div>
-        )}
-      </div>
+              {students.map((student) => (
+                <button
+                  key={student.studentId}
+                  type="button"
+                  aria-pressed={selectedChild?.studentId === student.studentId}
+                  className={selectedChild?.studentId === student.studentId ? parentStyles.childChipActive : ''}
+                  onClick={() => updateQuery({ child: student.studentId })}
+                >
+                  {student.fullName}
+                </button>
+              ))}
+            </div>
+          ) : undefined
+        }
+      >
+        {null}
+      </PageContainer>
 
       {(pendingAlerts.length > 0 || rescheduleAlerts.length > 0) && (
         <div className={parentStyles.alerts}>
@@ -511,7 +509,7 @@ const ParentLessons = () => {
         </div>
       )}
 
-      <main className={styles.main}>
+      <main className={`${styles.main} ${parentStyles.main}`}>
         <section className={styles.workspace} aria-labelledby="parent-lesson-workspace-title">
           <div className={styles.toolbar} data-tour="lessons-toolbar">
             <button

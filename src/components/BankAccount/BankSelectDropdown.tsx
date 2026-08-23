@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Select } from 'antd';
+import { toast } from 'react-toastify';
 import { getBankList } from '../../services/bankVerification.service';
 import type { BankListItem } from '../../types/finance.types';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 interface Props {
   value?: string;
@@ -75,6 +77,7 @@ const BankSelectDropdown: React.FC<Props> = ({
         setBanks(sortedBanks);
       } catch (error) {
         console.error('Failed to fetch banks:', error);
+        toast.error(getApiErrorMessage(error, 'Không tải được danh sách ngân hàng. Vui lòng thử lại.'));
       } finally {
         setLoading(false);
       }

@@ -1,6 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { PageContainer } from '../../components/shared';
 import {
   getWalletBalance,
   getTransactions,
@@ -13,6 +14,7 @@ import { formatCurrency, formatDateTime } from '../../utils/formatters';
 import TransactionsCard from './TransactionsCard';
 import PendingWithdrawalCallout from './PendingWithdrawalCallout';
 import styles from './styles.module.css';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 const TransactionDetailModal = lazy(() => import('./TransactionDetailModal'));
 const WithdrawModal = lazy(() => import('./WithdrawModal'));
@@ -54,8 +56,8 @@ const ParentWallet = () => {
     try {
       const res = await getWalletBalance();
       setBalance(res.content);
-    } catch {
-      toast.error('Không thể tải số dư ví');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Không thể tải số dư ví'));
     } finally {
       setBalanceLoading(false);
     }
@@ -67,8 +69,8 @@ const ParentWallet = () => {
       const res = await getTransactions(1, PREVIEW_SIZE);
       setTransactions(res.content.transactions);
       setTransactionsTotal(res.content.totalCount);
-    } catch {
-      toast.error('Không thể tải lịch sử giao dịch');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Không thể tải lịch sử giao dịch'));
     } finally {
       setTxLoading(false);
     }
@@ -79,8 +81,8 @@ const ParentWallet = () => {
     try {
       const res = await getWithdrawals(1, PREVIEW_SIZE);
       setWithdrawals(res.content.items);
-    } catch {
-      toast.error('Không thể tải danh sách yêu cầu rút tiền');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Không thể tải danh sách yêu cầu rút tiền'));
     } finally {
       setWithdrawalsLoading(false);
     }
@@ -104,13 +106,12 @@ const ParentWallet = () => {
     balanceLoading ? <span className={`${styles.skeleton} ${styles.skeletonValue}`} /> : formatCurrency(value);
 
   return (
-    <div className={styles.page}>
-      <header className={styles.walletHeader}>
-        <div className={styles.walletHeaderText}>
-          <h1 className={styles.pageTitle}>Tài chính của tôi</h1>
-          <p className={styles.pageSubtitle}>Quản lý số dư, rút tiền và xem lịch sử giao dịch của bạn.</p>
-        </div>
-
+    <PageContainer
+      className={styles.page}
+      title="Tài chính"
+      titleInfo="Quản lý số dư, rút tiền và xem lịch sử giao dịch của bạn."
+      maxWidth="wide"
+      headerAction={
         <div className={styles.headerActions}>
           <button
             className={styles.withdrawBtn}
@@ -136,7 +137,8 @@ const ParentWallet = () => {
             Lịch sử rút tiền
           </button>
         </div>
-      </header>
+      }
+    >
 
       {!balanceLoading && !canWithdraw && (
         <p className={styles.headerHint}>
@@ -220,7 +222,7 @@ const ParentWallet = () => {
           />
         </Suspense>
       )}
-    </div>
+    </PageContainer>
   );
 };
 

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Modal, Radio, Button } from 'antd';
 import { toast } from 'react-toastify';
 import { processNoShowAction, type NoShowActionRequest } from '../../../services/parent-lesson.service';
+import { getApiErrorMessage } from '../../../utils/apiError';
 
 interface NoShowActionModalProps {
   open: boolean;
@@ -74,7 +75,7 @@ const NoShowActionModal: React.FC<NoShowActionModalProps> = ({
       toast.success('Đã xử lý thành công!');
       onSuccess();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Không thể xử lý. Vui lòng thử lại.');
+      toast.error(getApiErrorMessage(error, 'Không thể xử lý. Vui lòng thử lại.'));
     } finally {
       setSubmitting(false);
     }

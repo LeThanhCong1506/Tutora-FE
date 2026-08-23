@@ -22,55 +22,16 @@
     sans-serif;
 }
 
-.header,
 .body {
   width: 100%;
-  max-width: 1320px;
-  margin: 0 auto;
-  padding: 0 36px;
   box-sizing: border-box;
-}
-
-/* ===== HEADER ===== */
-.header {
-  display: flex;
-  padding-top: 20px;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  flex: 0 0 auto;
-}
-
-.headerCopy {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.title {
-  margin: 0;
-  color: #17213a;
-  font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
-  font-size: 21px;
-  font-weight: 700;
-  letter-spacing: -0.015em;
-  line-height: 1.2;
-}
-
-.subtitle {
-  margin: 0;
-  /* Đậm hơn #687086 của các trang khác vì nền kem của portal tối hơn nền trắng của card. */
-  color: #5f687a;
-  font-size: 12.5px;
-  line-height: 1.45;
 }
 
 .headerActions {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .searchWrap {
@@ -169,7 +130,6 @@
 /* ===== BODY ===== */
 .body {
   display: flex;
-  padding-top: 18px;
   flex-direction: column;
   gap: 12px;
   flex: 1 1 auto;
@@ -578,36 +538,12 @@
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1080px) {
-  .header,
-  .body {
-    padding: 0 18px;
-  }
-
-  .header {
-    padding-top: 16px;
-  }
-
   .grid {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 760px) {
-  .header,
-  .body {
-    padding: 0 11px;
-  }
-
-  .header {
-    padding-top: 12px;
-    align-items: stretch;
-    gap: 10px;
-  }
-
-  .title {
-    font-size: 18px;
-  }
-
   .headerActions {
     width: 100%;
   }

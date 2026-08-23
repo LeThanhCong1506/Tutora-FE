@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import PaymentOtpStep from '../PaymentOtpStep/PaymentOtpStep';
 import { useBankAccountOtp } from '../../hooks/useBankAccountOtp';
 import { deleteBankAccount } from '../../services/bankAccount.service';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 interface Props {
   open: boolean;
@@ -31,9 +32,7 @@ const BankAccountDeleteModal: React.FC<Props> = ({ open, onClose, onSuccess }) =
       toast.success('Đã xoá tài khoản ngân hàng.');
       onSuccess();
     } catch (error: unknown) {
-      const message =
-        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Không thể xoá tài khoản ngân hàng. Vui lòng thử lại.';
+      const message = getApiErrorMessage(error, 'Không thể xoá tài khoản ngân hàng. Vui lòng thử lại.');
       toast.error(message);
       otp.reset();
     } finally {

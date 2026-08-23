@@ -2,6 +2,7 @@ import type { FunctionComponent } from 'react';
 import { useState, useEffect } from 'react';
 import { X, Clock } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '../../../utils/apiError';
 import styles from './AddAvailabilityModal.module.css';
 import { updateAvailability, DAY_OF_WEEK_MAP } from '../../../services/availability.service';
 import { useFormDraft } from '../../../hooks/useFormDraft';
@@ -244,8 +245,7 @@ const EditAvailabilityModal: FunctionComponent<EditAvailabilityModalProps> = ({
                 toast.error('Vui lòng kiểm tra lại thông tin nhập vào');
             } else {
                 // Generic error message
-                const rawMsg = axiosError.response?.data?.message || axiosError.response?.data?.title || '';
-                toast.error(translateScheduleMsg(rawMsg));
+                toast.error(translateScheduleMsg(getApiErrorMessage(error, '')));
             }
         } finally {
             setIsLoading(false);

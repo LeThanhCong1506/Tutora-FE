@@ -10,20 +10,17 @@
 /* Profile Page Container */
 .profilePage {
   background-color: transparent;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  font-family: 'IBM Plex Sans', sans-serif;
 }
 
 /* ===== PENDING APPROVAL BANNER ===== */
 /* Hiển thị khi profileStatus === 'pending_approval'. Tông kem/hổ phách và chấm trạng thái
    chuyển động nhẹ để truyền tải "đang được xử lý / chờ duyệt", khớp palette trang. */
 .pendingReviewWrapper {
-  max-width: min(1120px, 90vw);
+  max-width: min(1120px, 100%);
   width: 100%;
   margin: 0 auto;
-  padding: clamp(1.25rem, 0.9rem + 0.8vw, 2rem) clamp(1.5rem, 1rem + 1vw, 2.5rem) 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 .pendingReviewBanner {
@@ -152,7 +149,7 @@
 @media (max-width: 768px) {
   .pendingReviewWrapper {
     max-width: none;
-    padding: 14px 14px 0;
+    padding: 0;
   }
 
   .pendingReviewBanner {
@@ -203,9 +200,9 @@
 }
 
 .contentWrapper {
-  max-width: min(1120px, 90vw);
+  max-width: min(1120px, 100%);
   margin: 0 auto;
-  padding: clamp(1.5rem, 1rem + 1vw, 2.5rem);
+  padding: 0;
   display: flex;
   gap: clamp(1.5rem, 1rem + 1vw, 2.5rem);
 }
@@ -2485,7 +2482,7 @@
 
 @media (max-width: 1400px) {
   .contentWrapper {
-    padding: 21px;
+    padding: 0;
   }
 
   .leftColumn {
@@ -2535,7 +2532,7 @@
 
 @media (max-width: 768px) {
   .contentWrapper {
-    padding: 14px;
+    padding: 0;
     gap: 14px;
   }
 

@@ -3,6 +3,7 @@ import styles from './AddStudentModal.module.css';
 import { AlertCircle, UserPlus, X } from 'lucide-react';
 import type { ICreateParentStudent } from '../../../services/student.service';
 import { useGradeLevels } from '../../../hooks/useGradeLevels';
+import { extractApiErrorMessage } from '../student-components/apiMessages';
 
 interface AddStudentModalProps {
     isOpen: boolean;
@@ -118,8 +119,8 @@ const AddStudentModal = ({ isOpen, onClose, onSubmit }: AddStudentModalProps) =>
                     mapped[fieldKey] = Array.isArray(msgs) ? (msgs as string[])[0] : String(msgs);
                 }
                 setErrors(mapped);
-            } else if (err.response?.data?.message) {
-                setErrors({ general: err.response.data.message });
+            } else {
+                setErrors({ general: extractApiErrorMessage(err, 'Thêm học sinh thất bại. Vui lòng thử lại.') });
             }
         } finally {
             setSubmitting(false);

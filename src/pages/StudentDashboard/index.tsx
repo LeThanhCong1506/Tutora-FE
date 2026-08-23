@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Spin } from 'antd';
+import { toast } from 'react-toastify';
 import dayjs, { type Dayjs } from 'dayjs';
 import { BookOpen, Clock, CircleAlert, CheckCircle2, ChevronLeft, ChevronRight, Video } from 'lucide-react';
 import {
@@ -13,8 +14,9 @@ import {
 import { getUserInfoFromToken } from '../../services/auth.service';
 import { canJoinLiveSession, isWithinJoinWindow } from '../../utils/liveSession';
 import { isZaloMiniApp } from '../../services/zalo-env';
-import { StatCard } from '../../components/shared';
+import { PageContainer, StatCard } from '../../components/shared';
 import styles from './styles.module.css';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 const inMiniApp = isZaloMiniApp();
 
@@ -74,8 +76,25 @@ const StudentDashboard = () => {
         );
         setBookings(activeBookings);
       }
+      // allSettled nuốt lỗi từng nhánh: trước đây phần nào hỏng thì chỉ hiện danh sách rỗng
+      // như thể "chưa có dữ liệu". Gom lý do thật rồi báo một lần.
+      const sectionErrors = [
+        [allLessonsRes, 'Không tải được danh sách buổi học.'] as const,
+        [pendingLessonsRes, 'Không tải được buổi học chờ xác nhận.'] as const,
+        [bookingsRes, 'Không tải được danh sách đặt lịch.'] as const,
+      ]
+        .filter(([res]) => res.status === 'rejected')
+        .map(([res, fallback]) =>
+          getApiErrorMessage((res as PromiseRejectedResult).reason, fallback),
+        );
+
+      if (sectionErrors.length > 0) {
+        console.error('Dashboard: một số phần tải lỗi', sectionErrors);
+        toast.error([...new Set(sectionErrors)].join(' '));
+      }
     } catch (err) {
       console.error('Dashboard fetch error:', err);
+      toast.error(getApiErrorMessage(err, 'Không tải được dữ liệu tổng quan.'));
     } finally {
       setLoading(false);
     }
@@ -164,22 +183,31 @@ const StudentDashboard = () => {
 
   if (loading) {
     return (
-      <div className={styles.page}>
+      <PageContainer
+        className={styles.page}
+        title="Tổng quan"
+        titleInfo="Thao tác nhanh và theo dõi thống kê buổi học của bạn."
+        maxWidth="wide"
+      >
         <div className={styles.loading}>
           <Spin size="large" />
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className={styles.page}>
+    <PageContainer
+      className={styles.page}
+      title="Tổng quan"
+      titleInfo="Thao tác nhanh và theo dõi thống kê buổi học của bạn."
+      maxWidth="wide"
+    >
       <div className={styles.container}>
         <section className={styles.welcomeBanner}>
           <div className={styles.welcomeLayout}>
             <div className={styles.greeting}>
-              <span className={styles.welcomeGreeting}>Cổng học sinh</span>
-              <h1 className={styles.greetingTitle}>Xin chào, {userName}!</h1>
+              <h2 className={styles.greetingTitle}>Xin chào, {userName}!</h2>
               <div className={styles.quickActions} data-tour="student-dashboard-actions">
                 <Link to="/student-portal/booking" className={styles.quickActionBtn}>
                   <div className={styles.quickActionIcon}>
@@ -345,7 +373,7 @@ const StudentDashboard = () => {
           </div>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

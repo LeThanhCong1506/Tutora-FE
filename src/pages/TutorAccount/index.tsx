@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '../../utils/apiError';
 import Cropper from 'react-easy-crop';
 import type { Area, Point } from 'react-easy-crop';
 import { getUserIdFromToken, changePassword } from '../../services/auth.service';
 import { getUserProfile, updateUserProfile, updateUserAvatar } from '../../services/user.service';
 import { formatDateTime } from '../../utils/formatters';
+import { PageContainer } from '../../components/shared';
 import {
     validateUserProfileForm,
     mapApiFieldErrors,
@@ -132,8 +134,8 @@ const TutorAccount = () => {
                     gender: data.gender || '',
                     email: data.email || '',
                 });
-            } catch {
-                toast.error('Không thể tải thông tin tài khoản');
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, 'Không thể tải thông tin tài khoản'));
             } finally {
                 setLoading(false);
             }
@@ -185,7 +187,7 @@ const TutorAccount = () => {
                 setErrors(mapped);
                 toast.error('Vui lòng kiểm tra lại các thông tin được đánh dấu.');
             } else {
-                toast.error(apiError?.message || 'Cập nhật thất bại. Vui lòng thử lại.');
+                toast.error(getApiErrorMessage(err, 'Cập nhật thất bại. Vui lòng thử lại.'));
             }
         } finally {
             setSaving(false);
@@ -238,8 +240,8 @@ const TutorAccount = () => {
                 window.dispatchEvent(new CustomEvent('avatar-updated', { detail: newUrl }));
             }
             toast.success('Cập nhật ảnh đại diện thành công!');
-        } catch {
-            toast.error('Không thể cập nhật ảnh đại diện. Vui lòng thử lại.');
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Không thể cập nhật ảnh đại diện. Vui lòng thử lại.'));
         } finally {
             setUploadingAvatar(false);
             handleCancelPreview();
@@ -277,8 +279,7 @@ const TutorAccount = () => {
             setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
             setShowPasswordSection(false);
         } catch (error) {
-            const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
-            toast.error(message || 'Đổi mật khẩu thất bại. Vui lòng thử lại.');
+            toast.error(getApiErrorMessage(error, 'Đổi mật khẩu thất bại. Vui lòng thử lại.'));
         } finally {
             setChangingPassword(false);
         }
@@ -328,9 +329,14 @@ const TutorAccount = () => {
 
     if (loading) {
         return (
-            <div className={styles.page}>
+            <PageContainer
+                className={styles.page}
+                title="Tài khoản"
+                titleInfo="Quản lý thông tin cá nhân và cài đặt tài khoản."
+                maxWidth="standard"
+            >
                 <div style={{ textAlign: 'center', color: '#737373', padding: 48 }}>Đang tải...</div>
-            </div>
+            </PageContainer>
         );
     }
 
@@ -338,7 +344,12 @@ const TutorAccount = () => {
     const initials = getInitials(displayName);
 
     return (
-        <div className={styles.page}>
+        <PageContainer
+            className={styles.page}
+            title="Tài khoản"
+            titleInfo="Quản lý thông tin cá nhân và cài đặt tài khoản."
+            maxWidth="standard"
+        >
             {/* Avatar Crop Modal */}
             {previewUrl && (
                 <div className={styles.modalOverlay} onClick={handleCancelPreview}>
@@ -419,12 +430,6 @@ const TutorAccount = () => {
                     </div>
                 </div>
             )}
-
-            {/* Page Header */}
-            <div style={pageHeader}>
-                <h1 style={pageTitle}>Tài khoản của tôi</h1>
-                <p style={pageSubtitle}>Quản lý thông tin cá nhân và cài đặt tài khoản</p>
-            </div>
 
             {/* Profile Header Card */}
             <div className={styles.profileCard} data-tour="account-profile-card">
@@ -733,29 +738,11 @@ const TutorAccount = () => {
                     </div>
                 )}
             </div>
-        </div>
+        </PageContainer>
     );
 };
 
 // ── Styles ──
-const pageHeader: React.CSSProperties = {
-    marginBottom: 28,
-};
-
-const pageTitle: React.CSSProperties = {
-    fontSize: 24,
-    fontWeight: 700,
-    color: '#1a2238',
-    margin: '0 0 4px',
-    fontFamily: "'Bricolage Grotesque', 'IBM Plex Sans', sans-serif",
-};
-
-const pageSubtitle: React.CSSProperties = {
-    fontSize: 14,
-    color: '#737373',
-    margin: 0,
-};
-
 const avatarImg: React.CSSProperties = {
     width: '100%',
     height: '100%',

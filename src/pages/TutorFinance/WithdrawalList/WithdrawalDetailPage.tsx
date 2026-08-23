@@ -11,6 +11,7 @@ import {
   WalletOutlined,
 } from '@ant-design/icons';
 import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '../../../utils/apiError';
 import { getWithdrawalDetail } from '../../../services/tutorFinance.service';
 import type { WithdrawalDetail } from '../../../types/finance.types';
 import { formatCurrency, formatDateTime } from '../../../utils/formatters';
@@ -38,7 +39,7 @@ const WithdrawalDetailPage: React.FC = () => {
       setWithdrawal(data);
     } catch (error) {
       console.error('Failed to fetch withdrawal detail:', error);
-      toast.error('Không thể tải thông tin chi tiết yêu cầu rút tiền');
+      toast.error(getApiErrorMessage(error, 'Không thể tải thông tin chi tiết yêu cầu rút tiền'));
       navigate('/tutor-portal/finance/withdrawals');
     } finally {
       setLoading(false);

@@ -17,6 +17,7 @@ import {
   type WithdrawalDetail,
 } from '../../services/wallet.service';
 import styles from './styles.module.css';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 interface Props {
   transactionId: number;
@@ -61,9 +62,9 @@ const TransactionDetailModal = ({ transactionId, onClose }: Props) => {
             console.error('Failed to load withdrawal detail for transaction:', err);
           }
         }
-      } catch {
+      } catch (error) {
         if (!cancelled) {
-          toast.error('Không thể tải chi tiết giao dịch');
+          toast.error(getApiErrorMessage(error, 'Không thể tải chi tiết giao dịch'));
           onClose();
         }
       } finally {

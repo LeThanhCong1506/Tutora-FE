@@ -7,6 +7,7 @@ import {
     type ClassSessionDetailResponse,
 } from '../../services/classSession.service';
 import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '../../utils/apiError';
 import styles from '../../styles/pages/tutor-portal-student-profile.module.css';
 
 // Icons
@@ -134,9 +135,8 @@ const TutorPortalStudentProfile: React.FC = () => {
                 computeStudentData(classSessions, details);
             }
         } catch (error: unknown) {
-            const e = error as { response?: { data?: { message?: string } } };
             console.error('❌ Error fetching student data:', error);
-            toast.error(e.response?.data?.message || 'Không thể tải dữ liệu học sinh');
+            toast.error(getApiErrorMessage(error, 'Không thể tải dữ liệu học sinh'));
         } finally {
             setLoading(false);
         }

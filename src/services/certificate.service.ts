@@ -2,6 +2,7 @@
 import axios from 'axios';
 import { getCurrentUser } from './auth.service';
 import { setupAuthInterceptor } from './apiClient';
+import { getApiErrorMessage } from '../utils/apiError';
 
 const API_BASE_URL = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5166') + '/api';
 
@@ -105,7 +106,7 @@ export const uploadCertificate = async (
     return {
       content: null,
       statusCode: error.response?.status || 500,
-      message: error.response?.data?.message || 'Có lỗi xảy ra khi tải lên chứng chỉ',
+      message: getApiErrorMessage(error, 'Có lỗi xảy ra khi tải lên chứng chỉ'),
       error: error.response?.data?.error || error.message,
     };
   }
@@ -148,7 +149,7 @@ export const deleteCertificate = async (
 
     return {
       success: false,
-      message: error.response?.data?.message || 'Có lỗi xảy ra khi xóa chứng chỉ',
+      message: getApiErrorMessage(error, 'Có lỗi xảy ra khi xóa chứng chỉ'),
     };
   }
 };

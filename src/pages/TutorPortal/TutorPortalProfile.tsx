@@ -22,7 +22,9 @@ import { getAcceptingBookings, setAcceptingBookings, getMyCccdUrls, type MyCccdU
 import { validateAvatar } from './utils/validation';
 import { getCertificateImageUrl, isPdfUrl } from '../../utils/certificateImage';
 import { fetchProtectedImage, releaseProtectedImage } from '../../utils/protectedImage';
+import { getApiErrorMessage } from '../../utils/apiError';
 import { formatGradeLevelRanges } from '../TutorSearch/components/utils';
+import { PageContainer } from '../../components/shared';
 import styles from '../../styles/pages/tutor-portal-profile.module.css';
 
 // Icon Components
@@ -369,8 +371,9 @@ const TutorPortalProfile: React.FC = () => {
           imageUrl: objectUrl,
         };
       });
-    } catch {
-      toast.error('Không mở được ảnh CCCD. Vui lòng thử lại.');
+    } catch (err) {
+      console.error('View CCCD error:', err);
+      toast.error(getApiErrorMessage(err, 'Không mở được ảnh CCCD. Vui lòng thử lại.'));
     } finally {
       setOpeningCccdSide(null);
     }
@@ -387,7 +390,7 @@ const TutorPortalProfile: React.FC = () => {
       toast.success(accepting ? 'Đã mở nhận học viên mới.' : 'Đã tạm dừng nhận booking mới.');
     } catch (err) {
       console.error('Error toggling accepting bookings:', err);
-      toast.error('Không thể cập nhật trạng thái nhận booking. Vui lòng thử lại.');
+      toast.error(getApiErrorMessage(err, 'Không thể cập nhật trạng thái nhận booking. Vui lòng thử lại.'));
     } finally {
       setTogglingBookings(false);
     }
@@ -600,14 +603,19 @@ const TutorPortalProfile: React.FC = () => {
       }
     } catch (error) {
       console.error('Delete credential error:', error);
-      toast.error('Có lỗi xảy ra khi xóa chứng chỉ');
+      toast.error(getApiErrorMessage(error, 'Có lỗi xảy ra khi xóa chứng chỉ'));
     } finally {
       setDeletingCredentialId(null);
     }
   };
 
   return (
-    <div className={styles.profilePage}>
+    <PageContainer
+      className={styles.profilePage}
+      title="Hồ sơ gia sư"
+      titleInfo="Cập nhật hồ sơ công khai, chứng chỉ và trạng thái nhận học viên."
+      maxWidth="wide"
+    >
       {/* Banner trạng thái: hồ sơ đang chờ Admin xét duyệt. Hiển thị ở cả chế độ
           chỉnh sửa lẫn xem trước để gia sư luôn thấy hồ sơ đang được duyệt. */}
       {isPendingApproval && (
@@ -747,7 +755,7 @@ const TutorPortalProfile: React.FC = () => {
                   {/* Info */}
                   <div className={styles.heroInfo}>
                     <div className={styles.nameRow}>
-                      <h1 className={styles.tutorName}>{formData.fullName}</h1>
+                      <h2 className={styles.tutorName}>{formData.fullName}</h2>
                       <VerifiedIcon />
                     </div>
 
@@ -1299,7 +1307,7 @@ const TutorPortalProfile: React.FC = () => {
           navigate('/tutor-portal/onboarding');
         }}
       />
-    </div>
+    </PageContainer>
   );
 };
 
