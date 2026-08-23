@@ -742,8 +742,9 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
               >
                 <div style={{ fontWeight: 600, fontSize: 13.5 }}>Báo ngắt giữa chừng do sự cố</div>
                 <div style={{ fontSize: 12.5, color: '#6b7280', marginTop: 2 }}>
-                  Dùng khi có việc đột xuất (mất điện, mất mạng, việc gấp...). Buổi hiện tại dừng lại, hệ thống tạo
-                  ngay 1 buổi phụ để học nốt trong hôm nay.
+                  Chỉ dùng khi có sự cố kỹ thuật ngoài ý muốn (mất điện, mất mạng...) khiến buổi học đang diễn ra bị
+                  gián đoạn. Buổi hiện tại dừng lại, hệ thống tạo ngay 1 buổi phụ để học nốt trong hôm nay. Nếu bạn có
+                  việc bận/gấp cần dừng sớm, hãy dùng chức năng "Dời lịch học" thay vì báo ngắt ở đây.
                   {!interruptEligibleNow && interruptionEligibility && (
                     <>
                       {' '}
@@ -770,7 +771,7 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
                 // Tắt spellcheck của trình duyệt: từ điển mặc định là tiếng Anh nên gạch đỏ hầu như
                 // mọi từ tiếng Việt, làm ô nhập trông lỗi/rối dù không có lỗi thật nào.
                 spellCheck={false}
-                placeholder="Lý do (mất điện, mất mạng, việc gấp...)"
+                placeholder="Lý do (mất điện, mất mạng...)"
                 value={interruptReason}
                 onChange={(e) => setInterruptReason(e.target.value)}
               />
