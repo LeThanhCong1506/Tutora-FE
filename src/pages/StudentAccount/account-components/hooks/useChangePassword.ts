@@ -2,6 +2,7 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { changePassword } from "../../../../services/auth.service";
 import type { PasswordForm } from "../types";
+import { getApiErrorMessage } from '../../../../utils/apiError';
 
 /**
  * Encapsulate the change-password flow: form state, show/hide toggles per
@@ -53,8 +54,7 @@ export function useChangePassword() {
             resetForm();
             setShowPasswordSection(false);
         } catch (error) {
-            const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
-            toast.error(message || "Đổi mật khẩu thất bại. Vui lòng thử lại.");
+            toast.error(getApiErrorMessage(error, "Đổi mật khẩu thất bại. Vui lòng thử lại."));
         } finally {
             setChangingPassword(false);
         }
