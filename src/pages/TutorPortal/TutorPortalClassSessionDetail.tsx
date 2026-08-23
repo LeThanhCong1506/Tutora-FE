@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   CalendarClock,
@@ -9,6 +9,7 @@ import {
   Clock3,
   FileText,
   GraduationCap,
+  Link2,
   MapPin,
   Paperclip,
   RefreshCw,
@@ -42,6 +43,7 @@ import {
   ClassSessionRecording,
   RescheduleProposalModal,
   SessionTimeline,
+  SkipContinuationCard,
 } from '../../components/shared';
 import styles from '../../styles/pages/tutor-portal-class-session-detail.module.css';
 
@@ -131,6 +133,7 @@ const getDisplayStatus = (session: ClassSessionDetailResponse) => {
 
 const TutorPortalClassSessionDetail = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { classSessionId: rawClassSessionId } = useParams();
   const classSessionId = rawClassSessionId && /^\d+$/.test(rawClassSessionId) ? Number(rawClassSessionId) : null;
   const [session, setSession] = useState<ClassSessionDetailResponse | null>(null);
@@ -251,6 +254,14 @@ const TutorPortalClassSessionDetail = () => {
     setPendingAttachments([]);
   };
 
+  /** Quay lại đúng trang/tab người dùng vừa rời (vd tab "Hoàn thành" trên lịch dạy) thay vì luôn
+   *  văng về URL mặc định — `location.key === 'default'` nghĩa là trang này là entry đầu tiên của
+   *  history (mở thẳng link, F5, tab mới), lúc đó `navigate(-1)` sẽ văng ra khỏi app. */
+  const goBack = () => {
+    if (location.key !== 'default') navigate(-1);
+    else navigate('/tutor-portal/calendar');
+  };
+
   const handleOpenStudentProfile = () => {
     if (!session?.student?.studentId || !session.bookingId) return;
 
@@ -270,7 +281,7 @@ const TutorPortalClassSessionDetail = () => {
               <button
                 type="button"
                 className={styles.backButton}
-                onClick={() => navigate('/tutor-portal/calendar')}
+                onClick={goBack}
                 aria-label="Quay lại lịch dạy"
               >
                 <ArrowLeft size={19} />
@@ -299,7 +310,7 @@ const TutorPortalClassSessionDetail = () => {
               <button
                 type="button"
                 className={styles.backButton}
-                onClick={() => navigate('/tutor-portal/calendar')}
+                onClick={goBack}
                 aria-label="Quay lại lịch dạy"
               >
                 <ArrowLeft size={19} />
@@ -322,7 +333,7 @@ const TutorPortalClassSessionDetail = () => {
                 <button
                   type="button"
                   className={styles.primaryButton}
-                  onClick={() => navigate('/tutor-portal/calendar')}
+                  onClick={goBack}
                 >
                   Về lịch dạy
                 </button>
@@ -343,7 +354,7 @@ const TutorPortalClassSessionDetail = () => {
     status === 'in_progress' ? 'Vào lại lớp' : isWithinJoinWindow(session.scheduledStart) ? 'Vào học' : 'Vào học nhanh';
   const canCheckOut = status === 'in_progress' && !session.checkOutTime;
   const pendingReschedule = session.pendingRescheduleProposal;
-  const canProposeReschedule = status === 'scheduled' && !pendingReschedule;
+  const canProposeReschedule = status === 'scheduled' && !pendingReschedule && !session.skipConfirmedByBothSides;
   const isRescheduleCounterpart = pendingReschedule?.counterpartRole === 'Tutor';
   const isRescheduleProposer = pendingReschedule?.proposedByRole === 'Tutor';
   const canSubmitReport =
@@ -367,6 +378,9 @@ const TutorPortalClassSessionDetail = () => {
     disputeTutorRespondedAt: dispute?.tutorRespondedAt,
     disputeResolvedAt: dispute?.resolvedAt,
     scheduleChangeAppliedAt: session.scheduleChanges?.map((sc) => sc.appliedAt),
+    interruptedAt: session.interruptedAt,
+    interruptReason: session.interruptReason,
+    interruptedByName: session.interruptedByName,
   });
   const sessionStyle = {
     '--status-color': displayStatus.color,
@@ -389,12 +403,12 @@ const TutorPortalClassSessionDetail = () => {
               <button
                 type="button"
                 className={styles.backButton}
-                onClick={() => navigate('/tutor-portal/calendar')}
+                onClick={goBack}
                 aria-label="Quay lại lịch dạy"
               >
                 <ArrowLeft size={19} />
               </button>
-              <button type="button" className={styles.breadcrumb} onClick={() => navigate('/tutor-portal/calendar')}>
+              <button type="button" className={styles.breadcrumb} onClick={goBack}>
                 Lịch dạy
               </button>
               <span className={styles.breadcrumbDivider}>/</span>
@@ -410,6 +424,13 @@ const TutorPortalClassSessionDetail = () => {
                     <i />
                     {displayStatus.label}
                   </span>
+                  {(session.isContinuation || session.isDisputeRelearn) && (
+                    <span className={styles.linkChip}>
+                      <Link2 size={12} />
+                      {session.isContinuation ? 'Buổi phụ' : 'Buổi học lại'}
+                      {session.originalClassSessionId ? ` của buổi #${session.originalClassSessionId}` : ''}
+                    </span>
+                  )}
                 </div>
                 <h1>{subjectName}</h1>
                 <div className={styles.heroMeta}>
@@ -522,6 +543,25 @@ const TutorPortalClassSessionDetail = () => {
               </div>
             )}
           </header>
+
+          {/* Buổi phụ chưa diễn ra: cho tự bỏ nếu 2 bên thống nhất không học nốt. Buổi GỐC đang
+              interrupted: cho xem lại trạng thái đó + tự mở form báo cáo khi cả 2 đã đồng ý. */}
+          {session.isContinuation && status === 'scheduled' && (
+            <SkipContinuationCard
+              continuationSessionId={session.classSessionId}
+              isTutor
+              accentColor="#1a2238"
+              onBothConfirmed={() => void loadSession()}
+            />
+          )}
+          {status === 'interrupted' && session.continuationSessionId && !session.continuationSkipBothConfirmed && (
+            <SkipContinuationCard
+              continuationSessionId={session.continuationSessionId}
+              isTutor
+              accentColor="#1a2238"
+              onBothConfirmed={() => void loadSession()}
+            />
+          )}
 
           <RescheduleProposalModal
             open={rescheduleModalOpen}
