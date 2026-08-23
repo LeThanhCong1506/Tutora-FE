@@ -1,46 +1,13 @@
 .page {
-    padding: 24px;
-    min-height: 100%;
+    max-width: 800px;
 }
 
 .container {
-    max-width: 720px;
-    margin: 0 auto;
+    width: 100%;
     background: #fff;
     border-radius: 12px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
     overflow: hidden;
-}
-
-.header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 24px;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.headerLeft {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.title {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--color-navy);
-    font-family: var(--font-serif);
-}
-
-.badge {
-    background-color: var(--color-navy);
-    color: var(--color-cream);
-    font-size: 13px;
-    font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 12px;
 }
 
 .markAllBtn {
@@ -112,26 +79,6 @@
 }
 
 @media (max-width: 768px) {
-    .page {
-        padding: 16px 12px;
-    }
-
-    .header {
-        padding: 20px 16px;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 16px;
-    }
-
-    .headerLeft {
-        width: 100%;
-        justify-content: space-between;
-    }
-
-    .title {
-        font-size: 22px;
-    }
-
     .markAllBtn {
         width: 100%;
         padding: 12px 18px;
