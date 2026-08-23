@@ -6,6 +6,7 @@ import { createChannel } from '../../services/chat.service';
 import { formatVNDNumber } from '../../utils/formatters';
 import styles from './MonthlySchedule.module.css';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 const WEEK_DAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 const STUDENT_COLORS = ['#1f2a40', '#846f5b', '#687783', '#9a8d70', '#59675d'];
@@ -170,6 +171,7 @@ const MonthlySchedule = () => {
         if (active) {
           setLessons([]);
           console.error('Dashboard: failed to fetch monthly calendar:', error);
+          toast.error(getApiErrorMessage(error, 'Không tải được lịch học trong tháng.'));
         }
       } finally {
         if (active) setLoading(false);
@@ -195,7 +197,7 @@ const MonthlySchedule = () => {
         if (active) setLessonDetail(response.content || null);
       } catch (error) {
         if (active) {
-          setModalError('Không thể tải thông tin buổi học. Vui lòng thử lại.');
+          setModalError(getApiErrorMessage(error, 'Không thể tải thông tin buổi học. Vui lòng thử lại.'));
           console.error('Dashboard: failed to fetch lesson detail:', error);
         }
       } finally {
@@ -282,7 +284,7 @@ const MonthlySchedule = () => {
       });
     } catch (error) {
       console.error('Dashboard: failed to open tutor conversation:', error);
-      toast.error('Không mở được cuộc trò chuyện. Vui lòng thử lại.');
+      toast.error(getApiErrorMessage(error, 'Không mở được cuộc trò chuyện. Vui lòng thử lại.'));
     } finally {
       setOpeningChat(false);
     }
