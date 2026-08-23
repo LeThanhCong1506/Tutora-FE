@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState, type ElementType } from 'react';
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
-import type { AxiosError } from 'axios';
 import { Input, Modal, Spin, message as antMessage } from 'antd';
 import {
   AlertCircle,
@@ -40,6 +39,7 @@ import { canLeaveBookingFeedback, getBookingFeedback, type FeedbackDto } from '.
 import { getPaymentBadge } from '../../../utils/paymentBadge';
 import CreateFeedbackModal from '../../ParentLessons/components/CreateFeedbackModal';
 import styles from './styles.module.css';
+import { getApiErrorMessage } from '../../../utils/apiError';
 
 type Lesson = NonNullable<BookingResponseDTO['lessons']>[number];
 
@@ -54,10 +54,6 @@ interface ProgressStep {
   label: string;
   description: string;
   date?: string | null;
-}
-
-interface ApiErrorBody {
-  message?: string;
 }
 
 const STATUS_CONFIG: Record<string, StatusConfig> = {
@@ -298,8 +294,8 @@ const BookingDetailPage = () => {
         const response = await getBookingById(bookingId);
         setBooking(response.content);
         await refreshFeedbackState(response.content.status);
-      } catch {
-        antMessage.error('Không thể tải chi tiết đặt lịch.');
+      } catch (error) {
+        antMessage.error(getApiErrorMessage(error, 'Không thể tải chi tiết đặt lịch.'));
       } finally {
         setLoading(false);
       }
@@ -978,10 +974,11 @@ const BookingDetailPage = () => {
             setBooking(response.content);
             await refreshFeedbackState(response.content.status);
           } catch (error) {
-            const apiError = error as AxiosError<ApiErrorBody>;
             antMessage.error(
-              apiError.response?.data?.message ||
-                (canFinalizeEarly ? 'Không thể kết thúc khóa học' : 'Không thể hủy đặt lịch'),
+              getApiErrorMessage(
+                error,
+                canFinalizeEarly ? 'Không thể kết thúc khóa học' : 'Không thể hủy đặt lịch',
+              ),
             );
           } finally {
             setCancelLoading(false);
