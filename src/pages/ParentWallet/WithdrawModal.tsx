@@ -6,6 +6,7 @@ import { createWithdrawal } from '../../services/wallet.service';
 import { getBankAccount, type BankAccount } from '../../services/bankAccount.service';
 import { setPendingRedirect } from '../../services/auth.service';
 import styles from './styles.module.css';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 interface Props {
   availableBalance: number;
@@ -79,7 +80,7 @@ const WithdrawModal = ({ availableBalance, onClose, onSuccess }: Props) => {
         goAddBankAccount();
         return;
       }
-      toast.error(apiError.response?.data?.message || 'Không thể gửi yêu cầu rút tiền. Vui lòng thử lại.');
+      toast.error(getApiErrorMessage(apiError, 'Không thể gửi yêu cầu rút tiền. Vui lòng thử lại.'));
     } finally {
       setSubmitting(false);
     }
