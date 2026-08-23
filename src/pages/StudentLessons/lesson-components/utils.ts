@@ -42,15 +42,13 @@ export type LessonRenderItem =
   | { kind: 'chain'; lessons: LessonSummary[] };
 
 /**
- * Gom buổi gốc bị ngắt/dispute với buổi phụ/buổi học lại của nó (originalClassSessionId) thành
- * 1 nhóm để hiển thị nối liền nhau — chỉ gom khi CẢ 2 buổi cùng nằm trong mảng `lessons` truyền vào
- * (cùng 1 ngày/cùng 1 view đang render); nếu buổi gốc rơi ra ngoài phạm vi đó thì vẫn hiện đơn lẻ,
- * tránh tham chiếu tới 1 buổi không hề xuất hiện trên màn hình.
+ * Dựng hàm tìm buổi GỐC của 1 chuỗi (lùi theo originalClassSessionId) trong phạm vi `lessons`
+ * truyền vào — dùng chung cho groupLessonsByChain và filterLessonsKeepingChains để không lệch
+ * định nghĩa "cùng 1 chuỗi" giữa 2 nơi.
  */
-export const groupLessonsByChain = (lessons: LessonSummary[]): LessonRenderItem[] => {
+const buildChainRootFinder = <T extends { lessonId: number; originalClassSessionId?: number }>(lessons: T[]) => {
   const byId = new Map(lessons.map((lesson) => [lesson.lessonId, lesson]));
-
-  const findRoot = (id: number): number => {
+  return (id: number): number => {
     const seen = new Set<number>();
     let current = id;
     while (!seen.has(current)) {
@@ -61,6 +59,16 @@ export const groupLessonsByChain = (lessons: LessonSummary[]): LessonRenderItem[
     }
     return current;
   };
+};
+
+/**
+ * Gom buổi gốc bị ngắt/dispute với buổi phụ/buổi học lại của nó (originalClassSessionId) thành
+ * 1 nhóm để hiển thị nối liền nhau — chỉ gom khi CẢ 2 buổi cùng nằm trong mảng `lessons` truyền vào
+ * (cùng 1 ngày/cùng 1 view đang render); nếu buổi gốc rơi ra ngoài phạm vi đó thì vẫn hiện đơn lẻ,
+ * tránh tham chiếu tới 1 buổi không hề xuất hiện trên màn hình.
+ */
+export const groupLessonsByChain = (lessons: LessonSummary[]): LessonRenderItem[] => {
+  const findRoot = buildChainRootFinder(lessons);
 
   const groups = new Map<number, LessonSummary[]>();
   lessons.forEach((lesson) => {
@@ -80,6 +88,26 @@ export const groupLessonsByChain = (lessons: LessonSummary[]): LessonRenderItem[
     result.push(group.length > 1 ? { kind: 'chain', lessons: group } : { kind: 'single', lesson: group[0] });
   });
   return result;
+};
+
+/**
+ * Lọc theo tab trạng thái (vd "Hoàn thành"/"Tất cả") nhưng KHÔNG làm rớt buổi nào đang là mắt xích
+ * của 1 chuỗi mà ít nhất 1 buổi khác trong chuỗi vẫn khớp bộ lọc — cần thế vì buổi gốc bị khiếu nại
+ * được Admin đóng theo hướng "học lại" sẽ bị BE chuyển status=Cancelled
+ * (DisputeService.CloseDisputeAsync), nên tab "Tất cả" (vốn ẩn buổi cancelled thật) vô tình nuốt
+ * luôn mắt xích nối buổi học lại (Isdisputerelearn) về buổi phụ/buổi gốc trước đó, làm chuỗi hiện
+ * tách rời dù dữ liệu originalClassSessionId vẫn đúng.
+ */
+export const filterLessonsKeepingChains = <T extends { lessonId: number; originalClassSessionId?: number }>(
+  lessons: T[],
+  predicate: (lesson: T) => boolean,
+): T[] => {
+  const matched = lessons.filter(predicate);
+  if (matched.length === lessons.length) return matched;
+
+  const findRoot = buildChainRootFinder(lessons);
+  const keepRoots = new Set(matched.map((lesson) => findRoot(lesson.lessonId)));
+  return lessons.filter((lesson) => predicate(lesson) || keepRoots.has(findRoot(lesson.lessonId)));
 };
 
 export const isCancelledLesson = (lesson: LessonSummary): boolean =>

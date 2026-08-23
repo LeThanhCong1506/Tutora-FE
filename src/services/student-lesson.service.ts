@@ -131,6 +131,7 @@ export interface StudentCalendarLessonDto {
     isContinuation?: boolean;
     isDisputeRelearn?: boolean;
     originalClassSessionId?: number;
+    skipConfirmedByBothSides?: boolean;
 }
 
 export interface StudentCalendarDayDto {
@@ -193,6 +194,7 @@ export const getStudentCalendar = async (
                 isContinuation: c.isContinuation,
                 isDisputeRelearn: c.isDisputeRelearn,
                 originalClassSessionId: c.originalClassSessionId,
+                skipConfirmedByBothSides: c.skipConfirmedByBothSides,
             })),
         })),
     };

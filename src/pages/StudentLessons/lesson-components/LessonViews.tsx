@@ -15,6 +15,7 @@ import {
   Video,
 } from 'lucide-react';
 import { getClassSessionStatusMeta } from '../../../utils/classSessionStatus';
+import { canJoinLiveSession } from '../../../utils/liveSession';
 import styles from '../styles.module.css';
 import type { LessonSummary, LessonViewProps } from './types';
 import {
@@ -92,12 +93,13 @@ const SecondaryPerson = ({ lesson }: { lesson: LessonSummary }) =>
 // Vào lớp được bất kỳ lúc nào (BE không chặn theo giờ, EarlyJoinToleranceMinutes chỉ quyết có cần
 // hỏi xác nhận thêm khi vào sớm/muộn chứ không chặn cứng) — nên hàm này giờ chỉ còn xét đúng những lý
 // do "thật sự không vào được": không phải người có quyền vào (phụ huynh theo dõi), phòng đã đóng sau
-// check-out, hoặc buổi không ở trạng thái có thể vào (đã huỷ/kết thúc/chưa có phòng).
+// check-out, hoặc buổi không ở trạng thái có thể vào (đã huỷ/kết thúc/chưa có phòng/2 bên đã đồng ý
+// bỏ buổi phụ). Phần status/meetingLink/skip dùng chung canJoinLiveSession — tránh lệch định nghĩa
+// với các nơi khác (LiveSession/SessionLobby) từng thiếu điều kiện skipConfirmedByBothSides.
 const canShowJoinButton = (lesson: LessonSummary) => {
   if (lesson.canJoin === false) return false; // người xem chỉ theo dõi (phụ huynh)
   if (isAwaitingReport(lesson)) return false; // phòng đã đóng sau check-out
-  const status = lesson.status.trim().toLowerCase();
-  return ['scheduled', 'in_progress'].includes(status) && !!lesson.meetingLink?.trim();
+  return canJoinLiveSession(lesson);
 };
 
 const getAttentionClass = (lesson: LessonSummary): string => {
@@ -109,8 +111,9 @@ const getAttentionClass = (lesson: LessonSummary): string => {
 
 const StatusPill = ({ lesson }: { lesson: LessonSummary }) => {
   const status = getLessonDisplayMeta(lesson);
+  const isAlert = status.variant === 'warning' || status.variant === 'error';
   return (
-    <span className={styles.statusPill}>
+    <span className={`${styles.statusPill} ${isAlert ? styles.statusPillAlert : ''}`}>
       <i />
       <span title={status.label}>{status.label}</span>
     </span>
@@ -191,12 +194,42 @@ const ReschedulePendingBadge = ({ compact = false }: { compact?: boolean }) => (
 /**
  * Buổi phụ (Link 2, sinh ra khi buổi gốc bị báo ngắt giữa chừng) hoặc buổi học lại (Link 3, sinh
  * ra khi hoà giải dispute) — đánh dấu để không bị hiểu nhầm là một buổi học độc lập, không liên quan.
+ * Buổi gốc thường KHÁC ngày (có khi cách vài tuần với buổi học lại do hoà giải) nên không thể gộp
+ * chung 1 khối ChainGroup như buổi cùng ngày — bấm được để nhảy thẳng tới buổi gốc thay vì chỉ đọc
+ * cái tên suông.
  */
-const ContinuationBadge = ({ lesson, compact = false }: { lesson: LessonSummary; compact?: boolean }) => {
+const ContinuationBadge = ({
+  lesson,
+  compact = false,
+  onOpenLesson,
+}: {
+  lesson: LessonSummary;
+  compact?: boolean;
+  onOpenLesson?: (id: number) => void;
+}) => {
   if (!lesson.isContinuation && !lesson.isDisputeRelearn) return null;
-  const text = `${lesson.isContinuation ? 'Buổi phụ' : 'Buổi học lại'}${
-    lesson.originalClassSessionId ? ` của #${lesson.originalClassSessionId}` : ''
-  }`;
+  const label = lesson.isContinuation ? 'Buổi phụ' : 'Buổi học lại';
+  const text = `${label}${lesson.originalClassSessionId ? ` của #${lesson.originalClassSessionId}` : ''}`;
+
+  if (lesson.originalClassSessionId && onOpenLesson) {
+    const originalId = lesson.originalClassSessionId;
+    return (
+      <button
+        type="button"
+        className={`${styles.scheduleChangeBadge} ${styles.linkBadge}`}
+        title={`Xem buổi gốc #${originalId}`}
+        aria-label={`${text} — xem buổi gốc`}
+        onClick={(event) => {
+          event.stopPropagation();
+          onOpenLesson(originalId);
+        }}
+      >
+        <Link2 size={compact ? 11 : 12} strokeWidth={2.3} aria-hidden="true" />
+        <span>{text}</span>
+      </button>
+    );
+  }
+
   return (
     <span className={styles.scheduleChangeBadge}>
       <Link2 size={compact ? 11 : 12} strokeWidth={2.3} aria-hidden="true" />
@@ -204,6 +237,30 @@ const ContinuationBadge = ({ lesson, compact = false }: { lesson: LessonSummary;
     </span>
   );
 };
+
+/**
+ * Nhóm các badge THÔNG TIN PHỤ (bản ghi/dời lịch/buổi phụ-học lại) vào chung 1 khối, tách
+ * khỏi trạng thái chính (StatusPill) và nút hành động (MeetLink) — trước đây cả 4-5 loại badge
+ * này nằm phẳng chung 1 hàng với status/nút bấm nên rất dễ đọc nhầm badge phụ thành trạng thái
+ * buổi học. Gộp lại còn giúp chúng cùng xuống dòng như 1 nhóm khi màn hẹp, thay vì mỗi badge
+ * rơi xuống 1 dòng riêng lẻ.
+ */
+const MetaBadges = ({
+  lesson,
+  compact = false,
+  onOpenLesson,
+}: {
+  lesson: LessonSummary;
+  compact?: boolean;
+  onOpenLesson?: (id: number) => void;
+}) => (
+  <span className={styles.metaBadges}>
+    {lesson.hasRecording && <RecordingBadge compact={compact} />}
+    <ScheduleChangeBadge lesson={lesson} compact={compact} />
+    {lesson.hasPendingReschedule && <ReschedulePendingBadge compact={compact} />}
+    <ContinuationBadge lesson={lesson} compact={compact} onOpenLesson={onOpenLesson} />
+  </span>
+);
 
 const LessonHoverDetails = ({ lesson }: { lesson: LessonSummary }) => {
   const status = getLessonDisplayMeta(lesson);
@@ -266,7 +323,13 @@ const LessonTooltip = ({ lesson, children }: { lesson: LessonSummary; children: 
   </Tooltip>
 );
 
-const CalendarEvent = ({ lesson, onOpen }: { lesson: LessonSummary; onOpen: () => void }) => (
+interface LessonCardProps {
+  lesson: LessonSummary;
+  onOpen: () => void;
+  onOpenLesson: (id: number) => void;
+}
+
+const CalendarEvent = ({ lesson, onOpen, onOpenLesson }: LessonCardProps) => (
   <LessonTooltip lesson={lesson}>
     <article
       className={`${styles.calendarEvent} ${getAttentionClass(lesson)} ${isCancelledLesson(lesson) ? styles.cancelled : ''}`}
@@ -284,17 +347,14 @@ const CalendarEvent = ({ lesson, onOpen }: { lesson: LessonSummary; onOpen: () =
       </button>
       <div className={styles.calendarEventFooter}>
         <StatusPill lesson={lesson} />
-        {lesson.hasRecording && <RecordingBadge compact />}
-        <ScheduleChangeBadge lesson={lesson} compact />
-        {lesson.hasPendingReschedule && <ReschedulePendingBadge compact />}
-        <ContinuationBadge lesson={lesson} compact />
+        <MetaBadges lesson={lesson} compact onOpenLesson={onOpenLesson} />
         <MeetLink lesson={lesson} compact />
       </div>
     </article>
   </LessonTooltip>
 );
 
-const ListLessonRow = ({ lesson, onOpen }: { lesson: LessonSummary; onOpen: () => void }) => (
+const ListLessonRow = ({ lesson, onOpen, onOpenLesson }: LessonCardProps) => (
   <LessonTooltip lesson={lesson}>
     <article
       className={`${styles.listRow} ${getAttentionClass(lesson)} ${isCancelledLesson(lesson) ? styles.cancelled : ''}`}
@@ -317,12 +377,9 @@ const ListLessonRow = ({ lesson, onOpen }: { lesson: LessonSummary; onOpen: () =
         </span>
       </button>
       <div className={styles.listActions}>
-        <MeetLink lesson={lesson} />
-        {lesson.hasRecording && <RecordingBadge compact />}
-        <ScheduleChangeBadge lesson={lesson} compact />
-        {lesson.hasPendingReschedule && <ReschedulePendingBadge compact />}
-        <ContinuationBadge lesson={lesson} compact />
         <StatusPill lesson={lesson} />
+        <MeetLink lesson={lesson} />
+        <MetaBadges lesson={lesson} compact onOpenLesson={onOpenLesson} />
         <button type="button" className={styles.detailIconButton} onClick={onOpen} aria-label="Xem chi tiết buổi học">
           <ChevronRight size={18} className={styles.rowChevron} aria-hidden="true" />
         </button>
@@ -346,9 +403,7 @@ const ChainGroup = ({
   <div className={styles.chainGroup}>
     <div className={styles.chainGroupHeader}>
       <Link2 size={12} strokeWidth={2.3} aria-hidden="true" />
-      <span>
-        Chuỗi {lessons.length} buổi · {getSubject(lessons[0])}
-      </span>
+      <span>{getSubject(lessons[0])}</span>
     </div>
     <div className={styles.chainTimeline}>
       {lessons.map((lesson, index) => (
@@ -406,13 +461,18 @@ export const CalendarLessonView = ({
                         key={item.lesson.lessonId}
                         lesson={item.lesson}
                         onOpen={() => onOpenLesson(item.lesson.lessonId)}
+                        onOpenLesson={onOpenLesson}
                       />
                     ) : (
                       <ChainGroup
                         key={`chain-${item.lessons[0].lessonId}`}
                         lessons={item.lessons}
                         render={(lesson) => (
-                          <CalendarEvent lesson={lesson} onOpen={() => onOpenLesson(lesson.lessonId)} />
+                          <CalendarEvent
+                            lesson={lesson}
+                            onOpen={() => onOpenLesson(lesson.lessonId)}
+                            onOpenLesson={onOpenLesson}
+                          />
                         )}
                       />
                     ),
@@ -460,9 +520,28 @@ export const CalendarLessonView = ({
             </div>
           ) : (
             <div className={styles.mobileAgendaList}>
-              {selectedLessons.map((lesson) => (
-                <ListLessonRow key={lesson.lessonId} lesson={lesson} onOpen={() => onOpenLesson(lesson.lessonId)} />
-              ))}
+              {groupLessonsByChain(selectedLessons).map((item) =>
+                item.kind === 'single' ? (
+                  <ListLessonRow
+                    key={item.lesson.lessonId}
+                    lesson={item.lesson}
+                    onOpen={() => onOpenLesson(item.lesson.lessonId)}
+                    onOpenLesson={onOpenLesson}
+                  />
+                ) : (
+                  <ChainGroup
+                    key={`chain-${item.lessons[0].lessonId}`}
+                    lessons={item.lessons}
+                    render={(lesson) => (
+                      <ListLessonRow
+                        lesson={lesson}
+                        onOpen={() => onOpenLesson(lesson.lessonId)}
+                        onOpenLesson={onOpenLesson}
+                      />
+                    )}
+                  />
+                ),
+              )}
             </div>
           )}
         </div>
@@ -471,7 +550,7 @@ export const CalendarLessonView = ({
   );
 };
 
-const GridCard = ({ lesson, onOpen }: { lesson: LessonSummary; onOpen: () => void }) => {
+const GridCard = ({ lesson, onOpen, onOpenLesson }: LessonCardProps) => {
   const status = getLessonStatusMeta(lesson.status);
   return (
     <LessonTooltip lesson={lesson}>
@@ -512,10 +591,7 @@ const GridCard = ({ lesson, onOpen }: { lesson: LessonSummary; onOpen: () => voi
         </button>
         <div className={styles.gridCardFooter}>
           <MeetLink lesson={lesson} />
-          {lesson.hasRecording && <RecordingBadge compact />}
-          <ScheduleChangeBadge lesson={lesson} compact />
-          {lesson.hasPendingReschedule && <ReschedulePendingBadge compact />}
-          <ContinuationBadge lesson={lesson} compact />
+          <MetaBadges lesson={lesson} compact onOpenLesson={onOpenLesson} />
           <button type="button" className={styles.openCard} style={{ color: status.color }} onClick={onOpen}>
             Chi tiết <ChevronRight size={16} />
           </button>
@@ -529,12 +605,19 @@ export const GridLessonView = ({ lessons, onOpenLesson }: LessonViewProps) => (
   <div className={styles.lessonGrid}>
     {groupLessonsByChain(lessons).map((item) =>
       item.kind === 'single' ? (
-        <GridCard key={item.lesson.lessonId} lesson={item.lesson} onOpen={() => onOpenLesson(item.lesson.lessonId)} />
+        <GridCard
+          key={item.lesson.lessonId}
+          lesson={item.lesson}
+          onOpen={() => onOpenLesson(item.lesson.lessonId)}
+          onOpenLesson={onOpenLesson}
+        />
       ) : (
         <ChainGroup
           key={`chain-${item.lessons[0].lessonId}`}
           lessons={item.lessons}
-          render={(lesson) => <GridCard lesson={lesson} onOpen={() => onOpenLesson(lesson.lessonId)} />}
+          render={(lesson) => (
+            <GridCard lesson={lesson} onOpen={() => onOpenLesson(lesson.lessonId)} onOpenLesson={onOpenLesson} />
+          )}
         />
       ),
     )}
@@ -562,12 +645,19 @@ export const ListLessonView = ({ lessons, onOpenLesson }: LessonViewProps) => {
                   key={item.lesson.lessonId}
                   lesson={item.lesson}
                   onOpen={() => onOpenLesson(item.lesson.lessonId)}
+                  onOpenLesson={onOpenLesson}
                 />
               ) : (
                 <ChainGroup
                   key={`chain-${item.lessons[0].lessonId}`}
                   lessons={item.lessons}
-                  render={(lesson) => <ListLessonRow lesson={lesson} onOpen={() => onOpenLesson(lesson.lessonId)} />}
+                  render={(lesson) => (
+                    <ListLessonRow
+                      lesson={lesson}
+                      onOpen={() => onOpenLesson(lesson.lessonId)}
+                      onOpenLesson={onOpenLesson}
+                    />
+                  )}
                 />
               ),
             )}

@@ -736,6 +736,26 @@
   background: var(--status-color);
 }
 
+/* Trạng thái "cần chú ý" (Khiếu nại/Bị ngắt giữa buổi/Vắng mặt...) — viền rõ hơn để không bị
+   lẫn với các badge thông tin phụ (bản ghi/dời lịch) vốn cũng là pill nền nhạt. */
+.statusPillAlert {
+  border: 1px solid color-mix(in srgb, var(--status-color) 45%, transparent);
+}
+
+/* Khối badge phụ (bản ghi/dời lịch/buổi phụ-học lại) — gộp chung 1 nhóm, tách khỏi trạng thái
+   chính và nút hành động để không trông như 1 hàng phẳng lẫn lộn. Là 1 flex item duy nhất trong
+   hàng cha nên khi không đủ chỗ, cả nhóm xuống dòng cùng nhau thay vì mỗi badge rớt 1 dòng riêng. */
+.metaBadges {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.metaBadges:empty {
+  display: none;
+}
+
 .meetLink {
   display: inline-flex;
   min-height: 30px;
@@ -940,6 +960,24 @@
   border-color: rgba(16, 150, 122, 0.28);
   background: #e9f6f2;
   color: #0b796a;
+}
+
+/* Badge "Buổi phụ/Buổi học lại của #..." khi bấm được (buổi gốc nằm trong danh sách đang xem) —
+   reset style mặc định của <button> để trông y hệt span nhưng có phản hồi khi hover/bấm. */
+.linkBadge {
+  appearance: none;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    transform 150ms ease;
+}
+
+.linkBadge:hover {
+  border-color: rgba(217, 119, 6, 0.5);
+  background: #fbe9c8;
+  transform: translateY(-1px);
 }
 
 .calendarEvent .scheduleChangeBadge,

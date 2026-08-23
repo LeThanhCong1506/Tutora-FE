@@ -33,6 +33,7 @@ import {
   GridLessonView,
   ListLessonView,
   LoadingState,
+  filterLessonsKeepingChains,
   getLessonDate,
   getMonday,
   type LessonSummary,
@@ -325,7 +326,7 @@ const ParentLessons = () => {
   );
 
   const filteredLessons = useMemo(
-    () => childLessons.filter((lesson) => matchesStatusFilter(lesson, activeStatus)),
+    () => filterLessonsKeepingChains(childLessons, (lesson) => matchesStatusFilter(lesson, activeStatus)),
     [activeStatus, childLessons],
   );
 

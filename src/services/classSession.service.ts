@@ -254,6 +254,9 @@ export interface CalendarClassSessionResponse {
     isDisputeRelearn?: boolean;
     /** Buổi gốc mà buổi bù/buổi phụ/buổi học lại này trỏ về — undefined nếu đây là buổi gốc. */
     originalClassSessionId?: number;
+    /** True khi cả gia sư và học sinh đã đồng ý bỏ buổi phụ này — status vẫn "scheduled" cho tới
+     * khi báo cáo buổi gốc được nộp, nhưng buổi này coi như đã "chết" nên phải ẩn nút "Vào lớp". */
+    skipConfirmedByBothSides?: boolean;
 }
 
 export interface CalendarDayResponse {

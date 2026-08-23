@@ -126,6 +126,7 @@ export interface CalendarLessonDto {
   isContinuation?: boolean;
   isDisputeRelearn?: boolean;
   originalClassSessionId?: number;
+  skipConfirmedByBothSides?: boolean;
 }
 
 export interface CalendarDayDto {
@@ -368,6 +369,7 @@ export const getParentCalendar = async (
         isContinuation: c.isContinuation,
         isDisputeRelearn: c.isDisputeRelearn,
         originalClassSessionId: c.originalClassSessionId,
+        skipConfirmedByBothSides: c.skipConfirmedByBothSides,
       })),
     })),
   };
