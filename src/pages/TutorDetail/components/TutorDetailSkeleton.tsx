@@ -108,10 +108,7 @@ const TutorDetailSkeleton = () => {
                     <div className="portfolio-stats-wrapper">
                         <section className="portfolio-section skeleton-section-card skeleton-portfolio-card">
                             <div className="skeleton-portfolio-header">
-                                <div>
-                                    <div className="skeleton-box skeleton-heading-line skeleton-heading-line-wide" />
-                                    <div className="skeleton-box skeleton-overline-line" />
-                                </div>
+                                <div className="skeleton-box skeleton-heading-line skeleton-heading-line-wide" />
                                 <div className="skeleton-box skeleton-verified-pill" />
                             </div>
                             <div className="skeleton-cert-grid">
@@ -147,7 +144,7 @@ const TutorDetailSkeleton = () => {
                         </div>
                     </section>
 
-                    {/* Khớp TestimonialsSection ("Nhật ký thành công" — section5). */}
+                    {/* Khớp TestimonialsSection ("Đánh giá từ học viên & phụ huynh" — section5). */}
                     <section className="section5 skeleton-section-card skeleton-testimonial-card">
                         <div className="skeleton-testimonial-heading">
                             <div className="skeleton-box skeleton-heading-line skeleton-heading-line-short" />

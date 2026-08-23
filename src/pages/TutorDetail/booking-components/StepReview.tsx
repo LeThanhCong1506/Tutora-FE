@@ -11,21 +11,28 @@ const StepReview: React.FC<StepProps> = ({
     hourlyRate,
     scheduling,
     sessionHours,
-    selectedCombo,
     tutorName,
     submitError,
     onDismissSubmitError,
 }) => {
     const selectedSubject = availableSubjects.find((s) => s.id === formData.subjectId);
     const selectedStudent = students.find((s) => s.studentId === formData.studentId);
-    const isAvailabilityMode = formData.bookingMode === "schedule";
-    const scheduleChoiceLabel = isAvailabilityMode ? "Tự chọn lịch rảnh" : (selectedCombo?.name ?? "Gói cố định");
 
     const { selectedSlots, bookingWindowStart, bookingWindowEnd, today } = scheduling;
     const chosenHours = selectedSlots.reduce((sum, slot) => sum + slot.durationHours, 0);
     const subtotal = chosenHours * hourlyRate;
     const serviceFee = Math.round(subtotal * 0.05);
     const total = subtotal + serviceFee;
+
+    // Số tiền phải trả NGAY khi bấm Gửi yêu cầu. Phải khớp tuyệt đối với BE, nếu không
+    // người dùng đọc một số ở đây rồi PaymentModal lại thu một số khác.
+    // Công thức lấy từ BookingFeeCalculator.CalculatePaymentPhases:
+    //   deposit = floor(finalPrice / totalSessions), riêng booking 1 buổi thì trả trọn.
+    // `total` ở trên chính là finalPrice (baseAmount + phí dịch vụ 5%), còn totalSessions
+    // là số slot đã chọn — đúng giá trị FE gửi lên trong payload createBooking.
+    const sessionCount = selectedSlots.length;
+    const firstSessionAmount = sessionCount > 1 ? Math.floor(total / sessionCount) : total;
+    const remainingAmount = total - firstSessionAmount;
 
     return (
         <>
@@ -48,9 +55,6 @@ const StepReview: React.FC<StepProps> = ({
                             <h3>
                                 {selectedSubject?.name ?? "Môn học"} · {selectedStudent?.fullName ?? "Học sinh"}
                             </h3>
-                            <p>
-                                {tutorName} · {scheduleChoiceLabel}
-                            </p>
                         </div>
                         <div className={styles.confirmQuickFacts}>
                             <span>
@@ -91,9 +95,26 @@ const StepReview: React.FC<StepProps> = ({
                             <span>Phí dịch vụ (5%)</span>
                             <strong>{formatPrice(serviceFee)}</strong>
                         </div>
+                        <div className={`${styles.priceLine} ${styles.priceLineNow}`}>
+                            <span>Trả ngay · buổi đầu tiên</span>
+                            <strong>{formatPrice(firstSessionAmount)}</strong>
+                        </div>
+                        {remainingAmount > 0 && (
+                            <div className={styles.priceLine}>
+                                <span>Còn lại · {sessionCount - 1} buổi sau</span>
+                                <strong>{formatPrice(remainingAmount)}</strong>
+                            </div>
+                        )}
+                        {/* Thứ tự thật của luồng (xem useBookingForm.submit + PaymentModal):
+                            createBooking → booking ở `pending_payment` → mở PaymentModal thu tiền
+                            buổi ĐẦU → trả xong mới sang `pending_tutor` để gia sư xác nhận.
+                            Phần còn lại thu ở phase `remaining` (pay-per-phase, xem
+                            BookingService.TutorDecisions.cs). Câu cũ "Thanh toán sau khi gia sư
+                            xác nhận lịch học" mô tả ngược hẳn thứ tự này. */}
                         <p className={styles.priceSummaryNote}>
                             <ShieldCheck size={14} />
-                            Thanh toán sau khi gia sư xác nhận lịch học.
+                            Gửi yêu cầu → thanh toán buổi đầu → gia sư xác nhận lịch. Các buổi còn lại thanh toán
+                            sau.
                         </p>
                     </div>
 

@@ -257,7 +257,6 @@ const ParentDashboard = () => {
           icon={<BookingIcon />}
           value={totalBookings}
           label="Tổng lịch hẹn"
-          subLabel="Xem chi tiết lịch hẹn"
           badge={`${activeBookings} đang hoạt động`}
           badgeVariant="green"
           variant="quiet"
@@ -268,7 +267,6 @@ const ParentDashboard = () => {
           icon={<ChildrenIcon />}
           value={childrenCount}
           label="Học sinh"
-          subLabel="Đã liên kết"
           badge="Đã liên kết"
           badgeVariant="blue"
           variant="quiet"
@@ -279,7 +277,6 @@ const ParentDashboard = () => {
           icon={<SessionsIcon />}
           value={weekLessonCount}
           label="Buổi học"
-          subLabel="Đã lên lịch tuần này"
           badge="Tuần này"
           badgeVariant="green"
           variant="quiet"
@@ -290,7 +287,6 @@ const ParentDashboard = () => {
           icon={<PendingIcon />}
           value={pendingBookings.length}
           label="Chờ xử lý"
-          subLabel="Yêu cầu đang chờ phản hồi"
           badge={pendingBookings.length > 0 ? 'Cần xử lý' : 'Đã cập nhật'}
           badgeVariant={pendingBookings.length > 0 ? 'green' : 'blue'}
           variant="quiet"

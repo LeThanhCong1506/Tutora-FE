@@ -144,7 +144,7 @@ export const validateBio = (value: string): ValidationResult => {
     return { isValid: true };
 };
 
-// Education validation (1-255 chars)
+// Học vị — chọn từ DEGREE_LEVELS, BE giới hạn 100 ký tự
 export const validateDegree = (value: string): ValidationResult => {
     if (!value || value.trim().length === 0) {
         return { isValid: false, error: 'Vui lòng chọn học vị' };
@@ -157,9 +157,15 @@ export const validateDegree = (value: string): ValidationResult => {
     return { isValid: true };
 };
 
+// Trường học — nhập tự do, BE nhận 2-255 ký tự (giữ đúng khoảng này để lỗi hiện ngay
+// tại ô thay vì phải chờ API trả 400).
 export const validateSchool = (value: string): ValidationResult => {
     if (!value || value.trim().length === 0) {
         return { isValid: false, error: 'Vui lòng nhập trường học' };
+    }
+
+    if (value.trim().length < 2) {
+        return { isValid: false, error: 'Tên trường phải có ít nhất 2 ký tự' };
     }
 
     if (value.length > 255) {
