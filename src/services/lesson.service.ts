@@ -54,6 +54,18 @@ export interface LessonResponse {
   student?: StudentMini;
   subject?: SubjectInfo;
   tutor?: TutorMini;
+  /** True nếu đây là buổi phụ (Link 2), sinh ra khi buổi gốc (`originalClassSessionId`) bị báo ngắt giữa chừng. */
+  isContinuation?: boolean;
+  /** True nếu đây là buổi học lại (Link 3), sinh ra khi hoà giải dispute chọn "học lại". */
+  isDisputeRelearn?: boolean;
+  /** Buổi gốc mà buổi bù/buổi phụ/buổi học lại này trỏ về — undefined nếu đây là buổi gốc. */
+  originalClassSessionId?: number;
+  /** Mốc buổi GỐC bị báo ngắt — chỉ có giá trị trên chính buổi gốc, không phải trên buổi phụ. */
+  interruptedAt?: string;
+  /** Lý do báo ngắt do người báo tự nhập — chỉ có trên buổi gốc. */
+  interruptReason?: string;
+  /** Tên người đã báo ngắt — chỉ có trên buổi gốc. BE không trả user_id, chỉ trả tên đã resolve. */
+  interruptedByName?: string;
 }
 
 export interface LessonDetailDto extends LessonResponse {

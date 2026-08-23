@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { Modal } from 'antd';
+import { Modal, Input } from 'antd';
 import axios from 'axios';
 import SessionDeviceModal from '../../components/SessionDeviceModal';
 import {
@@ -16,7 +16,12 @@ import {
   isSessionScheduleConflictError,
   leaveRoom,
 } from '../../services/agora.service';
-import { checkOutClassSession } from '../../services/classSession.service';
+import {
+  checkOutClassSession,
+  requestClassSessionInterruption,
+  getClassSessionInterruptionEligibility,
+  type ClassSessionInterruptionEligibilityResponse,
+} from '../../services/classSession.service';
 import { getCurrentUserRole, getUserIdFromToken } from '../../services/auth.service';
 import {
   SessionHeader,
@@ -86,14 +91,22 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
   // Số giây còn lại tới lúc hệ thống tự đóng phòng — null khi còn ngoài cửa sổ cảnh báo
   // (> AUTO_END_WARNING_SEC) hoặc chưa có mốc autoEndAt từ backend.
   const [autoEndCountdownSec, setAutoEndCountdownSec] = useState<number | null>(null);
+  // % thật (dữ liệu Agora) đã đủ để báo ngắt giữa chừng chưa — null khi chưa poll được lần nào.
+  const [interruptionEligibility, setInterruptionEligibility] =
+    useState<ClassSessionInterruptionEligibilityResponse | null>(null);
   const [mockMicOn, setMockMicOn] = useState(initialMicOn);
   const [mockCamOn, setMockCamOn] = useState(initialCamOn);
   const [mockScreenSharing, setMockScreenSharing] = useState(false);
   const [mockMessages, setMockMessages] = useState<ChatMessage[]>([]);
   const [panelOpen, setPanelOpen] = useState(true);
   const [whiteboardOpen, setWhiteboardOpen] = useState(false);
+  // Modal "Kết thúc"/"Rời đi" gộp chung 2 lựa chọn: kết thúc bình thường hoặc báo ngắt giữa chừng
+  // do sự cố đột xuất — trước đây là 2 nút/2 modal tách rời (1 ở ControlBar, 1 icon riêng ở header).
   const [endModalOpen, setEndModalOpen] = useState(false);
+  const [endChoice, setEndChoice] = useState<'normal' | 'interrupt'>('normal');
   const [ending, setEnding] = useState(false);
+  const [interruptReason, setInterruptReason] = useState('');
+  const [interrupting, setInterrupting] = useState(false);
   // Gia sư tự bấm kết thúc → bỏ qua nhánh auto-điều hướng của `sessionEnded`, nếu không
   // heartbeat trả `roomClosed` sẽ đá chính gia sư ra và chạy trùng logic rời phòng.
   const selfEndingRef = useRef(false);
@@ -304,11 +317,47 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
     return () => clearInterval(interval);
   }, [isMock, presenceStatus?.autoEndAt, sessionEnded]);
 
+  // % thật (Agora) đã đủ báo ngắt giữa chừng chưa — poll định kỳ trong lúc đang học, KHÔNG suy
+  // từ elapsed time (đồng hồ tường không phản ánh có đang học thật hay không, giống lý do BE
+  // dùng overlapRatio thay Realstart→now ở RequestInterruptionAsync).
+  useEffect(() => {
+    if (isMock || !joined || !presenceStatus?.isCheckedIn || sessionIdNum == null) {
+      setInterruptionEligibility(null);
+      return;
+    }
+    let cancelled = false;
+    const poll = () => {
+      getClassSessionInterruptionEligibility(sessionIdNum)
+        .then((res) => {
+          if (!cancelled) setInterruptionEligibility(res.content);
+        })
+        .catch(() => {
+          // Lỗi (mất kết nối, endpoint chưa deploy...) — CỐ Ý không set gì cả, để
+          // interruptionEligible ở nơi gọi fail-open (coi như bấm được) thay vì khoá vĩnh viễn.
+          // Backend RequestInterruptionAsync vẫn là lưới an toàn thật khi bấm xác nhận.
+        });
+    };
+    poll();
+    const interval = setInterval(poll, 20_000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [isMock, joined, presenceStatus?.isCheckedIn, sessionIdNum]);
+
   const participantLabel = useMemo(() => {
     if (isMock) return 'Học sinh Demo';
     if (!room) return '';
     return [room.tutorName, room.studentName].filter(Boolean).join(', ');
   }, [isMock, room]);
+
+  // Chỉ cho chọn "Báo ngắt giữa chừng" trong modal gộp khi đã điểm danh (đang in_progress — báo ngắt
+  // trước đó không có ý nghĩa) và buổi này còn được phép báo ngắt (buổi phụ/buổi học lại do hoà giải
+  // thì không — canEverBeInterrupted=false cố định suốt buổi). Chưa tải xong (undefined) vẫn cho hiện,
+  // cùng triết lý fail-open với interruptionEligible bên dưới (BE vẫn là lưới an toàn thật).
+  const showInterruptOption =
+    (isMock || presenceStatus?.isCheckedIn) && interruptionEligibility?.canEverBeInterrupted !== false;
+  const interruptEligibleNow = isMock || !interruptionEligibility ? true : interruptionEligibility.eligible;
 
   const localName = useMemo(() => {
     if (isMock) return isTutor ? 'Gia sư Demo' : 'Học sinh Demo';
@@ -348,6 +397,35 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
       setEndModalOpen(false);
     }
   };
+
+  // Báo buổi học bị ngắt giữa chừng vì sự cố đột xuất (mất điện, mất mạng...). Buổi hiện tại
+  // dừng lại (backend chuyển "interrupted") và một buổi phụ được tạo để học nốt trong ngày —
+  // người dùng tìm buổi phụ đó lại trong danh sách buổi học, không tự động chuyển phòng ngay.
+  const confirmInterrupt = async () => {
+    if (isMock) {
+      toast.info('Không khả dụng ở chế độ demo');
+      setEndModalOpen(false);
+      return;
+    }
+    if (sessionIdNum == null) return;
+    setInterrupting(true);
+    try {
+      await requestClassSessionInterruption(sessionIdNum, interruptReason.trim() || undefined);
+      toast.success('Đã báo buổi học bị ngắt. Buổi phụ đã được tạo, xem trong danh sách buổi học của bạn.');
+      setEndModalOpen(false);
+      await leave();
+      navigate(-1);
+    } catch (error) {
+      const fallback = 'Không thể báo buổi học bị ngắt. Vui lòng thử lại.';
+      const message = axios.isAxiosError(error) ? (error.response?.data?.message as string | undefined) : undefined;
+      toast.error(message || fallback);
+    } finally {
+      setInterrupting(false);
+    }
+  };
+
+  // Điểm vào duy nhất của modal gộp: tuỳ lựa chọn đang chọn mà chạy đúng luồng kết thúc/báo ngắt sẵn có.
+  const confirmEndChoice = () => (endChoice === 'interrupt' ? confirmInterrupt() : confirmEnd());
 
   // Takeover chỉ thu hồi media/RTC/presence của thiết bị cũ. Không đi qua handleLeave vì nhánh đó
   // sẽ check-out và kết thúc cả buổi nếu người bị thay thế là gia sư.
@@ -549,7 +627,10 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
               if (isMock) return toast.info('Bảng vẽ không khả dụng ở chế độ demo');
               setWhiteboardOpen((v) => !v);
             }}
-            onLeave={() => setEndModalOpen(true)}
+            onLeave={() => {
+              setEndChoice('normal');
+              setEndModalOpen(true);
+            }}
             leaveLabel={isTutor ? 'Kết thúc' : 'Rời đi'}
           />
         </VideoStage>
@@ -585,22 +666,123 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
         </Suspense>
       )}
 
+      {/* Modal gộp: trước đây là 2 nút/2 modal tách rời (Kết thúc ở ControlBar dưới cùng, Báo ngắt
+          giữa chừng là icon riêng ở header) — gộp về 1 điểm bấm duy nhất, cho chọn rõ 1 trong 2 khi
+          buổi còn được phép báo ngắt (showInterruptOption); nếu không (chưa điểm danh, hoặc buổi
+          phụ/buổi học lại do hoà giải — không được báo ngắt nữa) thì chỉ còn đúng luồng kết thúc cũ. */}
       <Modal
         open={endModalOpen}
-        onOk={confirmEnd}
-        onCancel={() => setEndModalOpen(false)}
-        confirmLoading={ending}
+        onOk={confirmEndChoice}
+        onCancel={() => {
+          setEndModalOpen(false);
+          setInterruptReason('');
+        }}
         title={isTutor ? 'Kết thúc buổi học?' : 'Rời khỏi buổi học?'}
-        okText={isTutor ? 'Kết thúc buổi học' : 'Rời đi'}
+        okText={
+          endChoice === 'interrupt'
+            ? interrupting
+              ? 'Đang xử lý…'
+              : 'Xác nhận báo ngắt'
+            : isTutor
+              ? 'Kết thúc buổi học'
+              : 'Rời đi'
+        }
         cancelText="Ở lại"
-        okButtonProps={{ danger: true }}
+        cancelButtonProps={{ disabled: ending || interrupting }}
+        okButtonProps={
+          endChoice === 'interrupt'
+            ? // KHÔNG dùng confirmLoading ở đây: icon xoay antd tự thêm lấy màu theo class riêng,
+              // không theo `style` ghi đè bên dưới → lệch màu với nền nút. Đổi text + khoá nút bằng
+              // tay để luôn 1 màu, giống cách CloseDisputeModal (CMS) đang làm.
+              { disabled: interrupting, style: { background: '#d97706', borderColor: '#d97706', color: '#fff' } }
+            : { danger: true, disabled: ending, loading: ending }
+        }
         centered
       >
-        <p style={{ margin: 0 }}>
-          {isTutor
-            ? 'Buổi học sẽ kết thúc cho tất cả mọi người tham gia và hệ thống sẽ tự động điểm danh cho buổi học này. Hành động này không thể hoàn tác. Ngay sau đó bạn sẽ được mời viết báo cáo buổi học.'
-            : 'Bạn sẽ rời khỏi buổi học này.'}
-        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {showInterruptOption ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => setEndChoice('normal')}
+                style={{
+                  textAlign: 'left',
+                  padding: '10px 12px',
+                  borderRadius: 10,
+                  border: endChoice === 'normal' ? '1.5px solid #dc2626' : '1px solid #e5e7eb',
+                  background: endChoice === 'normal' ? '#fef2f2' : '#fff',
+                  cursor: 'pointer',
+                }}
+              >
+                <div style={{ fontWeight: 600, fontSize: 13.5 }}>{isTutor ? 'Kết thúc bình thường' : 'Rời đi bình thường'}</div>
+                <div style={{ fontSize: 12.5, color: '#6b7280', marginTop: 2 }}>
+                  {isTutor
+                    ? 'Buổi học kết thúc cho tất cả, hệ thống tự điểm danh và tính buổi này là đã học đủ.'
+                    : 'Bạn rời khỏi buổi học này, buổi vẫn tiếp tục bình thường cho người còn lại.'}
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => interruptEligibleNow && setEndChoice('interrupt')}
+                disabled={!interruptEligibleNow}
+                title={
+                  !interruptEligibleNow && interruptionEligibility
+                    ? `Cần học đủ ${Math.round(interruptionEligibility.requiredRatio * 100)}% mới báo ngắt được (hiện ${Math.round(interruptionEligibility.currentRatio * 100)}%)`
+                    : undefined
+                }
+                style={{
+                  textAlign: 'left',
+                  padding: '10px 12px',
+                  borderRadius: 10,
+                  border: endChoice === 'interrupt' ? '1.5px solid #d97706' : '1px solid #e5e7eb',
+                  background: endChoice === 'interrupt' ? '#fffbeb' : '#fff',
+                  cursor: interruptEligibleNow ? 'pointer' : 'not-allowed',
+                  opacity: interruptEligibleNow ? 1 : 0.5,
+                }}
+              >
+                <div style={{ fontWeight: 600, fontSize: 13.5 }}>Báo ngắt giữa chừng do sự cố</div>
+                <div style={{ fontSize: 12.5, color: '#6b7280', marginTop: 2 }}>
+                  Chỉ dùng khi có sự cố kỹ thuật ngoài ý muốn (mất điện, mất mạng...) khiến buổi học đang diễn ra bị
+                  gián đoạn. Buổi hiện tại dừng lại, hệ thống tạo ngay 1 buổi phụ để học nốt trong hôm nay. Nếu bạn có
+                  việc bận/gấp cần dừng sớm, hãy dùng chức năng "Dời lịch học" thay vì báo ngắt ở đây.
+                  {!interruptEligibleNow && interruptionEligibility && (
+                    <>
+                      {' '}
+                      Cần học đủ {Math.round(interruptionEligibility.requiredRatio * 100)}% (hiện{' '}
+                      {Math.round(interruptionEligibility.currentRatio * 100)}%).
+                    </>
+                  )}
+                </div>
+              </button>
+            </div>
+          ) : (
+            <p style={{ margin: 0 }}>
+              {isTutor
+                ? 'Buổi học sẽ kết thúc cho tất cả mọi người tham gia và hệ thống sẽ tự động điểm danh cho buổi học này. Hành động này không thể hoàn tác. Ngay sau đó bạn sẽ được mời viết báo cáo buổi học.'
+                : 'Bạn sẽ rời khỏi buổi học này.'}
+            </p>
+          )}
+
+          {endChoice === 'interrupt' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <Input.TextArea
+                rows={3}
+                maxLength={500}
+                // Tắt spellcheck của trình duyệt: từ điển mặc định là tiếng Anh nên gạch đỏ hầu như
+                // mọi từ tiếng Việt, làm ô nhập trông lỗi/rối dù không có lỗi thật nào.
+                spellCheck={false}
+                placeholder="Lý do (mất điện, mất mạng...)"
+                value={interruptReason}
+                onChange={(e) => setInterruptReason(e.target.value)}
+              />
+              {/* Đếm ký tự bằng tay thay vì dùng showCount của antd: showCount vẽ đè số đếm lên góc
+                  dưới-phải NGAY BÊN TRONG khung textarea (chồng lên tay cầm resize), nhìn như lỗi. */}
+              <p style={{ margin: 0, textAlign: 'right', fontSize: 12, color: '#9ca3af' }}>
+                {interruptReason.length} / 500
+              </p>
+            </div>
+          )}
+        </div>
       </Modal>
       {/* Cảnh báo hành vi — chỉ gia sư. Đặt ở cấp trang (position: fixed) để luôn neo góc dưới
           bên phải MÀN HÌNH, không lệch theo khung camera hay khi mở/đóng SidePanel. */}

@@ -81,6 +81,25 @@ const LESSON_STATUS_CONFIG: Record<string, { label: string; className: string }>
   cancelled_noshow: { label: 'Hủy do vắng mặt', className: 'lessonCancelled' },
   disputed: { label: 'Đang khiếu nại', className: 'lessonPending' },
   no_show: { label: 'Vắng mặt', className: 'lessonCancelled' },
+  interrupted: { label: 'Bị ngắt giữa buổi', className: 'lessonPending' },
+};
+
+/**
+ * Ghi chú liên kết chuỗi (buổi gốc bị ngắt/dispute ↔ buổi phụ/buổi học lại của nó) cho từng dòng
+ * trong "Danh sách buổi học" — nếu không có dòng này, buổi gốc bị Cancelled (khi Admin hoà giải
+ * chọn "học lại") trông như huỷ thật, và buổi phụ/học lại trông như 1 buổi độc lập không liên quan.
+ */
+const getLessonLinkNote = (lesson: Lesson, allLessons: Lesson[]): string | null => {
+  if (lesson.isContinuation || lesson.isDisputeRelearn) {
+    const kind = lesson.isContinuation ? 'Buổi phụ' : 'Buổi học lại';
+    return lesson.originalClassSessionId ? `${kind} của buổi #${lesson.originalClassSessionId}` : kind;
+  }
+  const successor = allLessons.find((other) => other.originalClassSessionId === lesson.lessonId);
+  if (successor) {
+    const kind = successor.isContinuation ? 'buổi phụ' : 'buổi học lại';
+    return `Đã thay bằng ${kind} #${successor.lessonId}`;
+  }
+  return null;
 };
 
 const DAY_NAMES = ['', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
@@ -589,12 +608,14 @@ const BookingDetailPage = () => {
                         label: 'Chưa cập nhật',
                         className: 'lessonScheduled',
                       };
+                      const linkNote = getLessonLinkNote(lesson, lessons);
                       return (
                         <article className={styles.lessonItem} key={lesson.lessonId}>
                           <span className={styles.lessonNumber}>{index + 1}</span>
                           <div className={styles.lessonDate}>
                             <strong>{formatDateOnly(lesson.scheduledStart)}</strong>
                             <span>{formatTimeRange(lesson.scheduledStart, lesson.scheduledEnd)}</span>
+                            {linkNote && <span className={styles.lessonLinkNote}>{linkNote}</span>}
                           </div>
                           <span className={`${styles.lessonBadge} ${styles[lessonStatus.className]}`}>
                             {lessonStatus.label}

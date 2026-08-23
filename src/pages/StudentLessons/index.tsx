@@ -16,6 +16,7 @@ import {
   GridLessonView,
   ListLessonView,
   LoadingState,
+  filterLessonsKeepingChains,
   getLessonDate,
   getMonday,
   isAwaitingReport,
@@ -192,7 +193,7 @@ const StudentLessons = () => {
   }, [rangeEndKey, rangeStartKey, retryKey]);
 
   const filteredLessons = useMemo(
-    () => lessons.filter((lesson) => matchesStatusFilter(lesson, activeStatus)),
+    () => filterLessonsKeepingChains(lessons, (lesson) => matchesStatusFilter(lesson, activeStatus)),
     [activeStatus, lessons],
   );
 

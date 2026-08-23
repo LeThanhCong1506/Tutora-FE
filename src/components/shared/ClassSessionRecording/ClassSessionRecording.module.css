@@ -79,3 +79,44 @@
     background: #111827;
     display: block;
 }
+
+.chainWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Buổi bù/buổi phụ/buổi học lại — chỉ hiện khi buổi này thật sự nằm trong 1 chuỗi (>1 buổi). */
+.chainTabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.chainTab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: 1px solid #e6e1d4;
+    border-radius: 999px;
+    background: #faf9f6;
+    color: #737373;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.chainTabActive {
+    border-color: #1a2238;
+    background: #1a2238;
+    color: #fff;
+}
+
+.chainTabCurrentDot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.7;
+}

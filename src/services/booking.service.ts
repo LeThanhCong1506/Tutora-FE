@@ -102,6 +102,9 @@ export interface BookingResponseDTO {
         scheduledEnd: string;
         status?: string;
         lessonPrice?: number;
+        isContinuation?: boolean;
+        isDisputeRelearn?: boolean;
+        originalClassSessionId?: number;
     }>;
     /** Real field name sent by the backend (BookingResponse.ClassSessions) — `lessons` above
      * is never actually populated by the API. bookingToLocal() maps this into `lessons`. */
@@ -112,6 +115,9 @@ export interface BookingResponseDTO {
         scheduledEnd: string;
         status?: string;
         classSessionPrice?: number;
+        isContinuation?: boolean;
+        isDisputeRelearn?: boolean;
+        originalClassSessionId?: number;
     }>;
     startDate?: string;
     createdAt: string;
@@ -167,6 +173,9 @@ const bookingToLocal = (b: BookingResponseDTO): BookingResponseDTO => ({
                   scheduledEnd: cs.scheduledEnd,
                   status: cs.status,
                   lessonPrice: cs.classSessionPrice,
+                  isContinuation: cs.isContinuation,
+                  isDisputeRelearn: cs.isDisputeRelearn,
+                  originalClassSessionId: cs.originalClassSessionId,
               })),
 });
 
