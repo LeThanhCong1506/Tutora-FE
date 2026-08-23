@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { PageContainer } from '../../components/shared';
 import styles from './styles.module.css';
 import { useTabParam } from '../../hooks/useTabParam';
 import {
@@ -94,13 +95,27 @@ const TutorOnboarding: React.FC = () => {
     }
   };
 
+  const pageHeader = (
+    <PageContainer
+      className={styles.pageHeader}
+      title="Thiết lập giảng dạy"
+      titleInfo="Thiết lập lịch rảnh, môn học, mức giá và các gói lịch để sẵn sàng nhận booking."
+      maxWidth="full"
+    >
+      {null}
+    </PageContainer>
+  );
+
   if (sync.loading) {
     return (
-      <div className={styles.loadingScreen} role="status" aria-live="polite">
-        <div className={styles.loadingSpinner} aria-hidden="true" />
-        <div className={styles.loadingCopy}>
-          <h1>Đang tải thiết lập giảng dạy…</h1>
-          <p>{sync.loadError || 'Vui lòng chờ trong giây lát'}</p>
+      <div className={styles.page}>
+        {pageHeader}
+        <div className={styles.loadingScreen} role="status" aria-live="polite">
+          <div className={styles.loadingSpinner} aria-hidden="true" />
+          <div className={styles.loadingCopy}>
+            <strong>Đang tải thiết lập giảng dạy…</strong>
+            <p>{sync.loadError || 'Vui lòng chờ trong giây lát'}</p>
+          </div>
         </div>
       </div>
     );
@@ -108,19 +123,23 @@ const TutorOnboarding: React.FC = () => {
 
   if (finished) {
     return (
-      <OnboardingSummary
-        subjectRecords={state.subjectRecords}
-        availability={state.availability}
-        combos={state.combos}
-        gradeLevels={gradeLevels}
-        onBack={() => setStepSlug('packages', { tab: null })}
-        onFinish={() => navigate('/tutor-portal/dashboard')}
-      />
+      <div className={styles.page}>
+        {pageHeader}
+        <OnboardingSummary
+          subjectRecords={state.subjectRecords}
+          availability={state.availability}
+          combos={state.combos}
+          gradeLevels={gradeLevels}
+          onBack={() => setStepSlug('packages', { tab: null })}
+          onFinish={() => navigate('/tutor-portal/dashboard')}
+        />
+      </div>
     );
   }
 
   return (
     <div className={styles.page}>
+      {pageHeader}
       <div className={styles.stepNavigation} data-tour="onboarding-stepper">
         <OnboardingStepper
           currentStep={currentStep}
