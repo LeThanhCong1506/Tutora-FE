@@ -4,6 +4,7 @@ import type { ColumnsType } from 'antd/es/table';
 import { EyeOutlined, SyncOutlined, WalletOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '../../../utils/apiError';
 import { getWithdrawals } from '../../../services/tutorFinance.service';
 import type { WithdrawalItem } from '../../../types/finance.types';
 import { formatCurrency, formatDateTime } from '../../../utils/formatters';
@@ -27,7 +28,7 @@ const WithdrawalListPage: React.FC = () => {
       setTotal(response.total);
     } catch (error) {
       console.error('Failed to fetch withdrawals:', error);
-      toast.error('Không thể tải danh sách yêu cầu rút tiền');
+      toast.error(getApiErrorMessage(error, 'Không thể tải danh sách yêu cầu rút tiền'));
     } finally {
       setLoading(false);
     }
@@ -89,7 +90,7 @@ const WithdrawalListPage: React.FC = () => {
   return (
     <FinancePageShell
       title="Lịch sử rút tiền"
-      subtitle="Theo dõi tiến độ xét duyệt và chuyển khoản của từng yêu cầu."
+      titleInfo="Theo dõi tiến độ xét duyệt và chuyển khoản của từng yêu cầu."
       actions={
         <>
           <Button size="large" icon={<SyncOutlined />} onClick={fetchWithdrawals} loading={loading}>
@@ -110,7 +111,6 @@ const WithdrawalListPage: React.FC = () => {
       <section className="finance-surface finance-table-surface" aria-label="Danh sách yêu cầu rút tiền">
         <div className="finance-table-heading">
           <div>
-            <h2>Các yêu cầu của bạn</h2>
             <p>{total > 0 ? `${total.toLocaleString('vi-VN')} yêu cầu rút tiền` : 'Chưa có yêu cầu rút tiền'}</p>
           </div>
         </div>

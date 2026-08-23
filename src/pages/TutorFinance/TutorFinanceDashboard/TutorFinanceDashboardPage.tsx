@@ -10,6 +10,7 @@ import FinanceOverviewCards from './components/FinanceOverviewCards';
 import EarningsChart from './components/EarningsChart';
 import '../../../styles/pages/tutor-finance.css';
 import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '../../../utils/apiError';
 
 const MIN_WITHDRAWAL = 10000;
 
@@ -31,7 +32,7 @@ const TutorFinanceDashboardPage: React.FC = () => {
         setRecentTransactions(transRes.transactions);
       } catch (error) {
         console.error('Failed to fetch finance dashboard data:', error);
-        toast.error('Không thể tải dữ liệu tổng quan tài chính');
+        toast.error(getApiErrorMessage(error, 'Không thể tải dữ liệu tổng quan tài chính'));
       } finally {
         setLoading(false);
       }
@@ -44,8 +45,8 @@ const TutorFinanceDashboardPage: React.FC = () => {
 
   return (
     <FinancePageShell
-      title="Tài chính của tôi"
-      headerClassName="finance-page-header--dashboard"
+      title="Tài chính"
+      titleInfo="Theo dõi số dư, thu nhập, giao dịch và các yêu cầu rút tiền."
       actions={
         <Tooltip
           title={!loading && !canWithdraw ? `Cần tối thiểu ${formatCurrency(MIN_WITHDRAWAL)} để rút tiền` : undefined}
