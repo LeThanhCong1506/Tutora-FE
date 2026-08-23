@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { isZaloMiniApp } from '../../services/zalo-env';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 const inMiniApp = isZaloMiniApp();
 import { ArrowLeft, CalendarClock, CheckCircle2, Clock3, GraduationCap, UserRound, XCircle } from 'lucide-react';
@@ -41,9 +42,6 @@ import { formatLocalDate, formatLocalDateTime, formatLocalTime } from '../../uti
 import styles from './lesson-detail.module.css';
 
 const TERMINAL_BOOKING_STATUSES = ['completed', 'cancelled', 'cancelled_noshow'];
-
-const getApiErrorMessage = (error: unknown): string | undefined =>
-  (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
 
 const getPresenceLabel = (present?: boolean | null) =>
   present === true ? 'Có mặt' : present === false ? 'Vắng mặt' : 'Chưa ghi nhận';
@@ -114,8 +112,8 @@ const ParentLessonDetail: React.FC = () => {
       setLoading(true);
       const response = await getParentLessonDetail(id);
       setLesson(response.content);
-    } catch {
-      toast.error('Không thể tải chi tiết buổi học.');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Không thể tải chi tiết buổi học.'));
     } finally {
       setLoading(false);
     }
@@ -178,7 +176,7 @@ const ParentLessonDetail: React.FC = () => {
         toast.success(confirmed ? 'Đã xác nhận đổi lịch học.' : 'Đã từ chối đổi lịch học.');
       }
     } catch (error: unknown) {
-      toast.error(getApiErrorMessage(error) || 'Không thể xử lý yêu cầu đổi lịch.');
+      toast.error(getApiErrorMessage(error, 'Không thể xử lý yêu cầu đổi lịch.'));
       await fetchScheduleChange();
     } finally {
       setSubmittingScheduleDecision(false);
@@ -199,7 +197,7 @@ const ParentLessonDetail: React.FC = () => {
       await fetchLesson();
       toast.success(accepted ? 'Đã đồng ý đổi lịch học.' : 'Đã từ chối đề xuất đổi lịch.');
     } catch (error: unknown) {
-      toast.error(getApiErrorMessage(error) || 'Không thể xử lý yêu cầu đổi lịch.');
+      toast.error(getApiErrorMessage(error, 'Không thể xử lý yêu cầu đổi lịch.'));
     } finally {
       setRespondingReschedule(false);
     }
