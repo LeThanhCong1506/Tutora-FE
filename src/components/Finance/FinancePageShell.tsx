@@ -11,10 +11,10 @@ export interface FinanceNavItem {
 
 interface FinancePageShellProps {
   title: string;
+  titleInfo?: string;
   subtitle?: string;
   children: ReactNode;
   actions?: ReactNode;
-  eyebrow?: string;
   headerClassName?: string;
   contentClassName?: string;
   backLink?: {
@@ -27,10 +27,10 @@ interface FinancePageShellProps {
 /** Shell dùng chung cho trang tài chính của Tutor lẫn Parent/Student — khác nhau ở `navItems` (số tab/đường dẫn). */
 const FinancePageShell = ({
   title,
+  titleInfo,
   subtitle,
   children,
   actions,
-  eyebrow = 'Trung tâm tài chính',
   headerClassName = '',
   contentClassName = '',
   backLink,
@@ -47,11 +47,21 @@ const FinancePageShell = ({
             </NavLink>
           )}
 
-          <span className="finance-eyebrow">{eyebrow}</span>
-
           <div className="finance-title-row">
             <div className="finance-title-block">
-              <h1>{title}</h1>
+              <div className="finance-title-heading">
+                <h1>{title}</h1>
+                {titleInfo && (
+                  <button
+                    type="button"
+                    className="finance-page-info finance-title-info"
+                    aria-label={`Thông tin: ${titleInfo}`}
+                  >
+                    <span className="material-symbols-outlined" aria-hidden="true">help</span>
+                    <span className="finance-page-info-bubble" role="tooltip">{titleInfo}</span>
+                  </button>
+                )}
+              </div>
               {subtitle && <p>{subtitle}</p>}
             </div>
             {actions && <div className="finance-header-actions">{actions}</div>}
