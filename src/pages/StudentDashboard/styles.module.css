@@ -12,13 +12,9 @@
 
 .container {
   display: flex;
+  width: 100%;
   flex-direction: column;
   gap: 16px;
-  width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 24px;
-  box-sizing: border-box;
 }
 
 /* Welcome banner */
@@ -49,20 +45,6 @@
   align-items: flex-start;
   gap: 10px;
   max-width: 760px;
-}
-
-.welcomeGreeting {
-  display: inline-flex;
-  width: fit-content;
-  padding: 6px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(242, 234, 215, 0.92);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .greetingTitle {
@@ -738,11 +720,6 @@
 }
 
 @media (max-width: 768px) {
-  .container {
-    gap: 16px;
-    padding: 16px 14px 24px;
-  }
-
   .welcomeBanner {
     padding: 18px 16px;
     border-radius: 14px;
@@ -766,11 +743,6 @@
 
   .greetingSubtitle {
     font-size: 12px;
-  }
-
-  .welcomeGreeting {
-    padding: 5px 10px;
-    font-size: 9px;
   }
 
   .quickActions {
@@ -862,10 +834,6 @@
 }
 
 @media (max-width: 420px) {
-  .container {
-    padding: 12px 10px 20px;
-  }
-
   .welcomeBanner {
     padding: 18px 16px;
   }
