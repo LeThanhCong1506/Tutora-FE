@@ -18,8 +18,24 @@
   }
 }
 
+/*
+ * flex-shrink: 0 — KHÔNG được bỏ, nếu bỏ là banner xẹp lại thành thanh trống như cũ.
+ *
+ * Vì sao: PortalLayout đặt `.main { height: 100vh }` → `.contentArea { flex: 1 1 auto;
+ * display: flex; flex-direction: column }` và `.contentArea > * { flex: 1 1 auto;
+ * min-height: 0 }`. Từ commit fa75ee8 trang này bọc trong PageContainer, mà PageContainer
+ * cũng là `display: flex; flex-direction: column` → banner trở thành flex item trong một
+ * cột có chiều cao xác định. Nội dung dashboard cao hơn khung nên flexbox co các item lại
+ * trước khi cho tràn ra scroll.
+ *
+ * Riêng banner bị co sạch vì nó có `overflow: hidden`: theo spec flexbox, flex item có
+ * overflow khác `visible` thì `min-height: auto` được tính bằng 0 thay vì bằng chiều cao
+ * nội dung. Các thẻ khác không có overflow nên giữ nguyên min-height = nội dung, không co
+ * — đó là lý do chỉ mỗi banner biến mất còn 4 ô thống kê vẫn bình thường.
+ */
 .welcomeBanner {
   position: relative;
+  flex-shrink: 0;
   overflow: hidden;
   background: linear-gradient(135deg, #1b2437 0%, #222f46 100%);
   border-radius: 18px;
