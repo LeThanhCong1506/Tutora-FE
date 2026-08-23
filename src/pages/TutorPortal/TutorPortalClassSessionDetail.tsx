@@ -19,6 +19,7 @@ import {
   X,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '../../utils/apiError';
 import { formatVNDNumber } from '../../utils/formatters';
 import {
   checkOutClassSession,
@@ -97,12 +98,8 @@ const getNameInitial = (name?: string) => {
   return givenName?.charAt(0).toLocaleUpperCase('vi-VN') || 'H';
 };
 
-const getErrorMessage = (error: unknown) => {
-  const requestError = error as { response?: { data?: { message?: string } }; message?: string };
-  return (
-    requestError.response?.data?.message || requestError.message || 'Không thể tải chi tiết buổi học. Vui lòng thử lại.'
-  );
-};
+const getErrorMessage = (error: unknown) =>
+  getApiErrorMessage(error, 'Không thể tải chi tiết buổi học. Vui lòng thử lại.');
 
 const getDisputeStatusMeta = (status?: string) => {
   if (status === 'resolved') return { label: 'Đã giải quyết', tone: styles.badgeResolved };

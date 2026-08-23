@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import EditModal from './EditModal';
 import { uploadCccd } from '../../../services/tutorProfile.service';
 import { getUserIdFromToken } from '../../../services/auth.service';
+import { getApiErrorMessage } from '../../../utils/apiError';
 import styles from './IdentityVerificationModal.module.css';
 
 // Icons
@@ -216,9 +217,8 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
             onClose();
         } catch (error) {
             // BE trả message thân thiện cho lỗi file hoặc xác minh CCCD.
-            const e = error as { response?: { data?: { message?: string } } };
             console.error('Upload CCCD error:', error);
-            toast.error(e.response?.data?.message || 'Không thể kết nối với server. Vui lòng thử lại.');
+            toast.error(getApiErrorMessage(error, 'Không thể kết nối với server. Vui lòng thử lại.'));
         } finally {
             setIsLoading(false);
         }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Form, Input, Button } from 'antd';
 import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '../../../utils/apiError';
 import {
   submitClassSessionReport,
   triggerReportAiFill,
@@ -189,8 +190,7 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
     } catch (error: unknown) {
       setAiJobStatus('failed');
       pendingAiFieldsRef.current.clear();
-      const e = error as { response?: { data?: { message?: string } } };
-      toast.error(e.response?.data?.message || 'Không thể gợi ý nội dung bằng AI. Vui lòng thử lại.');
+      toast.error(getApiErrorMessage(error, 'Không thể gợi ý nội dung bằng AI. Vui lòng thử lại.'));
     }
   };
 
@@ -231,8 +231,7 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
       clearDraft();
       onSubmitSuccess(response.content);
     } catch (error: unknown) {
-      const e = error as { response?: { data?: { message?: string } } };
-      toast.error(e.response?.data?.message || 'Không thể nộp báo cáo. Vui lòng thử lại.');
+      toast.error(getApiErrorMessage(error, 'Không thể nộp báo cáo. Vui lòng thử lại.'));
     } finally {
       setSubmitting(false);
     }

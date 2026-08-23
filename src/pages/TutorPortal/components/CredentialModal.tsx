@@ -8,6 +8,7 @@ import { CERTIFICATE_TYPES, getCertificateLabel } from '../data/certificateTypes
 import { uploadCertificate } from '../../../services/certificate.service';
 import { getUserIdFromToken } from '../../../services/auth.service';
 import { useFormDraft } from '../../../hooks/useFormDraft';
+import { getApiErrorMessage } from '../../../utils/apiError';
 import styles from './CredentialModal.module.css';
 
 // Icons
@@ -289,7 +290,7 @@ const CredentialModal: React.FC<CredentialModalProps> = ({
       }
     } catch (error) {
       console.error('Upload certificate error:', error);
-      toast.error('Không thể kết nối với server. Vui lòng thử lại.');
+      toast.error(getApiErrorMessage(error, 'Không thể kết nối với server. Vui lòng thử lại.'));
     } finally {
       setIsLoading(false);
     }
