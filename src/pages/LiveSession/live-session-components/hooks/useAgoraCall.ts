@@ -115,7 +115,7 @@ export const useAgoraCall = (
   const localUidRef = useRef<string | number | null>(null);
   const localNameRef = useRef<string>('Bạn');
   // Trạng thái mic/cam mới nhất cho heartbeat. Dùng ref chứ không đọc state trực tiếp để
-  // sendHeartbeat giữ nguyên identity — nếu không, mỗi lần bật/tắt mic sẽ reset nhịp 20s.
+  // sendHeartbeat giữ nguyên identity — nếu không, mỗi lần bật/tắt mic sẽ reset nhịp 10s.
   const micOnRef = useRef(initialMicOn);
   const camOnRef = useRef(initialCamOn);
   const screenSharingRef = useRef(false);
@@ -438,17 +438,17 @@ export const useAgoraCall = (
     }
   }, [room]);
 
-  // Heartbeat định kỳ: khi đã join, báo BE mỗi 20s để BE auto check-in khi đủ cả 2 người và
+  // Heartbeat định kỳ: khi đã join, báo BE mỗi 10s để BE auto check-in khi đủ cả 2 người và
   // biết khi nào cần đá mình ra (phòng đã đóng vì gia sư check-out).
   useEffect(() => {
     if (!joined || !room) return;
     void sendHeartbeat();
-    const interval = setInterval(() => void sendHeartbeat(), 20_000);
+    const interval = setInterval(() => void sendHeartbeat(), 10_000);
     return () => clearInterval(interval);
   }, [joined, room, sendHeartbeat]);
 
   // Có người mới xuất hiện trong channel (Agora báo qua user-published) → bắn heartbeat NGAY,
-  // không đợi hết nhịp 20s. Nhờ vậy phía vào trước nhận check-in gần như tức thì và banner
+  // không đợi hết nhịp 10s. Nhờ vậy phía vào trước nhận check-in gần như tức thì và banner
   // "đang chờ… vào phòng" biến mất ngay khi cả hai đã có mặt.
   const remoteCount = remoteParticipants.length;
   useEffect(() => {
