@@ -59,6 +59,12 @@ export interface ClassSessionResponse {
     scheduleChangeStatus?: 'pending' | 'approved' | null;
     /** True nếu buổi này đang có đề xuất đổi lịch (tính năng chủ động chọn giờ mới) chờ phản hồi. */
     hasPendingReschedule?: boolean;
+    /** True nếu đây là buổi phụ (Link 2), sinh ra khi buổi gốc (`originalClassSessionId`) bị báo ngắt giữa chừng. */
+    isContinuation?: boolean;
+    /** True nếu đây là buổi học lại (Link 3), sinh ra khi hoà giải dispute chọn "học lại". */
+    isDisputeRelearn?: boolean;
+    /** Buổi gốc mà buổi bù/buổi phụ/buổi học lại này trỏ về — undefined nếu đây là buổi gốc. */
+    originalClassSessionId?: number;
 }
 
 // ── ClassSessionDetailResponse (rich detail — tutor actions, check-in/out/report) ──
@@ -166,6 +172,24 @@ export interface ClassSessionDetailResponse {
     isMakeup?: boolean;
     originalClassSessionId?: number;
     noShowAction?: string;
+    /** True nếu đây là buổi phụ (Link 2), sinh ra khi buổi gốc (`originalClassSessionId`) bị báo ngắt giữa chừng. */
+    isContinuation?: boolean;
+    /** True nếu đây là buổi học lại (Link 3), sinh ra khi hoà giải dispute chọn "học lại". */
+    isDisputeRelearn?: boolean;
+    /** Mốc buổi GỐC bị báo ngắt — chỉ có giá trị trên chính buổi gốc, không phải trên buổi phụ. */
+    interruptedAt?: string;
+    /** Lý do báo ngắt do người báo tự nhập — chỉ có trên buổi gốc. */
+    interruptReason?: string;
+    /** Tên người đã báo ngắt — chỉ có trên buổi gốc. BE không trả user_id, chỉ trả tên đã resolve. */
+    interruptedByName?: string;
+    /** ID buổi phụ sinh ra từ chính buổi này khi bị ngắt — chỉ có trên buổi GỐC (status=interrupted). */
+    continuationSessionId?: number;
+    /** True khi cả 2 phía đã đồng ý bỏ hẳn buổi phụ — lúc này canSubmitReport đã tự bật true dù
+     * status vẫn là interrupted, không cần FE tự suy luận thêm. */
+    continuationSkipBothConfirmed?: boolean;
+    /** True khi CHÍNH buổi này là buổi phụ và cả 2 phía đã đồng ý bỏ nó — khoá "Vào học nhanh"/
+     * "Đề xuất đổi lịch" trên chính trang buổi phụ dù status vẫn còn Scheduled. */
+    skipConfirmedByBothSides?: boolean;
     student?: ClassSessionStudent;
     tutor?: ClassSessionTutor;
     subject?: ClassSessionSubject;
@@ -224,6 +248,15 @@ export interface CalendarClassSessionResponse {
     scheduleChangeStatus?: 'pending' | 'approved' | null;
     /** True nếu buổi này đang có đề xuất đổi lịch (tính năng chủ động chọn giờ mới) chờ phản hồi. */
     hasPendingReschedule?: boolean;
+    /** True nếu đây là buổi phụ (Link 2), sinh ra khi buổi gốc (`originalClassSessionId`) bị báo ngắt giữa chừng. */
+    isContinuation?: boolean;
+    /** True nếu đây là buổi học lại (Link 3), sinh ra khi hoà giải dispute chọn "học lại". */
+    isDisputeRelearn?: boolean;
+    /** Buổi gốc mà buổi bù/buổi phụ/buổi học lại này trỏ về — undefined nếu đây là buổi gốc. */
+    originalClassSessionId?: number;
+    /** True khi cả gia sư và học sinh đã đồng ý bỏ buổi phụ này — status vẫn "scheduled" cho tới
+     * khi báo cáo buổi gốc được nộp, nhưng buổi này coi như đã "chết" nên phải ẩn nút "Vào lớp". */
+    skipConfirmedByBothSides?: boolean;
 }
 
 export interface CalendarDayResponse {
@@ -791,6 +824,76 @@ export const getClassSessionById = async (id: number): Promise<ApiResponse<Class
 };
 
 /**
+ * Gia sư/học sinh/phụ huynh báo buổi đang `in_progress` bị ngắt giữa chừng vì sự cố đột xuất.
+ * Buổi gốc chuyển `interrupted`; hệ thống tạo 1 buổi phụ (`isContinuation=true`) để học nốt trong ngày.
+ */
+export const requestClassSessionInterruption = async (
+    id: number,
+    reason?: string,
+): Promise<ApiResponse<ClassSessionDetailResponse>> => {
+    const response = await api.post(
+        `/class-sessions/${id}/request-interruption`,
+        { reason },
+        { headers: getAuthHeaders() },
+    );
+    return response.data;
+};
+
+/**
+ * Đã đủ % thời lượng thật (dữ liệu Agora, không phải đồng hồ tường) để báo ngắt giữa chừng chưa —
+ * gọi định kỳ trong lúc đang học để FE hiện/khoá nút "Báo buổi học bị ngắt" đúng lúc, không phải
+ * đoán bằng elapsed time. `currentRatio`/`requiredRatio` là số 0.0–1.0.
+ */
+export interface ClassSessionInterruptionEligibilityResponse {
+    eligible: boolean;
+    currentRatio: number;
+    requiredRatio: number;
+    /** False cho buổi phụ/buổi học lại do hoà giải — 2 loại này KHÔNG BAO GIỜ báo ngắt được, nên ẩn
+     * hẳn nút thay vì hiện nút khoá vĩnh viễn. Khác `eligible`: `eligible` có thể đổi thành true khi
+     * đạt đủ %, còn cờ này thì cố định suốt buổi. */
+    canEverBeInterrupted: boolean;
+}
+
+export const getClassSessionInterruptionEligibility = async (
+    id: number,
+): Promise<ApiResponse<ClassSessionInterruptionEligibilityResponse>> => {
+    const response = await api.get(`/class-sessions/${id}/interruption-eligibility`, {
+        headers: getAuthHeaders(),
+    });
+    return response.data;
+};
+
+/**
+ * Trạng thái đồng ý bỏ buổi phụ (link 2) — cần CẢ HAI phía (gia sư + học sinh/phụ huynh) cùng xác
+ * nhận thì buổi phụ mới bị huỷ và buổi GỐC (đang `interrupted`) mới nhận được báo cáo. `id` là ID
+ * của chính buổi phụ, không phải buổi gốc.
+ */
+export interface ClassSessionSkipContinuationResponse {
+    tutorConfirmed: boolean;
+    studentConfirmed: boolean;
+    bothConfirmed: boolean;
+}
+
+export const getSkipContinuationStatus = async (
+    id: number,
+): Promise<ApiResponse<ClassSessionSkipContinuationResponse>> => {
+    const response = await api.get(`/class-sessions/${id}/skip-continuation`, {
+        headers: getAuthHeaders(),
+    });
+    return response.data;
+};
+
+/** Gia sư HOẶC học sinh/phụ huynh xác nhận đồng ý bỏ hẳn buổi phụ này (không học nốt phần còn lại). */
+export const confirmSkipContinuation = async (
+    id: number,
+): Promise<ApiResponse<ClassSessionSkipContinuationResponse>> => {
+    const response = await api.post(`/class-sessions/${id}/skip-continuation`, {}, {
+        headers: getAuthHeaders(),
+    });
+    return response.data;
+};
+
+/**
  * available (đã ghi xong, xem được) | processing (đang đẩy lên lưu trữ) | recording (đang ghi) |
  * failed (buổi đã đóng phòng nhưng Agora không trả về file nào — bản ghi hỏng, không có gì để xem) | none.
  */
@@ -813,6 +916,31 @@ export const getClassSessionRecording = async (
     id: number,
 ): Promise<ApiResponse<ClassSessionRecordingResponse>> => {
     const response = await api.get(`/class-sessions/${id}/recording`, { headers: getAuthHeaders() });
+    return response.data;
+};
+
+/** Một buổi trong chuỗi buổi liên kết (bù/phụ/học lại), kèm trạng thái ghi hình riêng buổi đó. */
+export interface ClassSessionRecordingChainItem {
+    classSessionId: number;
+    /** "Buổi 1", "Buổi 2"... đánh số theo thứ tự thời gian, không phân biệt lý do liên kết. */
+    label: string;
+    scheduledStart: string;
+    /** True nếu đây là buổi đang xem trên trang gọi API này. */
+    isCurrent: boolean;
+    status: RecordingStatus;
+    streamUrl?: string;
+    available: boolean;
+}
+
+/**
+ * `GET /class-sessions/{id}/recording-chain` — toàn bộ chuỗi buổi liên kết (bù/phụ/học lại) chứa
+ * buổi này. Mảng chỉ có 1 phần tử (chính buổi này) khi chưa từng liên kết — dùng chung 1 endpoint
+ * cho cả trường hợp bình thường và có chuỗi, không cần gọi `/recording` riêng nữa.
+ */
+export const getClassSessionRecordingChain = async (
+    id: number,
+): Promise<ApiResponse<ClassSessionRecordingChainItem[]>> => {
+    const response = await api.get(`/class-sessions/${id}/recording-chain`, { headers: getAuthHeaders() });
     return response.data;
 };
 
@@ -842,6 +970,12 @@ export interface StudentClassSessionSummaryResponse {
     subjectName?: string;
     tutorName?: string;
     bookingId?: number;
+    /** True nếu đây là buổi phụ (Link 2), sinh ra khi buổi gốc (`originalClassSessionId`) bị báo ngắt giữa chừng. */
+    isContinuation?: boolean;
+    /** True nếu đây là buổi học lại (Link 3), sinh ra khi hoà giải dispute chọn "học lại". */
+    isDisputeRelearn?: boolean;
+    /** Buổi gốc mà buổi phụ/buổi học lại này trỏ về — undefined nếu đây là buổi gốc. */
+    originalClassSessionId?: number;
 }
 
 export interface StudentClassSessionReport {
@@ -863,6 +997,8 @@ export interface StudentClassSessionDetailResponse extends StudentClassSessionSu
     pendingRescheduleProposal?: RescheduleProposalDto | null;
     /** Toàn bộ lịch sử đề xuất đổi lịch, mới nhất trước. */
     rescheduleProposals?: RescheduleProposalDto[];
+    /** True khi CHÍNH buổi này là buổi phụ và cả 2 phía đã đồng ý bỏ nó. */
+    skipConfirmedByBothSides?: boolean;
 }
 
 export const getStudentClassSessions = async (

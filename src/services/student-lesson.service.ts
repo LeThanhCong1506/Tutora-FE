@@ -57,6 +57,10 @@ export interface StudentLessonDetailDto extends Omit<LessonDetailDto, 'lessonId'
     scheduleChanges?: ScheduleChangeAuditDto[];
     pendingRescheduleProposal?: RescheduleProposalDto | null;
     rescheduleProposals?: RescheduleProposalDto[];
+    isContinuation?: boolean;
+    isDisputeRelearn?: boolean;
+    originalClassSessionId?: number;
+    skipConfirmedByBothSides?: boolean;
 }
 
 const mapDetail = (d: StudentClassSessionDetailResponse): StudentLessonDetailDto => ({
@@ -95,6 +99,10 @@ const mapDetail = (d: StudentClassSessionDetailResponse): StudentLessonDetailDto
     scheduleChanges: d.scheduleChanges,
     pendingRescheduleProposal: d.pendingRescheduleProposal,
     rescheduleProposals: d.rescheduleProposals,
+    isContinuation: d.isContinuation,
+    isDisputeRelearn: d.isDisputeRelearn,
+    originalClassSessionId: d.originalClassSessionId,
+    skipConfirmedByBothSides: d.skipConfirmedByBothSides,
 });
 
 // ============================================
@@ -120,6 +128,10 @@ export interface StudentCalendarLessonDto {
     scheduleChangeStatus?: 'pending' | 'approved' | null;
     /** True nếu buổi này đang có đề xuất đổi lịch (tính năng chủ động chọn giờ mới) chờ phản hồi. */
     hasPendingReschedule?: boolean;
+    isContinuation?: boolean;
+    isDisputeRelearn?: boolean;
+    originalClassSessionId?: number;
+    skipConfirmedByBothSides?: boolean;
 }
 
 export interface StudentCalendarDayDto {
@@ -179,6 +191,10 @@ export const getStudentCalendar = async (
                 hasRecording: c.hasRecording,
                 scheduleChangeStatus: c.scheduleChangeStatus,
                 hasPendingReschedule: c.hasPendingReschedule,
+                isContinuation: c.isContinuation,
+                isDisputeRelearn: c.isDisputeRelearn,
+                originalClassSessionId: c.originalClassSessionId,
+                skipConfirmedByBothSides: c.skipConfirmedByBothSides,
             })),
         })),
     };

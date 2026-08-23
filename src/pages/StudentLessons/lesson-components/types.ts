@@ -47,6 +47,16 @@ export interface LessonSummary {
   scheduleChangeStatus?: 'pending' | 'approved' | null;
   /** True nếu buổi này đang có đề xuất đổi lịch (tính năng chủ động chọn giờ mới) chờ phản hồi. */
   hasPendingReschedule?: boolean;
+  /** True nếu đây là buổi phụ (Link 2), sinh ra khi buổi gốc (`originalClassSessionId`) bị báo ngắt giữa chừng. */
+  isContinuation?: boolean;
+  /** True nếu đây là buổi học lại (Link 3), sinh ra khi hoà giải dispute chọn "học lại". */
+  isDisputeRelearn?: boolean;
+  /** Buổi gốc mà buổi phụ/buổi học lại này trỏ về — undefined nếu đây là buổi gốc. */
+  originalClassSessionId?: number;
+  /** True khi cả gia sư và học sinh đã đồng ý bỏ buổi phụ này — status vẫn "scheduled" cho tới
+   * khi báo cáo buổi gốc được nộp, nhưng buổi này coi như đã "chết" nên phải ẩn nút "Vào lớp"
+   * (xem utils/liveSession.ts canJoinLiveSession). */
+  skipConfirmedByBothSides?: boolean;
 }
 
 export interface LessonGroup {

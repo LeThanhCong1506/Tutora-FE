@@ -15,6 +15,10 @@ export interface JoinableLesson {
     scheduledEnd?: string | null;
     /** Buổi đã check-out → BE đóng phòng vĩnh viễn (kể cả khi status còn in_progress). */
     checkOutTime?: string | null;
+    /** True khi đây là buổi phụ mà cả 2 phía đã đồng ý bỏ — status vẫn "scheduled" cho tới khi gia
+     * sư nộp báo cáo xong (xem SubmitReportAsync/ConfirmSkipContinuationAsync ở BE), nhưng buổi này
+     * coi như đã "chết" nên không cho vào lớp nữa. */
+    skipConfirmedByBothSides?: boolean | null;
 }
 
 /** Must match BE `ClassSessionService.LiveSessionAutoEndGraceMinutes`. */
@@ -30,6 +34,7 @@ export function isLiveSessionOverdue(lesson: Pick<JoinableLesson, 'status' | 'sc
 export function canJoinLiveSession(lesson: JoinableLesson): boolean {
     if (!lesson.meetingLink) return false; // buổi offline (tại nhà) không có phòng online
     if (lesson.checkOutTime) return false; // đã kết thúc — BE trả lobbyClosed/"Buổi học đã kết thúc"
+    if (lesson.skipConfirmedByBothSides) return false; // 2 bên đã thống nhất bỏ buổi phụ này
 
     if (isLiveSessionOverdue(lesson)) return false;
     const status = lesson.status?.toLowerCase();

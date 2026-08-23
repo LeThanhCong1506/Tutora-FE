@@ -20,6 +20,12 @@ export interface SessionTimelineSource {
     disputeTutorRespondedAt?: string | null;
     disputeResolvedAt?: string | null;
     scheduleChangeAppliedAt?: Array<string | null | undefined>;
+    /** Mốc buổi GỐC bị báo ngắt giữa chừng — chỉ có giá trị trên chính buổi gốc. */
+    interruptedAt?: string | null;
+    /** Lý do báo ngắt do người báo tự nhập, hiện kèm trong chi tiết mốc trên. */
+    interruptReason?: string | null;
+    /** Tên người đã báo ngắt, hiện kèm trong nhãn mốc trên nếu có. */
+    interruptedByName?: string | null;
 }
 
 const isFuture = (iso: string) => new Date(iso).getTime() > Date.now();
@@ -58,6 +64,17 @@ export const buildSessionTimeline = (source: SessionTimelineSource): SessionTime
             : null,
         source.disputeResolvedAt
             ? { key: 'dispute-resolved', at: source.disputeResolvedAt, label: 'Khiếu nại đã được xử lý', tone: 'done' }
+            : null,
+        source.interruptedAt
+            ? {
+                  key: 'interrupted',
+                  at: source.interruptedAt,
+                  label: source.interruptedByName
+                      ? `Buổi học bị ngắt giữa chừng bởi ${source.interruptedByName} — đã tạo buổi phụ`
+                      : 'Buổi học bị ngắt giữa chừng — đã tạo buổi phụ',
+                  detail: source.interruptReason || undefined,
+                  tone: 'alert',
+              }
             : null,
         source.confirmDeadline
             ? {

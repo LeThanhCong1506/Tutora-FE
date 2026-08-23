@@ -23,6 +23,9 @@ const NOTIFICATION_TYPE = {
     LessonRecordingReady: 'lesson_recording_ready',
     LessonVideoSummaryReady: 'lesson_video_summary_ready',
     LessonReportAiFillReady: 'lesson_report_ai_fill_ready',
+    LessonContinuationCreated: 'lesson_continuation_created',
+    LessonInterruptionAutoClosed: 'lesson_interruption_auto_closed',
+    DisputeRelearnScheduled: 'dispute_relearn_scheduled',
     RescheduleProposed: 'reschedule_proposed',
     RescheduleAccepted: 'reschedule_accepted',
     RescheduleRejected: 'reschedule_rejected',
@@ -92,7 +95,10 @@ export function getNotificationTargetPath(notification: NotificationDTO): string
         || type === NOTIFICATION_TYPE.LessonNoShow
         || type === NOTIFICATION_TYPE.LessonRecordingReady
         || type === NOTIFICATION_TYPE.LessonVideoSummaryReady
-        || type === NOTIFICATION_TYPE.LessonReportAiFillReady) && refId) {
+        || type === NOTIFICATION_TYPE.LessonReportAiFillReady
+        || type === NOTIFICATION_TYPE.LessonContinuationCreated
+        || type === NOTIFICATION_TYPE.LessonInterruptionAutoClosed
+        || type === NOTIFICATION_TYPE.DisputeRelearnScheduled) && refId) {
         return lessonDetailPath(refId);
     }
     if ((type === NOTIFICATION_TYPE.RescheduleProposed

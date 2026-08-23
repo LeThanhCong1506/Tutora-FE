@@ -169,7 +169,7 @@ export const takeOverAgoraRoom = async (
 };
 
 /**
- * Heartbeat presence: báo "tôi đang trong phòng" của buổi học. Gọi định kỳ (~20s) khi đang
+ * Heartbeat presence: báo "tôi đang trong phòng" của buổi học. Gọi định kỳ (~10s) khi đang
  * join. BE tự auto check-in khi cả gia sư và học viên cùng có mặt, và trả về trạng thái để FE
  * hiển thị / tự rời khi phòng đã đóng (roomClosed).
  */

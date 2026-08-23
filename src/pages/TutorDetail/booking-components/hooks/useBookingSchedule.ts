@@ -43,6 +43,14 @@ interface Args {
 // demo weekday (1..7, CN=7) → backend (0=CN..6=T7).
 const toBackendDow = (demoDow: number) => (demoDow === 7 ? 0 : demoDow);
 
+// Buổi [dateKey, startTime] có còn ở tương lai không — so đủ ngày+giờ (không chỉ ngày),
+// để loại các khung giờ hôm nay đã trôi qua khỏi việc chọn tuần bắt đầu cho gói cố định.
+const isFutureSlot = (dateKey: string, startTime: string): boolean => {
+    const start = fromDateKey(dateKey);
+    start.setHours(0, timeToMinutes(startTime), 0, 0);
+    return start > new Date();
+};
+
 const endTimeOf = (startTime: string, durationHours: number) =>
     minutesToTime(timeToMinutes(startTime) + Math.round(durationHours * 60));
 
@@ -247,7 +255,7 @@ export function useBookingSchedule({
                 durationHours: slot.durationHours,
                 date: toDateKey(addDays(weekMonday, slot.dayOfWeek - 1)),
             }))
-            .filter((slot) => fromDateKey(slot.date) >= today);
+            .filter((slot) => isFutureSlot(slot.date, slot.startTime));
         if (!futureInWeek.length) return [];
         return buildScheduleFromPattern(pattern, fromDateKey(sortSlots(futureInWeek)[0].date));
     };
@@ -337,8 +345,8 @@ export function useBookingSchedule({
             durationHours: slot.durationHours,
             date: toDateKey(addDays(weekMonday, slot.dayOfWeek - 1)), // demo: T2=1 → offset 0
         }));
-        // Tuần 1 chỉ gồm buổi từ hôm nay trở đi; pattern vẫn lặp đủ các tuần sau.
-        const futureInWeek = datedInWeek.filter((slot) => fromDateKey(slot.date) >= today);
+        // Tuần 1 chỉ gồm buổi từ GIỜ HIỆN TẠI trở đi (không chỉ từ hôm nay); pattern vẫn lặp đủ các tuần sau.
+        const futureInWeek = datedInWeek.filter((slot) => isFutureSlot(slot.date, slot.startTime));
         if (!futureInWeek.length) return;
         setPickedWeekSlots(futureInWeek);
         setSelectedSlots(buildScheduleFromPattern(pattern, fromDateKey(sortSlots(futureInWeek)[0].date)));
