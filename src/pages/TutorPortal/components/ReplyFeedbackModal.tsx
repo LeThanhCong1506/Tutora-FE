@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Input, Rate, Spin } from 'antd';
 import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '../../../utils/apiError';
 import { replyFeedback, type ReplyFeedbackRequest } from '../../../services/feedback.service';
 import { useFormDraft } from '../../../hooks/useFormDraft';
 
@@ -62,7 +63,7 @@ const ReplyFeedbackModal: React.FC<ReplyFeedbackModalProps> = ({
             setReplyText('');
             onSuccess();
         } catch (error) {
-            toast.error('Không thể gửi phản hồi. Vui lòng thử lại.');
+            toast.error(getApiErrorMessage(error, 'Không thể gửi phản hồi. Vui lòng thử lại.'));
         } finally {
             setSubmitting(false);
         }

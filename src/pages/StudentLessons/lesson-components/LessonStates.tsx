@@ -10,13 +10,20 @@ export const LoadingState = ({ mode }: { mode: LessonViewMode }) => (
   </div>
 );
 
-export const ErrorState = ({ onRetry }: { onRetry: () => void }) => (
+export const ErrorState = ({
+  onRetry,
+  /** Lý do cụ thể từ API; bỏ trống thì dùng câu chung về đường truyền. */
+  description = 'Đường truyền có thể đang gián đoạn. Bạn hãy thử lại nhé.',
+}: {
+  onRetry: () => void;
+  description?: string;
+}) => (
   <div className={styles.stateBox} role="alert">
     <span className={`${styles.stateIcon} ${styles.errorIcon}`}>
       <CircleAlert size={24} />
     </span>
     <strong>Không thể tải lịch học</strong>
-    <p>Đường truyền có thể đang gián đoạn. Bạn hãy thử lại nhé.</p>
+    <p>{description}</p>
     <button type="button" onClick={onRetry}>
       <RefreshCw size={15} /> Thử lại
     </button>

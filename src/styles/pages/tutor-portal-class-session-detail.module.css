@@ -173,6 +173,20 @@
   background: currentColor;
 }
 
+/* Ghi chú buổi phụ (Link 2) / buổi học lại (Link 3) trỏ về buổi gốc. */
+.linkChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 8px;
+  border: 1px dashed #b9d6ea;
+  background: #EAF3FA;
+  color: #2F6F9F;
+  font-size: 11px;
+  font-weight: 600;
+}
+
 .heroCopy h1 {
   margin: 8px 0 10px;
   color: var(--ink);

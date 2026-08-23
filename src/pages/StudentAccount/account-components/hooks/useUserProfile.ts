@@ -9,6 +9,7 @@ import {
     type UserProfileFieldErrors,
 } from "../../../../utils/userProfileForm";
 import type { EditForm, UserProfileData } from "../types";
+import { getApiErrorMessage } from '../../../../utils/apiError';
 
 /**
  * Load the current user's profile, manage the edit form state, and
@@ -50,8 +51,8 @@ export function useUserProfile() {
                     gender: data.gender || "",
                     email: data.email || "",
                 });
-            } catch {
-                toast.error("Không thể tải thông tin tài khoản");
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, "Không thể tải thông tin tài khoản"));
             } finally {
                 setLoading(false);
             }

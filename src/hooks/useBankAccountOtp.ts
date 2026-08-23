@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { sendBankAccountOtp, verifyBankAccountOtp } from '../services/bankAccount.service';
+import { getApiErrorMessage } from '../utils/apiError';
 
 export type BankAccountOtpStatus = 'idle' | 'sending' | 'awaiting_otp' | 'verifying' | 'verified' | 'blocked';
 
@@ -46,7 +47,7 @@ export function useBankAccountOtp() {
             );
             return false;
         }
-        setErrorMessage(apiError.response?.data?.message || 'Không thể gửi mã OTP xác thực. Vui lòng thử lại.');
+        setErrorMessage(getApiErrorMessage(err, 'Không thể gửi mã OTP xác thực. Vui lòng thử lại.'));
         return false;
     }, []);
 
@@ -80,8 +81,7 @@ export function useBankAccountOtp() {
             setStatus('verified');
             return { ok: true };
         } catch (err: unknown) {
-            const apiError = err as OtpApiError;
-            return { ok: false, message: apiError.response?.data?.message || 'Xác thực OTP thất bại.' };
+            return { ok: false, message: getApiErrorMessage(err, 'Xác thực OTP thất bại.') };
         } finally {
             setVerifying(false);
         }

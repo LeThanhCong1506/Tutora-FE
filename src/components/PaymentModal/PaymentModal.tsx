@@ -36,6 +36,7 @@ import { useLargeTransactionOtp } from '../../hooks/useLargeTransactionOtp';
 import { setBookingOtpResume } from '../../utils/bookingOtpResume';
 import { setPendingRedirect } from '../../services/auth.service';
 import PaymentOtpStep from '../PaymentOtpStep/PaymentOtpStep';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 interface PaymentModalProps {
     bookingId: number;
@@ -127,7 +128,7 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess, tutorId }:
         } else if (errorCode === 'BOOKING_EXPIRED') {
             setError('BOOKING_EXPIRED');
         } else {
-            setError(apiError.response?.data?.message || fallback);
+            setError(getApiErrorMessage(err, fallback));
         }
     }, [onClose, onPaymentSuccess]);
 
@@ -260,7 +261,7 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess, tutorId }:
                 // quay lại luồng OTP thay vì chỉ báo lỗi chung chung.
                 otpGate.handlePaymentOtpRequired();
             } else {
-                toast.error(apiError.response?.data?.message || 'Thanh toán thất bại.');
+                toast.error(getApiErrorMessage(apiError, 'Thanh toán thất bại.'));
             }
         } finally {
             setPaying(false);
@@ -298,7 +299,7 @@ const PaymentModal = ({ bookingId, isOpen, onClose, onPaymentSuccess, tutorId }:
             } else if (errorCode === 'OTP_REQUIRED') {
                 otpGate.handlePaymentOtpRequired();
             } else {
-                toast.error(apiError.response?.data?.message || 'Không thể tạo liên kết thanh toán. Vui lòng thử lại.');
+                toast.error(getApiErrorMessage(apiError, 'Không thể tạo liên kết thanh toán. Vui lòng thử lại.'));
             }
         } finally {
             setQrLoading(false);

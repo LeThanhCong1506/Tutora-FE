@@ -1,4 +1,5 @@
 import { isZaloMiniApp } from "../../services/zalo-env";
+import { PageContainer } from "../../components/shared";
 import styles from "./styles.module.css";
 import {
     AcademicInfoNote,
@@ -14,7 +15,6 @@ import {
     useZaloNotify,
 } from "./account-components";
 import { getInitials } from "./account-components/utils";
-import { pageHeader, pageSubtitle, pageTitle } from "./account-components/styles";
 
 const inMiniApp = isZaloMiniApp();
 
@@ -55,9 +55,14 @@ const StudentAccount = () => {
 
     if (loading) {
         return (
-            <div className={styles.page}>
+            <PageContainer
+                className={styles.page}
+                title="Tài khoản"
+                titleInfo="Quản lý thông tin cá nhân và bảo mật đăng nhập."
+                maxWidth="standard"
+            >
                 <div style={{ textAlign: "center", color: "#737373", padding: 48 }}>Đang tải...</div>
-            </div>
+            </PageContainer>
         );
     }
 
@@ -65,7 +70,12 @@ const StudentAccount = () => {
     const initials = displayName ? getInitials(displayName) : "ST";
 
     return (
-        <div className={styles.page}>
+        <PageContainer
+            className={styles.page}
+            title="Tài khoản"
+            titleInfo="Quản lý thông tin cá nhân và bảo mật đăng nhập."
+            maxWidth="standard"
+        >
             {previewUrl && (
                 <AvatarCropModal
                     previewUrl={previewUrl}
@@ -79,11 +89,6 @@ const StudentAccount = () => {
                     onCancel={handleCancelPreview}
                 />
             )}
-
-            <div style={pageHeader}>
-                <h1 style={pageTitle}>Tài khoản của tôi</h1>
-                <p style={pageSubtitle}>Quản lý thông tin cá nhân và cài đặt tài khoản</p>
-            </div>
 
             {viewingAvatar && profile?.avatarurl && (
                 <AvatarLightbox
@@ -137,7 +142,7 @@ const StudentAccount = () => {
             />
 
             <AcademicInfoNote />
-        </div>
+        </PageContainer>
     );
 };
 

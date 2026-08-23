@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '../../utils/apiError';
 import { PageContainer, SectionCard } from '../../components/shared';
 import {
   getMySupportThread,
@@ -75,7 +76,7 @@ const SupportChatPage: React.FC<SupportChatPageProps> = ({ embedded = false, onB
       setThread(data);
     } catch (err) {
       console.error('[SupportChat] load:', err);
-      toast.error('Không tải được hội thoại hỗ trợ.');
+      toast.error(getApiErrorMessage(err, 'Không tải được hội thoại hỗ trợ.'));
     } finally {
       setLoading(false);
     }
@@ -120,7 +121,7 @@ const SupportChatPage: React.FC<SupportChatPageProps> = ({ embedded = false, onB
       if (textareaRef.current) textareaRef.current.style.height = 'auto';
     } catch (err) {
       console.error('[SupportChat] send:', err);
-      toast.error('Gửi tin nhắn thất bại. Vui lòng thử lại.');
+      toast.error(getApiErrorMessage(err, 'Gửi tin nhắn thất bại. Vui lòng thử lại.'));
     } finally {
       setSending(false);
     }
@@ -146,7 +147,7 @@ const SupportChatPage: React.FC<SupportChatPageProps> = ({ embedded = false, onB
       appendMessage(sent);
     } catch (err) {
       console.error('[SupportChat] sendImage:', err);
-      toast.error('Gửi hình ảnh thất bại. Vui lòng thử lại.');
+      toast.error(getApiErrorMessage(err, 'Gửi hình ảnh thất bại. Vui lòng thử lại.'));
     } finally {
       setImageSending(false);
     }
@@ -246,7 +247,12 @@ const SupportChatPage: React.FC<SupportChatPageProps> = ({ embedded = false, onB
   }
 
   return (
-    <PageContainer title="Hỗ trợ Tutora" subtitle="Nhắn tin trực tiếp cho đội ngũ hỗ trợ Tutora.">
+    <PageContainer
+      eyebrow="Hỗ trợ"
+      eyebrowInfo="Nhắn tin trực tiếp cho đội ngũ hỗ trợ Tutora."
+      title="Hỗ trợ Tutora"
+      maxWidth="wide"
+    >
       {conversation}
     </PageContainer>
   );

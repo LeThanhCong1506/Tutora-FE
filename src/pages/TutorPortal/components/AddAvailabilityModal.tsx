@@ -1,6 +1,7 @@
 import { type FunctionComponent, useState, useEffect, useMemo } from 'react';
 import { X, Clock, Info } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '../../../utils/apiError';
 import styles from './AddAvailabilityModal.module.css';
 import { createAvailability, DAY_OF_WEEK_MAP } from '../../../services/availability.service';
 
@@ -242,8 +243,7 @@ const AddAvailabilityModal: FunctionComponent<AddAvailabilityModalProps> = ({
                 toast.error('Vui lòng kiểm tra lại thông tin nhập vào');
             } else {
                 // Generic error message
-                const rawMsg = error.response?.data?.message || error.response?.data?.title || '';
-                toast.error(translateScheduleMsg(rawMsg));
+                toast.error(translateScheduleMsg(getApiErrorMessage(error, '')));
             }
         } finally {
             setIsLoading(false);

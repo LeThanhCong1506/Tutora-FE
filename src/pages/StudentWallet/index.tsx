@@ -10,9 +10,11 @@ import {
   type WithdrawalItem,
 } from '../../services/wallet.service';
 import { formatCurrency, formatDateTime } from '../../utils/formatters';
+import { PageContainer } from '../../components/shared';
 import TransactionsCard from '../ParentWallet/TransactionsCard';
 import PendingWithdrawalCallout from '../ParentWallet/PendingWithdrawalCallout';
 import parentStyles from '../ParentWallet/styles.module.css';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 const TransactionDetailModal = lazy(() => import('../ParentWallet/TransactionDetailModal'));
 const WithdrawModal = lazy(() => import('../ParentWallet/WithdrawModal'));
@@ -53,8 +55,8 @@ const StudentWallet = () => {
     try {
       const res = await getWalletBalance();
       setBalance(res.content);
-    } catch {
-      toast.error('Không thể tải số dư ví');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Không thể tải số dư ví'));
     } finally {
       setBalanceLoading(false);
     }
@@ -66,8 +68,8 @@ const StudentWallet = () => {
       const res = await getTransactions(1, PREVIEW_SIZE);
       setTransactions(res.content.transactions);
       setTransactionsTotal(res.content.totalCount);
-    } catch {
-      toast.error('Không thể tải lịch sử giao dịch');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Không thể tải lịch sử giao dịch'));
     } finally {
       setTxLoading(false);
     }
@@ -78,8 +80,8 @@ const StudentWallet = () => {
     try {
       const res = await getWithdrawals(1, PREVIEW_SIZE);
       setWithdrawals(res.content.items);
-    } catch {
-      toast.error('Không thể tải danh sách yêu cầu rút tiền');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Không thể tải danh sách yêu cầu rút tiền'));
     } finally {
       setWithdrawalsLoading(false);
     }
@@ -107,15 +109,11 @@ const StudentWallet = () => {
     );
 
   return (
-    <div className={parentStyles.page}>
-      <header className={parentStyles.walletHeader}>
-        <div className={parentStyles.walletHeaderText}>
-          <h1 className={parentStyles.pageTitle}>Ví của tôi</h1>
-          <p className={parentStyles.pageSubtitle}>
-            Số dư được hoàn khi buổi học bị hủy. Ví học sinh không nạp tiền.
-          </p>
-        </div>
-
+    <PageContainer
+      title="Tài chính"
+      titleInfo="Theo dõi số dư hoàn tiền, yêu cầu rút tiền và lịch sử giao dịch của bạn."
+      maxWidth="wide"
+      headerAction={
         <div className={parentStyles.headerActions}>
           <button
             className={parentStyles.withdrawBtn}
@@ -141,12 +139,10 @@ const StudentWallet = () => {
             Lịch sử rút tiền
           </button>
         </div>
-      </header>
-
+      }
+    >
       {!balanceLoading && !canWithdraw && (
-        <p className={parentStyles.headerHint}>
-          Bạn cần có số dư khả dụng lớn hơn 0 ₫ mới tạo được yêu cầu rút tiền.
-        </p>
+        <p className={parentStyles.headerHint}>Bạn cần có số dư khả dụng lớn hơn 0 ₫ mới tạo được yêu cầu rút tiền.</p>
       )}
 
       <div className={parentStyles.balanceGrid} data-tour="wallet-balance-cards">
@@ -204,19 +200,13 @@ const StudentWallet = () => {
 
       {selectedTxId != null && (
         <Suspense fallback={null}>
-          <TransactionDetailModal
-            transactionId={selectedTxId}
-            onClose={() => setSelectedTxId(null)}
-          />
+          <TransactionDetailModal transactionId={selectedTxId} onClose={() => setSelectedTxId(null)} />
         </Suspense>
       )}
 
       {selectedWithdrawalId != null && (
         <Suspense fallback={null}>
-          <WithdrawalDetailModal
-            withdrawalId={selectedWithdrawalId}
-            onClose={() => setSelectedWithdrawalId(null)}
-          />
+          <WithdrawalDetailModal withdrawalId={selectedWithdrawalId} onClose={() => setSelectedWithdrawalId(null)} />
         </Suspense>
       )}
 
@@ -234,7 +224,7 @@ const StudentWallet = () => {
           />
         </Suspense>
       )}
-    </div>
+    </PageContainer>
   );
 };
 

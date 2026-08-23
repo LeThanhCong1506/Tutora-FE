@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState, type ElementType } from 'react';
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
-import type { AxiosError } from 'axios';
 import { Input, Modal, Spin, message as antMessage } from 'antd';
 import {
   AlertCircle,
@@ -40,6 +39,7 @@ import { canLeaveBookingFeedback, getBookingFeedback, type FeedbackDto } from '.
 import { getPaymentBadge } from '../../../utils/paymentBadge';
 import CreateFeedbackModal from '../../ParentLessons/components/CreateFeedbackModal';
 import styles from './styles.module.css';
+import { getApiErrorMessage } from '../../../utils/apiError';
 
 type Lesson = NonNullable<BookingResponseDTO['lessons']>[number];
 
@@ -54,10 +54,6 @@ interface ProgressStep {
   label: string;
   description: string;
   date?: string | null;
-}
-
-interface ApiErrorBody {
-  message?: string;
 }
 
 const STATUS_CONFIG: Record<string, StatusConfig> = {
@@ -85,6 +81,25 @@ const LESSON_STATUS_CONFIG: Record<string, { label: string; className: string }>
   cancelled_noshow: { label: 'Hủy do vắng mặt', className: 'lessonCancelled' },
   disputed: { label: 'Đang khiếu nại', className: 'lessonPending' },
   no_show: { label: 'Vắng mặt', className: 'lessonCancelled' },
+  interrupted: { label: 'Bị ngắt giữa buổi', className: 'lessonPending' },
+};
+
+/**
+ * Ghi chú liên kết chuỗi (buổi gốc bị ngắt/dispute ↔ buổi phụ/buổi học lại của nó) cho từng dòng
+ * trong "Danh sách buổi học" — nếu không có dòng này, buổi gốc bị Cancelled (khi Admin hoà giải
+ * chọn "học lại") trông như huỷ thật, và buổi phụ/học lại trông như 1 buổi độc lập không liên quan.
+ */
+const getLessonLinkNote = (lesson: Lesson, allLessons: Lesson[]): string | null => {
+  if (lesson.isContinuation || lesson.isDisputeRelearn) {
+    const kind = lesson.isContinuation ? 'Buổi phụ' : 'Buổi học lại';
+    return lesson.originalClassSessionId ? `${kind} của buổi #${lesson.originalClassSessionId}` : kind;
+  }
+  const successor = allLessons.find((other) => other.originalClassSessionId === lesson.lessonId);
+  if (successor) {
+    const kind = successor.isContinuation ? 'buổi phụ' : 'buổi học lại';
+    return `Đã thay bằng ${kind} #${successor.lessonId}`;
+  }
+  return null;
 };
 
 const DAY_NAMES = ['', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
@@ -298,8 +313,8 @@ const BookingDetailPage = () => {
         const response = await getBookingById(bookingId);
         setBooking(response.content);
         await refreshFeedbackState(response.content.status);
-      } catch {
-        antMessage.error('Không thể tải chi tiết đặt lịch.');
+      } catch (error) {
+        antMessage.error(getApiErrorMessage(error, 'Không thể tải chi tiết đặt lịch.'));
       } finally {
         setLoading(false);
       }
@@ -593,12 +608,14 @@ const BookingDetailPage = () => {
                         label: 'Chưa cập nhật',
                         className: 'lessonScheduled',
                       };
+                      const linkNote = getLessonLinkNote(lesson, lessons);
                       return (
                         <article className={styles.lessonItem} key={lesson.lessonId}>
                           <span className={styles.lessonNumber}>{index + 1}</span>
                           <div className={styles.lessonDate}>
                             <strong>{formatDateOnly(lesson.scheduledStart)}</strong>
                             <span>{formatTimeRange(lesson.scheduledStart, lesson.scheduledEnd)}</span>
+                            {linkNote && <span className={styles.lessonLinkNote}>{linkNote}</span>}
                           </div>
                           <span className={`${styles.lessonBadge} ${styles[lessonStatus.className]}`}>
                             {lessonStatus.label}
@@ -978,10 +995,11 @@ const BookingDetailPage = () => {
             setBooking(response.content);
             await refreshFeedbackState(response.content.status);
           } catch (error) {
-            const apiError = error as AxiosError<ApiErrorBody>;
             antMessage.error(
-              apiError.response?.data?.message ||
-                (canFinalizeEarly ? 'Không thể kết thúc khóa học' : 'Không thể hủy đặt lịch'),
+              getApiErrorMessage(
+                error,
+                canFinalizeEarly ? 'Không thể kết thúc khóa học' : 'Không thể hủy đặt lịch',
+              ),
             );
           } finally {
             setCancelLoading(false);

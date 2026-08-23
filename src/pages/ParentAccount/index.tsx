@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import Cropper from 'react-easy-crop';
 import type { Area, Point } from 'react-easy-crop';
+import { PageContainer } from '../../components/shared';
 import { getUserIdFromToken, changePassword } from '../../services/auth.service';
 import { getUserProfile, updateUserProfile, updateUserAvatar, updateZaloNotifyEnabled } from '../../services/user.service';
 import { isZaloMiniApp } from '../../services/zalo-env';
@@ -13,6 +14,7 @@ import {
     type UserProfileFieldErrors,
 } from '../../utils/userProfileForm';
 import styles from './styles.module.css';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 const inMiniApp = isZaloMiniApp();
 
@@ -136,8 +138,8 @@ const ParentAccount = () => {
                     gender: data.gender || '',
                     email: data.email || '',
                 });
-            } catch {
-                toast.error('Không thể tải thông tin tài khoản');
+            } catch (error) {
+                toast.error(getApiErrorMessage(error, 'Không thể tải thông tin tài khoản'));
             } finally {
                 setLoading(false);
             }
@@ -186,7 +188,7 @@ const ParentAccount = () => {
                 setErrors(mapped);
                 toast.error('Vui lòng kiểm tra lại các thông tin được đánh dấu.');
             } else {
-                toast.error(apiError?.message || 'Cập nhật thất bại. Vui lòng thử lại.');
+                toast.error(getApiErrorMessage(err, 'Cập nhật thất bại. Vui lòng thử lại.'));
             }
         } finally {
             setSaving(false);
@@ -239,8 +241,8 @@ const ParentAccount = () => {
                 window.dispatchEvent(new CustomEvent('avatar-updated', { detail: newUrl }));
             }
             toast.success('Cập nhật ảnh đại diện thành công!');
-        } catch {
-            toast.error('Không thể cập nhật ảnh đại diện. Vui lòng thử lại.');
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Không thể cập nhật ảnh đại diện. Vui lòng thử lại.'));
         } finally {
             setUploadingAvatar(false);
             handleCancelPreview();
@@ -278,8 +280,7 @@ const ParentAccount = () => {
             setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
             setShowPasswordSection(false);
         } catch (error) {
-            const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
-            toast.error(message || 'Đổi mật khẩu thất bại. Vui lòng thử lại.');
+            toast.error(getApiErrorMessage(error, 'Đổi mật khẩu thất bại. Vui lòng thử lại.'));
         } finally {
             setChangingPassword(false);
         }
@@ -292,9 +293,9 @@ const ParentAccount = () => {
         try {
             await updateZaloNotifyEnabled(profile.userid, newValue);
             toast.success(newValue ? 'Đã bật thông báo Zalo' : 'Đã tắt thông báo Zalo');
-        } catch {
+        } catch (error) {
             setZaloNotifyEnabled(!newValue);
-            toast.error('Không thể cập nhật cài đặt');
+            toast.error(getApiErrorMessage(error, 'Không thể cập nhật cài đặt'));
         }
     };
 
@@ -337,9 +338,14 @@ const ParentAccount = () => {
 
     if (loading) {
         return (
-            <div className={styles.page}>
+            <PageContainer
+                className={styles.page}
+                title="Tài khoản"
+                titleInfo="Quản lý thông tin cá nhân và cài đặt tài khoản."
+                maxWidth="standard"
+            >
                 <div style={{ textAlign: 'center', color: '#737373', padding: 48 }}>Đang tải...</div>
-            </div>
+            </PageContainer>
         );
     }
 
@@ -347,7 +353,12 @@ const ParentAccount = () => {
     const initials = displayName ? getInitials(displayName) : 'PH';
 
     return (
-        <div className={styles.page}>
+        <PageContainer
+            className={styles.page}
+            title="Tài khoản"
+            titleInfo="Quản lý thông tin cá nhân và cài đặt tài khoản."
+            maxWidth="standard"
+        >
             {/* Avatar Crop Modal */}
             {previewUrl && (
                 <div className={styles.modalOverlay} onClick={handleCancelPreview}>
@@ -415,12 +426,6 @@ const ParentAccount = () => {
                     </div>
                 </div>
             )}
-            {/* Page Header */}
-            <div style={pageHeader}>
-                <h1 style={pageTitle}>Tài khoản của tôi</h1>
-                <p style={pageSubtitle}>Quản lý thông tin cá nhân và cài đặt tài khoản</p>
-            </div>
-
             {/* Avatar Lightbox */}
             {viewingAvatar && profile?.avatarurl && (
                 <div className={styles.lightboxOverlay} onClick={() => setViewingAvatar(false)}>
@@ -750,30 +755,11 @@ const ParentAccount = () => {
                     </div>
                 )}
             </div>
-        </div>
+        </PageContainer>
     );
 };
 
 // ── Styles ──
-const pageHeader: React.CSSProperties = {
-    marginBottom: 28,
-};
-
-const pageTitle: React.CSSProperties = {
-    fontSize: 24,
-    fontWeight: 700,
-    color: '#1a2238',
-    margin: '0 0 4px',
-    fontFamily: "'Bricolage Grotesque', 'IBM Plex Sans', sans-serif",
-};
-
-const pageSubtitle: React.CSSProperties = {
-    fontSize: 14,
-    color: '#737373',
-    margin: 0,
-};
-
-
 const avatarImg: React.CSSProperties = {
     width: '100%',
     height: '100%',

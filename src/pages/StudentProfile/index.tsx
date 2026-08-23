@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import {
-  GraduationCap,
   Save,
   Info,
   ShieldCheck,
@@ -27,7 +26,9 @@ import { useStudentProfile } from '../../contexts/StudentProfileContext';
 import { takeBookingOtpResume } from '../../utils/bookingOtpResume';
 import { takePendingRedirect } from '../../services/auth.service';
 import { fetchProtectedImage, releaseProtectedImage } from '../../utils/protectedImage';
+import { PageContainer } from '../../components/shared';
 import styles from './styles.module.css';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 /** So khớp không phân biệt "0xxxxxxxxx" với "+84xxxxxxxxx" — cùng một số thật. */
 const normalizePhone = (raw: string): string => {
@@ -152,8 +153,8 @@ const StudentProfile = () => {
         releaseProtectedImage(prev?.url);
         return { label: side === 'front' ? 'CCCD mặt trước' : 'CCCD mặt sau', url: objectUrl };
       });
-    } catch {
-      toast.error('Không mở được ảnh CCCD. Vui lòng thử lại.');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Không mở được ảnh CCCD. Vui lòng thử lại.'));
     } finally {
       setOpeningCccdSide(null);
     }
@@ -233,9 +234,7 @@ const StudentProfile = () => {
       await refresh();
       if (wasIncomplete) navigate('/student-portal/dashboard');
     } catch (err) {
-      const message =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        'Cập nhật hồ sơ thất bại. Vui lòng thử lại.';
+      const message = getApiErrorMessage(err, 'Cập nhật hồ sơ thất bại. Vui lòng thử lại.');
       toast.error(message);
     } finally {
       setSaving(false);
@@ -289,9 +288,7 @@ const StudentProfile = () => {
       await Promise.all([refresh(), refreshEligibility(), refreshMyCccd()]);
     } catch (err) {
       // 422 = nghiệp vụ (ảnh mờ/giả, chưa đủ 16, CCCD trùng); 400 = file; message sẵn tiếng Việt.
-      const message =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        'Xác minh độ tuổi thất bại. Vui lòng thử lại.';
+      const message = getApiErrorMessage(err, 'Xác minh độ tuổi thất bại. Vui lòng thử lại.');
       toast.error(message);
     } finally {
       setVerifying(false);
@@ -346,9 +343,7 @@ const StudentProfile = () => {
         }
       }
     } catch (err) {
-      const message =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        'Cập nhật số điện thoại phụ huynh thất bại.';
+      const message = getApiErrorMessage(err, 'Cập nhật số điện thoại phụ huynh thất bại.');
       toast.error(message);
     } finally {
       setSavingPhone(false);
@@ -371,24 +366,22 @@ const StudentProfile = () => {
 
   if (loading) {
     return (
-      <div className={styles.page}>
+      <PageContainer
+        title="Hồ sơ học sinh"
+        titleInfo="Hoàn thiện hồ sơ và xác minh độ tuổi để có thể đặt lịch học với gia sư."
+        maxWidth="standard"
+      >
         <div className={styles.loading}>Đang tải hồ sơ...</div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <span className={styles.headerIcon}>
-          <GraduationCap size={22} />
-        </span>
-        <div>
-          <h1>Hồ sơ học sinh</h1>
-          <p>Hoàn thiện hồ sơ và xác minh độ tuổi để có thể đặt lịch học với gia sư.</p>
-        </div>
-      </header>
-
+    <PageContainer
+      title="Hồ sơ học sinh"
+      titleInfo="Hoàn thiện hồ sơ và xác minh độ tuổi để có thể đặt lịch học với gia sư."
+      maxWidth="standard"
+    >
       {mustComplete && (
         <div className={styles.mandatoryBanner}>
           <Info size={18} />
@@ -750,7 +743,7 @@ const StudentProfile = () => {
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 };
 

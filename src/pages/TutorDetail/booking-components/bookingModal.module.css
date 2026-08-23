@@ -976,8 +976,53 @@
 
 .sectionHeading {
   align-items: flex-start;
+  flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 18px;
+}
+
+/*
+ * Cụm thông tin phụ nằm cùng hàng tiêu đề (hiện chỉ Bước 03 dùng).
+ *
+ * Đẩy sang phải bằng `margin-left: auto` chứ KHÔNG đặt `justify-content: space-between`
+ * lên .sectionHeading: class đó dùng chung cho cả 4 bước, ba bước còn lại chỉ có 2 phần
+ * tử con (icon + khối chữ) nên space-between sẽ ném khối chữ văng sang mép phải.
+ *
+ * .sectionHeading có `align-items: flex-start` để icon 40px thẳng hàng với dòng eyebrow,
+ * nên cụm này tự căn giữa lại theo chiều dọc bằng align-self.
+ */
+.headingMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  align-self: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.headingMetaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid rgba(26, 34, 56, 0.1);
+  border-radius: 10px;
+  background: rgba(242, 240, 228, 0.55);
+  color: var(--color-navy);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.headingMetaItem svg {
+  flex-shrink: 0;
+  color: var(--color-burgundy);
+}
+
+.headingMetaItem strong {
+  color: var(--color-burgundy);
+  font-weight: 700;
 }
 
 .headingIcon,
@@ -1603,67 +1648,8 @@
   color: var(--color-burgundy);
 }
 
-/* Thiết lập gói (bước 3): trạng thái chọn tuần bắt đầu + cửa sổ booking. */
-.packageSetup {
-  display: flex;
-  min-height: 64px;
-  flex-wrap: nowrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px 18px;
-  margin-bottom: 16px;
-  padding: 14px 16px;
-  border: 1px solid rgba(26, 34, 56, 0.1);
-  border-radius: 12px;
-  background: rgba(242, 240, 228, 0.4);
-}
-
-.startDateField {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.startDateField span {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  color: var(--color-navy-60);
-}
-
-.startDateField input {
-  padding: 9px 12px;
-  border: 1px solid rgba(26, 34, 56, 0.18);
-  border-radius: 9px;
-  background: var(--color-white);
-  color: var(--color-navy);
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.packageWindowInfo {
-  display: inline-flex;
-  min-width: 0;
-  align-items: center;
-  gap: 7px;
-  color: var(--color-navy);
-  font-size: 12.5px;
-}
-
-.packageWindowInfo span {
-  overflow: hidden;
-  min-width: 0;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.packageWindowInfo strong {
-  color: var(--color-burgundy);
-  font-weight: 700;
-}
-
+/* Bo góc 10px khớp .headingMetaItem — nút này đứng cùng cụm chip trên hàng tiêu đề
+   Bước 03, để dạng viên thuốc 999px sẽ lạc khỏi hai chip bên cạnh. */
 .changeWeekBtn {
   display: inline-flex;
   min-height: 34px;
@@ -1672,7 +1658,7 @@
   gap: 6px;
   padding: 7px 14px;
   border: 1px solid rgba(26, 34, 56, 0.18);
-  border-radius: 999px;
+  border-radius: 10px;
   background: var(--color-white);
   color: var(--color-navy);
   font-family: inherit;
@@ -1764,13 +1750,6 @@
 
 .monthSimHead svg {
   color: var(--color-burgundy);
-}
-
-.monthSimEmpty {
-  margin: 0;
-  color: var(--color-navy-60);
-  font-size: 12px;
-  line-height: 1.6;
 }
 
 .monthSimMonths {
@@ -2157,18 +2136,14 @@
   min-width: 0;
 }
 
+/* margin dưới 2px trước đây để tách với dòng "{gia sư} · {cách đặt}" nằm ngay dưới; dòng đó
+   đã bỏ nên chỉ còn giữ khoảng hở với eyebrow phía trên, tránh lệch tâm khi .reviewHero
+   căn giữa theo chiều dọc. */
 .reviewHero h3 {
-  margin: 3px 0 2px;
+  margin: 3px 0 0;
   color: var(--color-navy);
   font-size: 16px;
   font-weight: 600;
-}
-
-.reviewHero p {
-  margin: 0;
-  color: var(--color-navy-60);
-  font-size: 11px;
-  line-height: 1.45;
 }
 
 .confirmQuickFacts {
@@ -2519,6 +2494,33 @@
   color: var(--color-navy);
   font-size: 11px;
   text-align: right;
+}
+
+/*
+ * Dòng "Trả ngay · buổi đầu tiên": tách khỏi phần liệt kê học phí phía trên bằng viền đậm
+ * hơn (0.16 so với 0.07 của `.priceLine + .priceLine`) vì đây là con số duy nhất bị trừ
+ * ngay khi bấm Gửi yêu cầu — phần còn lại thu ở phase sau.
+ *
+ * Selector phải viết dạng `.priceLine + .priceLineNow` chứ không phải `.priceLineNow` trần:
+ * dòng này cũng khớp `.priceLine + .priceLine` ở trên — selector đó có specificity (0,2,0),
+ * cao hơn một class đơn (0,1,0) nên sẽ thắng bất kể thứ tự, và viền vẫn ra 0.07 như cũ.
+ * Cùng dạng (0,2,0) + đứng sau thì mới ghi đè được.
+ */
+.priceLine + .priceLineNow {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(62, 47, 40, 0.16);
+}
+
+.priceLineNow span {
+  color: var(--color-navy);
+  font-weight: 800;
+}
+
+.priceLineNow strong {
+  color: var(--color-burgundy);
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .priceSummaryNote {

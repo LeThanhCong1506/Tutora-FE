@@ -4,10 +4,10 @@ import SharedFinancePageShell, { type FinanceNavItem } from '../../../components
 
 interface FinancePageShellProps {
   title: string;
+  titleInfo?: string;
   subtitle?: string;
   children: ReactNode;
   actions?: ReactNode;
-  eyebrow?: string;
   headerClassName?: string;
   contentClassName?: string;
   backLink?: {

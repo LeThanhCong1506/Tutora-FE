@@ -3,7 +3,7 @@
    `../StudentLessons/styles.module.css`. File này chỉ giữ những mảng chỉ phụ huynh mới có:
    tiêu đề trang, bộ lọc theo con, và dải nhắc việc cần phụ huynh xử lý. */
 
-.header,
+.pageHeader,
 .alerts {
   width: 100%;
   max-width: 1320px;
@@ -19,45 +19,18 @@
     sans-serif;
 }
 
-.header {
-  display: flex;
+.pageHeader {
+  min-height: 0;
   padding-top: 18px;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
+  gap: 0;
 }
 
-.headerCopy {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.title {
-  margin: 0;
-  color: #17213a;
-  font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
-  font-size: 21px;
-  font-weight: 700;
-  letter-spacing: -0.015em;
-  line-height: 1.2;
-}
-
-.subtitle {
-  display: flex;
-  margin: 0;
-  align-items: center;
-  gap: 6px;
-  color: #687086;
-  font-size: 12.5px;
-  line-height: 1.45;
-}
-
-.subtitle svg {
-  flex: 0 0 auto;
-  color: #8b93a3;
+.main {
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 18px 36px 36px;
+  box-sizing: border-box;
 }
 
 /* ── Bộ lọc theo từng con (chỉ hiện khi phụ huynh có từ 2 học sinh) ── */
@@ -234,43 +207,41 @@
 }
 
 @media (max-width: 1080px) {
-  .header,
+  .pageHeader,
   .alerts {
     padding: 0 18px;
   }
 
-  .header {
+  .pageHeader {
     padding-top: 16px;
   }
 
   .alerts {
     padding-top: 12px;
   }
+
+  .main {
+    padding: 16px 18px 24px;
+  }
 }
 
 @media (max-width: 760px) {
-  .header,
+  .pageHeader,
   .alerts {
     padding: 0 11px;
   }
 
-  .header {
+  .pageHeader {
     padding-top: 12px;
-    align-items: stretch;
-    gap: 10px;
-  }
-
-  .title {
-    font-size: 18px;
-  }
-
-  .subtitle {
-    font-size: 12px;
   }
 
   .alerts {
     padding-top: 10px;
     grid-template-columns: 1fr;
+  }
+
+  .main {
+    padding: 12px 11px 18px;
   }
 
   .alertCard {

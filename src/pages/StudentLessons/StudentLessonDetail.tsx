@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import {
     ArrowLeft, BookOpen, AlertCircle, Video,
     FileText, ClipboardCheck, Star,
     User, PlayCircle, StopCircle, Paperclip, Download, CalendarClock,
-    CheckCircle2, Clock3, XCircle, Sparkles, ChevronDown, Plus, ArrowUp,
+    CheckCircle2, Clock3, XCircle, Sparkles, ChevronDown, Plus, ArrowUp, Link2,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import ReactMarkdown from 'react-markdown';
@@ -20,7 +20,7 @@ import {
     respondStudentScheduleChange,
     proposeStudentReschedule,
     respondStudentReschedule,
-    getClassSessionRecording,
+    getClassSessionRecordingChain,
     type DisputeDetailResponse,
     type DisputeMessage,
     type SessionScheduleChangeResponse,
@@ -36,7 +36,7 @@ import {
 import { signalRService } from '../../services/signalr.service';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
 import { message as antMessage, Spin, Modal } from 'antd';
-import { ClassSessionRecording, RescheduleProposalModal } from '../../components/shared';
+import { ClassSessionRecording, RescheduleProposalModal, SkipContinuationCard } from '../../components/shared';
 import CreateDisputeForm from '../ParentLessons/components/CreateDisputeForm';
 import ReportNoShowModal from '../ParentLessons/components/ReportNoShowModal';
 import NoShowActionModal from '../ParentLessons/components/NoShowActionModal';
@@ -46,6 +46,7 @@ import s from '../StudentPages.module.css';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 import { canJoinLiveSession, isWithinJoinWindow } from '../../utils/liveSession';
 import { isAwaitingReport } from './lesson-components';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 // ── Status definitions — nguồn duy nhất là classSessionStatus.ts (khớp BE ClassSessionStatus) ──
 type StatusInfo = { label: string; color: string; bg: string; icon: string };
@@ -60,6 +61,7 @@ const STATUS_ICON: Record<string, string> = {
     cancelled_noshow: '❌',
     no_show: '⚠️',
     disputed: '🚨',
+    interrupted: '🔌',
 };
 
 const getStatus = (status: string | null | undefined): StatusInfo => {
@@ -111,6 +113,7 @@ const AiMarkdown = ({ content }: { content: string }) => (
 const StudentLessonDetail = () => {
     const { lessonId } = useParams<{ lessonId: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
     const { isParentManaged } = useStudentProfile();
     const [lesson, setLesson] = useState<StudentLessonDetailDto | null>(null);
     const [loading, setLoading] = useState(true);
@@ -147,8 +150,8 @@ const StudentLessonDetail = () => {
             setLoading(true);
             const response = await getStudentLessonDetail(parseInt(lessonId));
             setLesson(response.content);
-        } catch {
-            antMessage.error('Không thể tải chi tiết buổi học');
+        } catch (error) {
+            antMessage.error(getApiErrorMessage(error, 'Không thể tải chi tiết buổi học'));
         } finally {
             setLoading(false);
         }
@@ -187,8 +190,13 @@ const StudentLessonDetail = () => {
     const fetchRecordingStatus = useCallback(async () => {
         if (!lessonId) return;
         try {
-            const response = await getClassSessionRecording(parseInt(lessonId));
-            setRecordingAvailable(Boolean(response.content?.available));
+            // Tóm tắt AI hoạt động theo CẢ CHUỖI (backend chỉ cần 1 buổi trong chuỗi có video —
+            // xem TriggerStudentSummaryAsync/chain.Any(leg => leg.Available)), không phải riêng
+            // buổi đang xem. Buổi phụ/học lại còn chưa học thì tất nhiên chưa có video RIÊNG nó,
+            // nhưng vẫn tóm tắt được dựa trên video buổi gốc đã có — nên phải check theo chuỗi,
+            // không phải theo /recording của 1 buổi.
+            const response = await getClassSessionRecordingChain(parseInt(lessonId));
+            setRecordingAvailable(Boolean(response.content?.some((leg) => leg.available)));
         } catch {
             setRecordingAvailable(false);
         }
@@ -235,7 +243,7 @@ const StudentLessonDetail = () => {
             await fetchThread();
         } catch (error: any) {
             antMessage.error({
-                content: error.response?.data?.message || 'Không thể gửi tin nhắn',
+                content: getApiErrorMessage(error, 'Không thể gửi tin nhắn'),
                 key: 'dispute-thread-send-error',
             });
         } finally {
@@ -299,6 +307,14 @@ const StudentLessonDetail = () => {
 
     useLessonStartedListener(fetchDetail);
 
+    /** Quay lại đúng trang/tab người dùng vừa rời (vd tab "Hoàn thành" trên thời khóa biểu) thay vì
+     *  luôn văng về URL mặc định — `location.key === 'default'` nghĩa là trang này là entry đầu tiên
+     *  của history (mở thẳng link, F5, tab mới), lúc đó `navigate(-1)` sẽ văng ra khỏi app. */
+    const goBack = () => {
+        if (location.key !== 'default') navigate(-1);
+        else navigate('/student-portal/calendar');
+    };
+
     const handleConfirm = async () => {
         if (!lessonId) return;
         try {
@@ -308,7 +324,7 @@ const StudentLessonDetail = () => {
             setShowConfirmModal(false);
             fetchDetail();
         } catch (error: any) {
-            antMessage.error(error.response?.data?.message || 'Không thể xác nhận buổi học');
+            antMessage.error(getApiErrorMessage(error, 'Không thể xác nhận buổi học'));
         } finally {
             setConfirming(false);
         }
@@ -340,7 +356,7 @@ const StudentLessonDetail = () => {
                 antMessage.success(confirmed ? 'Đã xác nhận đổi lịch học.' : 'Đã từ chối đổi lịch học.');
             }
         } catch (error: any) {
-            antMessage.error(error.response?.data?.message || 'Không thể xử lý yêu cầu đổi lịch.');
+            antMessage.error(getApiErrorMessage(error, 'Không thể xử lý yêu cầu đổi lịch.'));
             await fetchScheduleChange();
         } finally {
             setSubmittingScheduleDecision(false);
@@ -362,7 +378,7 @@ const StudentLessonDetail = () => {
             await fetchDetail();
             antMessage.success(accepted ? 'Đã đồng ý đổi lịch học.' : 'Đã từ chối đề xuất đổi lịch.');
         } catch (error: any) {
-            antMessage.error(error.response?.data?.message || 'Không thể xử lý yêu cầu đổi lịch.');
+            antMessage.error(getApiErrorMessage(error, 'Không thể xử lý yêu cầu đổi lịch.'));
         } finally {
             setRespondingReschedule(false);
         }
@@ -375,7 +391,7 @@ const StudentLessonDetail = () => {
             const response = await triggerVideoSummary(parseInt(lessonId));
             setSummaryJob(response.content);
         } catch (error: any) {
-            antMessage.error(error.response?.data?.message || 'Không thể tóm tắt video lúc này.');
+            antMessage.error(getApiErrorMessage(error, 'Không thể tóm tắt video lúc này.'));
         } finally {
             setTriggeringSummary(false);
         }
@@ -391,7 +407,7 @@ const StudentLessonDetail = () => {
             const response = await sendVideoSummaryFollowUp(parseInt(lessonId), question);
             setChatTurns((prev) => [...prev, { role: 'assistant', content: response.content, createdAt: new Date().toISOString() }]);
         } catch (error: any) {
-            antMessage.error(error.response?.data?.message || 'Không thể gửi câu hỏi lúc này.');
+            antMessage.error(getApiErrorMessage(error, 'Không thể gửi câu hỏi lúc này.'));
         } finally {
             setChatSending(false);
         }
@@ -447,7 +463,7 @@ const StudentLessonDetail = () => {
                         </div>
                         <div style={notFoundTitle}>Không tìm thấy buổi học</div>
                         <div style={notFoundSub}>Buổi học này có thể đã bị xóa hoặc bạn không có quyền truy cập.</div>
-                        <button style={notFoundBackBtn} onClick={() => navigate('/student-portal/calendar')}>
+                        <button style={notFoundBackBtn} onClick={goBack}>
                             <ArrowLeft size={14} /> Quay lại thời khóa biểu
                         </button>
                     </div>
@@ -470,7 +486,8 @@ const StudentLessonDetail = () => {
     const canCreateDispute = !isParentManaged
         && !TERMINAL_BOOKING_STATUSES.includes(String(lesson.bookingStatus || '').toLowerCase());
     const pendingReschedule = lesson.pendingRescheduleProposal;
-    const canProposeReschedule = lesson.status === 'scheduled' && !isParentManaged && !pendingReschedule;
+    const canProposeReschedule =
+        lesson.status === 'scheduled' && !isParentManaged && !pendingReschedule && !lesson.skipConfirmedByBothSides;
     const isRescheduleCounterpart = pendingReschedule?.counterpartRole === 'Student';
     const isRescheduleProposer = pendingReschedule?.proposedByRole === 'Student';
     const currentUserInfo = getUserInfoFromToken();
@@ -496,7 +513,7 @@ const StudentLessonDetail = () => {
                 <div style={{ maxWidth: 860, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 24, flexShrink: 0 }}>
                 {/* Breadcrumb-style back nav */}
                 <div style={{ ...breadcrumbRow, display: 'none' }}>
-                    <button style={backBtnStyle} onClick={() => navigate('/student-portal/calendar')}>
+                    <button style={backBtnStyle} onClick={goBack}>
                         <ArrowLeft size={15} />
                         <span>Thời khóa biểu</span>
                     </button>
@@ -915,7 +932,7 @@ const StudentLessonDetail = () => {
                                             className="sld-next-btn"
                                             style={{ ...nextBtn, padding: '8px 12px', fontSize: 12, boxShadow: 'none' }}
                                             title="Về thời khóa biểu"
-                                            onClick={() => navigate('/student-portal/calendar')}
+                                            onClick={goBack}
                                         >
                                             <ArrowLeft size={14} />
                                             <span>Về thời khóa biểu</span>
@@ -1116,6 +1133,26 @@ const StudentLessonDetail = () => {
                                         <span style={{ ...statusDot, background: status.color }} />
                                         {status.label}
                                     </span>
+                                    {(lesson.isContinuation || lesson.isDisputeRelearn) && (
+                                        <span
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: 6,
+                                                padding: '3px 10px',
+                                                borderRadius: 8,
+                                                border: '1px dashed #b9d6ea',
+                                                background: '#EAF3FA',
+                                                color: '#2F6F9F',
+                                                fontSize: 11,
+                                                fontWeight: 600,
+                                            }}
+                                        >
+                                            <Link2 size={12} />
+                                            {lesson.isContinuation ? 'Buổi phụ' : 'Buổi học lại'}
+                                            {lesson.originalClassSessionId ? ` của buổi #${lesson.originalClassSessionId}` : ''}
+                                        </span>
+                                    )}
                                 </div>
                                 <div style={sidebarGoalTimeline}>
                                     <div style={sidebarGoalRow}>
@@ -1134,6 +1171,15 @@ const StudentLessonDetail = () => {
                                     </div>
                                 </div>
                             </div>
+
+                            {lesson.isContinuation && (lesson.status ?? '').toLowerCase() === 'scheduled' && (
+                                <SkipContinuationCard
+                                    continuationSessionId={lesson.lessonId}
+                                    isTutor={false}
+                                    accentColor="#6366F1"
+                                    onBothConfirmed={() => void fetchDetail()}
+                                />
+                            )}
 
                             <SidebarSection label="Gia sư">
                                 <SidebarItemRow

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { isZaloMiniApp } from '../../services/zalo-env';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 const inMiniApp = isZaloMiniApp();
-import { ArrowLeft, CalendarClock, CheckCircle2, Clock3, GraduationCap, UserRound, XCircle } from 'lucide-react';
+import { ArrowLeft, CalendarClock, CheckCircle2, Clock3, GraduationCap, Link2, UserRound, XCircle } from 'lucide-react';
 import { getParentLessonDetail, type ParentLessonDetailDto } from '../../services/parent-lesson.service';
 import {
   getClassSessionDispute,
@@ -33,6 +34,7 @@ import {
   RescheduleProposalModal,
   SectionCard,
   SessionTimeline,
+  SkipContinuationCard,
   StatusBadge,
 } from '../../components/shared';
 import { getDisputeStatusMeta, getDisputeTypeLabel } from '../../components/disputes';
@@ -41,9 +43,6 @@ import { formatLocalDate, formatLocalDateTime, formatLocalTime } from '../../uti
 import styles from './lesson-detail.module.css';
 
 const TERMINAL_BOOKING_STATUSES = ['completed', 'cancelled', 'cancelled_noshow'];
-
-const getApiErrorMessage = (error: unknown): string | undefined =>
-  (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
 
 const getPresenceLabel = (present?: boolean | null) =>
   present === true ? 'Có mặt' : present === false ? 'Vắng mặt' : 'Chưa ghi nhận';
@@ -114,8 +113,8 @@ const ParentLessonDetail: React.FC = () => {
       setLoading(true);
       const response = await getParentLessonDetail(id);
       setLesson(response.content);
-    } catch {
-      toast.error('Không thể tải chi tiết buổi học.');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Không thể tải chi tiết buổi học.'));
     } finally {
       setLoading(false);
     }
@@ -178,7 +177,7 @@ const ParentLessonDetail: React.FC = () => {
         toast.success(confirmed ? 'Đã xác nhận đổi lịch học.' : 'Đã từ chối đổi lịch học.');
       }
     } catch (error: unknown) {
-      toast.error(getApiErrorMessage(error) || 'Không thể xử lý yêu cầu đổi lịch.');
+      toast.error(getApiErrorMessage(error, 'Không thể xử lý yêu cầu đổi lịch.'));
       await fetchScheduleChange();
     } finally {
       setSubmittingScheduleDecision(false);
@@ -199,7 +198,7 @@ const ParentLessonDetail: React.FC = () => {
       await fetchLesson();
       toast.success(accepted ? 'Đã đồng ý đổi lịch học.' : 'Đã từ chối đề xuất đổi lịch.');
     } catch (error: unknown) {
-      toast.error(getApiErrorMessage(error) || 'Không thể xử lý yêu cầu đổi lịch.');
+      toast.error(getApiErrorMessage(error, 'Không thể xử lý yêu cầu đổi lịch.'));
     } finally {
       setRespondingReschedule(false);
     }
@@ -267,6 +266,9 @@ const ParentLessonDetail: React.FC = () => {
     disputeTutorRespondedAt: dispute?.tutorRespondedAt,
     disputeResolvedAt: dispute?.resolvedAt,
     scheduleChangeAppliedAt: lesson.scheduleChanges?.map((sc) => sc.appliedAt),
+    interruptedAt: lesson.interruptedAt,
+    interruptReason: lesson.interruptReason,
+    interruptedByName: lesson.interruptedByName,
   });
 
   const showConfirmAction = lesson.status === 'pending_confirmation';
@@ -304,6 +306,26 @@ const ParentLessonDetail: React.FC = () => {
         </div>
         <div className={styles.headerActions}>
           <StatusBadge variant={status.variant}>{status.label}</StatusBadge>
+          {(lesson.isContinuation || lesson.isDisputeRelearn) && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '3px 10px',
+                borderRadius: 8,
+                border: '1px dashed #b9d6ea',
+                background: '#EAF3FA',
+                color: '#2F6F9F',
+                fontSize: 11,
+                fontWeight: 600,
+              }}
+            >
+              <Link2 size={12} />
+              {lesson.isContinuation ? 'Buổi phụ' : 'Buổi học lại'}
+              {lesson.originalClassSessionId ? ` của buổi #${lesson.originalClassSessionId}` : ''}
+            </span>
+          )}
           {showConfirmAction && (
             <>
               <Button type="primary" className={styles.primaryAction} onClick={() => setShowConfirmModal(true)}>
@@ -338,6 +360,15 @@ const ParentLessonDetail: React.FC = () => {
           )}
         </div>
       </header>
+
+      {lesson.isContinuation && lesson.status === 'scheduled' && (
+        <SkipContinuationCard
+          continuationSessionId={lesson.lessonId}
+          isTutor={false}
+          accentColor="#3e2f28"
+          onBothConfirmed={() => void fetchLesson()}
+        />
+      )}
 
       {lesson.confirmDeadline && lesson.status === 'pending_confirmation' && (
         <div className={`${styles.notice} ${styles.noticeWarning}`}>

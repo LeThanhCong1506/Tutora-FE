@@ -13,7 +13,8 @@ export type ClassSessionStatus =
     | 'cancelled'
     | 'disputed'
     | 'no_show'
-    | 'cancelled_noshow';
+    | 'cancelled_noshow'
+    | 'interrupted';
 
 export interface ClassSessionStatusMeta {
     label: string;
@@ -32,6 +33,7 @@ export const CLASS_SESSION_STATUS_META: Record<ClassSessionStatus, ClassSessionS
     cancelled_noshow: { label: 'Hủy (vắng mặt)', color: '#667085', bg: '#F2F4F7', variant: 'neutral' },
     no_show: { label: 'Vắng mặt', color: '#A43732', bg: '#FBECEA', variant: 'error' },
     disputed: { label: 'Khiếu nại', color: '#A43732', bg: '#FBECEA', variant: 'error' },
+    interrupted: { label: 'Bị ngắt giữa buổi', color: '#A16207', bg: '#FFF6E5', variant: 'warning' },
 };
 
 const FALLBACK_META: ClassSessionStatusMeta = {

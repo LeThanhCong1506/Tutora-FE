@@ -11,6 +11,7 @@ import {
   type CreateDisputeRequest,
 } from '../../../services/classSession.service';
 import { getClassSessionStatusMeta } from '../../../utils/classSessionStatus';
+import { getApiErrorMessage } from '../../../utils/apiError';
 
 const { TextArea } = Input;
 
@@ -195,7 +196,7 @@ const CreateDisputeForm: React.FC<CreateDisputeFormProps> = ({
       resetDisputeState();
       onSuccess();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Không thể gửi khiếu nại.');
+      toast.error(getApiErrorMessage(error, 'Không thể gửi khiếu nại.'));
     } finally {
       setSubmitting(false);
     }

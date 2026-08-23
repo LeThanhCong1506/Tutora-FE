@@ -7,6 +7,8 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import { getTutorCalendar } from '../../services/classSession.service';
 import { localDateTimeToUtcIso } from '../../utils/datetime';
+import { PageContainer } from '../../components/shared';
+import { getApiErrorMessage } from '../../utils/apiError';
 import {
   CalendarLessonView,
   EmptyState,
@@ -14,6 +16,7 @@ import {
   GridLessonView,
   ListLessonView,
   LoadingState,
+  filterLessonsKeepingChains,
   getLessonDate,
   getMonday,
   isAwaitingReport,
@@ -103,6 +106,7 @@ const TutorPortalCalendar = () => {
   const [lessons, setLessons] = useState<LessonSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [retryKey, setRetryKey] = useState(0);
   const [, refreshClock] = useState(0);
   const [periodPickerOpen, setPeriodPickerOpen] = useState(false);
@@ -152,6 +156,7 @@ const TutorPortalCalendar = () => {
     const fetchLessons = async () => {
       setLoading(true);
       setHasError(false);
+      setErrorMessage('');
       try {
         const rangeStart = dayjs(rangeStartKey);
         const rangeEnd = dayjs(rangeEndKey);
@@ -174,6 +179,10 @@ const TutorPortalCalendar = () => {
             checkOutTime: session.checkOutTime,
             hasRecording: session.hasRecording,
             hasPendingReschedule: session.hasPendingReschedule,
+            isContinuation: session.isContinuation,
+            isDisputeRelearn: session.isDisputeRelearn,
+            originalClassSessionId: session.originalClassSessionId,
+            skipConfirmedByBothSides: session.skipConfirmedByBothSides,
             // Buổi đã check-out chờ báo cáo: mở đúng trang chi tiết buổi học.
             reportPath: `/tutor-portal/class-sessions/${session.classSessionId}`,
             // Gia sư nhìn lịch theo học sinh — card/tooltip hiển thị tên học sinh.
@@ -187,10 +196,11 @@ const TutorPortalCalendar = () => {
           .sort((first, second) => getLessonDate(first).valueOf() - getLessonDate(second).valueOf());
 
         setLessons(nextLessons);
-      } catch {
+      } catch (error) {
         if (!active) return;
         setLessons([]);
         setHasError(true);
+        setErrorMessage(getApiErrorMessage(error, ''));
       } finally {
         if (active) setLoading(false);
       }
@@ -203,7 +213,7 @@ const TutorPortalCalendar = () => {
   }, [rangeEndKey, rangeStartKey, retryKey]);
 
   const filteredLessons = useMemo(
-    () => lessons.filter((lesson) => matchesStatusFilter(lesson, activeStatus)),
+    () => filterLessonsKeepingChains(lessons, (lesson) => matchesStatusFilter(lesson, activeStatus)),
     [activeStatus, lessons],
   );
 
@@ -248,7 +258,12 @@ const TutorPortalCalendar = () => {
   const isFilteredEmpty = activeStatus !== '' && lessons.length > 0;
 
   return (
-    <div className={styles.page}>
+    <PageContainer
+      className={styles.page}
+      title="Lịch dạy"
+      titleInfo="Theo dõi và mở các buổi dạy theo tuần, tháng hoặc trạng thái."
+      maxWidth="wide"
+    >
       <main className={styles.main}>
         <section className={styles.workspace} aria-labelledby="lesson-workspace-title">
           <div className={styles.toolbar}>
@@ -358,7 +373,7 @@ const TutorPortalCalendar = () => {
             {loading ? (
               <LoadingState mode={viewMode} />
             ) : hasError ? (
-              <ErrorState onRetry={refreshLessons} />
+              <ErrorState onRetry={refreshLessons} description={errorMessage || undefined} />
             ) : filteredLessons.length === 0 ? (
               <EmptyState
                 filtered={isFilteredEmpty}
@@ -383,7 +398,7 @@ const TutorPortalCalendar = () => {
           </div>
         </section>
       </main>
-    </div>
+    </PageContainer>
   );
 };
 

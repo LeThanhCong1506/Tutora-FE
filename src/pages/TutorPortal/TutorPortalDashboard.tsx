@@ -12,7 +12,7 @@ import {
 } from '../../services/classSession.service';
 import { getTutorFeedbacks, type FeedbackDto } from '../../services/feedback.service';
 import { getUserInfoFromToken } from '../../services/auth.service';
-import { StatCard } from '../../components/shared';
+import { PageContainer, StatCard } from '../../components/shared';
 import ReplyFeedbackModal from './components/ReplyFeedbackModal';
 import { useTutorProfileForm } from './hooks/useTutorProfileForm';
 import { getProfileCompletionItems } from './profileCompletion';
@@ -566,35 +566,18 @@ const TutorPortalDashboard: React.FC = () => {
     const firstMissingProfileField = profileRequirements.find(item => !item.completed);
 
     return (
-        <div className={styles.dashboard}>
-            {/* Header */}
-            <div className={styles.header}>
-                <h1 className={styles.title}>Bảng điều khiển</h1>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    {stats && stats.profileStatus && stats.profileStatus !== 'active' && (
-                        <div className={styles.headerNotice} role="status">
-                            <span className={styles.headerNoticeText}>
-                                {stats.profileStatus === 'draft'
-                                    ? 'Hoàn tất hồ sơ để được duyệt và hiển thị công khai'
-                                    : stats.profileStatus === 'pending_approval'
-                                        ? 'Hồ sơ đang chờ duyệt để hiển thị công khai'
-                                        : 'Cập nhật hồ sơ để được duyệt lại'}
-                            </span>
-                            <button
-                                type="button"
-                                className={styles.headerNoticeBtn}
-                                onClick={() => navigate('/tutor-portal/profile')}
-                            >
-                                Cập nhật hồ sơ
-                                <ArrowRightIcon />
-                            </button>
-                        </div>
-                    )}
-                    <span className={styles.date}>
-                        {new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                    </span>
-                </div>
-            </div>
+        <PageContainer
+            className={styles.dashboard}
+            title="Tổng quan"
+            titleInfo="Theo dõi lịch dạy, yêu cầu cần xử lý và các chỉ số hoạt động của bạn."
+            subtitle={new Date().toLocaleDateString('vi-VN', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+            })}
+            maxWidth="wide"
+        >
 
             {/* Profile Status Banner - only show if NOT active */}
             {stats && stats.profileStatus && stats.profileStatus !== 'active' && (
@@ -1170,7 +1153,7 @@ const TutorPortalDashboard: React.FC = () => {
                 comment={replyModal.feedback?.comment}
                 createdAt={replyModal.feedback?.createdAt}
             />
-        </div>
+        </PageContainer>
     );
 };
 

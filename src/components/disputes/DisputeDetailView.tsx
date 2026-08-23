@@ -17,6 +17,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { getDisputeStatusMeta, getDisputeTypeLabel } from './disputePresentation';
 import type { DisputeDetailAdapter, DisputeSessionContext } from './disputeDetailTypes';
 import styles from './DisputeDetailView.module.css';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 export interface DisputeDetailViewProps {
   classSessionId: number | null;
@@ -28,10 +29,8 @@ const MIN_RESPONSE_LENGTH = 10;
 /** Trạng thái mà quản trị viên đã chốt — khoá phản hồi và ẩn kênh trao đổi. */
 const CLOSED_STATUSES = ['resolved', 'closed', 'confirmed_no_show'];
 
-const getErrorMessage = (error: unknown, fallback = 'Đã có lỗi xảy ra. Vui lòng thử lại.') => {
-  const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
-  return message || fallback;
-};
+const getErrorMessage = (error: unknown, fallback = 'Đã có lỗi xảy ra. Vui lòng thử lại.') =>
+  getApiErrorMessage(error, fallback);
 
 /**
  * Trang chi tiết một khiếu nại, dùng chung cho cả ba portal qua `adapter`.

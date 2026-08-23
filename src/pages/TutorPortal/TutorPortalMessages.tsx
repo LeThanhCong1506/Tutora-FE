@@ -39,9 +39,19 @@ const TutorPortalMessages = () => {
     <div className={styles.page}>
       <header className={`${styles.topBar} ${isMobile && (selectedChannel || showAdminChat) ? styles.topBarHidden : ''}`}>
         <div className={styles.topBarLeft}>
-          <span className={styles.pageEyebrow}>Kết nối</span>
-          <h1 className={styles.pageTitle}>Tin nhắn</h1>
-          <p className={styles.pageSubtitle}>Đồng hành cùng phụ huynh và học sinh trong từng buổi học.</p>
+          <div className={styles.pageTitleRow}>
+            <h1 className={styles.pageTitle}>Tin nhắn</h1>
+            <button
+              type="button"
+              className={`${styles.pageInfoButton} ${styles.pageTitleInfoButton}`}
+              aria-label="Thông tin về trang Tin nhắn"
+            >
+              <span className="material-symbols-outlined" aria-hidden="true">help</span>
+              <span className={styles.pageInfoBubble} role="tooltip">
+                Đồng hành cùng phụ huynh và học sinh trong từng buổi học.
+              </span>
+            </button>
+          </div>
         </div>
       </header>
       <div className={styles.mainContent}>
