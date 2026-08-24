@@ -5,31 +5,11 @@
     --cream-tint: rgba(242, 240, 228, 0.45);
     display: flex;
     flex-direction: column;
-    gap: 24px;
-    padding: 24px;
     width: 100%;
-    max-width: 1400px;
-    margin: 0 auto;
     box-sizing: border-box;
     color: var(--color-navy);
     font-family: 'IBM Plex Sans', system-ui, sans-serif;
     background: transparent;
-}
-
-/* Header trang ví (Parent/Student): tiêu đề bên trái, nhóm hành động bên phải. */
-.walletHeader {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 20px 24px;
-    flex-wrap: wrap;
-}
-
-.walletHeaderText {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-width: 0;
 }
 
 .headerActions {
@@ -44,21 +24,6 @@
     margin: -14px 0 0;
     font-size: 13px;
     color: var(--color-navy-60);
-}
-
-.pageTitle {
-    font-family: var(--font-primary);
-    font-size: 26px;
-    font-weight: 720;
-    letter-spacing: -0.02em;
-    color: var(--color-navy);
-    margin: 0;
-}
-
-.pageSubtitle {
-    font-size: 14px;
-    color: var(--color-navy-60);
-    margin: 0;
 }
 
 /* 3 chỉ số cùng cấp (khả dụng / tạm giữ / tổng), khả dụng rộng hơn vì là số chính. */
@@ -969,10 +934,6 @@
 }
 
 @media (max-width: 640px) {
-    .page {
-        padding: 16px;
-    }
-
     .summaryRow,
     .balanceGrid {
         grid-template-columns: 1fr;

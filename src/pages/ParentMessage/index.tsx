@@ -41,9 +41,19 @@ const ParentMessage = () => {
     <div className={styles.page}>
       <header className={`${styles.topBar} ${isMobile && (selectedChannel || showAdminChat) ? styles.topBarHidden : ''}`}>
         <div className={styles.topBarLeft}>
-          <span className={styles.pageEyebrow}>Kết nối</span>
-          <h1 className={styles.pageTitle}>Tin nhắn</h1>
-          <p className={styles.pageSubtitle}>Trao đổi cùng gia sư và theo dõi mọi thông tin học tập trong một nơi.</p>
+          <div className={styles.pageTitleRow}>
+            <h1 className={styles.pageTitle}>Tin nhắn</h1>
+            <button
+              type="button"
+              className={`${styles.pageInfoButton} ${styles.pageTitleInfoButton}`}
+              aria-label="Thông tin về trang Tin nhắn"
+            >
+              <span className="material-symbols-outlined" aria-hidden="true">help</span>
+              <span className={styles.pageInfoBubble} role="tooltip">
+                Trao đổi cùng gia sư và theo dõi mọi thông tin học tập trong một nơi.
+              </span>
+            </button>
+          </div>
         </div>
       </header>
       <div className={styles.mainContent}>

@@ -15,6 +15,7 @@ import BankAccountForm from '../../components/BankAccount/BankAccountForm';
 import BankAccountDeleteModal from '../../components/BankAccount/BankAccountDeleteModal';
 import FinanceShell from './components/FinanceShell';
 import '../../styles/pages/tutor-finance.css';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 const ACTION_LABEL: Record<BankAccountAuditLogItem['action'], string> = {
   created: 'Thêm tài khoản',
@@ -42,8 +43,8 @@ const BankAccountPage = () => {
     try {
       const info = await getBankAccount();
       setBankInfo(info);
-    } catch {
-      toast.error('Không thể tải thông tin tài khoản ngân hàng.');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Không thể tải thông tin tài khoản ngân hàng.'));
     } finally {
       setLoading(false);
     }
@@ -88,7 +89,7 @@ const BankAccountPage = () => {
   return (
     <FinanceShell
       title="Tài khoản ngân hàng"
-      subtitle="Quản lý tài khoản nhận tiền khi bạn tạo yêu cầu rút tiền từ TUTORA."
+      titleInfo="Quản lý tài khoản nhận tiền khi bạn tạo yêu cầu rút tiền từ TUTORA."
     >
       <div className="finance-bank-layout">
         <BankAccountCard

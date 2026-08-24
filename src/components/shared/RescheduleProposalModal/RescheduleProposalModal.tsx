@@ -4,6 +4,7 @@ import viVN from 'antd/es/date-picker/locale/vi_VN';
 import { toast } from 'react-toastify';
 import dayjs, { type Dayjs } from 'dayjs';
 import 'dayjs/locale/vi';
+import { getApiErrorMessage } from '../../../utils/apiError';
 
 dayjs.locale('vi');
 
@@ -63,7 +64,7 @@ const RescheduleProposalModal: React.FC<RescheduleProposalModalProps> = ({
             await onSubmit(proposedScheduledStart.toISOString(), reason.trim() || undefined);
             toast.success('Đã gửi đề xuất đổi lịch, đang chờ phản hồi.');
         } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Không thể gửi đề xuất đổi lịch. Vui lòng thử lại.');
+            toast.error(getApiErrorMessage(error, 'Không thể gửi đề xuất đổi lịch. Vui lòng thử lại.'));
         } finally {
             setSubmitting(false);
         }

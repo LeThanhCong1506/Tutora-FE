@@ -102,11 +102,18 @@ const timeOfDayToMinutes = (value: string): number | null => {
 
   const hour = Number(twentyFourHour[1]);
   const minute = Number(twentyFourHour[2]);
-  if (hour > 23 || minute > 59) return null;
+  // "24:00" là mốc cuối ngày hợp lệ (BE cho phép làm endtime — xem regex Endtime ở
+  // CreateAvailabilityRequest.cs) — không phải giờ thật nên không đi kèm phút lẻ.
+  if (hour > 24 || minute > 59 || (hour === 24 && minute !== 0)) return null;
   return hour * 60 + minute;
 };
 
 const minutesToHhmm = (min: number): string => {
+  // "24:00" là mốc cuối ngày hợp lệ (xem timeOfDayToMinutes) — quy về đúng 1 vòng 1440' thì phải
+  // giữ nguyên "24:00", không gói xuống "00:00" như 1 giờ thật bình thường. Chỉ áp dụng khi min là
+  // bội số DƯƠNG của 1440 (tức đã cộng/trừ offset mà vẫn "tròn ngày") — min=0 (00:00 thật) vẫn ra
+  // "00:00" như cũ.
+  if (min > 0 && min % 1440 === 0) return '24:00';
   const wrapped = ((min % 1440) + 1440) % 1440; // gói trong [0, 1440)
   return `${pad2(Math.floor(wrapped / 60))}:${pad2(wrapped % 60)}`;
 };

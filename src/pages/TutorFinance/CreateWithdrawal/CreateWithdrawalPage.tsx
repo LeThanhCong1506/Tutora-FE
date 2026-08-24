@@ -18,6 +18,7 @@ import WithdrawForm from './components/WithdrawForm';
 import WithdrawResultCard from './components/WithdrawResultCard';
 import '../../../styles/pages/tutor-finance.css';
 import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '../../../utils/apiError';
 
 const CreateWithdrawalPage: React.FC = () => {
   const navigate = useNavigate();
@@ -55,7 +56,7 @@ const CreateWithdrawalPage: React.FC = () => {
         }
       } catch (error) {
         console.error('Failed to prepare withdrawal:', error);
-        toast.error('Không thể tải thông tin số dư hoặc ngân hàng');
+        toast.error(getApiErrorMessage(error, 'Không thể tải thông tin số dư hoặc ngân hàng'));
       } finally {
         setLoading(false);
       }
@@ -79,10 +80,7 @@ const CreateWithdrawalPage: React.FC = () => {
       setCurrentStep(2);
     } catch (error: unknown) {
       console.error('Withdrawal failed:', error);
-      const message =
-        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Có lỗi xảy ra khi thực hiện rút tiền';
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, 'Có lỗi xảy ra khi thực hiện rút tiền'));
     } finally {
       setSubmitting(false);
     }

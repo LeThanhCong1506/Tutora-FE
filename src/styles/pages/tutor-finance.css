@@ -43,14 +43,56 @@
   transform: translateX(-2px);
 }
 
-.finance-eyebrow {
-  display: block;
-  margin-bottom: 7px;
-  color: var(--finance-green);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
+.finance-page-info {
+  position: relative;
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--finance-muted);
+  background: transparent;
+  cursor: help;
+}
+
+.finance-page-info > .material-symbols-outlined {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.finance-page-info-bubble {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 12px);
+  z-index: 30;
+  box-sizing: border-box;
+  width: 260px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--finance-navy);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: normal;
+  text-align: left;
+  text-transform: none;
+  transform: translateY(-50%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 150ms ease, visibility 150ms ease;
+}
+
+.finance-page-info:hover .finance-page-info-bubble,
+.finance-page-info:focus-visible .finance-page-info-bubble {
+  opacity: 1;
+  visibility: visible;
 }
 
 .finance-title-row {
@@ -62,6 +104,24 @@
 
 .finance-title-block {
   min-width: 0;
+}
+
+.finance-title-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Dấu ? đứng cạnh tiêu đề (thay vì hàng eyebrow) nên cần lớn hơn cho cân với h1. */
+.finance-title-info {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+}
+
+.finance-title-info > .material-symbols-outlined {
+  font-size: 20px;
 }
 
 .finance-title-block h1 {
@@ -80,22 +140,6 @@
   color: var(--finance-muted);
   font-size: 15px;
   line-height: 1.55;
-}
-
-.finance-page-header--dashboard .finance-eyebrow {
-  margin-bottom: 8px;
-  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
-  font-size: clamp(32px, 2.6vw, 40px);
-  font-weight: 760;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
-  text-transform: none;
-}
-
-.finance-page-header--dashboard .finance-title-block h1 {
-  font-size: clamp(18px, 1.5vw, 22px);
-  font-weight: 650;
-  letter-spacing: -0.01em;
 }
 
 .finance-header-actions {
@@ -699,6 +743,21 @@
   gap: 16px;
   max-width: 780px;
   margin-top: 19px;
+}
+
+.finance-table-filter-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--finance-border);
+  background: rgba(250, 249, 246, 0.45);
+}
+
+.finance-table-filter-toolbar .finance-filter-grid {
+  flex: 1;
+  margin-top: 0;
 }
 
 .finance-field {
@@ -2188,4 +2247,21 @@
 .finance-proof-image-btn:hover {
   color: var(--finance-green);
   text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .finance-page-info-bubble {
+    left: calc(100% + 10px);
+    width: 180px;
+  }
+
+  .finance-table-filter-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .finance-table-filter-toolbar .finance-filter-grid {
+    width: 100%;
+    grid-template-columns: 1fr;
+  }
 }

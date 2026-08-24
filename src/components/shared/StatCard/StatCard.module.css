@@ -23,7 +23,11 @@
 }
 
 .statCard.quiet {
-    min-height: 188px;
+    /* 188px là chiều cao thời còn dòng subLabel (nội dung 185px + 3px dư). Bỏ subLabel thì
+       nội dung chỉ còn 160px, giữ 188px sẽ để lại 28px trống ở đáy mỗi thẻ. 164px giữ đúng
+       khoảng dư cũ. Biến thể `quiet` hiện chỉ ParentDashboard dùng nên không ảnh hưởng
+       StatCard ở các trang khác (những trang đó dùng variant mặc định, không có min-height). */
+    min-height: 164px;
     padding: 20px;
     border: 1px solid #e3e0d7;
     border-radius: 16px;

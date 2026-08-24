@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '../../../../utils/apiError';
 
 import { getUserIdFromToken } from '../../../../services/auth.service';
 import { getPricing, updatePricing } from '../../../../services/tutorProfile.service';
@@ -49,10 +50,7 @@ const slotKey = (slot: { dayOfWeek: number; startTime: string; endTime: string }
 // Bóc field `message` từ envelope APIResponse của BE ({ content, statusCode, message, error }).
 // Phần lớn message BE đã là tiếng Việt (vd validation giá) → hiển thị trực tiếp; trả về
 // `fallback` khi không có message.
-const extractApiError = (err: unknown, fallback: string): string => {
-  const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-  return msg && msg.trim() ? msg : fallback;
-};
+const extractApiError = (err: unknown, fallback: string): string => getApiErrorMessage(err, fallback);
 
 // Như extractApiError nhưng dịch riêng message overlap của POST lịch rảnh (tiếng Anh:
 // "... overlaps with existing slot: HH:mm - HH:mm") sang tiếng Việt; các message còn lại

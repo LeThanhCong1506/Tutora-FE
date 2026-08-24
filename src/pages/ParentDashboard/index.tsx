@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { isZaloMiniApp } from '../../services/zalo-env';
 import { getUserInfoFromToken } from '../../services/auth.service';
 import { getStudents } from '../../services/student.service';
 import { getParentBookings } from '../../services/booking.service';
 import { getParentCalendar, type CalendarLessonDto } from '../../services/parent-lesson.service';
 import type { BookingResponseDTO } from '../../services/booking.service';
-import { StatCard } from '../../components/shared';
+import { PageContainer, StatCard } from '../../components/shared';
 import MonthlySchedule from './MonthlySchedule';
 import styles from './styles.module.css';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 // ===== SVG Icons =====
 const BookingIcon = () => (
@@ -94,6 +96,10 @@ const ParentDashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
+      // Mỗi khối dưới đây tải một phần độc lập của dashboard; trước đây phần nào lỗi thì
+      // chỉ ghi console và hiện số 0 như thể "chưa có dữ liệu". Gom lý do lại rồi báo
+      // một lần ở cuối để không bắn 3 toast cùng lúc.
+      const sectionErrors: string[] = [];
 
       // 1) User name from JWT
       try {
@@ -117,6 +123,7 @@ const ParentDashboard = () => {
         setPendingBookings(pending.slice(0, 3));
       } catch (err) {
         console.error('Dashboard: failed to fetch bookings:', err);
+        sectionErrors.push(getApiErrorMessage(err, 'Không tải được danh sách đặt lịch.'));
       }
 
       // 3) Students (children)
@@ -126,6 +133,7 @@ const ParentDashboard = () => {
         setChildrenCount(Array.isArray(students) ? students.length : 0);
       } catch (err) {
         console.error('Dashboard: failed to fetch students:', err);
+        sectionErrors.push(getApiErrorMessage(err, 'Không tải được danh sách học sinh.'));
       }
 
       // 4) Lessons (upcoming this week) — dùng getParentCalendar vì getParentLessons không tồn tại ở BE
@@ -157,6 +165,11 @@ const ParentDashboard = () => {
         setWeekLessonCount(thisWeekLessons.length);
       } catch (err) {
         console.error('Dashboard: failed to fetch lessons:', err);
+        sectionErrors.push(getApiErrorMessage(err, 'Không tải được lịch học sắp tới.'));
+      }
+
+      if (sectionErrors.length > 0) {
+        toast.error([...new Set(sectionErrors)].join(' '));
       }
 
       setLoading(false);
@@ -168,122 +181,123 @@ const ParentDashboard = () => {
   // Skeleton loading
   if (loading) {
     return (
-      <div className={styles.dashboard}>
-        <div className={styles.container}>
-          <div className={styles.welcomeBanner} style={{ opacity: 0.6 }}>
-            <div className={styles.welcomeContent}>
-              <h1 className={styles.welcomeTitle}>Đang tải...</h1>
-            </div>
-          </div>
-          <div className={styles.statsGrid}>
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className={styles.statCardSkeleton} />
-            ))}
+      <PageContainer
+        className={styles.dashboard}
+        title="Tổng quan"
+        titleInfo="Theo dõi lịch học của con, lịch hẹn và các việc cần xử lý trong một nơi."
+        maxWidth="wide"
+      >
+        <div className={styles.welcomeBanner} style={{ opacity: 0.6 }}>
+          <div className={styles.welcomeContent}>
+            <p className={styles.welcomeTitle}>Đang tải...</p>
           </div>
         </div>
-      </div>
+        <div className={styles.statsGrid}>
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className={styles.statCardSkeleton} />
+          ))}
+        </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className={styles.dashboard}>
-      <div className={styles.container}>
-        {/* Welcome Banner */}
-        <div className={styles.welcomeBanner}>
-          <div className={styles.welcomeLayout}>
-            <div className={styles.welcomeContent}>
-              <span className={styles.welcomeGreeting}>Cổng phụ huynh</span>
-              <h1 className={styles.welcomeTitle}>Xin chào, {userName}!</h1>
-
-              {!inMiniApp && (
-                <div className={styles.welcomeActions} data-tour="parent-dashboard-actions">
-                  <button
-                    type="button"
-                    className={styles.welcomePrimaryAction}
-                    onClick={() => navigate('/tutor-search')}
-                  >
-                    <FindTutorIcon />
-                    <span>Tìm gia sư</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.welcomeSecondaryAction}
-                    onClick={() => navigate('/parent-portal/booking')}
-                  >
-                    Quản lý lịch hẹn
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.welcomeTutorAction}
-                    onClick={() => scheduleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                  >
-                    Xem lịch học
-                  </button>
-                </div>
-              )}
-            </div>
+    <PageContainer
+      className={styles.dashboard}
+      title="Tổng quan"
+      titleInfo="Theo dõi lịch học của con, lịch hẹn và các việc cần xử lý trong một nơi."
+      maxWidth="wide"
+    >
+      {/* Welcome Banner */}
+      <div className={styles.welcomeBanner}>
+        <div className={styles.welcomeLayout}>
+          <div className={styles.welcomeContent}>
+            <p className={styles.welcomeTitle}>Xin chào, {userName}!</p>
 
             {!inMiniApp && (
-              <div className={styles.welcomeIllustration}>
-                <div className={styles.welcomeIllustrationHalo} />
-                <FamilyLearningIllustration />
+              <div className={styles.welcomeActions} data-tour="parent-dashboard-actions">
+                <button
+                  type="button"
+                  className={styles.welcomePrimaryAction}
+                  onClick={() => navigate('/tutor-search')}
+                >
+                  <FindTutorIcon />
+                  <span>Tìm gia sư</span>
+                </button>
+                <button
+                  type="button"
+                  className={styles.welcomeSecondaryAction}
+                  onClick={() => navigate('/parent-portal/booking')}
+                >
+                  Quản lý lịch hẹn
+                </button>
+                <button
+                  type="button"
+                  className={styles.welcomeTutorAction}
+                  onClick={() => scheduleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                >
+                  Xem lịch học
+                </button>
               </div>
             )}
           </div>
-        </div>
 
-        {/* Stats Grid */}
-        <div className={styles.statsGrid} data-tour="parent-dashboard-stats">
-          <StatCard
-            icon={<BookingIcon />}
-            value={totalBookings}
-            label="Tổng lịch hẹn"
-            subLabel="Xem chi tiết lịch hẹn"
-            badge={`${activeBookings} đang hoạt động`}
-            badgeVariant="green"
-            variant="quiet"
-            infoTooltip="Tổng số lịch hẹn bạn đã đặt với gia sư, gồm cả đang hoạt động và đã hoàn tất."
-            onClick={() => navigate('/parent-portal/booking')}
-          />
-          <StatCard
-            icon={<ChildrenIcon />}
-            value={childrenCount}
-            label="Học sinh"
-            subLabel="Đã liên kết"
-            badge="Đã liên kết"
-            badgeVariant="blue"
-            variant="quiet"
-            infoTooltip="Số học sinh (con) đã được liên kết với tài khoản của bạn."
-            onClick={() => navigate('/parent-portal/student')}
-          />
-          <StatCard
-            icon={<SessionsIcon />}
-            value={weekLessonCount}
-            label="Buổi học"
-            subLabel="Đã lên lịch tuần này"
-            badge="Tuần này"
-            badgeVariant="green"
-            variant="quiet"
-            infoTooltip="Số buổi học đã lên lịch trong tuần này (Thứ Hai - Chủ Nhật)."
-            onClick={() => scheduleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-          />
-          <StatCard
-            icon={<PendingIcon />}
-            value={pendingBookings.length}
-            label="Chờ xử lý"
-            subLabel="Yêu cầu đang chờ phản hồi"
-            badge={pendingBookings.length > 0 ? 'Cần xử lý' : 'Đã cập nhật'}
-            badgeVariant={pendingBookings.length > 0 ? 'green' : 'blue'}
-            variant="quiet"
-            infoTooltip="Số lịch hẹn đang xử lý: chờ gia sư phản hồi hoặc chờ hoàn tất xác nhận đặt lịch."
-          />
-        </div>
-
-        <div ref={scheduleRef}>
-          <MonthlySchedule />
+          {!inMiniApp && (
+            <div className={styles.welcomeIllustration}>
+              <div className={styles.welcomeIllustrationHalo} />
+              <FamilyLearningIllustration />
+            </div>
+          )}
         </div>
       </div>
-    </div>
+
+      {/* Stats Grid */}
+      <div className={styles.statsGrid} data-tour="parent-dashboard-stats">
+        <StatCard
+          icon={<BookingIcon />}
+          value={totalBookings}
+          label="Tổng lịch hẹn"
+          badge={`${activeBookings} đang hoạt động`}
+          badgeVariant="green"
+          variant="quiet"
+          infoTooltip="Tổng số lịch hẹn bạn đã đặt với gia sư, gồm cả đang hoạt động và đã hoàn tất."
+          onClick={() => navigate('/parent-portal/booking')}
+        />
+        <StatCard
+          icon={<ChildrenIcon />}
+          value={childrenCount}
+          label="Học sinh"
+          badge="Đã liên kết"
+          badgeVariant="blue"
+          variant="quiet"
+          infoTooltip="Số học sinh (con) đã được liên kết với tài khoản của bạn."
+          onClick={() => navigate('/parent-portal/student')}
+        />
+        <StatCard
+          icon={<SessionsIcon />}
+          value={weekLessonCount}
+          label="Buổi học"
+          badge="Tuần này"
+          badgeVariant="green"
+          variant="quiet"
+          infoTooltip="Số buổi học đã lên lịch trong tuần này (Thứ Hai - Chủ Nhật)."
+          onClick={() => scheduleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+        />
+        <StatCard
+          icon={<PendingIcon />}
+          value={pendingBookings.length}
+          label="Chờ xử lý"
+          badge={pendingBookings.length > 0 ? 'Cần xử lý' : 'Đã cập nhật'}
+          badgeVariant={pendingBookings.length > 0 ? 'green' : 'blue'}
+          variant="quiet"
+          infoTooltip="Số lịch hẹn đang xử lý: chờ gia sư phản hồi hoặc chờ hoàn tất xác nhận đặt lịch."
+        />
+      </div>
+
+      <div ref={scheduleRef}>
+        <MonthlySchedule />
+      </div>
+    </PageContainer>
   );
 };
 

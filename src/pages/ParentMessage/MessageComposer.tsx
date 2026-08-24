@@ -3,6 +3,7 @@ import styles from './styles.module.css';
 import { Loader2, SendHorizontal, Paperclip, X } from 'lucide-react';
 import { signalRService } from '../../services/signalr.service';
 import { toast } from 'react-toastify';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 interface MessageComposerProps {
   onSend: (content: string) => void;
@@ -97,8 +98,8 @@ const MessageComposer = ({ onSend, onSendImage, disabled = false, channelId }: M
         setMessage('');
         requestAnimationFrame(() => resizeTextarea(textareaRef.current));
       }
-    } catch {
-      toast.error('Không thể gửi. Vui lòng thử lại.');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Không thể gửi. Vui lòng thử lại.'));
     } finally {
       setSending(false);
     }

@@ -8,6 +8,7 @@ import {
     type FeedbackDto,
 } from '../../../services/feedback.service';
 import { useFormDraft } from '../../../hooks/useFormDraft';
+import { getApiErrorMessage } from '../../../utils/apiError';
 
 const { TextArea } = Input;
 
@@ -98,8 +99,7 @@ const CreateFeedbackModal: React.FC<CreateFeedbackModalProps> = ({
         } catch (error: any) {
             // BE trả message tiếng Việt cho các trường hợp từ chối (vd gia sư đã phản hồi),
             // hiện lại đúng câu đó thay vì nuốt mất lý do.
-            const apiMessage = error?.response?.data?.message;
-            toast.error(apiMessage || (existingFeedback
+            toast.error(getApiErrorMessage(error, existingFeedback
                 ? 'Không thể cập nhật đánh giá. Vui lòng thử lại.'
                 : 'Không thể gửi đánh giá. Vui lòng thử lại.'));
         } finally {

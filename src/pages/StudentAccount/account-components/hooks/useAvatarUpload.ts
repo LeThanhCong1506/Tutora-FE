@@ -4,6 +4,7 @@ import type { Area, Point } from "react-easy-crop";
 import { updateUserAvatar } from "../../../../services/user.service";
 import { getCroppedImg, validateImageFile } from "../utils";
 import type { UserProfileData } from "../types";
+import { getApiErrorMessage } from '../../../../utils/apiError';
 
 /**
  * Encapsulate avatar upload flow: file-input → validation → preview →
@@ -66,8 +67,8 @@ export function useAvatarUpload(
                 window.dispatchEvent(new CustomEvent("avatar-updated", { detail: newUrl }));
             }
             toast.success("Cập nhật ảnh đại diện thành công!");
-        } catch {
-            toast.error("Không thể cập nhật ảnh đại diện. Vui lòng thử lại.");
+        } catch (error) {
+            toast.error(getApiErrorMessage(error, "Không thể cập nhật ảnh đại diện. Vui lòng thử lại."));
         } finally {
             setUploadingAvatar(false);
             handleCancelPreview();

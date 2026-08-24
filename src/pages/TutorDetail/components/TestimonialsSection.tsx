@@ -92,7 +92,10 @@ const TestimonialsSection = ({ feedbacks, totalFeedbacks, tutorId }: Testimonial
     return (
         <section className="section5">
             <div className="heading-24">
-                <h2 className="nht-k-thnh">Nhật ký thành công</h2>
+                {/* Người viết đánh giá là phụ huynh khi booking có phụ huynh, còn lại là học
+                    viên tự đặt lịch (xem CanReviewBooking/ReviewerRoleOf ở FeedbackService) —
+                    nên tiêu đề gọi tên cả hai. */}
+                <h2 className="testimonials-title">Đánh giá từ học viên & phụ huynh</h2>
             </div>
 
             {stats && (

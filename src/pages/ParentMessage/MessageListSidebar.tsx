@@ -7,6 +7,7 @@ import { getOtherUserRoleLabel } from './chatRole';
 import { signalRService } from '../../services/signalr.service';
 import { useUsersPresence } from '../../hooks/useUserPresence';
 import { normalizePresenceUserId } from '../../utils/presence';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 interface MessageListSidebarProps {
   onChannelSelect: (channelId: number | null) => void;
@@ -81,7 +82,7 @@ const MessageListSidebar = ({
         }
       } catch (err) {
         console.error('Error fetching chat channels:', err);
-        setError('Không thể tải tin nhắn');
+        setError(getApiErrorMessage(err, 'Không thể tải tin nhắn'));
       } finally {
         setLoading(false);
       }

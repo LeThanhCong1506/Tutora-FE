@@ -4,6 +4,7 @@ import { AlertCircle, ArrowUpRight, RefreshCw, Search, X } from 'lucide-react';
 import { Button, ConfigProvider, Empty, Input, Pagination, Select, Table, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { PageContainer, SectionCard, StatusBadge } from '../../components/shared';
+import { getApiErrorMessage } from '../../utils/apiError';
 import { getTutorDisputesList, type DisputeListResponse } from '../../services/classSession.service';
 import {
   DISPUTE_PAGE_THEME,
@@ -31,6 +32,7 @@ const TutorPortalDisputes = () => {
   const [disputes, setDisputes] = useState<DisputeListResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [usesLegacyUnpaginatedResponse, setUsesLegacyUnpaginatedResponse] = useState(false);
@@ -46,6 +48,7 @@ const TutorPortalDisputes = () => {
     try {
       setLoading(true);
       setHasError(false);
+      setErrorMessage('');
       const response = await getTutorDisputesList({
         page: currentPage,
         pageSize: DISPUTES_PER_PAGE,
@@ -74,12 +77,13 @@ const TutorPortalDisputes = () => {
         skipNextAutoFetch.current = true;
         setCurrentPage(content.page);
       }
-    } catch {
+    } catch (error) {
       if (requestId !== latestRequest.current) return;
       setDisputes([]);
       setTotalItems(0);
       setUsesLegacyUnpaginatedResponse(false);
       setHasError(true);
+      setErrorMessage(getApiErrorMessage(error, ''));
     } finally {
       if (requestId === latestRequest.current) setLoading(false);
     }
@@ -282,6 +286,8 @@ const TutorPortalDisputes = () => {
       <PageContainer
         className={styles.page}
         title="Khiếu nại"
+        titleInfo="Theo dõi và phản hồi các khiếu nại liên quan đến buổi học."
+        maxWidth="wide"
         headerAction={
           <Button
             className={styles.refreshButton}
@@ -296,7 +302,6 @@ const TutorPortalDisputes = () => {
         <SectionCard className={styles.tableCard}>
           <div className={styles.cardHeader}>
             <div className={styles.cardHeading}>
-              <h2 className={styles.cardTitle}>Danh sách khiếu nại</h2>
               <div className={styles.cardMeta}>
                 <p className={styles.cardSubtitle} aria-live="polite">
                   {loading ? 'Đang cập nhật dữ liệu...' : `${totalItems.toLocaleString('vi-VN')} hồ sơ`}
@@ -370,7 +375,7 @@ const TutorPortalDisputes = () => {
           {hasError && (
             <div className={styles.errorBanner} role="alert">
               <AlertCircle size={18} aria-hidden="true" />
-              <span>Dữ liệu chưa tải được. Vui lòng kiểm tra kết nối và thử lại.</span>
+              <span>{errorMessage || 'Dữ liệu chưa tải được. Vui lòng kiểm tra kết nối và thử lại.'}</span>
               <button type="button" onClick={() => void fetchDisputes()}>
                 Thử lại
               </button>

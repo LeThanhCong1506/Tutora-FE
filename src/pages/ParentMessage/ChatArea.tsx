@@ -16,6 +16,7 @@ import { signalRService, type ChatConnectionLifecycle } from '../../services/sig
 import { toast } from 'react-toastify';
 import PaymentModal from '../../components/PaymentModal/PaymentModal';
 import { MessageCircleMore } from 'lucide-react';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 interface ChatAreaProps {
   selectedChannelId: number | null;
@@ -234,7 +235,7 @@ const ChatArea = ({ selectedChannelId, currentUserId, selectedChannel, isTutor =
         }
       } catch (err) {
         console.error('Error fetching messages:', err);
-        toast.error('Không thể tải tin nhắn');
+        toast.error(getApiErrorMessage(err, 'Không thể tải tin nhắn'));
       } finally {
         setLoading(false);
       }
@@ -320,7 +321,7 @@ const ChatArea = ({ selectedChannelId, currentUserId, selectedChannel, isTutor =
         console.error('Error sending message:', err);
         // Xóa message thất bại khỏi UI
         setMessages((prev) => prev.filter((msg) => msg.messageId !== tempMessage.messageId));
-        toast.error('Gửi tin nhắn thất bại');
+        toast.error(getApiErrorMessage(err, 'Gửi tin nhắn thất bại'));
       }
     },
     [selectedChannelId, currentUserId],
@@ -345,7 +346,7 @@ const ChatArea = ({ selectedChannelId, currentUserId, selectedChannel, isTutor =
       setMessages([]);
     } catch (err) {
       console.error('Error leaving channel:', err);
-      toast.error('Không thể rời kênh chat');
+      toast.error(getApiErrorMessage(err, 'Không thể rời kênh chat'));
     }
   }, [selectedChannelId]);
 

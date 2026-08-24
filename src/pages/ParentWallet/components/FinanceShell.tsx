@@ -5,6 +5,7 @@ import SharedFinancePageShell, { type FinanceNavItem } from '../../../components
 
 interface FinanceShellProps {
   title: string;
+  titleInfo?: string;
   subtitle?: string;
   children: ReactNode;
   actions?: ReactNode;
@@ -20,7 +21,7 @@ interface FinanceShellProps {
  * Shell 3 tab (Giao dịch/Lịch sử rút tiền/Ngân hàng) cho Parent/Student — không có tab "Tổng quan"
  * vì trang "Ví của tôi" (ParentWallet/StudentWallet) đã đóng vai trò đó, truy cập riêng qua sidebar.
  */
-const FinanceShell = ({ title, subtitle, children, actions, headerClassName, contentClassName, backLink }: FinanceShellProps) => {
+const FinanceShell = ({ title, titleInfo, subtitle, children, actions, headerClassName, contentClassName, backLink }: FinanceShellProps) => {
   const location = useLocation();
   const portalBase = location.pathname.startsWith('/student-portal') ? '/student-portal' : '/parent-portal';
 
@@ -48,6 +49,7 @@ const FinanceShell = ({ title, subtitle, children, actions, headerClassName, con
   return (
     <SharedFinancePageShell
       title={title}
+      titleInfo={titleInfo}
       subtitle={subtitle}
       actions={actions}
       headerClassName={headerClassName}

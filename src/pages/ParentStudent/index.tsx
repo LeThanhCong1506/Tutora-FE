@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search } from 'lucide-react';
-import { ConfirmDialog } from '../../components/shared';
+import { ConfirmDialog, PageContainer } from '../../components/shared';
 import type { StudentType } from '../../types/student.type';
 import AddStudentModal from './components/AddStudentModal';
 import CredentialsModal from './components/CredentialsModal';
@@ -65,13 +65,13 @@ const ParentStudent = () => {
         : `${rows.length} hồ sơ`;
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <div className={styles.headerCopy}>
-          <h1 className={styles.title}>Quản lý học sinh</h1>
-          <p className={styles.subtitle}>{subtitle}</p>
-        </div>
-
+    <PageContainer
+      className={styles.page}
+      title="Quản lý học sinh"
+      titleInfo="Quản lý hồ sơ, tài khoản đăng nhập và lịch học của các con."
+      subtitle={subtitle}
+      maxWidth="wide"
+      headerAction={
         <div className={styles.headerActions}>
           {showSearch && (
             <div className={styles.searchWrap}>
@@ -94,7 +94,8 @@ const ParentStudent = () => {
             <Plus size={15} aria-hidden="true" /> Thêm con
           </button>
         </div>
-      </header>
+      }
+    >
 
       <div className={styles.body}>
         {loading ? (
@@ -191,7 +192,7 @@ const ParentStudent = () => {
       />
 
       <CredentialsModal credentials={credentials} onClose={dismissCredentials} title={credentialsTitle} />
-    </div>
+    </PageContainer>
   );
 };
 

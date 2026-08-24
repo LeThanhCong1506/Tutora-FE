@@ -17,7 +17,9 @@ import { useCurrentTime } from '../../hooks/useCurrentTime';
 import { getStudentBookings, isFirstLessonFinished, type BookingResponseDTO } from '../../services/booking.service';
 import { getBookingResponseDeadlineState } from '../../utils/bookingDeadline';
 import { formatVNDNumber } from '../../utils/formatters';
+import { PageContainer } from '../../components/shared';
 import styles from './styles.module.css';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 const STATUS_TABS = [
   { key: 'all', label: 'Tất cả' },
@@ -177,8 +179,8 @@ const StudentBooking = () => {
       });
       setBookings(response.content.items || []);
       setTotalItems(response.content.totalCount || 0);
-    } catch {
-      toast.error('Không thể tải danh sách đặt lịch.');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Không thể tải danh sách đặt lịch.'));
     } finally {
       setLoading(false);
     }
@@ -208,18 +210,19 @@ const StudentBooking = () => {
   };
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <h1>Đặt lịch</h1>
-          <p>Quản lý lịch học, thanh toán và tiến độ các booking của bạn.</p>
+    <PageContainer
+      title="Đặt lịch"
+      titleInfo="Quản lý lịch học, thanh toán và tiến độ các booking của bạn."
+      maxWidth="wide"
+      headerAction={
+        <div className={styles.headerActions}>
+          <button className={styles.newBookingBtn} type="button" onClick={() => navigate('/tutor-search')}>
+            <Plus size={17} />
+            Đặt gia sư mới
+          </button>
         </div>
-        <button className={styles.newBookingBtn} type="button" onClick={() => navigate('/tutor-search')}>
-          <Plus size={17} />
-          Đặt gia sư mới
-        </button>
-      </header>
-
+      }
+    >
       <main className={styles.content}>
         <div className={styles.tabBar} role="tablist" aria-label="Lọc booking theo trạng thái" data-tour="booking-tabs">
           {STATUS_TABS.map((tab) => (
@@ -446,7 +449,7 @@ const StudentBooking = () => {
           </div>
         )}
       </main>
-    </div>
+    </PageContainer>
   );
 };
 

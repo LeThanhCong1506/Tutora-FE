@@ -4,6 +4,7 @@ import type { NotificationDTO } from '../../services/notification.service';
 import { getMyNotifications, markAsRead, markAllAsRead } from '../../services/notification.service';
 import { getNotificationTargetPath } from '../../utils/notificationNavigation';
 import NotificationItem from '../../components/NotificationItem/NotificationItem';
+import { PageContainer } from '../../components/shared';
 import styles from './styles.module.css';
 
 const NotificationsPage: React.FC = () => {
@@ -55,21 +56,21 @@ const NotificationsPage: React.FC = () => {
     const unreadCount = notifications.filter(n => !n.isread).length;
 
     return (
-        <div className={styles.page}>
+        <PageContainer
+            className={styles.page}
+            eyebrow="Cập nhật"
+            eyebrowInfo="Theo dõi các cập nhật về lịch học, thanh toán, khiếu nại và tài khoản."
+            title="Thông báo"
+            subtitle={unreadCount > 0 ? `${unreadCount} chưa đọc` : 'Bạn đã xem tất cả thông báo'}
+            headerAction={
+                unreadCount > 0 ? (
+                    <button className={styles.markAllBtn} onClick={handleMarkAllAsRead}>
+                        Đánh dấu tất cả đã đọc
+                    </button>
+                ) : undefined
+            }
+        >
             <div className={styles.container}>
-                <div className={styles.header}>
-                    <div className={styles.headerLeft}>
-                        <h1 className={styles.title}>Thông báo</h1>
-                        {unreadCount > 0 && (
-                            <span className={styles.badge}>{unreadCount} chưa đọc</span>
-                        )}
-                    </div>
-                    {unreadCount > 0 && (
-                        <button className={styles.markAllBtn} onClick={handleMarkAllAsRead}>
-                            Đánh dấu tất cả đã đọc
-                        </button>
-                    )}
-                </div>
 
                 {loading ? (
                     <div className={styles.loading}>
@@ -93,7 +94,7 @@ const NotificationsPage: React.FC = () => {
                     </div>
                 )}
             </div>
-        </div>
+        </PageContainer>
     );
 };
 

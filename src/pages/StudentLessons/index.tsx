@@ -8,6 +8,7 @@ import 'dayjs/locale/vi';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
 import { getStudentCalendar } from '../../services/student-lesson.service';
 import { localDateTimeToUtcIso } from '../../utils/datetime';
+import { PageContainer } from '../../components/shared';
 import {
   CalendarLessonView,
   EmptyState,
@@ -233,7 +234,12 @@ const StudentLessons = () => {
   const isFilteredEmpty = activeStatus !== '' && lessons.length > 0;
 
   return (
-    <div className={styles.page}>
+    <PageContainer
+      className={styles.page}
+      title="Thời khóa biểu"
+      titleInfo="Xem lịch học theo tuần, tháng hoặc danh sách."
+      maxWidth="wide"
+    >
       <main className={styles.main}>
         <section className={styles.workspace} aria-labelledby="lesson-workspace-title">
           <div className={styles.toolbar} data-tour="lessons-toolbar">
@@ -319,7 +325,12 @@ const StudentLessons = () => {
           </div>
 
           <div className={styles.filterBar}>
-            <div className={styles.statusFilters} role="group" aria-label="Lọc theo trạng thái" data-tour="lessons-filters">
+            <div
+              className={styles.statusFilters}
+              role="group"
+              aria-label="Lọc theo trạng thái"
+              data-tour="lessons-filters"
+            >
               {STATUS_FILTERS.map((filter) => (
                 <button
                   key={filter.key}
@@ -366,7 +377,7 @@ const StudentLessons = () => {
           </div>
         </section>
       </main>
-    </div>
+    </PageContainer>
   );
 };
 
