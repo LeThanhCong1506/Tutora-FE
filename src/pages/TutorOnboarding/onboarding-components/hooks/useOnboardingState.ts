@@ -164,16 +164,13 @@ export function useOnboardingState() {
   // ── Derived ──
   const canProceedStep1 = state.availability.length > 0;
   const canProceedStep2 = state.subjectRecords.length > 0;
-  const requiredDurationHours = Math.max(1, ...state.subjectRecords.map((record) => record.hoursPerSession || 0));
-  const requiredSessionsPerWeek = Math.max(1, ...state.subjectRecords.map((record) => record.sessionsPerWeek || 0));
   const combosMatchAvailability = state.combos.every((combo) =>
     combo.sessions.every((session) => isSessionWithinAvailability(session, state.availability)),
   );
+  // Mỗi gói tự chọn thời lượng/tần suất riêng (không còn bị ép khớp 1 mức chung theo môn) — chỉ
+  // còn kiểm tra tính hợp lệ cấu trúc: có ít nhất 1 buổi, mỗi buổi có thời lượng dương.
   const combosMatchSubjectRules = state.combos.every(
-    (combo) =>
-      combo.sessions.length > 0 &&
-      combo.sessions.length <= requiredSessionsPerWeek &&
-      combo.sessions.every((session) => session.durationHours > 0 && session.durationHours <= requiredDurationHours),
+    (combo) => combo.sessions.length > 0 && combo.sessions.every((session) => session.durationHours > 0),
   );
   const canFinish = canProceedStep1 && canProceedStep2 && combosMatchAvailability && combosMatchSubjectRules; // B3 combo optional
 
