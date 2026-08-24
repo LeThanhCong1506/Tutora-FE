@@ -48,7 +48,8 @@
   max-width: 1500px;
   min-height: 480px;
   margin: 0 auto;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   border: 1px solid #e7e9ee;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.94);
