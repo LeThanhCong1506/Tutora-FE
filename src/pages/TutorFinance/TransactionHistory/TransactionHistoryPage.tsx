@@ -105,11 +105,24 @@ const TransactionHistoryPage: React.FC = () => {
                 allowClear
                 onChange={handleFilterChange}
                 options={[
-                  { label: 'Nạp tiền', value: 'Deposit' },
-                  { label: 'Rút tiền', value: 'Withdrawal' },
-                  { label: 'Giữ tiền', value: 'EscrowCredit' },
-                  { label: 'Giải phóng', value: 'EscrowRelease' },
-                  { label: 'Hoàn tiền', value: 'Refund' },
+                  {
+                    label: 'Giao dịch ví',
+                    title: 'Giao dịch ví',
+                    options: [
+                      { label: 'Nạp tiền', value: 'Deposit' },
+                      { label: 'Rút tiền', value: 'Withdrawal' },
+                      { label: 'Giải phóng', value: 'EscrowRelease' },
+                      { label: 'Hoàn tiền', value: 'Refund' },
+                    ],
+                  },
+                  {
+                    label: 'Escrow (chưa ảnh hưởng số dư ví)',
+                    title: 'Escrow (chưa ảnh hưởng số dư ví)',
+                    options: [
+                      { label: 'Escrow: Đang giữ', value: 'EscrowCredit' },
+                      { label: 'Escrow: Hoàn/Hủy', value: 'EscrowReversal' },
+                    ],
+                  },
                 ]}
               />
             </label>

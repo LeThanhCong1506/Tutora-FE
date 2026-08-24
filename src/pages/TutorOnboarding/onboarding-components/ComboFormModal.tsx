@@ -3,8 +3,13 @@ import { Input, Modal, Select } from 'antd';
 import { CalendarOutlined, ClockCircleOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import styles from '../styles.module.css';
 import ComboPreview from './ComboPreview';
-import { findFirstAvailableSession, getAvailableStartTimes, isSessionWithinAvailability } from './availability-utils';
-import { DAY_COLUMNS, END_HOUR, formatHourMinute, minutesOf } from './constants';
+import {
+  findFirstAvailableSession,
+  getAvailableStartTimes,
+  hasAvailabilityForDuration,
+  isSessionWithinAvailability,
+} from './availability-utils';
+import { DAY_COLUMNS, END_HOUR, formatDuration, formatHourMinute, minutesOf } from './constants';
 import type { ComboSessionSlot, FixedCombo, SubjectRecord, TutorAvailabilitySlot } from './types';
 
 interface ComboFormModalProps {
@@ -14,12 +19,15 @@ interface ComboFormModalProps {
   initial: FixedCombo | null;
   subjectRecords: SubjectRecord[];
   availability: TutorAvailabilitySlot[];
-  requiredDurationHours: number;
-  requiredSessionsPerWeek: number;
   saving?: boolean;
   // Các gói khác đã có (đã loại bỏ gói đang edit) — dùng để cảnh báo trùng giờ giữa các gói.
   existingCombos: FixedCombo[];
 }
+
+// Gia sư tự chọn thời lượng/buổi cho TỪNG gói — độc lập với "Thời gian mỗi buổi học" đã cấu hình
+// ở bước "Môn & giá" (con số đó chỉ là mặc định gợi ý cho gói mới, KHÔNG còn ép mọi gói phải khớp
+// — mỗi gói (vd "Toán cơ bản" 1h/buổi vs "Toán cao cấp" 3h/buổi) có thể khác nhau tự do).
+const SESSION_DURATION_CANDIDATES = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4];
 
 export interface ExternalBusyInfo {
   comboName: string;
@@ -76,33 +84,53 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
   initial,
   subjectRecords,
   availability,
-  requiredDurationHours,
-  requiredSessionsPerWeek,
   saving = false,
   existingCombos,
 }) => {
+  // Thời lượng/buổi CỦA GÓI ĐANG TẠO/SỬA — gia sư tự chọn, mặc định gợi ý theo môn đã cấu hình ở
+  // bước "Môn & giá" cho lần tạo gói ĐẦU TIÊN của môn đó, nhưng có thể đổi tự do (vd tạo thêm 1 gói
+  // "cao cấp" dài hơn cho cùng môn). Khi sửa gói có sẵn, lấy đúng duration đã lưu của gói đó.
+  const initialDurationHours =
+    initial?.sessions[0]?.durationHours ??
+    subjectRecords.find((record) => record.subjectId === initial?.subjectId)?.hoursPerSession ??
+    1;
+  const [durationHours, setDurationHours] = useState<number>(initialDurationHours);
   const [combo, setCombo] = useState<FixedCombo>(() =>
-    applyFixedRules(initial ?? defaultFixed(), requiredDurationHours),
+    applyFixedRules(initial ?? defaultFixed(), initialDurationHours),
   );
+
+  const durationOptions = useMemo(
+    () =>
+      SESSION_DURATION_CANDIDATES.filter((hours) => hasAvailabilityForDuration(hours, availability)).map(
+        (hours) => ({ value: hours, label: formatDuration(hours) }),
+      ),
+    [availability],
+  );
+
+  const handleDurationChange = (value: number) => {
+    setDurationHours(value);
+    setCombo((prev) => applyFixedRules(prev, value));
+  };
 
   const canFitRequiredDuration = (dayOfWeek: number, hour: number, minute: 0 | 30) => {
     const candidate: ComboSessionSlot = {
       dayOfWeek,
       startHour: hour,
       startMinute: minute,
-      durationHours: requiredDurationHours,
+      durationHours,
     };
-    const endTotalMinutes = minutesOf(hour, minute) + requiredDurationHours * 60;
+    const endTotalMinutes = minutesOf(hour, minute) + durationHours * 60;
     return endTotalMinutes <= END_HOUR * 60 && isSessionWithinAvailability(candidate, availability);
   };
 
-  // Map "dayOfWeek-hour-minute" (30-phút granularity) → gói khác đang chiếm khung này.
+  // Map "dayOfWeek-hour-minute" (30-phút granularity) → gói khác đang chiếm khung này. Dùng đúng
+  // durationHours CỦA TỪNG GÓI KHÁC (mỗi gói có thể dài ngắn khác nhau), không phải của gói đang sửa.
   const externalBusyCells = useMemo(() => {
     const map = new Map<string, ExternalBusyInfo>();
     existingCombos.forEach((other) => {
       other.sessions.forEach((session) => {
         const startMin = minutesOf(session.startHour, session.startMinute);
-        const endMin = startMin + requiredDurationHours * 60;
+        const endMin = startMin + session.durationHours * 60;
         for (let cur = startMin; cur < endMin; cur += 30) {
           const h = Math.floor(cur / 60);
           const m = cur % 60;
@@ -111,7 +139,7 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
       });
     });
     return map;
-  }, [existingCombos, requiredDurationHours]);
+  }, [existingCombos]);
 
   // Trả về thông tin gói khác đang chặn session này (nếu có).
   const findExternalConflict = (session: ComboSessionSlot): ExternalBusyInfo | null => {
@@ -145,11 +173,8 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
     [availability, combo],
   );
   const nextAvailableSession = useMemo(
-    () =>
-      combo.sessions.length >= requiredSessionsPerWeek
-        ? null
-        : findFirstAvailableSession(availability, combo.sessions, requiredDurationHours),
-    [availability, combo.sessions, requiredDurationHours, requiredSessionsPerWeek],
+    () => findFirstAvailableSession(availability, combo.sessions, durationHours),
+    [availability, combo.sessions, durationHours],
   );
   const availableDayOptions = useMemo(
     () =>
@@ -162,24 +187,21 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
         label: column.full,
       })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [availability, requiredDurationHours],
+    [availability, durationHours],
   );
 
   const fixedHasNoSessions = combo.sessions.length === 0;
-  const fixedExceedsSessionLimit = combo.sessions.length > requiredSessionsPerWeek;
   const isValid =
     combo.name.trim().length > 0 &&
     combo.subjectId != null &&
     !fixedHasNoSessions &&
-    !fixedExceedsSessionLimit &&
-    combo.sessions.every((session) => session.durationHours <= requiredDurationHours) &&
     !fixedHasOverlap &&
     !fixedHasOutOfRange &&
     !fixedHasOutsideAvailability &&
     !fixedHasExternalConflict;
 
   const addSession = () => {
-    if (!nextAvailableSession || combo.sessions.length >= requiredSessionsPerWeek) return;
+    if (!nextAvailableSession) return;
     setCombo({ ...combo, sessions: [...combo.sessions, nextAvailableSession] });
   };
 
@@ -189,7 +211,7 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
         dayOfWeek,
         startHour: hour,
         startMinute: minute,
-        durationHours: requiredDurationHours,
+        durationHours,
       };
       return (
         canFitRequiredDuration(dayOfWeek, hour, minute) &&
@@ -210,7 +232,7 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
       ...session,
       startHour: start.hour,
       startMinute: start.minute,
-      durationHours: requiredDurationHours,
+      durationHours,
     };
   };
 
@@ -219,7 +241,7 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
       ...combo,
       sessions: combo.sessions.map((session, sessionIndex) => {
         if (sessionIndex !== index) return session;
-        return normalizeSession({ ...session, ...patch, durationHours: requiredDurationHours }, sessionIndex);
+        return normalizeSession({ ...session, ...patch, durationHours }, sessionIndex);
       }),
     });
   };
@@ -232,7 +254,7 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
       className={styles.comboModal}
       open={open}
       onCancel={saving ? undefined : onClose}
-      onOk={() => onSave(applyFixedRules(combo, requiredDurationHours))}
+      onOk={() => onSave(applyFixedRules(combo, durationHours))}
       okText={initial ? 'Cập nhật gói' : 'Tạo gói'}
       cancelText="Hủy"
       confirmLoading={saving}
@@ -281,6 +303,19 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
                   size="large"
                 />
               </label>
+              <label className={styles.comboFormField}>
+                <span className={styles.comboFormLabel}>Thời lượng mỗi buổi</span>
+                <Select
+                  value={durationHours}
+                  onChange={handleDurationChange}
+                  options={durationOptions}
+                  size="large"
+                />
+              </label>
+              <div className={styles.comboFormHint}>
+                Có thể khác với thời gian mỗi buổi học đã cấu hình ở bước "Môn & giá" — mỗi gói tự chọn thời lượng
+                riêng (vd tạo thêm gói "cao cấp" dài buổi hơn cho cùng môn).
+              </div>
               <div className={styles.comboFormHint}>
                 Gói này chỉ hiển thị khi phụ huynh chọn đúng môn học.
               </div>
@@ -369,29 +404,21 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
                       </div>
                     );
                   })}
-                  {combo.sessions.length < requiredSessionsPerWeek && (
-                    <button
-                      type="button"
-                      className={styles.sessionAddBtn}
-                      onClick={addSession}
-                      disabled={!nextAvailableSession}
-                    >
-                      <PlusOutlined />
-                      <span>Thêm buổi học</span>
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    className={styles.sessionAddBtn}
+                    onClick={addSession}
+                    disabled={!nextAvailableSession}
+                  >
+                    <PlusOutlined />
+                    <span>Thêm buổi học</span>
+                  </button>
                 </div>
               )}
 
-              {fixedExceedsSessionLimit && (
+              {!nextAvailableSession && (
                 <div className={styles.comboAvailabilityHint}>
-                  Gói này đang vượt quá {requiredSessionsPerWeek} buổi/tuần theo cấu hình môn học.
-                </div>
-              )}
-
-              {!nextAvailableSession && combo.sessions.length < requiredSessionsPerWeek && (
-                <div className={styles.comboAvailabilityHint}>
-                  Không còn khung giờ rảnh phù hợp để thêm buổi học mới.
+                  Không còn khung giờ rảnh phù hợp để thêm buổi học mới với thời lượng đã chọn.
                 </div>
               )}
 

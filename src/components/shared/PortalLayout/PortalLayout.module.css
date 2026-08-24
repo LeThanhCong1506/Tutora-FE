@@ -562,7 +562,12 @@
 
 .contentArea > * {
     flex: 1 1 auto;
-    min-height: 0;
+    /* !important vì con trực tiếp có thể là bất kỳ component dùng chung nào (vd PageContainer tự
+       đặt min-height: calc(100vh - 56px) trên cùng element) — cùng độ đặc tả CSS (1 class), ai
+       thắng phụ thuộc thứ tự import/bundle, không chắc chắn. min-height:0 ở đây là điều kiện BẮT
+       BUỘC để flex-child co lại và kích hoạt overflow-y:auto của .contentArea (nếu không, nội dung
+       tràn ra ngoài thay vì tự cuộn) nên phải thắng tuyệt đối, không phụ thuộc thứ tự cascade. */
+    min-height: 0 !important;
 }
 
 /* ===== AVATAR LIGHTBOX ===== */
