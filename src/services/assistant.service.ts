@@ -18,6 +18,13 @@ export interface AssistantFilters {
   desiredCount?: number | null;
 }
 
+// Entity memory: gia sư đã hiển thị — FE giữ & gửi lại mỗi lượt (như filters), để AI hiểu
+// "thầy A"/"người đầu tiên" trỏ về ai.
+export interface ShownTutor {
+  tutorId: string;
+  name?: string | null;
+}
+
 export interface AssistantMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -44,6 +51,7 @@ export interface AssistantResponse {
   filters: AssistantFilters;
   aiRanked: boolean;
   suggestions: string[];
+  shownTutors: ShownTutor[];
   // Chỉ có khi authed — phiên đang lưu lịch sử; gửi lại lượt sau để nối đúng phiên.
   sessionId?: string | null;
 }
@@ -55,6 +63,7 @@ export interface AssistantRequest {
   currentFilters?: AssistantFilters | null;
   // Authed: nối đúng phiên đang lưu ở DB (null → .NET tạo phiên mới, trả sessionId về).
   sessionId?: string | null;
+  shownTutors?: ShownTutor[];
 }
 
 /**
@@ -70,6 +79,7 @@ export const askAssistant = async (
     context: payload.context ?? null,
     currentFilters: payload.currentFilters ?? null,
     sessionId: payload.sessionId ?? null,
+    shownTutors: payload.shownTutors ?? [],
   });
   // .NET bọc trong APIResponse { content } — bóc ra.
   return (data?.content ?? data) as AssistantResponse;
