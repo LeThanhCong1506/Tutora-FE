@@ -14,6 +14,7 @@ import {
   type AssistantMessage,
   type AssistantFilters,
   type TutorCard,
+  type ShownTutor,
 } from '../../services/assistant.service';
 import TutorCardView from './TutorCardView';
 import styles from './ChatAssistant.module.css';
@@ -36,6 +37,7 @@ interface PersistedChat {
   turns: ChatTurn[];
   filters: AssistantFilters | null;
   sessionId: string | null;
+  shownTutors?: ShownTutor[];
 }
 
 const loadPersisted = (): PersistedChat | null => {
@@ -58,6 +60,7 @@ const ChatAssistant: React.FC = () => {
   const filtersRef = useRef<AssistantFilters | null>(persisted?.filters ?? null);
   // Phiên DB khi authed (.NET trả về) — null nếu anonymous.
   const sessionIdRef = useRef<string | null>(persisted?.sessionId ?? null);
+  const shownTutorsRef = useRef<ShownTutor[]>(persisted?.shownTutors ?? []);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Chưa có lượt nào → hiện màn giới thiệu (intro) thay vì khung hội thoại.
@@ -75,6 +78,7 @@ const ChatAssistant: React.FC = () => {
         turns,
         filters: filtersRef.current,
         sessionId: sessionIdRef.current,
+        shownTutors: shownTutorsRef.current,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch {
@@ -92,6 +96,7 @@ const ChatAssistant: React.FC = () => {
     }
     filtersRef.current = null;
     sessionIdRef.current = null;
+    shownTutorsRef.current = [];
     setSuggestions([]);
     setInput('');
     setTurns([]);
@@ -116,8 +121,10 @@ const ChatAssistant: React.FC = () => {
           message,
           currentFilters: filtersRef.current,
           sessionId: sessionIdRef.current,
+          shownTutors: shownTutorsRef.current,
         });
         filtersRef.current = res.filters;
+        shownTutorsRef.current = res.shownTutors ?? [];
         if (res.sessionId) sessionIdRef.current = res.sessionId;
         setTurns((prev) => [...prev, { role: 'assistant', content: res.reply, cards: res.cards }]);
         setSuggestions(res.suggestions);
