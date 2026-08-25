@@ -33,16 +33,31 @@ const TutorCard = ({ tutor }: TutorCardProps) => {
   const navigate = useNavigate();
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
-  const { saved, toggle: toggleWishlist } = useWishlist(tutor.id);
+  const { saved, toggle: toggleWishlist, isSignedIn } = useWishlist(tutor.id);
 
   const handleCardClick = () => {
     navigate(`/tutor-detail/${tutor.id}`);
   };
 
   // Lưu/bỏ lưu gia sư vào danh sách yêu thích — không điều hướng/không mở video.
-  const handleWishlistClick = (e: React.MouseEvent) => {
+  // Wishlist lưu theo tài khoản trên server nên khách chưa đăng nhập không lưu được;
+  // nói thẳng thay vì để trái tim nhấp nháy rồi trở lại như cũ.
+  const handleWishlistClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    toggleWishlist();
+    if (!isSignedIn) {
+      toast.info('Vui lòng đăng nhập để lưu gia sư vào danh sách yêu thích.');
+      return;
+    }
+    const { ok, saved: nowSaved } = await toggleWishlist();
+    if (!ok) {
+      toast.error('Không lưu được. Vui lòng thử lại.');
+      return;
+    }
+    toast.success(
+      nowSaved
+        ? `Đã thêm ${tutor.name} vào danh sách yêu thích`
+        : `Đã bỏ ${tutor.name} khỏi danh sách yêu thích`,
+    );
   };
 
   // Click vào video → mở modal xem ngay tại trang (không điều hướng sang trang chi tiết).
