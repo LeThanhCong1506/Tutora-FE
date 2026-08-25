@@ -115,7 +115,7 @@ export const mapApiTutorToUi = (apiTutor: TutorSearchResultResponse): Tutor => {
     videoUrl: apiTutor.videoUrl ?? null,
     rating: apiTutor.averageRating || 0,
     totalReviews: apiTutor.totalReviews || 0,
-    totalLessons: apiTutor.totalLessons || 0,
+    totalLessons: apiTutor.totalClassSessions || 0,
     university: apiTutor.education || '',
     subjects: subjects.length > 0 ? subjects : ['Chưa cập nhật'],
     gradeLevels: sortedGradeLevels,
