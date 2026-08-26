@@ -560,13 +560,20 @@
     background-color: var(--portal-canvas);
 }
 
+/* flex-shrink phải là 0: với `flex: 1 1 auto` (giá trị cũ), trang dài hơn khung cuộn bị ép co
+   lại đúng bằng chiều cao khung — nội dung tràn RA NGOÀI hộp trang, còn padding-bottom của
+   trang bị vẽ ở mép hộp (tức lơ lửng giữa màn hình) thay vì nằm sau nội dung. Hệ quả: cuộn
+   xuống hết trang thì thẻ cuối cùng dính sát đáy, không còn khoảng thở. Không cho co thì hộp
+   cao đúng bằng nội dung + padding, và .contentArea cuộn như bình thường.
+   Trang tự khoá chiều cao (vd .page { height: 100% } của Thời khóa biểu, tự cuộn bên trong)
+   không bị ảnh hưởng: flex-basis auto lấy từ chính `height` nên vẫn vừa khít khung. */
 .contentArea > * {
-    flex: 1 1 auto;
+    flex: 1 0 auto;
     /* !important vì con trực tiếp có thể là bất kỳ component dùng chung nào (vd PageContainer tự
        đặt min-height: calc(100vh - 56px) trên cùng element) — cùng độ đặc tả CSS (1 class), ai
        thắng phụ thuộc thứ tự import/bundle, không chắc chắn. min-height:0 ở đây là điều kiện BẮT
-       BUỘC để flex-child co lại và kích hoạt overflow-y:auto của .contentArea (nếu không, nội dung
-       tràn ra ngoài thay vì tự cuộn) nên phải thắng tuyệt đối, không phụ thuộc thứ tự cascade. */
+       BUỘC để trang tự khoá chiều cao co được về đúng khung và tự cuộn bên trong, nên phải thắng
+       tuyệt đối, không phụ thuộc thứ tự cascade. */
     min-height: 0 !important;
 }
 
