@@ -114,19 +114,11 @@
     gap: 20px;
 }
 
+/* Chỉ còn tiêu đề: giữ min-width 0 để tiêu đề co lại thay vì đẩy phần đếm kết quả tràn ra. */
 .results-header-left {
     display: flex;
     flex-direction: column;
-    gap: 9px;
-}
-
-.results-label {
-    font-size: 13px;
-    letter-spacing: 2.5px;
-    line-height: 15px;
-    text-transform: uppercase;
-    font-weight: 700;
-    color: var(--color-gold);
+    min-width: 0;
 }
 
 .results-title {
@@ -309,15 +301,6 @@
         margin-bottom: 20px;
         padding-bottom: 14px;
         gap: 8px;
-    }
-
-    .results-header-left {
-        gap: 4px;
-    }
-
-    .results-label {
-        font-size: 10px;
-        letter-spacing: 2px;
     }
 
     .results-title {

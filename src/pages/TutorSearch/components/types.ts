@@ -44,7 +44,7 @@ export const defaultFilters: SearchFilters = {
   budgetRange: 'all',
   teachingMode: 'online',
   city: '',
-  sortBy: 'rating_desc',
+  sortBy: 'popularity',
   pageNumber: 1,
   pageSize: 9,
 };

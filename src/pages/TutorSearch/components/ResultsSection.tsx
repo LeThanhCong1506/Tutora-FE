@@ -59,7 +59,6 @@ const ResultsSection = ({
             <section className="results-section">
                 <div className="results-header">
                     <div className="results-header-left">
-                        <span className="results-label">TUTORA Selection</span>
                         <h2 className="results-title">Đang tải...</h2>
                     </div>
                 </div>
@@ -72,7 +71,6 @@ const ResultsSection = ({
             <section className="results-section">
                 <div className="results-header">
                     <div className="results-header-left">
-                        <span className="results-label">TUTORA Selection</span>
                         <h2 className="results-title" style={{ color: "#ef4444" }}>{error}</h2>
                     </div>
                 </div>
@@ -88,7 +86,6 @@ const ResultsSection = ({
         <section className="results-section" aria-busy={loading}>
             <div className="results-header">
                 <div className="results-header-left">
-                    <span className="results-label">TUTORA Selection</span>
                     <h2 className="results-title">Danh sách gia sư</h2>
                 </div>
                 <div className="results-header-meta">

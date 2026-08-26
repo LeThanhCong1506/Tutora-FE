@@ -2,6 +2,7 @@ import { useState } from 'react';
 import CustomDropdown, { type DropdownOption } from '../../../components/CustomDropdown/CustomDropdown';
 import { FilterIcon, SubjectIcons, subjectIcon } from './icons';
 import { budgetRangeOptions, teachingModeOptions, sortByOptions } from './constants';
+import { defaultFilters } from './types';
 
 interface SubjectItem {
   subjectId: number;
@@ -69,7 +70,7 @@ const FilterBar = ({
     budgetRange !== 'all' ||
     teachingMode !== 'online' ||
     city !== '' ||
-    sortBy !== 'rating_desc';
+    sortBy !== defaultFilters.sortBy;
 
   const getSubjectLabel = () => {
     if (activeSubjectIds.length === 0) return 'Tất cả';
@@ -179,7 +180,7 @@ const FilterBar = ({
 
           <div className="filter-actions">
             <div className="sort-group">
-              <span className="sort-label">Sort by</span>
+              <span className="sort-label">Sắp xếp</span>
               <CustomDropdown variant="sort" value={sortBy} onChange={onSortByChange} options={sortByOptions} />
             </div>
             <button
@@ -191,7 +192,7 @@ const FilterBar = ({
               <span className="btn-filter-icon">
                 <FilterIcon />
               </span>
-              <span className="btn-filter-text">{hasActiveFilters ? 'Xóa lọc' : 'Filters'}</span>
+              <span className="btn-filter-text">{hasActiveFilters ? 'Xóa lọc' : 'Bộ lọc'}</span>
             </button>
           </div>
         </div>
