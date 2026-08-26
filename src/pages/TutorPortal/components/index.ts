@@ -9,6 +9,7 @@ export { default as IntroVideoSection } from './IntroVideoSection';
 export { default as ProfileCompleteness } from './ProfileCompleteness';
 export { default as IdentityVerificationModal } from './IdentityVerificationModal';
 export type { IdentityVerificationData } from './IdentityVerificationModal';
+export { default as CccdConfirmModal } from './CccdConfirmModal';
 export { default as RescheduleModal } from './RescheduleModal';
 export { default as AddAvailabilityModal } from './AddAvailabilityModal';
 export { default as EditAvailabilityModal } from './EditAvailabilityModal';

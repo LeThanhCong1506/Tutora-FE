@@ -2403,6 +2403,53 @@
   color: rgba(62, 47, 40, 0.7);
 }
 
+/* Đã quét CCCD nhưng gia sư chưa xác nhận đưa thông tin vào hồ sơ. */
+.identityConfirmPending {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(146, 88, 15, 0.09);
+  border: 1px solid rgba(146, 88, 15, 0.22);
+}
+
+.identityConfirmPending p {
+  flex: 1 1 240px;
+  margin: 0;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  line-height: 19px;
+  color: rgba(62, 47, 40, 0.82);
+}
+
+.identityConfirmBtn {
+  flex-shrink: 0;
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  background: #3d4a3e;
+  cursor: pointer;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  transition: background-color 0.2s ease;
+}
+
+.identityConfirmBtn:hover,
+.identityConfirmBtn:focus-visible {
+  background: #2f3b30;
+}
+
+.identityConfirmBtn:focus-visible {
+  outline: 3px solid rgba(61, 74, 62, 0.35);
+  outline-offset: 2px;
+}
+
 .identityBadge.verified {
   display: inline-flex;
   align-items: center;
