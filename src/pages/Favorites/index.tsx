@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { getFavoriteTutors, toggleFavoriteTutor, type FavoriteTutor } from '../../services/tutorFavorite.service';
-import { wishlistStore } from '../TutorSearch/components/useWishlist';
+import { wishlistStore } from '../../hooks/useWishlist';
 import styles from './styles.module.css';
 
 const formatVnd = (amount: number) => `${amount.toLocaleString('vi-VN')}đ`;

@@ -1,7 +1,28 @@
 import { useState } from 'react';
+import { toast } from 'react-toastify';
+import { useWishlist } from '../../../hooks/useWishlist';
 import type { TutorFullProfile } from '../../../services/tutorDetail.service';
 import { getYouTubeEmbedUrl, getYouTubeThumbnail } from '../../../utils/youtube';
 import { HeartIcon, PlayIcon, StarIcon } from './icons';
+import { toHeroHeadline } from './utils';
+
+interface VideoIntroSectionProps {
+    profile: TutorFullProfile;
+    /** TutorFullProfile không mang theo id của chính nó — lấy từ URL ở trang cha. */
+    tutorId: string;
+    /**
+     * Chạy khi bấm trái tim mà tài khoản hiện tại không lưu được. Ở trang công khai là mời
+     * đăng nhập theo đúng cách của từng môi trường (web: /login, Mini App:
+     * ZaloRoleSelectModal); ở bản xem trước trong portal gia sư là nhắc "đây chỉ là xem
+     * trước". Trang cha đã có sẵn logic đó nên không dựng lại ở đây.
+     */
+    onFavoriteBlocked: () => void;
+    /**
+     * Ép hiện trái tim dù role hiện tại không lưu được. Chỉ bật ở bản xem trước của gia sư —
+     * mục đích của bản xem trước là cho họ thấy ĐÚNG những gì phụ huynh/học sinh sẽ thấy.
+     */
+    alwaysShowFavorite?: boolean;
+}
 
 /**
  * Hero video giới thiệu + overlay thông tin gia sư (avatar/tên/headline đè góc dưới
@@ -9,8 +30,16 @@ import { HeartIcon, PlayIcon, StarIcon } from './icons';
  * đã có sẵn trong tutor-detail.css. Avatar/tên/rating đặt ở đây (không phải AboutSection)
  * theo đúng bố cục "info card nổi trên ảnh bìa" của thiết kế gốc.
  */
-const VideoIntroSection = ({ profile }: { profile: TutorFullProfile }) => {
+const VideoIntroSection = ({
+    profile,
+    tutorId,
+    onFavoriteBlocked,
+    alwaysShowFavorite = false,
+}: VideoIntroSectionProps) => {
     const [showVideoModal, setShowVideoModal] = useState(false);
+    const [savingFavorite, setSavingFavorite] = useState(false);
+    const { saved, toggle: toggleFavorite, canFavorite, visible } = useWishlist(tutorId);
+    const showFavorite = alwaysShowFavorite || visible;
 
     const videoUrl = profile.videoIntroUrl;
     const embedUrl = getYouTubeEmbedUrl(videoUrl);
@@ -20,6 +49,64 @@ const VideoIntroSection = ({ profile }: { profile: TutorFullProfile }) => {
     const totalReviews = profile.totalFeedbacks || 0;
     const totalLessons = profile.totalClassSessions || 0;
     const education = profile.education?.trim();
+    const tutorLabel = profile.fullName || 'gia sư';
+    const fullHeadline = profile.headline?.trim() || '';
+    const heroHeadline = toHeroHeadline(fullHeadline);
+
+    // Lưu/bỏ lưu gia sư. Khách chưa đăng nhập được mời đăng nhập; gia sư/admin/staff không
+    // thấy nút này (xem `visible` trong useWishlist) nên không rơi vào nhánh nào ở đây.
+    const handleFavoriteClick = async () => {
+        if (!canFavorite) {
+            onFavoriteBlocked();
+            return;
+        }
+        if (savingFavorite) return;
+
+        setSavingFavorite(true);
+        try {
+            const { ok, saved: nowSaved } = await toggleFavorite();
+            if (!ok) {
+                toast.error('Không lưu được. Vui lòng thử lại.', { toastId: 'tutor-detail-favorite-error' });
+                return;
+            }
+            toast.success(
+                nowSaved
+                    ? `Đã thêm ${tutorLabel} vào danh sách yêu thích`
+                    : `Đã bỏ ${tutorLabel} khỏi danh sách yêu thích`,
+            );
+        } finally {
+            setSavingFavorite(false);
+        }
+    };
+
+    // Cùng một nút dùng cho rating card (desktop) và thanh rating (mobile) — hai chỗ không
+    // bao giờ hiện cùng lúc nên dùng chung state là đủ.
+    const favoriteButton = showFavorite ? (
+        <button
+            type="button"
+            className={`favorite-button${saved ? ' is-saved' : ''}`}
+            onClick={handleFavoriteClick}
+            disabled={savingFavorite}
+            aria-pressed={saved}
+            aria-label={saved ? 'Bỏ khỏi danh sách yêu thích' : 'Thêm vào danh sách yêu thích'}
+            title={saved ? 'Đã lưu vào yêu thích' : 'Lưu vào yêu thích'}
+        >
+            <HeartIcon filled={saved} />
+        </button>
+    ) : null;
+
+    const ratingSummary = (
+        <div className="rating-stars">
+            <div className="stars-row">
+                {[1, 2, 3, 4, 5].map((i) => (
+                    <StarIcon key={i} filled={i <= Math.round(rating)} />
+                ))}
+            </div>
+            <span className="rating-text">
+                {rating.toFixed(1)} ({totalReviews.toLocaleString('vi-VN')}) · {totalLessons.toLocaleString('vi-VN')} buổi
+            </span>
+        </div>
+    );
 
     return (
         <>
@@ -41,12 +128,6 @@ const VideoIntroSection = ({ profile }: { profile: TutorFullProfile }) => {
 
                     {videoUrl && (
                         <>
-                            <div className="TUTORA-badge-container">
-                                <div className="TUTORA-badge">
-                                    <span className="TUTORA-badge-dot" />
-                                    <span className="TUTORA-badge-text">Video phỏng vấn</span>
-                                </div>
-                            </div>
                             <span className="click-to-view">Nhấn để xem</span>
                             <div
                                 className="play-button-container"
@@ -75,29 +156,41 @@ const VideoIntroSection = ({ profile }: { profile: TutorFullProfile }) => {
                             <div className="tutor-info-text">
                                 {education && <span className="university-badge">{education}</span>}
                                 <h1 className="tutor-name">{profile.fullName || 'Chưa cập nhật tên'}</h1>
-                                {profile.headline && <p className="tutor-credential">{profile.headline}</p>}
+                                {heroHeadline && (
+                                    <p
+                                        className="tutor-credential"
+                                        /* Chỉ gắn tooltip khi có phần bị lược — không thì rê
+                                           chuột lại hiện đúng câu đang đọc, thừa. */
+                                        title={heroHeadline === fullHeadline ? undefined : fullHeadline}
+                                    >
+                                        {heroHeadline}
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>
 
                     <div className="rating-card-container">
                         <div className="rating-card">
-                            <div className="rating-stars">
-                                <div className="stars-row">
-                                    {[1, 2, 3, 4, 5].map((i) => (
-                                        <StarIcon key={i} filled={i <= Math.round(rating)} />
-                                    ))}
-                                </div>
-                                <span className="rating-text">
-                                    {rating.toFixed(1)} ({totalReviews.toLocaleString('vi-VN')}) · {totalLessons.toLocaleString('vi-VN')} buổi
-                                </span>
-                            </div>
-                            <div className="rating-divider" />
-                            <div className="favorite-button" title="Yêu thích">
-                                <HeartIcon />
-                            </div>
+                            {ratingSummary}
+                            {favoriteButton && (
+                                <>
+                                    <div className="rating-divider" />
+                                    {favoriteButton}
+                                </>
+                            )}
                         </div>
                     </div>
+                </div>
+
+                {/*
+                  * Dưới 600px, .rating-card-container bị ẩn (đè lên video thì không còn chỗ),
+                  * nên rating VÀ nút yêu thích biến mất khỏi trang. Thanh này thế chỗ — CSS
+                  * .mobile-rating-bar đã có sẵn trong tutor-detail.css và tự ẩn trên desktop.
+                  */}
+                <div className="mobile-rating-bar">
+                    {ratingSummary}
+                    {favoriteButton}
                 </div>
             </section>
 
