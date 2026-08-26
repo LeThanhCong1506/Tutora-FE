@@ -17,9 +17,27 @@ export const StarIcon = ({ filled = true }: { filled?: boolean }) => (
     </svg>
 );
 
-export const HeartIcon = () => (
-    <svg width="17.5" height="17.5" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M15.75 3.375C14.85 2.475 13.65 2.025 12.375 2.025C11.1 2.025 9.9 2.475 9 3.375L8.25 4.125L7.5 3.375C5.625 1.5 2.625 1.5 0.75 3.375C-1.125 5.25 -1.125 8.25 0.75 10.125L8.25 17.625L15.75 10.125C17.625 8.25 17.625 5.25 15.75 3.375Z" fill="white" />
+/**
+ * Trái tim "yêu thích". `filled` = đã lưu (tô đặc), chưa lưu thì chỉ có viền — hai trạng thái
+ * phải nhìn phát ra ngay, không dựa vào mỗi màu nền của nút.
+ *
+ * Dùng chung path với HeartIcon ở trang tìm kiếm (viewBox 24) thay cho path cũ: path cũ vẽ tới
+ * toạ độ âm trong viewBox 18 nên bị cắt mất một phần thuỳ trái, và `fill="white"` cứng khiến
+ * không thể đổi màu theo trạng thái.
+ */
+export const HeartIcon = ({ filled = false }: { filled?: boolean }) => (
+    <svg
+        width="17.5"
+        height="17.5"
+        viewBox="0 0 24 24"
+        fill={filled ? 'currentColor' : 'none'}
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        xmlns="http://www.w3.org/2000/svg"
+    >
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
     </svg>
 );
 
