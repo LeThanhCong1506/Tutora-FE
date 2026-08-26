@@ -4,7 +4,7 @@ import "../styles/components/google-signin-button.css";
 
 const GOOGLE_CLIENT_ID =
   import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-  "794743160263-c3g975skqtjmj1jmppng3eca1o5vngqi.apps.googleusercontent.com";
+  "267458190455-83ihoq4vf0n85o6srh6bua3p9dmckibk.apps.googleusercontent.com";
 
 const GSI_SRC = "https://accounts.google.com/gsi/client";
 
