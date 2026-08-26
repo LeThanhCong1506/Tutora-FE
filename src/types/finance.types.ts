@@ -47,6 +47,23 @@ export interface TransactionPagedResponse {
     pageSize: number;
 }
 
+/**
+ * Escrow currently held for one booking (net of EscrowCredit - EscrowRelease - EscrowReversal)
+ */
+export interface EscrowStatusItem {
+    bookingId: number;
+    parentName: string;
+    studentName: string;
+    subjectName: string | null;
+    bookingStatus: string | null;
+    heldAmount: number;
+}
+
+export interface EscrowStatusResponse {
+    items: EscrowStatusItem[];
+    totalHeld: number;
+}
+
 // Bank account types moved to services/bankAccount.service.ts (BankAccount, SaveBankAccountRequest)
 // — now shared across Tutor/Parent/Student, not tutor-specific.
 

@@ -29,6 +29,16 @@
   display: none;
 }
 
+.pendingGroupFilter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 22px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #586174;
+}
+
 .tabButton {
   position: relative;
   display: inline-flex;
@@ -126,6 +136,25 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.groupedCardWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.overlapGroupHeader {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border: 1px dashed rgba(166, 105, 23, 0.4);
+  border-radius: 10px;
+  background: rgba(217, 171, 92, 0.12);
+  color: #875817;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .bookingCard {
