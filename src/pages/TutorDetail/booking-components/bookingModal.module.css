@@ -2076,6 +2076,29 @@
   stroke-width: 2.4;
 }
 
+/* Còn chọn được (chưa bị gia sư khóa), nhưng đã có >=2 người khác cùng đặt cọc chờ xác nhận —
+   modifier chồng lên .slotAvailable, không thay thế cursor/khả năng bấm. */
+.slotContested {
+  border-color: rgba(166, 105, 23, 0.4);
+  background: rgba(217, 171, 92, 0.14);
+  color: #875817;
+}
+
+.slotContestedBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 13px;
+  height: 13px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: #875817;
+  color: var(--color-white);
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .calendarTip {
   gap: 6px;
   margin-top: 9px;

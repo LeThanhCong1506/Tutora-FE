@@ -3,7 +3,7 @@ import { getTutorBookedSlots } from "../../../../services/booking.service";
 import type { AvailabilitySlot } from "../../../../services/tutorDetail.service";
 import type { Combo } from "../../../../types/combo.types";
 import { parseUtc } from "../../../../utils/datetime";
-import type { BookingFormData, BookingScheduleApi, BookingSlot, ScheduleSlot, WeeklyPatternSlot } from "../types";
+import type { BookedSlotInfo, BookingFormData, BookingScheduleApi, BookingSlot, ScheduleSlot, WeeklyPatternSlot } from "../types";
 import {
     addDays,
     buildScheduleFromPattern,
@@ -88,7 +88,7 @@ export function useBookingSchedule({
     const [visibleWeekIndex, setVisibleWeekIndex] = useState(0);
     const [pickedWeekSlots, setPickedWeekSlots] = useState<BookingSlot[]>([]);
     const [selectedSlots, setSelectedSlots] = useState<BookingSlot[]>([]);
-    const [bookedSlots, setBookedSlots] = useState<BookingSlot[]>([]);
+    const [bookedSlots, setBookedSlots] = useState<BookedSlotInfo[]>([]);
     const [bookedSlotsLoading, setBookedSlotsLoading] = useState(false);
     const [bookedSlotsError, setBookedSlotsError] = useState(false);
 
@@ -103,7 +103,7 @@ export function useBookingSchedule({
             .then((response) => {
                 if (cancelled) return;
                 const slots = (response.content ?? [])
-                    .map((slot): BookingSlot | null => {
+                    .map((slot): BookedSlotInfo | null => {
                         const start = parseUtc(slot.scheduledStart);
                         const end = parseUtc(slot.scheduledEnd);
                         if (!start || !end || end <= start) return null;
@@ -113,9 +113,11 @@ export function useBookingSchedule({
                             dayOfWeek: toDemoWeekday(start.getDay()),
                             startTime: minutesToTime(start.getHours() * 60 + start.getMinutes()),
                             durationHours: (end.getTime() - start.getTime()) / (60 * 60 * 1000),
+                            isLocked: slot.isLocked,
+                            pendingCount: slot.pendingCount,
                         };
                     })
-                    .filter((slot): slot is BookingSlot => slot !== null);
+                    .filter((slot): slot is BookedSlotInfo => slot !== null);
                 setBookedSlots(slots);
             })
             .catch(() => {
@@ -211,9 +213,13 @@ export function useBookingSchedule({
     const bookingWindowEnd = bookingWindowStart ? getBookingValidityEnd(bookingWindowStart) : null;
     const navLocked = sortedPicks.length > 0;
 
+    // Lịch chỉ thực sự khóa (chặn chọn) khi gia sư đã accept booking khác cho khung giờ đó —
+    // booking đang chờ xác nhận (dù đã đóng cọc) không chặn ai, kể cả chính người tạo nó.
+    const lockedSlots = useMemo(() => bookedSlots.filter((slot) => slot.isLocked), [bookedSlots]);
+
     const slotsOverlapBooked = (candidateSlots: BookingSlot[]): boolean =>
         candidateSlots.some((candidate) =>
-            bookedSlots.some(
+            lockedSlots.some(
                 (booked) =>
                     booked.date === candidate.date &&
                     rangesOverlap(
@@ -227,10 +233,23 @@ export function useBookingSchedule({
 
     const isBookedCell = (dateKey: string, time: string): boolean => {
         const cellMinutes = timeToMinutes(time);
-        return bookedSlots.some(
+        return lockedSlots.some(
             (slot) =>
                 slot.date === dateKey && slotCoversCell(slot.startTime, slot.durationHours, cellMinutes),
         );
+    };
+
+    // Số người khác đang chờ gia sư xác nhận cho khung giờ này — 0 nếu đã bị khóa hẳn (không cần
+    // cảnh báo tranh chấp nữa, vì đằng nào cũng không chọn được) hoặc chưa ai đặt cọc.
+    const getContestedCount = (dateKey: string, time: string): number => {
+        const cellMinutes = timeToMinutes(time);
+        const match = bookedSlots.find(
+            (slot) =>
+                slot.date === dateKey &&
+                !slot.isLocked &&
+                slotCoversCell(slot.startTime, slot.durationHours, cellMinutes),
+        );
+        return match?.pendingCount ?? 0;
     };
 
     const wouldAvailabilityPickConflict = (
@@ -376,6 +395,7 @@ export function useBookingSchedule({
         bookedSlotsError,
         hasSelectedSlotConflict,
         isBookedCell,
+        getContestedCount,
         wouldAvailabilityPickConflict,
         fixedWeekHasConflict,
         toggleAvailabilityPick,

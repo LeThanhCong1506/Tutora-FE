@@ -171,6 +171,15 @@ const TutorPortalClassSessionDetail = () => {
     void loadSession();
   }, [loadSession]);
 
+  // Buổi phụ không có trang riêng — mọi thông tin (giờ hẹn, nút vào học) đã hiện thẳng trên trang
+  // buổi GỐC rồi (xem block "status === 'interrupted'" bên dưới). Ai lỡ mở thẳng URL của buổi phụ
+  // (vd từ lịch dạy) thì tự đưa về đúng trang buổi gốc thay vì hiện 1 trang riêng trùng lặp.
+  useEffect(() => {
+    if (session?.isContinuation && session.originalClassSessionId) {
+      navigate(`/tutor-portal/class-sessions/${session.originalClassSessionId}`, { replace: true });
+    }
+  }, [session, navigate]);
+
   const loadDispute = useCallback(async () => {
     if (!classSessionId) return;
     try {
@@ -474,6 +483,24 @@ const TutorPortalClassSessionDetail = () => {
                     {joinButtonLabel}
                   </button>
                 )}
+                {/* Buổi gốc bị ngắt giữa chừng: phòng đã checkout, không mở lại được nữa — hiện nút
+                    gốc dạng xám (đã dùng) cạnh nút vào buổi phụ để học nốt. */}
+                {status === 'interrupted' && (
+                  <button type="button" className={styles.joinButton} disabled>
+                    <Video size={16} />
+                    Đã kết thúc
+                  </button>
+                )}
+                {status === 'interrupted' && session.continuationSessionId && (
+                  <button
+                    type="button"
+                    className={styles.joinButton}
+                    onClick={() => navigate(`/session-lobby/${session.continuationSessionId}`)}
+                  >
+                    <Video size={16} />
+                    Vào buổi phụ
+                  </button>
+                )}
                 {canProposeReschedule && (
                   <button
                     type="button"
@@ -496,6 +523,22 @@ const TutorPortalClassSessionDetail = () => {
                 )}
               </div>
             </div>
+
+            {status === 'interrupted' && session.continuationSessionId && session.continuationScheduledStart && (
+              <div className={styles.infoBanner}>
+                <Link2 size={18} />
+                <div>
+                  <strong>
+                    Buổi phụ #{session.continuationSessionId}: {formatDate(session.continuationScheduledStart)} ·{' '}
+                    {formatTime(session.continuationScheduledStart)}–{formatTime(session.continuationScheduledEnd)}
+                  </strong>
+                  <span>
+                    Nộp báo cáo cho buổi này lúc nào cũng được — nếu không học buổi phụ, nó sẽ tự huỷ khi bạn nộp
+                    báo cáo.
+                  </span>
+                </div>
+              </div>
+            )}
 
             {pendingReschedule && (
               <div className={styles.infoBanner}>
@@ -541,19 +584,10 @@ const TutorPortalClassSessionDetail = () => {
             )}
           </header>
 
-          {/* Buổi phụ chưa diễn ra: cho tự bỏ nếu 2 bên thống nhất không học nốt. Buổi GỐC đang
-              interrupted: cho xem lại trạng thái đó + tự mở form báo cáo khi cả 2 đã đồng ý. */}
+          {/* Buổi phụ chưa diễn ra: cho tự bỏ nếu 2 bên thống nhất không học nốt. */}
           {session.isContinuation && status === 'scheduled' && (
             <SkipContinuationCard
               continuationSessionId={session.classSessionId}
-              isTutor
-              accentColor="#1a2238"
-              onBothConfirmed={() => void loadSession()}
-            />
-          )}
-          {status === 'interrupted' && session.continuationSessionId && !session.continuationSkipBothConfirmed && (
-            <SkipContinuationCard
-              continuationSessionId={session.continuationSessionId}
               isTutor
               accentColor="#1a2238"
               onBothConfirmed={() => void loadSession()}

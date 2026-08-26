@@ -57,6 +57,7 @@ const TutorPortalDisputes = lazy(() => import('./pages/TutorPortal/TutorPortalDi
 const TutorPortalDisputeDetail = lazy(() => import('./pages/TutorPortal/TutorPortalDisputeDetail'));
 const TutorPortalStudentProfile = lazy(() => import('./pages/TutorPortal/TutorPortalStudentProfile'));
 const TutorPortalBookings = lazy(() => import('./pages/TutorPortal/TutorPortalBookings'));
+const TutorPortalBookingDetail = lazy(() => import('./pages/TutorPortal/TutorPortalBookingDetail'));
 const TutorFinanceDashboardPage = lazy(
   () => import('./pages/TutorFinance/TutorFinanceDashboard/TutorFinanceDashboardPage'),
 );
@@ -327,6 +328,7 @@ function App() {
                   <Route path="classes/:classId" element={<LegacyTutorClassesRedirect />} />
                   <Route path="students/:studentId" element={<TutorPortalStudentProfile />} />
                   <Route path="bookings" element={<TutorPortalBookings />} />
+                  <Route path="bookings/:id" element={<TutorPortalBookingDetail />} />
                   <Route path="finance" element={<TutorFinanceDashboardPage />} />
                   <Route path="finance/transactions" element={<TransactionHistoryPage />} />
                   <Route path="finance/bank-info" element={<BankInfoManagementPage />} />

@@ -184,6 +184,9 @@ export interface ClassSessionDetailResponse {
     interruptedByName?: string;
     /** ID buổi phụ sinh ra từ chính buổi này khi bị ngắt — chỉ có trên buổi GỐC (status=interrupted). */
     continuationSessionId?: number;
+    /** Giờ hẹn của buổi phụ — hiện trực tiếp trên trang buổi gốc, không cần mở thêm trang riêng. */
+    continuationScheduledStart?: string;
+    continuationScheduledEnd?: string;
     /** True khi cả 2 phía đã đồng ý bỏ hẳn buổi phụ — lúc này canSubmitReport đã tự bật true dù
      * status vẫn là interrupted, không cần FE tự suy luận thêm. */
     continuationSkipBothConfirmed?: boolean;
@@ -999,6 +1002,11 @@ export interface StudentClassSessionDetailResponse extends StudentClassSessionSu
     rescheduleProposals?: RescheduleProposalDto[];
     /** True khi CHÍNH buổi này là buổi phụ và cả 2 phía đã đồng ý bỏ nó. */
     skipConfirmedByBothSides?: boolean;
+    /** ID buổi phụ sinh ra từ chính buổi này khi bị ngắt — chỉ có trên buổi GỐC (status=interrupted). */
+    continuationSessionId?: number;
+    /** Giờ hẹn của buổi phụ — hiện trực tiếp trên trang buổi gốc, không cần mở thêm trang riêng. */
+    continuationScheduledStart?: string;
+    continuationScheduledEnd?: string;
 }
 
 export const getStudentClassSessions = async (
