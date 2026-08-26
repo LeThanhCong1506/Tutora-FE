@@ -61,6 +61,10 @@ export interface StudentLessonDetailDto extends Omit<LessonDetailDto, 'lessonId'
     isDisputeRelearn?: boolean;
     originalClassSessionId?: number;
     skipConfirmedByBothSides?: boolean;
+    /** ID buổi phụ sinh ra từ chính buổi này khi bị ngắt (chỉ có trên buổi GỐC, status=interrupted). */
+    continuationSessionId?: number;
+    continuationScheduledStart?: string;
+    continuationScheduledEnd?: string;
 }
 
 const mapDetail = (d: StudentClassSessionDetailResponse): StudentLessonDetailDto => ({
@@ -103,6 +107,9 @@ const mapDetail = (d: StudentClassSessionDetailResponse): StudentLessonDetailDto
     isDisputeRelearn: d.isDisputeRelearn,
     originalClassSessionId: d.originalClassSessionId,
     skipConfirmedByBothSides: d.skipConfirmedByBothSides,
+    continuationSessionId: d.continuationSessionId,
+    continuationScheduledStart: d.continuationScheduledStart,
+    continuationScheduledEnd: d.continuationScheduledEnd,
 });
 
 // ============================================

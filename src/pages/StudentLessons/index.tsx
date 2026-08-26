@@ -17,7 +17,7 @@ import {
   ListLessonView,
   LoadingState,
   filterLessonsKeepingChains,
-  getLessonDate,
+  getLessonBucketDate,
   getMonday,
   isAwaitingReport,
   type LessonSummary,
@@ -163,7 +163,7 @@ const StudentLessons = () => {
         if (!active) return;
 
         const nextLessons: LessonSummary[] = (response.content || [])
-          .flatMap((day) => day.lessons || [])
+          .flatMap((day) => (day.lessons || []).map((lesson) => ({ ...lesson, calendarDate: day.date })))
           .map((lesson) => ({
             ...lesson,
             // Học sinh nhìn lịch theo gia sư — đồng bộ cách card lịch dạy hiển thị tên học sinh.
@@ -171,10 +171,10 @@ const StudentLessons = () => {
             counterpartName: lesson.tutorName,
           }))
           .filter((lesson) => {
-            const lessonDay = getLessonDate(lesson).startOf('day');
+            const lessonDay = getLessonBucketDate(lesson).startOf('day');
             return !lessonDay.isBefore(rangeStart, 'day') && !lessonDay.isAfter(rangeEnd, 'day');
           })
-          .sort((first, second) => getLessonDate(first).valueOf() - getLessonDate(second).valueOf());
+          .sort((first, second) => getLessonBucketDate(first).valueOf() - getLessonBucketDate(second).valueOf());
 
         setLessons(nextLessons);
       } catch {

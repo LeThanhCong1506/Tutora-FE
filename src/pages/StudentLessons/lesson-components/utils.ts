@@ -8,6 +8,15 @@ export const getLessonDate = (lesson: LessonSummary): Dayjs => {
   return parsed ? dayjs(parsed) : dayjs(lesson.scheduledStart);
 };
 
+/**
+ * Ngày dùng để XẾP buổi học vào cột/ô lịch — ưu tiên `calendarDate` (server đã tính theo giờ
+ * check-in thực tế khi buổi bị vào sớm/muộn khác ngày hẹn), rơi về `getLessonDate` (scheduledStart)
+ * khi không có. Chỉ dùng cho nhóm/lọc theo NGÀY — giờ hiển thị trên card vẫn lấy từ scheduledStart
+ * (xem getLessonTime), không đổi.
+ */
+export const getLessonBucketDate = (lesson: LessonSummary): Dayjs =>
+  lesson.calendarDate ? dayjs(lesson.calendarDate) : getLessonDate(lesson);
+
 export const getLessonEndDate = (lesson: LessonSummary): Dayjs => {
   const parsed = parseUtc(lesson.scheduledEnd);
   return parsed ? dayjs(parsed) : dayjs(lesson.scheduledEnd);
@@ -24,7 +33,7 @@ export const getMonday = (date: Dayjs): Dayjs => date.startOf('day').subtract((d
 export const groupLessonsByDate = (lessons: LessonSummary[]): LessonGroup[] => {
   const groups = new Map<string, LessonSummary[]>();
   lessons.forEach((lesson) => {
-    const key = getLessonDate(lesson).format('YYYY-MM-DD');
+    const key = getLessonBucketDate(lesson).format('YYYY-MM-DD');
     groups.set(key, [...(groups.get(key) || []), lesson]);
   });
 

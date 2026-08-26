@@ -17,7 +17,7 @@ import {
   ListLessonView,
   LoadingState,
   filterLessonsKeepingChains,
-  getLessonDate,
+  getLessonBucketDate,
   getMonday,
   isAwaitingReport,
   type LessonSummary,
@@ -166,8 +166,8 @@ const TutorPortalCalendar = () => {
         if (!active) return;
 
         const nextLessons: LessonSummary[] = (response.content || [])
-          .flatMap((day) => day.classSessions || [])
-          .map((session) => ({
+          .flatMap((day) => (day.classSessions || []).map((session) => ({ session, calendarDate: day.date })))
+          .map(({ session, calendarDate }) => ({
             lessonId: session.classSessionId,
             bookingId: session.bookingId,
             scheduledStart: session.scheduledStart,
@@ -183,6 +183,7 @@ const TutorPortalCalendar = () => {
             isDisputeRelearn: session.isDisputeRelearn,
             originalClassSessionId: session.originalClassSessionId,
             skipConfirmedByBothSides: session.skipConfirmedByBothSides,
+            calendarDate,
             // Buổi đã check-out chờ báo cáo: mở đúng trang chi tiết buổi học.
             reportPath: `/tutor-portal/class-sessions/${session.classSessionId}`,
             // Gia sư nhìn lịch theo học sinh — card/tooltip hiển thị tên học sinh.
@@ -190,10 +191,10 @@ const TutorPortalCalendar = () => {
             counterpartName: session.studentName,
           }))
           .filter((lesson) => {
-            const lessonDay = getLessonDate(lesson).startOf('day');
+            const lessonDay = getLessonBucketDate(lesson).startOf('day');
             return !lessonDay.isBefore(rangeStart, 'day') && !lessonDay.isAfter(rangeEnd, 'day');
           })
-          .sort((first, second) => getLessonDate(first).valueOf() - getLessonDate(second).valueOf());
+          .sort((first, second) => getLessonBucketDate(first).valueOf() - getLessonBucketDate(second).valueOf());
 
         setLessons(nextLessons);
       } catch (error) {
