@@ -11,7 +11,6 @@ import {
     Repeat2,
     RotateCcw,
 } from "lucide-react";
-import { toast } from "react-toastify";
 import type { StepProps } from "./types";
 import type { FixedCombo } from "../../../types/combo.types";
 import MonthSimulation from "./MonthSimulation";
@@ -329,17 +328,22 @@ const StepSchedule: React.FC<StepProps> = ({
                                                                     demoDow,
                                                                     time,
                                                                 );
-                                                            // Chỉ chặn bấm khi CHÍNH ô này đã bị khóa (gia sư có lịch cố
-                                                            // định hoặc đã accept booking khác đúng ô này). Nếu việc lặp
-                                                            // lịch hàng tuần sẽ đụng 1 tuần sau đó (conflictsWithExistingBooking
-                                                            // nhưng !bookedCell), vẫn cho bấm bình thường — chỉ báo lỗi lúc
-                                                            // bấm trúng, tránh khóa/tô màu khác thường trước khi user thao tác.
+                                                            // Chặn bấm ở CẢ 2 kiểu trùng, để user thấy ngay thay vì bấm
+                                                            // vào rồi mới bị từ chối:
+                                                            //  - bookedCell: chính ô này đã bị khóa (gia sư đã có buổi
+                                                            //    đúng khung giờ này, ngay tuần đang xem) → nhãn "Đã có lịch".
+                                                            //  - conflictsWithExistingBooking: ô này trống ở tuần đang xem,
+                                                            //    nhưng buổi lặp hàng tuần sẽ đụng lịch gia sư ở một tuần
+                                                            //    SAU đó → nhãn "Trùng lịch" (xem showBooked/slotLabel bên
+                                                            //    dưới). Không nhìn thấy được trên tuần hiện tại nên bắt
+                                                            //    buộc phải tô/khóa, nếu không user không hiểu vì sao hỏng.
                                                             const canStartSession =
                                                                 isOpen &&
                                                                 fits &&
                                                                 date <= bookingDeadline &&
                                                                 !bookedSlotsLoading &&
-                                                                !bookedCell;
+                                                                !bookedCell &&
+                                                                !conflictsWithExistingBooking;
 
                                                             clickable =
                                                                 isSelectedStart ||
@@ -348,15 +352,12 @@ const StepSchedule: React.FC<StepProps> = ({
                                                                 isOpen && !canStartSession && !isSelectedContinuation;
                                                             isBlockedBySelectedSession =
                                                                 isSelectedContinuation || overlapsSelectedSession;
-                                                            onCellClick = () => {
-                                                                if (wouldAvailabilityPickConflict(dateKey, demoDow, time)) {
-                                                                    toast.error(
-                                                                        "Lịch bạn chọn đang bị lấn qua khung giờ mà gia sư đang dạy, vui lòng thử lại khung giờ khác ạ.",
-                                                                    );
-                                                                    return;
-                                                                }
-                                                                toggleAvailabilityPick(dateKey, demoDow, time);
-                                                            };
+                                                            // Ô trùng lịch đã bị khóa ở canStartSession nên không cần chặn
+                                                            // lại ở đây. Ô ĐÃ CHỌN vẫn luôn bấm được (clickable qua
+                                                            // isSelectedStart) để bỏ chọn — kể cả khi nó vừa trở nên trùng
+                                                            // lịch sau khi được khôi phục từ draft; toggleAvailabilityPick
+                                                            // vào thẳng nhánh bỏ-chọn nên không bị guard nào cản.
+                                                            onCellClick = () => toggleAvailabilityPick(dateKey, demoDow, time);
                                                         } else if (isFixedPackage) {
                                                             const isComboCell = fixedPattern.some(
                                                                 (p) =>
