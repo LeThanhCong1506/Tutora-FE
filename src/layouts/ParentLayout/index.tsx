@@ -15,6 +15,7 @@ import { usePortalTour, type PageTour } from '../../components/TutorTour/usePort
 import {
     DashboardIcon, ChildrenIcon, MessagesIcon, BookingIcon,
     AccountIcon, CalendarIcon, ClockIcon, WalletIcon, DisputeIcon,
+  FavoriteIcon,
 } from '../shared/icons';
 
 const MESSAGES_PATH = '/parent-portal/messages';
@@ -44,6 +45,7 @@ const baseParentNavItems: NavItem[] = [
     { path: '/parent-portal/student', label: 'Quản lý học sinh', icon: ChildrenIcon, dataTour: 'nav-student' },
     { path: MESSAGES_PATH, label: 'Tin nhắn', icon: MessagesIcon, dataTour: 'nav-messages' },
     { path: '/parent-portal/booking', label: 'Đặt lịch', icon: BookingIcon, dataTour: 'nav-booking' },
+    { path: '/parent-portal/favorites', label: 'Yêu thích', icon: FavoriteIcon, dataTour: 'nav-favorites' },
     { path: LESSONS_PATH, label: 'Thời khóa biểu', icon: CalendarIcon, dataTour: 'nav-lessons' },
     { path: '/parent-portal/disputes', label: 'Khiếu nại', icon: DisputeIcon, dataTour: 'nav-disputes' },
     { path: '/parent-portal/wallet', label: 'Tài chính', icon: WalletIcon, dataTour: 'nav-wallet' },

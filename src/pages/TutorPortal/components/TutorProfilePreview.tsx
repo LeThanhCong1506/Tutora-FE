@@ -86,7 +86,7 @@ const mapFormDataToFullProfile = (data: TutorProfileFormData): TutorFullProfile 
 
   totalFeedbacks: data.totalReviews,
   averageRating: data.averageRating,
-  totalLessons: 0,
+  totalClassSessions: 0,
   feedbacks: null,
 
   totalActiveClasses: 0,
@@ -112,6 +112,12 @@ const TutorProfilePreview: React.FC<TutorProfilePreviewProps> = ({ formData }) =
     });
   };
 
+  const handlePreviewFavorite = () => {
+    toast.info('Đây là bản xem trước. Phụ huynh/học sinh sẽ dùng nút này để lưu bạn vào danh sách yêu thích.', {
+      toastId: 'profile-preview-favorite',
+    });
+  };
+
   return (
     <div
       className="tutor-detail-page tutor-profile-preview"
@@ -122,7 +128,14 @@ const TutorProfilePreview: React.FC<TutorProfilePreviewProps> = ({ formData }) =
       <main className="tutor-detail-main" style={{ paddingTop: '30px', paddingBottom: '80px' }}>
         <div className="tutor-detail-container">
           <div className="tutor-detail-content">
-            <VideoIntroSection profile={profile} />
+            <VideoIntroSection
+              profile={profile}
+              tutorId={tutorId ?? ''}
+              onFavoriteBlocked={handlePreviewFavorite}
+              /* Gia sư không lưu được yêu thích, nhưng bản xem trước phải hiện đúng những gì
+                 phụ huynh/học sinh nhìn thấy — nên vẫn vẽ trái tim, bấm vào chỉ nhắc. */
+              alwaysShowFavorite
+            />
             <AboutSection profile={profile} />
 
             <div className="portfolio-stats-wrapper">

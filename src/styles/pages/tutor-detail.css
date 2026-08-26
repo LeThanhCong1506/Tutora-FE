@@ -51,7 +51,9 @@
 }
 
 .tutor-detail-page .component-2 {
-    width: 824.2px;
+    /* Bám đúng bề rộng cột .tutor-detail-content (824px). Trước đây ghi cứng 824.2px —
+       thừa 0.2px nên khung video nhô ra khỏi các section bên dưới đúng một sợi tóc. */
+    width: 100%;
     box-shadow: 0px 25px 50px -12px rgba(0, 0, 0, 0.25);
     border-radius: 18px;
     background-color: rgba(255, 255, 255, 0);
@@ -63,13 +65,20 @@
 
 .tutor-detail-page .interview-thumbnail {
     width: 100%;
-    height: 351.4px;
+    /* Số nguyên: 351.4px làm cạnh dưới rơi vào giữa một pixel vật lý (màn hình dpr lẻ như
+       1.25) nên viền dưới bị khử răng cưa thành một vệt mờ. */
+    height: 351px;
     object-fit: cover;
 }
 
 .tutor-detail-page .gradient-overlay {
     position: absolute;
-    inset: 1px;
+    /* inset PHẢI bằng 0. Phần tử absolute đã neo theo padding box, tức là đã nằm trong viền
+       1px của .component-2 rồi; đặt thêm 1px nữa khiến gradient hụt 1px so với ảnh ở cả 4
+       cạnh — chỗ đáy gradient đục màu nên hở ra một sợi ảnh gốc chạy dọc mép dưới. */
+    inset: 0;
+    /* Bo theo khung để hai góc dưới không bị lởm chởm khi trình duyệt cắt bằng overflow. */
+    border-radius: inherit;
     background: linear-gradient(0deg, #1a2238, rgba(26, 34, 56, 0.4) 50%, rgba(26, 34, 56, 0));
     z-index: 1;
 }
@@ -113,40 +122,6 @@
     line-height: 13.5px;
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.6);
-}
-
-/* TUTORA Badge */
-.tutor-detail-page .TUTORA-badge-container {
-    position: absolute;
-    top: 29px;
-    left: 29px;
-    z-index: 3;
-}
-
-.tutor-detail-page .TUTORA-badge {
-    backdrop-filter: blur(12px);
-    border-radius: 10.5px;
-    background-color: rgba(26, 34, 56, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    display: flex;
-    align-items: center;
-    padding: 6.9px 13.9px;
-    gap: 7px;
-}
-
-.tutor-detail-page .TUTORA-badge-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 9999px;
-    background-color: var(--color-gold);
-}
-
-.tutor-detail-page .TUTORA-badge-text {
-    font-size: 9px;
-    letter-spacing: 0.9px;
-    line-height: 13.5px;
-    text-transform: uppercase;
-    color: var(--color-gold);
 }
 
 /* Tutor Info Card */
@@ -241,6 +216,17 @@
     line-height: 24.5px;
     color: var(--color-gold);
     margin: 0;
+    /* Headline được nhập tới 200 ký tự (validateHeadline ở portal gia sư) nhưng ô này chỉ là
+       dòng giới thiệu đè trên video, rộng ~350px — 200 ký tự là khoảng 4,5 dòng, đủ che kín
+       mặt gia sư và đội cả thẻ lên chạm nút play. Cắt ở 2 dòng: vừa đủ đọc ý chính, phần đầy
+       đủ đã có ở mục "Về gia sư" ngay bên dưới. */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    /* Headline không có dấu cách (link, chuỗi dài) thì bẻ giữa chữ thay vì tràn ngang. */
+    overflow-wrap: anywhere;
 }
 
 /* Rating Card */
@@ -288,17 +274,40 @@
     background-color: #e4ded5;
 }
 
+/* Nút yêu thích. Trước đây là <div> trang trí; nay là <button> thật nên phải tự dựng lại
+   hình viên thuốc (bỏ border/nền mặc định của button) và canh giữa icon bằng flex. */
 .tutor-detail-page .favorite-button {
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.05) inset;
+    border: none;
     border-radius: 14px;
     background-color: var(--color-green);
+    color: #fff;
     padding: 8.8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
-.tutor-detail-page .favorite-button:hover {
+.tutor-detail-page .favorite-button:hover:not(:disabled) {
     transform: scale(1.05);
+}
+
+/* Đã lưu: đổi CẢ nền lẫn màu tim (viền -> tô đặc) để nhìn phát biết ngay, không phải đoán
+   qua một sắc độ. #e0245e dùng chung với trái tim trên thẻ ở trang tìm kiếm. */
+.tutor-detail-page .favorite-button.is-saved {
+    background-color: #e0245e;
+}
+
+.tutor-detail-page .favorite-button:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+.tutor-detail-page .favorite-button:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
 }
 
 /* Subject + grade chips */
@@ -2102,28 +2111,6 @@
         /* hide on mobile for cleanliness */
     }
 
-    /* TUTORA Badge - compact */
-    .tutor-detail-page .TUTORA-badge-container {
-        top: 14px;
-        left: 14px;
-    }
-
-    .tutor-detail-page .TUTORA-badge {
-        padding: 5px 10px;
-        border-radius: 8px;
-        gap: 5px;
-    }
-
-    .tutor-detail-page .TUTORA-badge-text {
-        font-size: 7px;
-        letter-spacing: 0.6px;
-    }
-
-    .tutor-detail-page .TUTORA-badge-dot {
-        width: 5px;
-        height: 5px;
-    }
-
     /* Tutor Info Card - repositioned for mobile */
     .tutor-detail-page .tutor-info-card {
         position: absolute;
@@ -2163,7 +2150,8 @@
         font-size: 12px;
         line-height: 18px;
         margin-top: 2px;
-        display: block;
+        /* KHÔNG đổi thành `block`: sẽ ghi đè -webkit-box ở trên và vô hiệu hoá line-clamp. */
+        display: -webkit-box;
     }
 
     .tutor-detail-page .university-badge {

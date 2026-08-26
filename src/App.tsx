@@ -30,6 +30,7 @@ const HomePage = lazy(() => import('./pages/Home/HomePage'));
 const TutorSearchPage = lazy(() => import('./pages/TutorSearch/TutorSearchPage'));
 const MiniAppSearchFormPage = lazy(() => import('./pages/MiniAppSearchForm/MiniAppSearchFormPage'));
 const PolicyPage = lazy(() => import('./pages/Policy'));
+const FavoritesPage = lazy(() => import('./pages/Favorites'));
 const TutorDetailPage = lazy(() => import('./pages/TutorDetail/TutorDetailPage'));
 const ParentBookingDemo = lazy(() => import('./pages/ParentBookingDemo'));
 const LoginPage = lazy(() => import('./pages/Login/LoginPage'));
@@ -363,6 +364,7 @@ function App() {
               <Route path="wallet/withdrawals/:id" element={<ParentWalletWithdrawalDetail />} />
               <Route path="wallet/bank-account" element={<BankAccountPage />} />
               <Route path="messages" element={<ParentMessage />} />
+              <Route path="favorites" element={<FavoritesPage />} />
               <Route path="lessons" element={<ParentLessons />} />
               <Route path="lessons/:lessonId" element={<ParentLessonDetail />} />
               <Route path="account" element={<ParentAccount />} />
@@ -388,6 +390,7 @@ function App() {
                 <Route path="booking" element={<StudentBooking />} />
                 <Route path="booking/:id" element={<BookingDetail />} />
                 <Route path="booking/:id/payment" element={<PaymentPage />} />
+                <Route path="favorites" element={<FavoritesPage />} />
                 <Route path="calendar" element={<StudentLessons />} />
                 <Route path="calendar/:lessonId" element={<StudentLessonDetail />} />
                 <Route path="lessons" element={<LegacyStudentLessonsRedirect />} />

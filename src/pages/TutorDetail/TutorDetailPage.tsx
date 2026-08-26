@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams, useLocation } from 'react-rout
 import { toast } from 'react-toastify';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-import { getCurrentUser, getCurrentUserRole, hasAnyRole } from '../../services/auth.service';
+import { getCurrentUser, getCurrentUserRole, hasAnyRole, setPendingRedirect } from '../../services/auth.service';
 import { createChannel } from '../../services/chat.service';
 import { isZaloMiniApp } from '../../services/zalo-env';
 import { loginWithZalo } from '../../services/zalo-auth.service';
@@ -65,10 +65,20 @@ const TutorDetailPage = () => {
                 return;
             }
             toast.info('Vui lòng đăng nhập để sử dụng tính năng này.');
+            // Đăng nhập xong quay lại đúng hồ sơ gia sư đang xem, thay vì rơi về dashboard
+            // và phải tìm lại từ đầu (LoginForm đọc và xoá key này ngay sau khi vào).
+            setPendingRedirect(`${location.pathname}${location.search}`);
             navigate('/login');
             return;
         }
         onSuccess();
+    };
+
+    // Nút yêu thích nằm trong VideoIntroSection, nhưng luồng mời đăng nhập (Mini App dùng
+    // ZaloRoleSelectModal, web thì sang /login) chỉ có ở trang này nên truyền xuống cho con.
+    // Đăng nhập xong KHÔNG tự lưu hộ — người dùng bấm lại trái tim nếu vẫn muốn.
+    const promptLoginForFavorite = () => {
+        void requireLogin(() => { });
     };
 
     const openBooking = () => {
@@ -246,7 +256,11 @@ const TutorDetailPage = () => {
             <main className="tutor-detail-main">
                 <div className="tutor-detail-container">
                     <div className="tutor-detail-content">
-                        <VideoIntroSection profile={profile} />
+                        <VideoIntroSection
+                            profile={profile}
+                            tutorId={id || ''}
+                            onFavoriteBlocked={promptLoginForFavorite}
+                        />
                         <AboutSection profile={profile} />
 
                         <div className="portfolio-stats-wrapper">

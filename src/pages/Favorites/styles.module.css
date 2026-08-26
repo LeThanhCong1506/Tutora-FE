@@ -1,0 +1,285 @@
+/* ===== DANH SÁCH YÊU THÍCH =====
+   Cùng ngôn ngữ thị giác với `pages/ParentStudent` / `ParentLessons`: nền kem của portal,
+   chữ #17213a, IBM Plex Sans, bo góc 14px, viền mảnh + đổ bóng rất nhẹ.
+
+   Bố cục là LƯỚI chứ không phải danh sách một cột: portal rộng ~1200px, một cột thẻ ngang
+   để trống hơn nửa màn hình bên phải. */
+
+.page {
+  display: flex;
+  width: 100%;
+  /* .contentArea của PortalLayout có padding: 0 — mỗi trang tự chừa lề. Cùng khuôn với
+     ParentLessons (1320px, canh giữa, 36px hai bên) để không dính sát sidebar và không
+     bị cắt mất phần đếm ở mép phải. */
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 24px 36px 40px;
+  min-height: 100%;
+  flex-direction: column;
+  box-sizing: border-box;
+  color: #17213a;
+  font-family:
+    'IBM Plex Sans',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid rgba(23, 33, 58, 0.08);
+}
+
+.title {
+  margin: 0;
+  font-size: 25px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+
+.count {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: rgba(23, 33, 58, 0.35);
+  white-space: nowrap;
+}
+
+.muted {
+  color: rgba(23, 33, 58, 0.5);
+}
+
+.error {
+  color: #dc2626;
+  margin-bottom: 14px;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(23, 33, 58, 0.09);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(23, 33, 58, 0.04);
+  transition:
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.card:hover {
+  border-color: rgba(23, 33, 58, 0.18);
+  box-shadow: 0 4px 14px rgba(23, 33, 58, 0.07);
+}
+
+/* Cả vùng thông tin là một nút để tab tới được — phải bỏ style nút mặc định. */
+.cardMain {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  /* Chừa lề phải cho nút tim nổi ở góc. */
+  padding: 18px 60px 18px 18px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 14px;
+  font: inherit;
+  color: inherit;
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.avatar {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background-color: #e8eaef;
+  background-size: cover;
+  background-position: center;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.name {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+  /* Tên dài xuống dòng thay vì đẩy vỡ thẻ. */
+  overflow-wrap: anywhere;
+}
+
+.sub {
+  font-size: 13px;
+  line-height: 1.4;
+  color: rgba(23, 33, 58, 0.55);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.subjects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.subjectChip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(61, 74, 62, 0.08);
+  color: #3d4a3e;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(23, 33, 58, 0.07);
+}
+
+.stats {
+  font-size: 12.5px;
+  color: rgba(23, 33, 58, 0.5);
+  white-space: nowrap;
+}
+
+.price {
+  font-size: 15px;
+  font-weight: 700;
+  color: #17213a;
+  white-space: nowrap;
+}
+
+.badge {
+  align-self: flex-start;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(220, 38, 38, 0.09);
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Nút tim nổi ở góc, giống thẻ gia sư ở trang tìm kiếm. */
+.removeBtn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(23, 33, 58, 0.1);
+  border-radius: 50%;
+  background: #fff;
+  color: #dc2626;
+  cursor: pointer;
+  padding: 0;
+}
+
+.removeBtn:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.07);
+  border-color: rgba(220, 38, 38, 0.25);
+}
+
+.removeBtn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.removeBtn :global(.material-symbols-outlined) {
+  font-size: 20px;
+  font-variation-settings: 'FILL' 1;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 64px 20px;
+  border: 1px dashed rgba(23, 33, 58, 0.15);
+  border-radius: 14px;
+  color: rgba(23, 33, 58, 0.55);
+  text-align: center;
+}
+
+.empty p {
+  margin: 0;
+}
+
+.empty :global(.material-symbols-outlined) {
+  font-size: 46px;
+  color: rgba(23, 33, 58, 0.25);
+}
+
+.primaryBtn {
+  padding: 10px 22px;
+  border: 0;
+  border-radius: 999px;
+  background: #3d4a3e;
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primaryBtn:hover {
+  background: #334034;
+}
+
+@media (max-width: 900px) {
+  .page {
+    padding: 16px 18px 32px;
+  }
+}
+
+@media (max-width: 640px) {
+  .list {
+    grid-template-columns: 1fr;
+  }
+
+  .title {
+    font-size: 21px;
+  }
+
+  .stats,
+  .price {
+    white-space: normal;
+  }
+}

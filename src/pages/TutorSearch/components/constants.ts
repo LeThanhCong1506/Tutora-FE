@@ -37,14 +37,14 @@ export const teachingModeOptions = [
 // Danh sách cấp học không còn hardcode tại đây — lấy từ API (GET /api/grade-levels)
 // qua hook useGradeLevels và truyền vào FilterBar dưới dạng prop (giống cityOptions).
 
+// Thứ tự hiển thị = thứ tự trong mảng; mặc định đứng đầu (xem TutorSearchSortBy.Default ở BE).
+// BE vẫn nhận 'experience_desc', 'reviews_desc', 'rating_asc' cho link cũ, chỉ là không liệt kê ở đây nữa.
 export const sortByOptions = [
+  { value: 'popularity', label: 'PHỔ BIẾN NHẤT' },
   { value: 'rating_desc', label: 'ĐÁNH GIÁ CAO NHẤT' },
   { value: 'price_asc', label: 'GIÁ THẤP NHẤT' },
   { value: 'price_desc', label: 'GIÁ CAO NHẤT' },
-  { value: 'experience_desc', label: 'KINH NGHIỆM' },
-  { value: 'reviews_desc', label: 'ĐÁNH GIÁ NHIỀU NHẤT' },
   { value: 'newest', label: 'MỚI NHẤT' },
-  { value: 'popularity', label: 'PHỔ BIẾN NHẤT' },
 ];
 
 export const typeLabels: Record<TutorType, string> = {

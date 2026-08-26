@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import type { Tutor } from './types';
 import { VerifiedIcon, UniversityIcon, ArrowIcon, PlayIcon, StarIcon, HeartIcon } from './icons';
 import { formatGradeLevelRanges } from './utils';
-import { useWishlist } from './useWishlist';
+import { useWishlist } from '../../../hooks/useWishlist';
 import { createChannel } from '../../../services/chat.service';
-import { getCurrentUser, getCurrentUserRole } from '../../../services/auth.service';
+import { getCurrentUser, getCurrentUserRole, setPendingRedirect } from '../../../services/auth.service';
+import { isZaloMiniApp } from '../../../services/zalo-env';
 import { formatVNDNumber } from '../../../utils/formatters';
 
 const MAX_VISIBLE_SUBJECT_GRADES = 3;
@@ -31,18 +32,45 @@ interface TutorCardProps {
 
 const TutorCard = ({ tutor }: TutorCardProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
-  const { saved, toggle: toggleWishlist } = useWishlist(tutor.id);
+  const { saved, toggle: toggleWishlist, canFavorite, visible: showWishlist } = useWishlist(tutor.id);
 
   const handleCardClick = () => {
     navigate(`/tutor-detail/${tutor.id}`);
   };
 
   // Lưu/bỏ lưu gia sư vào danh sách yêu thích — không điều hướng/không mở video.
-  const handleWishlistClick = (e: React.MouseEvent) => {
+  // Wishlist lưu theo tài khoản trên server nên khách chưa đăng nhập không lưu được;
+  // nói thẳng thay vì để trái tim nhấp nháy rồi trở lại như cũ.
+  const handleWishlistClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    toggleWishlist();
+
+    // Tới nhánh này chỉ có thể là khách chưa đăng nhập: gia sư/admin/staff không được
+    // render nút (xem `visible` trong useWishlist).
+    if (!canFavorite) {
+      toast.info('Vui lòng đăng nhập để lưu gia sư vào danh sách yêu thích.');
+      // Bộ lọc tìm kiếm nằm hết trong query string nên quay lại là khôi phục nguyên trạng.
+      // Mini App không có trang /login (đăng nhập đi qua ZaloRoleSelectModal ở trang chi
+      // tiết) nên chỉ nhắc, không đẩy vào ngõ cụt.
+      if (!isZaloMiniApp()) {
+        setPendingRedirect(`${location.pathname}${location.search}`);
+        navigate('/login');
+      }
+      return;
+    }
+
+    const { ok, saved: nowSaved } = await toggleWishlist();
+    if (!ok) {
+      toast.error('Không lưu được. Vui lòng thử lại.');
+      return;
+    }
+    toast.success(
+      nowSaved
+        ? `Đã thêm ${tutor.name} vào danh sách yêu thích`
+        : `Đã bỏ ${tutor.name} khỏi danh sách yêu thích`,
+    );
   };
 
   // Click vào video → mở modal xem ngay tại trang (không điều hướng sang trang chi tiết).
@@ -156,16 +184,18 @@ const TutorCard = ({ tutor }: TutorCardProps) => {
             <PlayIcon />
           </span>
         )}
-        <button
-          type="button"
-          className={`tutor-card-wishlist${saved ? ' is-saved' : ''}`}
-          onClick={handleWishlistClick}
-          aria-pressed={saved}
-          aria-label={saved ? 'Bỏ khỏi danh sách yêu thích' : 'Thêm vào danh sách yêu thích'}
-          title={saved ? 'Đã lưu vào yêu thích' : 'Lưu vào yêu thích'}
-        >
-          <HeartIcon filled={saved} />
-        </button>
+        {showWishlist && (
+          <button
+            type="button"
+            className={`tutor-card-wishlist${saved ? ' is-saved' : ''}`}
+            onClick={handleWishlistClick}
+            aria-pressed={saved}
+            aria-label={saved ? 'Bỏ khỏi danh sách yêu thích' : 'Thêm vào danh sách yêu thích'}
+            title={saved ? 'Đã lưu vào yêu thích' : 'Lưu vào yêu thích'}
+          >
+            <HeartIcon filled={saved} />
+          </button>
+        )}
       </div>
 
       <div className="tutor-card-body">
