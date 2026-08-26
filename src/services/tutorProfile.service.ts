@@ -78,10 +78,31 @@ export interface CertificatesSection {
   updatedAt: string | null;
 }
 
+/**
+ * Một trường hồ sơ sẽ đổi (hoặc vừa đổi) theo dữ liệu CCCD. Nhãn do BE trả về để
+ * FE không phải tự map field → tên tiếng Việt ở nhiều chỗ.
+ */
+export interface EkycProfileFieldChange {
+  field: 'fullName' | 'dateOfBirth' | 'gender' | 'address' | (string & {});
+  label: string;
+  currentValue: string | null;
+  newValue: string | null;
+}
+
 export interface IdentityCardSection {
   frontImageUrl: string | null;
   backImageUrl: string | null;
   isVerified: boolean;
+  /** Số CCCD đã che bớt (vd 079****5678). */
+  identityNumberMasked: string | null;
+  fullName: string | null;
+  dateOfBirth: string | null;
+  gender: string | null;
+  hometown: string | null;
+  permanentAddress: string | null;
+  /** Đã quét CCCD nhưng gia sư chưa xác nhận đưa thông tin vào hồ sơ. */
+  requiresProfileConfirmation: boolean;
+  pendingProfileChanges: EkycProfileFieldChange[];
   status: SectionStatus;
   updatedAt: string | null;
 }
@@ -271,6 +292,12 @@ export const updateVideo = async (userId: string, videoUrl: string): Promise<Api
 export interface CccdUploadResult {
   ocrSuccess: boolean;
   profileDataUpdated: boolean;
+  /**
+   * Đọc được dữ liệu khác hồ sơ hiện tại và ĐANG CHỜ gia sư xác nhận. Danh tính đã xác minh
+   * (ảnh + số CCCD đã lưu), chỉ các trường hồ sơ là chưa ghi — ghi khi gọi confirmCccdProfile.
+   */
+  requiresProfileConfirmation: boolean;
+  pendingProfileChanges: EkycProfileFieldChange[];
   identityNumber: string | null;
   fullName: string | null;
   dateOfBirth: string | null;
@@ -278,6 +305,16 @@ export interface CccdUploadResult {
   /** Quê quán trên CCCD — chỉ hiển thị/đối chiếu, không có cột riêng ở BE. */
   hometown: string | null;
   /** Nơi thường trú trên CCCD. Khác với khu vực DẠY (teachingAreaCity/District). */
+  address: string | null;
+  message: string;
+}
+
+export interface CccdProfileConfirmResult {
+  appliedChanges: EkycProfileFieldChange[];
+  fullName: string | null;
+  dateOfBirth: string | null;
+  gender: string | null;
+  hometown: string | null;
   address: string | null;
   message: string;
 }
@@ -316,6 +353,30 @@ export const uploadCccd = async (
       status: error.response?.status,
       data: error.response?.data,
       message: error.message,
+    });
+    throw error;
+  }
+};
+
+/**
+ * Gia sư xác nhận đưa thông tin trên CCCD vào hồ sơ (họ tên, ngày sinh, giới tính,
+ * địa chỉ thường trú). POST /api/tutors/{id}/profile/cccd/confirm — không có body:
+ * BE lấy dữ liệu từ bản OCR đã lưu ở bước quét, client không được tự khai giá trị.
+ */
+export const confirmCccdProfile = async (
+  userId: string,
+): Promise<ApiResponse<CccdProfileConfirmResult>> => {
+  try {
+    const response = await api.post(
+      `/tutors/${userId}/profile/cccd/confirm`,
+      {},
+      { headers: getAuthHeaders() },
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ Error confirming CCCD profile:', {
+      status: error.response?.status,
+      data: error.response?.data,
     });
     throw error;
   }

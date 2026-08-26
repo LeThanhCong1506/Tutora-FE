@@ -12,7 +12,8 @@ import {
     type BasicInfoUpdateData,
     type IntroductionUpdateData,
     type SubjectGradePriceItem,
-    type TutorProfileStatus
+    type TutorProfileStatus,
+    type CccdProfileConfirmResult
 } from '../../../services/tutorProfile.service';
 import { getUserIdFromToken } from '../../../services/auth.service';
 import { getMyAvailability, DAY_OF_WEEK_MAP } from '../../../services/availability.service';
@@ -476,13 +477,18 @@ export function useTutorProfileForm() {
                         const backUrl = identitySection?.backImageUrl ?? kycData?.idCardBackUrl ?? null;
                         const isVerified = (identitySection?.isVerified ?? false) || (kycData?.isIdentityVerified ?? false);
 
+                        // Chi tiết CCCD: ưu tiên eKYC thô (/users/profile), fallback sang progress
+                        // — sau khi tải lại trang thì progress là nguồn duy nhất còn dữ liệu, nên
+                        // nếu chỉ dựa vào eKYC thì màn hình xác nhận sẽ trống trơn.
                         mergedForm.identityVerification = {
-                            idNumber: ekyc?.id || '',
-                            fullNameOnId: ekyc?.name || '',
-                            dateOfBirth: ekyc?.dob || '',
-                            address: ekyc?.address || '',
-                            hometown: ekyc?.home || '',
-                            gender: ekyc?.sex || '',
+                            idNumber: ekyc?.id || identitySection?.identityNumberMasked || '',
+                            fullNameOnId: ekyc?.name || identitySection?.fullName || '',
+                            dateOfBirth: ekyc?.dob || identitySection?.dateOfBirth || '',
+                            address: ekyc?.address || identitySection?.permanentAddress || '',
+                            hometown: ekyc?.home || identitySection?.hometown || '',
+                            gender: ekyc?.sex || identitySection?.gender || '',
+                            requiresProfileConfirmation: identitySection?.requiresProfileConfirmation ?? false,
+                            pendingProfileChanges: identitySection?.pendingProfileChanges ?? [],
                             idFrontImage: null,
                             idFrontImageUrl: frontUrl || undefined,
                             idBackImage: null,
@@ -879,23 +885,39 @@ export function useTutorProfileForm() {
         }));
     }, []);
 
-    // Update identity verification
+    // Kết quả quét CCCD. BE mới CHỈ lưu ảnh + dữ liệu OCR và đánh dấu đã xác minh danh tính;
+    // họ tên/ngày sinh/giới tính/địa chỉ trên hồ sơ CHƯA đổi, nên ở đây không đụng tới
+    // formData.fullName và cũng chưa gợi ý khu vực dạy — tất cả chờ gia sư xác nhận
+    // (xem applyConfirmedCccdProfile).
     const updateIdentityVerification = useCallback((data: IdentityVerificationData) => {
-        const fullName = data.fullNameOnId || null;
+        setFormData(prev => ({ ...prev, identityVerification: data }));
+        setSavedData(prev => ({ ...prev, identityVerification: data }));
+    }, []);
 
-        // Upload CCCD đã cập nhật user.Fullname ở BE. Cập nhật luôn state của hero để
-        // người dùng thấy tên mới ngay, không phải tải lại trang hay chờ SignalR.
+    // Gia sư đã bấm xác nhận và BE đã ghi dữ liệu CCCD vào hồ sơ → đồng bộ lại state hiển thị.
+    const applyConfirmedCccdProfile = useCallback((confirmed: CccdProfileConfirmResult) => {
+        const fullName = confirmed.fullName || null;
+
         setFormData(prev => ({
             ...prev,
             ...(fullName ? { fullName } : {}),
-            identityVerification: data
+            identityVerification: {
+                ...prev.identityVerification,
+                requiresProfileConfirmation: false,
+                pendingProfileChanges: [],
+            },
         }));
         setSavedData(prev => ({
             ...prev,
             ...(fullName ? { fullName } : {}),
-            identityVerification: data
+            identityVerification: {
+                ...prev.identityVerification,
+                requiresProfileConfirmation: false,
+                pendingProfileChanges: [],
+            },
         }));
 
+        // Hero ở layout hiển thị tên riêng — báo cho nó đổi ngay, không chờ tải lại trang.
         if (fullName) {
             window.dispatchEvent(new CustomEvent('profile-name-updated', { detail: fullName }));
         }
@@ -907,7 +929,7 @@ export function useTutorProfileForm() {
         void (async () => {
             if (formDataRef.current.teachingAreaCity) return;
 
-            const province = await matchProvinceFromCccdAddress(data.address);
+            const province = await matchProvinceFromCccdAddress(confirmed.address ?? undefined);
             if (!province || formDataRef.current.teachingAreaCity) return;
 
             setFormData(prev =>
@@ -976,6 +998,7 @@ export function useTutorProfileForm() {
         addAvailabilitySlot,
         removeAvailabilitySlot,
         updateIdentityVerification,
+        applyConfirmedCccdProfile,
         saveDraft,
         publishChanges,
         resetChanges
