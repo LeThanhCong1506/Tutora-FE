@@ -20,7 +20,7 @@ import styles from '../styles.module.css';
 import type { LessonSummary, LessonViewProps } from './types';
 import {
   formatDayHeading,
-  getLessonDate,
+  getLessonBucketDate,
   getLessonLiveState,
   getLessonTime,
   groupLessonsByChain,
@@ -274,7 +274,7 @@ const LessonHoverDetails = ({ lesson }: { lesson: LessonSummary }) => {
       <div className={styles.tooltipMeta}>
         <span>
           <CalendarDays size={14} aria-hidden="true" />
-          {formatDayHeading(getLessonDate(lesson))} · {getLessonTime(lesson)}
+          {formatDayHeading(getLessonBucketDate(lesson))} · {getLessonTime(lesson)}
         </span>
         <span className={styles.tooltipTutor}>
           <UserRound size={14} aria-hidden="true" />
@@ -389,9 +389,11 @@ const ListLessonRow = ({ lesson, onOpen, onOpenLesson }: LessonCardProps) => (
 );
 
 /**
- * Bọc chung 1 khung "chuỗi buổi học" quanh buổi gốc bị ngắt/dispute và buổi phụ/học lại của nó —
- * để không còn trông như 2 buổi học rời rạc trùng ngày. Chỉ đổi cách BÀY, không đổi dữ liệu: mỗi
- * buổi trong chuỗi vẫn dùng đúng card gốc (CalendarEvent/ListLessonRow/gridCard) qua `render`.
+ * Buổi gốc bị ngắt/dispute và buổi phụ/học lại của nó trỏ về CÙNG 1 trang chi tiết (buổi phụ tự
+ * redirect về buổi gốc — xem TutorPortalClassSessionDetail.tsx/StudentLessonDetail.tsx), nên hiện
+ * 2 thẻ bấm vào đâu cũng ra 1 chỗ là thừa và gây nhầm là 2 buổi độc lập. Chỉ hiện DUY NHẤT thẻ của
+ * buổi gốc (root theo originalClassSessionId), các buổi còn lại trong chuỗi chỉ còn 1 dòng ghi chú
+ * giờ hẹn — không phải link riêng vì bấm vào cũng chỉ quay lại đúng thẻ gốc đang hiện.
  */
 const ChainGroup = ({
   lessons,
@@ -399,25 +401,26 @@ const ChainGroup = ({
 }: {
   lessons: LessonSummary[];
   render: (lesson: LessonSummary) => ReactNode;
-}) => (
-  <div className={styles.chainGroup}>
-    <div className={styles.chainGroupHeader}>
-      <Link2 size={12} strokeWidth={2.3} aria-hidden="true" />
-      <span>{getSubject(lessons[0])}</span>
-    </div>
-    <div className={styles.chainTimeline}>
-      {lessons.map((lesson, index) => (
-        <div className={styles.chainRow} key={lesson.lessonId}>
-          <span className={styles.chainRail} aria-hidden="true">
-            <i className={styles.chainDot} style={{ background: getLessonDisplayMeta(lesson).color }} />
-            {index < lessons.length - 1 && <span className={styles.chainLine} />}
+}) => {
+  const root = lessons.find((lesson) => !lesson.originalClassSessionId) ?? lessons[0];
+  const linked = lessons.filter((lesson) => lesson.lessonId !== root.lessonId);
+
+  return (
+    <div className={styles.chainGroup}>
+      {render(root)}
+      {linked.length > 0 && (
+        <div className={styles.chainGroupHeader}>
+          <Link2 size={11} strokeWidth={2.3} aria-hidden="true" />
+          <span>
+            {linked
+              .map((lesson) => `${lesson.isContinuation ? 'Buổi phụ' : 'Buổi học lại'} ${getLessonTime(lesson)}`)
+              .join(' · ')}
           </span>
-          <div className={styles.chainItem}>{render(lesson)}</div>
         </div>
-      ))}
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 interface CalendarLessonViewProps extends LessonViewProps {
   weekDates: Dayjs[];
@@ -432,7 +435,7 @@ export const CalendarLessonView = ({
   onSelectDate,
   onOpenLesson,
 }: CalendarLessonViewProps) => {
-  const lessonsForDate = (date: Dayjs) => lessons.filter((lesson) => getLessonDate(lesson).isSame(date, 'day'));
+  const lessonsForDate = (date: Dayjs) => lessons.filter((lesson) => getLessonBucketDate(lesson).isSame(date, 'day'));
   const selectedLessons = lessonsForDate(selectedDate);
 
   return (
@@ -567,7 +570,7 @@ const GridCard = ({ lesson, onOpen, onOpenLesson }: LessonCardProps) => {
           <span className={styles.gridCardTop}>
             <span className={styles.gridDate}>
               <CalendarDays size={14} />
-              {getLessonDate(lesson).format('dddd, DD/MM')}
+              {getLessonBucketDate(lesson).format('dddd, DD/MM')}
             </span>
             <StatusPill lesson={lesson} />
           </span>

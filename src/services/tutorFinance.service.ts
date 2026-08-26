@@ -8,7 +8,8 @@ import type {
     TutorTransaction,
     WithdrawalListResponse,
     WithdrawalDetail,
-    CreateWithdrawalRequest
+    CreateWithdrawalRequest,
+    EscrowStatusResponse
 } from '../types/finance.types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -99,6 +100,19 @@ export const getTransactionDetail = async (id: number): Promise<TutorTransaction
         const { data } = await api.get(`/tutor/finance/transactions/${id}`);
         return data.content;
     } catch (error) {
+        throw error;
+    }
+};
+
+/**
+ * Get net escrow currently held per booking (only bookings with a positive net)
+ */
+export const getEscrowStatus = async (): Promise<EscrowStatusResponse> => {
+    try {
+        const { data } = await api.get('/tutor/finance/escrow-status');
+        return data.content;
+    } catch (error) {
+        if (is404(error)) return { items: [], totalHeld: 0 };
         throw error;
     }
 };

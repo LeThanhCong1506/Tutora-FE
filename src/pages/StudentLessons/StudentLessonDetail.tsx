@@ -256,6 +256,15 @@ const StudentLessonDetail = () => {
         fetchDispute();
     }, [fetchDetail, fetchDispute]);
 
+    // Buổi phụ không có trang riêng — mọi thông tin (giờ hẹn, nút vào học) đã hiện thẳng trên trang
+    // buổi GỐC rồi (xem block "status === 'interrupted'" bên dưới). Ai lỡ mở thẳng URL của buổi phụ
+    // thì tự đưa về đúng trang buổi gốc thay vì hiện 1 trang riêng trùng lặp.
+    useEffect(() => {
+        if (lesson?.isContinuation && lesson.originalClassSessionId) {
+            navigate(`/student-portal/calendar/${lesson.originalClassSessionId}`, { replace: true });
+        }
+    }, [lesson, navigate]);
+
     useEffect(() => {
         if (lesson?.bookingId) void fetchMaterials(lesson.bookingId);
     }, [lesson?.bookingId, fetchMaterials]);
@@ -1283,6 +1292,14 @@ const StudentLessonDetail = () => {
                     <div style={middleScrollBody}>
                     <div style={middleVideoSection}>
                         {canJoin && <JoinSessionBanner lessonId={lesson.lessonId} nearJoinWindow={nearJoinWindow} isInProgress={isInProgress} />}
+                        {(lesson.status ?? '').toLowerCase() === 'interrupted' && (
+                            <InterruptedOriginalBanner
+                                originalScheduledStart={lesson.scheduledStart}
+                                continuationSessionId={lesson.continuationSessionId}
+                                continuationScheduledStart={lesson.continuationScheduledStart}
+                                continuationScheduledEnd={lesson.continuationScheduledEnd}
+                            />
+                        )}
                         <div style={videoCard}>
                             <ClassSessionRecording classSessionId={lesson.lessonId} />
                         </div>
@@ -1737,10 +1754,68 @@ const JoinSessionBanner = ({ lessonId, nearJoinWindow, isInProgress }: { lessonI
         <div style={heroBgCircle1} /><div style={heroBgCircle2} />
         <div style={heroInner}>
             <div style={heroLeft}><div style={heroLiveDot}><span style={heroPulseRing} /><span style={heroSolidDot} /></div><div><div style={heroBadgeText}>{isInProgress ? 'BUỔI HỌC ĐÃ BẮT ĐẦU' : 'PHÒNG HỌC ĐÃ MỞ'}</div><div style={heroSubtext}>{isInProgress ? 'Gia sư đang chờ bạn trong lớp' : 'Phòng học đã sẵn sàng — bạn có thể vào lớp bất cứ lúc nào'}</div></div></div>
-            <Link to={`/session-lobby/${lessonId}`} style={heroJoinBtn}><Video size={16} /> {nearJoinWindow ? 'Vào học' : 'Vào học nhanh'}</Link>
+            <Link to={`/session-lobby/${lessonId}`} className="sld-hero-join-btn" style={heroJoinBtn}><Video size={16} /> {nearJoinWindow ? 'Vào học' : 'Vào học nhanh'}</Link>
         </div>
     </div>
 );
+
+// Buổi gốc bị ngắt giữa chừng: phòng đã checkout, không mở lại được nữa — hiện thẻ xám "đã kết thúc"
+// kèm nút vào buổi phụ (nếu đã sinh) để học nốt phần còn lại, cộng thông tin giờ hẹn buổi phụ ngay
+// tại đây thay vì bắt học sinh mở thêm 1 trang riêng.
+const InterruptedOriginalBanner = ({
+    originalScheduledStart,
+    continuationSessionId,
+    continuationScheduledStart,
+    continuationScheduledEnd,
+}: {
+    originalScheduledStart?: string;
+    continuationSessionId?: number;
+    continuationScheduledStart?: string;
+    continuationScheduledEnd?: string;
+}) => {
+    // Ngày buổi phụ tính theo lúc bị ngắt THỰC TẾ, có thể lệch hẳn khỏi ngày hẹn gốc (vd vào học
+    // sớm/ngoài lịch để test) — báo rõ ngày nào dời sang ngày nào, tránh học sinh tưởng nhầm lịch.
+    const originalDateKey = originalScheduledStart ? new Date(originalScheduledStart).toDateString() : null;
+    const continuationDateKey = continuationScheduledStart ? new Date(continuationScheduledStart).toDateString() : null;
+    const dateShifted = Boolean(originalDateKey && continuationDateKey && originalDateKey !== continuationDateKey);
+
+    return (
+        <div style={heroCardMuted}>
+            <div style={heroInner}>
+                <div style={heroLeft}>
+                    <div style={heroLiveDotMuted}><Video size={16} /></div>
+                    <div>
+                        <div style={heroBadgeText}>ĐÃ KẾT THÚC</div>
+                        <div style={heroSubtext}>
+                            {continuationSessionId
+                                ? 'Buổi học gốc đã đóng phòng — học tiếp phần còn lại ở buổi phụ.'
+                                : 'Buổi học đã đóng phòng.'}
+                        </div>
+                    </div>
+                </div>
+                {continuationSessionId && (
+                    <Link to={`/session-lobby/${continuationSessionId}`} className="sld-hero-join-btn" style={heroJoinBtn}>
+                        <Video size={16} /> Vào buổi phụ
+                    </Link>
+                )}
+            </div>
+            {continuationSessionId && continuationScheduledStart && (
+                <div style={heroContinuationInfo}>
+                    <div>
+                        Buổi phụ #{continuationSessionId}: {formatLongDate(continuationScheduledStart)} ·{' '}
+                        {formatTime(continuationScheduledStart)}–{formatTime(continuationScheduledEnd)}
+                    </div>
+                    {dateShifted && (
+                        <div style={{ marginTop: 4, opacity: 0.85 }}>
+                            Buổi học ngày {formatLongDate(originalScheduledStart)} đã được chuyển sang buổi phụ vào ngày{' '}
+                            {formatLongDate(continuationScheduledStart)}.
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
 
 // ── Sidebar cột trái kiểu Coursera: khối bo viền duy nhất, chia mục bằng
 // đường kẻ mảnh thay vì nhiều thẻ nổi rời rạc ──
@@ -1861,6 +1936,17 @@ styleTag.textContent = `
     box-shadow: 0 7px 16px rgba(103,35,32,.10);
 }
 .sld-dive-btn:hover { background: #f2eee4; }
+.sld-hero-join-btn {
+    transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+}
+.sld-hero-join-btn:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 6px 16px rgba(0,0,0,.18);
+    background: #f4f4f4 !important;
+}
+.sld-hero-join-btn:active {
+    transform: translateY(0) scale(0.98);
+}
 .sld-sidebar-close:hover { background: #f0f0ee; color: #1a2238; }
 .sld-next-btn:hover { background: #272A31; color: #fff; }
 .sld-ai-send-btn:hover:not(:disabled) {
@@ -1930,6 +2016,36 @@ const heroCard: React.CSSProperties = {
     borderRadius: 16,
     marginBottom: 16,
     boxShadow: '0 8px 24px rgba(45,55,47,0.25), 0 2px 8px rgba(0,0,0,0.08)',
+};
+
+const heroCardMuted: React.CSSProperties = {
+    position: 'relative',
+    overflow: 'hidden',
+    background: 'linear-gradient(135deg, #6b7280 0%, #7c828b 58%, #8b909a 100%)',
+    color: '#fff',
+    borderRadius: 16,
+    marginBottom: 16,
+    boxShadow: '0 4px 16px rgba(107,114,128,0.2)',
+};
+
+const heroLiveDotMuted: React.CSSProperties = {
+    width: 40,
+    height: 40,
+    borderRadius: '50%',
+    background: 'rgba(255,255,255,0.18)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+};
+
+const heroContinuationInfo: React.CSSProperties = {
+    position: 'relative',
+    padding: '0 24px 16px',
+    fontSize: 13,
+    opacity: 0.92,
+    fontFamily: FONT_BODY,
+    fontWeight: 500,
 };
 
 const heroBgCircle1: React.CSSProperties = {

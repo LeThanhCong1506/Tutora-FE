@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Spin } from 'antd';
+import { ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import {
     confirmSkipContinuation,
@@ -16,6 +18,10 @@ export interface SkipContinuationCardProps {
     onBothConfirmed?: () => void;
     /** Màu nút hành động chính — mỗi portal có màu CTA riêng, xem RescheduleProposalModal. */
     accentColor?: string;
+    /** Đường dẫn tới trang chi tiết của CHÍNH buổi phụ (vd /tutor-portal/class-sessions/924) — nếu
+     * có, hiện thêm nút điều hướng sang đó để vào lớp/học nốt. Card này đang hiện trên trang buổi
+     * GỐC nên không tự có nút "Vào lớp" của buổi phụ; không truyền thì chỉ ẩn nút, không lỗi. */
+    continuationDetailPath?: string;
 }
 
 /**
@@ -29,7 +35,9 @@ const SkipContinuationCard = ({
     isTutor,
     onBothConfirmed,
     accentColor = '#1a2238',
+    continuationDetailPath,
 }: SkipContinuationCardProps) => {
+    const navigate = useNavigate();
     const [status, setStatus] = useState<ClassSessionSkipContinuationResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [confirming, setConfirming] = useState(false);
@@ -98,16 +106,23 @@ const SkipContinuationCard = ({
                         ? `Bạn đã đồng ý — đang chờ ${otherLabel} xác nhận.`
                         : `Nếu cả 2 bên thống nhất không cần học nốt phần còn lại, hãy xác nhận ở đây. Cần cả bạn và ${otherLabel} cùng đồng ý.`}
             </div>
-            {!status.bothConfirmed && !myConfirmed && (
-                <Button
-                    size="small"
-                    loading={confirming}
-                    onClick={() => void handleConfirm()}
-                    style={{ alignSelf: 'flex-start', background: accentColor, color: '#fff', borderColor: accentColor }}
-                >
-                    Đồng ý bỏ buổi phụ này
-                </Button>
-            )}
+            <div style={{ display: 'flex', gap: 8 }}>
+                {!status.bothConfirmed && !myConfirmed && (
+                    <Button
+                        size="small"
+                        loading={confirming}
+                        onClick={() => void handleConfirm()}
+                        style={{ background: accentColor, color: '#fff', borderColor: accentColor }}
+                    >
+                        Đồng ý bỏ buổi phụ này
+                    </Button>
+                )}
+                {!status.bothConfirmed && continuationDetailPath && (
+                    <Button size="small" onClick={() => navigate(continuationDetailPath)}>
+                        Vào buổi phụ để học nốt <ArrowRight size={14} />
+                    </Button>
+                )}
+            </div>
         </div>
     );
 };

@@ -34,7 +34,7 @@ import {
   ListLessonView,
   LoadingState,
   filterLessonsKeepingChains,
-  getLessonDate,
+  getLessonBucketDate,
   getMonday,
   type LessonSummary,
   type LessonViewMode,
@@ -205,8 +205,8 @@ const ParentLessons = () => {
         if (!active) return;
 
         const nextLessons: ParentLesson[] = (response.content || [])
-          .flatMap((day) => day.classSessions || [])
-          .map((session) => ({
+          .flatMap((day) => (day.classSessions || []).map((session) => ({ session, calendarDate: day.date })))
+          .map(({ session, calendarDate }) => ({
             lessonId: session.classSessionId,
             bookingId: session.bookingId,
             scheduledStart: session.scheduledStart,
@@ -222,14 +222,15 @@ const ParentLessons = () => {
             isContinuation: session.isContinuation,
             isDisputeRelearn: session.isDisputeRelearn,
             originalClassSessionId: session.originalClassSessionId,
+            calendarDate,
             // Phụ huynh chỉ theo dõi: không có nút vào lớp trên mọi khung nhìn.
             canJoin: false,
           }))
           .filter((lesson) => {
-            const lessonDay = getLessonDate(lesson).startOf('day');
+            const lessonDay = getLessonBucketDate(lesson).startOf('day');
             return !lessonDay.isBefore(rangeStart, 'day') && !lessonDay.isAfter(rangeEnd, 'day');
           })
-          .sort((first, second) => getLessonDate(first).valueOf() - getLessonDate(second).valueOf());
+          .sort((first, second) => getLessonBucketDate(first).valueOf() - getLessonBucketDate(second).valueOf());
 
         setLessons(nextLessons);
       } catch {

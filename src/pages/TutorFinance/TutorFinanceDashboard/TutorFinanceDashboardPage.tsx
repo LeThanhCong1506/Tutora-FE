@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Button, Empty, Spin, Tooltip } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { ArrowDownOutlined, ArrowRightOutlined, ArrowUpOutlined, WalletOutlined } from '@ant-design/icons';
-import { getFinanceSummary, getTransactions } from '../../../services/tutorFinance.service';
+import { getEscrowStatus, getFinanceSummary, getTransactions } from '../../../services/tutorFinance.service';
 import { formatCurrency, formatDateTime, formatTransactionType } from '../../../utils/formatters';
-import type { FinanceSummary, TutorTransaction } from '../../../types/finance.types';
+import type { EscrowStatusItem, FinanceSummary, TutorTransaction } from '../../../types/finance.types';
 import FinancePageShell from '../components/FinancePageShell';
 import FinanceOverviewCards from './components/FinanceOverviewCards';
 import EarningsChart from './components/EarningsChart';
@@ -18,18 +18,21 @@ const TutorFinanceDashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [summary, setSummary] = useState<FinanceSummary | null>(null);
   const [recentTransactions, setRecentTransactions] = useState<TutorTransaction[]>([]);
+  const [escrowItems, setEscrowItems] = useState<EscrowStatusItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        const [summaryRes, transRes] = await Promise.all([
+        const [summaryRes, transRes, escrowRes] = await Promise.all([
           getFinanceSummary(),
           getTransactions({ page: 1, pageSize: 5 }),
+          getEscrowStatus(),
         ]);
         setSummary(summaryRes);
         setRecentTransactions(transRes.transactions);
+        setEscrowItems(escrowRes.items);
       } catch (error) {
         console.error('Failed to fetch finance dashboard data:', error);
         toast.error(getApiErrorMessage(error, 'Không thể tải dữ liệu tổng quan tài chính'));
@@ -127,6 +130,61 @@ const TutorFinanceDashboardPage: React.FC = () => {
                   </article>
                 );
               })}
+            </div>
+          )}
+        </section>
+
+        <section className="finance-surface recent-transactions-section" aria-label="Escrow đang giữ">
+          <div className="finance-section-heading">
+            <div>
+              <h2>Escrow đang giữ</h2>
+              <p style={{ margin: '2px 0 0', fontSize: 13, color: '#7a8296' }}>
+                Tiền đang treo trong ví, ứng với các booking chưa giải ngân hết — chưa cộng vào số dư khả dụng.
+              </p>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="finance-list-loading" aria-label="Đang tải escrow">
+              <Spin />
+            </div>
+          ) : escrowItems.length === 0 ? (
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description={
+                <div className="finance-empty-copy">
+                  <strong>Không có escrow đang giữ</strong>
+                  <span>Toàn bộ tiền đã được giải ngân hoặc chưa có booking nào đang treo.</span>
+                </div>
+              }
+            />
+          ) : (
+            <div className="finance-transaction-list">
+              {escrowItems.map((item) => (
+                <article className="finance-transaction-item" key={item.bookingId}>
+                  <div className="finance-transaction-icon finance-transaction-icon--debit" aria-hidden="true">
+                    <WalletOutlined />
+                  </div>
+                  <div className="finance-transaction-copy">
+                    <strong>Booking #{item.bookingId} — {item.studentName}</strong>
+                    <span title={item.parentName}>
+                      PHHS: {item.parentName}
+                      {item.subjectName ? ` • ${item.subjectName}` : ''}
+                    </span>
+                  </div>
+                  <span className="finance-transaction-amount finance-transaction-amount--debit">
+                    {formatCurrency(item.heldAmount)}
+                  </span>
+                  <Button
+                    type="link"
+                    className="finance-text-action"
+                    icon={<ArrowRightOutlined />}
+                    onClick={() => navigate(`/tutor-portal/bookings/${item.bookingId}`)}
+                  >
+                    Xem booking
+                  </Button>
+                </article>
+              ))}
             </div>
           )}
         </section>

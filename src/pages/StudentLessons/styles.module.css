@@ -984,8 +984,9 @@
   font-size: 9.5px;
 }
 
-/* Chuỗi buổi học (buổi gốc bị ngắt/dispute + buổi phụ/học lại) bọc chung 1 khung, nối bằng
-   đường timeline dọc — thay vì trông như 2 buổi rời rạc trùng ngày. */
+/* Chuỗi buổi học (buổi gốc bị ngắt/dispute + buổi phụ/học lại): chỉ hiện thẻ buổi gốc, các buổi
+   còn lại trong chuỗi gộp thành 1 dòng ghi chú giờ hẹn bên dưới (xem ChainGroup) — bấm thẻ nào
+   trong chuỗi cũng dẫn về cùng 1 trang chi tiết nên không cần hiện nhiều thẻ rời rạc. */
 .chainGroup {
   display: flex;
   flex-direction: column;
@@ -1006,61 +1007,6 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.02em;
-}
-
-.chainTimeline {
-  display: flex;
-  flex-direction: column;
-}
-
-.chainRow {
-  display: flex;
-  gap: 5px;
-}
-
-.chainRail {
-  display: flex;
-  width: 8px;
-  flex: 0 0 auto;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 12px;
-}
-
-.chainDot {
-  width: 7px;
-  height: 7px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-}
-
-.chainLine {
-  width: 1px;
-  flex: 1;
-  min-height: 8px;
-  margin: 3px 0;
-  background: #d5dade;
-}
-
-.chainItem {
-  min-width: 0;
-  flex: 1;
-  padding-bottom: 6px;
-}
-
-/* Card trong chuỗi vốn đã hẹp hơn card đơn (mất bề ngang cho rail nối dấu chấm) — cho status/badge
-   luôn xếp dọc mỗi thứ 1 dòng riêng (giống pattern đã dùng cho màn hẹp 761–1400px) thay vì chen
-   chung 1 hàng rồi bị ellipsis cắt cụt, để chữ như "Bị ngắt giữa buổi" luôn đọc trọn vẹn. */
-.chainItem .calendarEventFooter {
-  align-items: flex-start;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.chainItem .statusPill,
-.chainItem .scheduleChangeBadge,
-.chainItem .recordingBadge {
-  max-width: 100%;
 }
 
 .mobileCalendar {
