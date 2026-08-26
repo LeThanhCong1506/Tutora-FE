@@ -413,6 +413,10 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
       await requestClassSessionInterruption(sessionIdNum, interruptReason.trim() || undefined);
       toast.success('Đã báo buổi học bị ngắt. Buổi phụ đã được tạo, xem trong danh sách buổi học của bạn.');
       setEndModalOpen(false);
+      // Đá phía còn lại ra ngay qua RTM — không đợi heartbeat (tới 10s) mới phát hiện roomClosed,
+      // giống hệt đường "Kết thúc buổi học" bình thường ở handleLeave.
+      selfEndingRef.current = true;
+      await broadcastSessionEnded();
       await leave();
       navigate(-1);
     } catch (error) {
