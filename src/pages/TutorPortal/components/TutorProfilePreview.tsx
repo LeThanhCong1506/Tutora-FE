@@ -86,7 +86,7 @@ const mapFormDataToFullProfile = (data: TutorProfileFormData): TutorFullProfile 
 
   totalFeedbacks: data.totalReviews,
   averageRating: data.averageRating,
-  totalLessons: 0,
+  totalClassSessions: 0,
   feedbacks: null,
 
   totalActiveClasses: 0,

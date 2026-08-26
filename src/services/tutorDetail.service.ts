@@ -166,7 +166,8 @@ export interface TutorFullProfile {
     // Feedback Statistics
     totalFeedbacks: number;
     averageRating: number;
-    totalLessons: number;
+    /** Số buổi đã dạy. BE đổi tên Lesson -> ClassSession; tên cũ luôn undefined. */
+    totalClassSessions: number;
 
     // Feedback List
     feedbacks: FeedbackItem[] | null;

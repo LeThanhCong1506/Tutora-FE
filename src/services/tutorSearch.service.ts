@@ -45,7 +45,12 @@ export interface TutorSearchResultResponse {
     degreeLevel: string | null;
     averageRating: number | null;
     totalReviews: number | null;
-    totalLessons: number | null;
+    /**
+     * Số buổi đã dạy (đã hoàn tất, đã tất toán, không có khiếu nại).
+     * BE đổi tên Lesson -> ClassSession nên tên trường là totalClassSessions;
+     * đọc theo tên cũ 'totalLessons' sẽ luôn ra undefined và hiện 0 buổi học.
+     */
+    totalClassSessions: number | null;
     minPricePerHour: number | null;
     yearsOfExperience: number | null;
     completedHours: number | null;

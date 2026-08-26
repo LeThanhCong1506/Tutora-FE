@@ -18,7 +18,7 @@ const VideoIntroSection = ({ profile }: { profile: TutorFullProfile }) => {
     const isDirectVideo = Boolean(videoUrl && !embedUrl);
     const rating = profile.averageRating || 0;
     const totalReviews = profile.totalFeedbacks || 0;
-    const totalLessons = profile.totalLessons || 0;
+    const totalLessons = profile.totalClassSessions || 0;
     const education = profile.education?.trim();
 
     return (
