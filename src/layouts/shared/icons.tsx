@@ -121,3 +121,10 @@ export const LinkIcon = () => (
         <path d="M12.5 5.5L14.5 3.5C15.33 2.67 15.33 1.33 14.5 0.5C13.67 -0.33 12.33 -0.33 11.5 0.5L9.5 2.5" strokeLinecap="round" />
     </svg>
 );
+
+export const FavoriteIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+         strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21.2l7.8-7.7 1-1.1a5.5 5.5 0 0 0 0-7.8z" />
+    </svg>
+);
