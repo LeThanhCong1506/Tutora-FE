@@ -2896,6 +2896,8 @@ const contentBlockValue: React.CSSProperties = {
     color: '#1a2238',
     lineHeight: 1.6,
     whiteSpace: 'pre-wrap',
+    wordBreak: 'break-word',
+    overflowWrap: 'anywhere',
     fontFamily: FONT_BODY,
 };
 
@@ -2923,6 +2925,8 @@ const reportValueStyle: React.CSSProperties = {
     lineHeight: 1.6,
     fontFamily: FONT_BODY,
     whiteSpace: 'pre-wrap',
+    wordBreak: 'break-word',
+    overflowWrap: 'anywhere',
 };
 
 const summaryTabBtnBase: React.CSSProperties = {
