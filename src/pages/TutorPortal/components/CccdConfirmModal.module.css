@@ -1,0 +1,189 @@
+/* ===== CCCD CONFIRM MODAL ===== */
+/* Màn hình đối chiếu sau khi quét CCCD — dùng lại tông màu của IdentityVerificationModal. */
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Lời dẫn */
+.intro {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background-color: rgba(34, 197, 94, 0.08);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.introIcon {
+    display: flex;
+    flex-shrink: 0;
+    color: #16a34a;
+}
+
+.intro p {
+    margin: 0;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    line-height: 20px;
+    color: rgba(62, 47, 40, 0.85);
+}
+
+/* Khối nội dung */
+.block {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.blockTitle {
+    margin: 0;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(62, 47, 40, 0.8);
+}
+
+/* Thông tin đọc được */
+.infoGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 16px;
+    margin: 0;
+    padding: 16px;
+    border-radius: 12px;
+    background-color: rgba(62, 47, 40, 0.04);
+    border: 1px solid rgba(62, 47, 40, 0.08);
+}
+
+.infoItem {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.infoItem dt {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(62, 47, 40, 0.55);
+}
+
+.infoItem dd {
+    margin: 0;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    color: #3e2f28;
+    overflow-wrap: anywhere;
+}
+
+/* Danh sách thay đổi */
+.changeList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.changeRow {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background-color: #fff;
+    border: 1px solid rgba(62, 47, 40, 0.12);
+}
+
+.changeLabel {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(62, 47, 40, 0.55);
+}
+
+.changeValues {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13.5px;
+    line-height: 20px;
+}
+
+.oldValue {
+    color: rgba(62, 47, 40, 0.5);
+    text-decoration: line-through;
+    overflow-wrap: anywhere;
+}
+
+.changeArrow {
+    display: flex;
+    flex-shrink: 0;
+    color: rgba(62, 47, 40, 0.4);
+}
+
+.newValue {
+    font-weight: 600;
+    color: #16a34a;
+    overflow-wrap: anywhere;
+}
+
+.noChange {
+    padding: 14px 16px;
+    border-radius: 10px;
+    background-color: rgba(62, 47, 40, 0.04);
+    border: 1px solid rgba(62, 47, 40, 0.08);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    line-height: 20px;
+    color: rgba(62, 47, 40, 0.75);
+}
+
+/* Ghi chú */
+.note {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background-color: rgba(146, 88, 15, 0.07);
+    border: 1px solid rgba(146, 88, 15, 0.16);
+}
+
+.note p {
+    margin: 0;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12.5px;
+    line-height: 19px;
+    color: rgba(62, 47, 40, 0.78);
+}
+
+.dismissHint {
+    margin: 0;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    line-height: 18px;
+    color: rgba(62, 47, 40, 0.55);
+}
+
+@media (max-width: 600px) {
+    .infoGrid {
+        grid-template-columns: 1fr;
+    }
+}

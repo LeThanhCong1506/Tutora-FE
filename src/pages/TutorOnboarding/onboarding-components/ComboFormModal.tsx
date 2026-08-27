@@ -269,6 +269,7 @@ const ComboFormModal: React.FC<ComboFormModalProps> = ({
         </div>
       }
       width={920}
+      centered
       destroyOnHidden
     >
       <div className={styles.comboForm}>

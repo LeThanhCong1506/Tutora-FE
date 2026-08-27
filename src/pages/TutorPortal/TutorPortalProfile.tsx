@@ -10,6 +10,7 @@ import AboutMeModal from './components/AboutMeModal';
 import CredentialModal from './components/CredentialModal';
 import type { CredentialData as ModalCredentialData } from './components/CredentialModal';
 import IdentityVerificationModal from './components/IdentityVerificationModal';
+import CccdConfirmModal from './components/CccdConfirmModal';
 // @ts-ignore - IdentityVerificationData may be used later
 import type { IdentityVerificationData as _IdentityVerificationData } from './components/IdentityVerificationModal';
 import IntroVideoSection from './components/IntroVideoSection';
@@ -18,7 +19,13 @@ import BookingModal from './components/BookingModal';
 import TutorProfilePreview from './components/TutorProfilePreview';
 import { deleteCertificate } from '../../services/certificate.service';
 import { getUserIdFromToken } from '../../services/auth.service';
-import { getAcceptingBookings, setAcceptingBookings, getMyCccdUrls, type MyCccdUrls } from '../../services/tutorProfile.service';
+import {
+  getAcceptingBookings,
+  setAcceptingBookings,
+  getMyCccdUrls,
+  confirmCccdProfile,
+  type MyCccdUrls,
+} from '../../services/tutorProfile.service';
 import { validateAvatar } from './utils/validation';
 import { getCertificateImageUrl, isPdfUrl } from '../../utils/certificateImage';
 import { fetchProtectedImage, releaseProtectedImage } from '../../utils/protectedImage';
@@ -314,6 +321,10 @@ const TutorPortalProfile: React.FC = () => {
   const [isCredentialModalOpen, setIsCredentialModalOpen] = useState(false);
   const [editingCredential, setEditingCredential] = useState<ModalCredentialData | null>(null);
   const [isIdentityModalOpen, setIsIdentityModalOpen] = useState(false);
+  // Màn hình đối chiếu "thông tin CCCD → hồ sơ". Mở sau khi quét xong, và mở lại được từ
+  // thẻ Xác minh danh tính nếu gia sư bấm "Để sau".
+  const [isCccdConfirmOpen, setIsCccdConfirmOpen] = useState(false);
+  const [isConfirmingCccd, setIsConfirmingCccd] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [certificatePreview, setCertificatePreview] = useState<CertificatePreviewData | null>(null);
   const [deletingCredentialId, setDeletingCredentialId] = useState<string | null>(null);
@@ -416,6 +427,7 @@ const TutorPortalProfile: React.FC = () => {
     updateCredential,
     removeCredential,
     updateIdentityVerification,
+    applyConfirmedCccdProfile,
     saveDraft: _saveDraft,
     publishChanges: _publishChanges,
   } = useTutorProfileForm();
@@ -608,6 +620,41 @@ const TutorPortalProfile: React.FC = () => {
       setDeletingCredentialId(null);
     }
   };
+
+  // Gia sư đồng ý đưa thông tin CCCD vào hồ sơ. BE lấy dữ liệu từ bản OCR đã lưu — request
+  // không gửi kèm giá trị nào, gia sư chỉ đồng ý chứ không tự khai.
+  const handleConfirmCccdProfile = async () => {
+    const userId = getUserIdFromToken();
+    if (!userId) {
+      toast.error('Không tìm thấy thông tin người dùng');
+      return;
+    }
+
+    setIsConfirmingCccd(true);
+    try {
+      const res = await confirmCccdProfile(userId);
+      const confirmed = res.content;
+      if (res.statusCode !== 200 || !confirmed) {
+        toast.error(res.message || 'Không thể cập nhật hồ sơ theo CCCD. Vui lòng thử lại.');
+        return;
+      }
+
+      applyConfirmedCccdProfile(confirmed);
+      toast.success(confirmed.message || 'Đã cập nhật hồ sơ theo CCCD.');
+      setIsCccdConfirmOpen(false);
+      setIsIdentityModalOpen(false);
+      // Đồng bộ lại tiến trình hồ sơ (cờ "chờ xác nhận" nằm trong section identityCard).
+      fetchProgress();
+    } catch (error) {
+      console.error('Confirm CCCD profile error:', error);
+      toast.error(getApiErrorMessage(error, 'Không thể cập nhật hồ sơ theo CCCD. Vui lòng thử lại.'));
+    } finally {
+      setIsConfirmingCccd(false);
+    }
+  };
+
+  const identityData = formData.identityVerification;
+  const hasPendingCccdConfirm = identityData.requiresProfileConfirmation === true;
 
   return (
     <PageContainer
@@ -1069,6 +1116,24 @@ const TutorPortalProfile: React.FC = () => {
                           <span>Đã lấy thông tin</span>
                         </div>
                         <p className={styles.identityVerifiedText}>Đã lấy thông tin CCCD của bạn thành công.</p>
+
+                        {/* Đã quét nhưng gia sư chưa đồng ý ghi vào hồ sơ — nhắc lại lời mời
+                            xác nhận, kể cả sau khi tải lại trang (cờ lấy từ verification progress). */}
+                        {hasPendingCccdConfirm && (
+                          <div className={styles.identityConfirmPending} role="status">
+                            <p>
+                              Thông tin trên CCCD <strong>chưa được lưu vào hồ sơ</strong> của bạn.
+                              Xem lại và xác nhận để cập nhật họ tên, ngày sinh, giới tính và địa chỉ thường trú.
+                            </p>
+                            <button
+                              type="button"
+                              className={styles.identityConfirmBtn}
+                              onClick={() => setIsCccdConfirmOpen(true)}
+                            >
+                              Xem &amp; xác nhận
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                     {formData.identityVerification.verificationStatus === 'pending' && (
@@ -1293,8 +1358,30 @@ const TutorPortalProfile: React.FC = () => {
         onClose={() => setIsIdentityModalOpen(false)}
         onSave={(data) => {
           updateIdentityVerification(data);
+          // Quét xong và có thông tin lệch với hồ sơ → mở ngay màn hình đối chiếu.
+          // Không có gì lệch thì khỏi hỏi, đóng luôn cho gọn.
+          if (data.requiresProfileConfirmation) {
+            setIsCccdConfirmOpen(true);
+          }
         }}
         initialData={formData.identityVerification}
+        onRequestProfileConfirm={() => setIsCccdConfirmOpen(true)}
+      />
+
+      <CccdConfirmModal
+        isOpen={isCccdConfirmOpen}
+        onDismiss={() => setIsCccdConfirmOpen(false)}
+        onConfirm={handleConfirmCccdProfile}
+        isLoading={isConfirmingCccd}
+        info={{
+          identityNumber: identityData.idNumber,
+          fullName: identityData.fullNameOnId,
+          dateOfBirth: identityData.dateOfBirth,
+          gender: identityData.gender,
+          hometown: identityData.hometown,
+          address: identityData.address,
+        }}
+        changes={identityData.pendingProfileChanges ?? []}
       />
 
       <BookingModal
