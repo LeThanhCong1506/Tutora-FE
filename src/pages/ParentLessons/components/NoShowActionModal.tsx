@@ -137,7 +137,9 @@ const NoShowActionModal: React.FC<NoShowActionModalProps> = ({
               style={{ width: '100%', padding: '10px 12px', border: '1px solid #d9d9d9', borderRadius: '6px' }}
             />
             <p style={{ marginTop: '6px', marginBottom: 0, color: '#888', fontSize: '12px' }}>
-              Hệ thống sẽ kiểm tra trùng lịch của gia sư trước khi tạo buổi bù.
+              Hệ thống sẽ kiểm tra trùng lịch của gia sư trước khi tạo buổi bù. Nếu buổi học này đã
+              qua nhiều lần dời/học lại trước đó, hệ thống có thể từ chối tạo thêm — khi đó vui lòng
+              chọn một trong 2 phương án còn lại.
             </p>
           </div>
         )}
