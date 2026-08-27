@@ -57,6 +57,12 @@ export interface LessonSummary {
    * khi báo cáo buổi gốc được nộp, nhưng buổi này coi như đã "chết" nên phải ẩn nút "Vào lớp"
    * (xem utils/liveSession.ts canJoinLiveSession). */
   skipConfirmedByBothSides?: boolean;
+  /**
+   * Ngày ô lịch (server tính sẵn: check-in thực tế nếu đã vào học, không thì giờ hẹn — xem
+   * `GetTutorCalendarAsync`/`GetStudentCalendarAsync`/`GetParentCalendarAsync`). Dùng để nhóm/lọc
+   * buổi học vào đúng cột ngày trên lịch tuần; không set thì rơi về `scheduledStart` như cũ.
+   */
+  calendarDate?: string;
 }
 
 export interface LessonGroup {

@@ -26,6 +26,14 @@ export interface BookingSlot extends WeeklySlot {
     date: string; // "YYYY-MM-DD"
 }
 
+// Lịch đã có (từ API booked-slots) — thêm 2 field để phân biệt "đã khóa" (gia sư accept rồi,
+// chặn chọn) với "đang tranh chấp" (nhiều người đã đặt cọc chờ xác nhận, vẫn chọn được bình
+// thường, chỉ cảnh báo nhẹ).
+export interface BookedSlotInfo extends BookingSlot {
+    isLocked: boolean;
+    pendingCount: number;
+}
+
 export interface WeeklyPatternSlot {
     dayOfWeek: number;
     startTime: string;
@@ -52,6 +60,8 @@ export interface BookingScheduleApi {
     bookedSlotsError: boolean;
     hasSelectedSlotConflict: boolean;
     isBookedCell: (dateKey: string, time: string) => boolean;
+    /** Số người khác đang chờ gia sư xác nhận cho khung giờ này (0 nếu không tranh chấp hoặc đã bị khóa). */
+    getContestedCount: (dateKey: string, time: string) => number;
     wouldAvailabilityPickConflict: (dateKey: string, dayOfWeek: number, startTime: string) => boolean;
     fixedWeekHasConflict: (weekMonday: Date) => boolean;
     toggleAvailabilityPick: (dateKey: string, dayOfWeek: number, startTime: string) => void;

@@ -278,7 +278,20 @@
 }
 
 /* ── Hour slot grid ── */
+/* Hình học của lưới (bề rộng cột giờ, số cột ngày, khoảng hở) khai báo bằng custom
+   property Ở ĐÂY — trên .gridCard — chứ không phải trên .grid, vì hàng header ngày
+   (.weekHeader) là element ANH EM của .grid nhưng phải khớp từng cột với nó. Đặt biến
+   ở cha chung để cả hai cùng đọc một nguồn: mọi biến thể (preview trong modal, mobile)
+   chỉ cần ghi đè biến trên .gridCard là header và thân lưới tự trôi theo nhau.
+   Số cột khai báo qua custom property thay vì viết thẳng grid-template-columns: nếu cả
+   biến thể lẫn media query cùng ghi grid-template-columns thì rule specificity cao hơn
+   sẽ nuốt luôn phần số cột của mobile, khiến lưới còn 8 cột trong khi mỗi bước 30 phút
+   chỉ còn 2 phần tử hiển thị → vỡ hoàn toàn bố cục. */
 .gridCard {
+  --grid-time-col: 56px;
+  --grid-day-count: 7;
+  --grid-col-gap: 6px;
+  --grid-row-gap: 6px;
   background: #fff;
   border: 1px solid rgba(26, 34, 56, 0.08);
   border-radius: 14px;
@@ -287,17 +300,10 @@
   overflow: visible;
 }
 
-/* Số cột khai báo qua custom property thay vì viết thẳng grid-template-columns.
-   Lý do: các biến thể (.comboPreview .grid) chỉ ghi đè bề rộng cột giờ, còn số cột
-   ngày do media query quyết định — nếu cả hai cùng ghi grid-template-columns thì
-   rule specificity cao hơn sẽ nuốt luôn phần số cột của mobile, khiến lưới còn 8 cột
-   trong khi mỗi bước 30 phút chỉ còn 2 phần tử hiển thị → vỡ hoàn toàn bố cục. */
 .grid {
   display: grid;
-  --grid-time-col: 56px;
-  --grid-day-count: 7;
   grid-template-columns: var(--grid-time-col) repeat(var(--grid-day-count), minmax(0, 1fr));
-  gap: 6px;
+  gap: var(--grid-row-gap) var(--grid-col-gap);
 }
 
 .slotCellWrap {
@@ -314,19 +320,26 @@
   display: none;
 }
 
-/* Giữ ô đệm ở góc header mà không cần render phần tử .gridCorner. */
+/* Giữ ô đệm ở góc header mà không cần render phần tử .gridCorner: margin-left đúng bằng
+   bề rộng cột giờ + khoảng hở cột, và column-gap trùng với thân lưới — nếu lệch một trong
+   hai thì mỗi cột ngày trong header rộng hơn/hẹp hơn cột ô bên dưới và sai số cộng dồn
+   dần sang phải (T2 lệch vài px, tới CN lệch cả ô). */
 .weekHeader {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  margin: 0 0 6px 62px;
+  grid-template-columns: repeat(var(--grid-day-count), minmax(0, 1fr));
+  column-gap: var(--grid-col-gap);
+  margin: 0 0 var(--grid-row-gap) calc(var(--grid-time-col) + var(--grid-col-gap));
   overflow: hidden;
   position: sticky;
   top: var(--tabs-h);
   z-index: 6;
-  border: 1px solid rgba(26, 34, 56, 0.1);
   border-radius: 12px;
   background: #fff;
-  box-shadow: 0 7px 16px rgba(45, 55, 47, 0.1);
+  /* Viền vẽ bằng inset shadow chứ không phải border: border sẽ ăn 2px vào vùng nội dung
+     nên 7 cột header hẹp hơn 7 cột ô bên dưới và lệch dần ~1px về phía CN. */
+  box-shadow:
+    inset 0 0 0 1px rgba(26, 34, 56, 0.1),
+    0 7px 16px rgba(45, 55, 47, 0.1);
 }
 
 .gridCorner {
@@ -337,14 +350,22 @@
 }
 
 .colHead {
+  position: relative;
   text-align: center;
   padding: 6px 0 8px;
   min-width: 0;
-  border-right: 1px solid rgba(26, 34, 56, 0.08);
 }
 
-.colHead:last-child {
-  border-right: 0;
+/* Vạch ngăn nằm GIỮA khoảng hở giữa hai cột (không phải border-right sát mép cột),
+   để nó rơi đúng vào rãnh giữa hai cột ô bên dưới. */
+.colHead:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 14%;
+  bottom: 14%;
+  right: calc(var(--grid-col-gap) / -2);
+  width: 1px;
+  background: rgba(26, 34, 56, 0.08);
 }
 
 .colHeadDay {
@@ -2330,13 +2351,25 @@
 }
 
 /* ── ComboFormModal ── */
-.comboModal :global(.ant-modal-content) {
+/* antd v6 đổi tên khối bọc header/body/footer từ .ant-modal-content → .ant-modal-container;
+   selector cũ .ant-modal-content không còn khớp phần tử nào.
+   Modal dùng `centered`, chiều cao do chính .ant-modal-container chặn (flex column) chứ
+   KHÔNG đặt max-height lên riêng .ant-modal-body: đặt ở body thì header + footer + offset
+   `top` mặc định của antd cộng thêm vào và tổng chiều cao vượt quá viewport → thanh nút
+   dưới cùng bị đẩy sát/khuất đáy màn hình. Chặn ở container thì phần dư luôn rơi vào vùng
+   cuộn của body và modal luôn còn khoảng hở đều ở trên/dưới. */
+.comboModal :global(.ant-modal-container) {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 96px);
+  max-height: calc(100dvh - 96px);
   overflow: hidden;
   padding: 0;
   border-radius: 16px;
 }
 
 .comboModal :global(.ant-modal-header) {
+  flex: none;
   margin: 0;
   padding: 19px 22px 16px;
   border-bottom: 1px solid rgba(26, 34, 56, 0.08);
@@ -2348,12 +2381,16 @@
 }
 
 .comboModal :global(.ant-modal-body) {
-  max-height: calc(100vh - 210px);
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   padding: 18px 22px;
 }
 
 .comboModal :global(.ant-modal-footer) {
+  flex: none;
   margin: 0;
   padding: 14px 22px;
   border-top: 1px solid rgba(26, 34, 56, 0.08);
@@ -2831,6 +2868,9 @@
 
 /* Lưới compact + bỏ sticky trong context modal */
 .comboPreview .gridCard {
+  --grid-time-col: 42px;
+  --grid-col-gap: 5px;
+  --grid-row-gap: 3px;
   overflow: hidden;
   padding: 0;
   border: none;
@@ -2872,8 +2912,6 @@
 
 .comboPreview .grid {
   min-width: 0;
-  --grid-time-col: 42px;
-  gap: 3px 5px;
 }
 
 /* Ô rảnh nhưng KHÔNG thuộc gói cố định — xanh nhạt làm bối cảnh */
@@ -3150,14 +3188,12 @@
   /* Mobile: chuyển sang một ngày/lần. Không ép 7 cột vào màn hình hoặc bắt
      người dùng cuộn ngang qua hàng chục mốc giờ. */
   .gridCard {
-    overflow: visible;
-    padding: 12px;
-  }
-
-  .grid {
     --grid-time-col: 52px;
     --grid-day-count: 1;
-    gap: 8px;
+    --grid-col-gap: 8px;
+    --grid-row-gap: 8px;
+    overflow: visible;
+    padding: 12px;
   }
 
   .slotCellWrap:not(.slotCellActive) {
@@ -3168,12 +3204,18 @@
     height: 44px;
   }
 
+  /* Mobile chỉ hiện 1 ngày: header là một thanh full-width (không chừa cột giờ) nên
+     cần trả margin-left về 0 và bỏ vạch ngăn giữa các cột. */
   .weekHeader {
     grid-template-columns: 1fr;
     margin-left: 0;
     position: static;
     overflow: visible;
-    box-shadow: none;
+    box-shadow: inset 0 0 0 1px rgba(26, 34, 56, 0.1);
+  }
+
+  .colHead:not(:last-child)::after {
+    display: none;
   }
 
   .colHead:not(.colHeadActive) {

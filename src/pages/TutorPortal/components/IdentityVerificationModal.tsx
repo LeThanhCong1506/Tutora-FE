@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import EditModal from './EditModal';
 import { uploadCccd } from '../../../services/tutorProfile.service';
+import type { EkycProfileFieldChange } from '../../../services/tutorProfile.service';
 import { getUserIdFromToken } from '../../../services/auth.service';
 import { getApiErrorMessage } from '../../../utils/apiError';
 import styles from './IdentityVerificationModal.module.css';
@@ -51,6 +52,13 @@ export interface IdentityVerificationData {
     idBackImageUrl?: string;
     verificationStatus: 'not_submitted' | 'pending' | 'verified' | 'rejected';
     rejectionReason?: string;
+    /**
+     * Đã quét CCCD nhưng gia sư CHƯA xác nhận đưa thông tin vào hồ sơ. Danh tính vẫn được
+     * tính là đã xác minh — chỉ họ tên/ngày sinh/giới tính/địa chỉ là chưa ghi.
+     */
+    requiresProfileConfirmation?: boolean;
+    /** Các trường sẽ đổi nếu xác nhận (giá trị hiện tại → giá trị trên CCCD). */
+    pendingProfileChanges?: EkycProfileFieldChange[];
 }
 
 interface IdentityVerificationModalProps {
@@ -58,6 +66,8 @@ interface IdentityVerificationModalProps {
     onClose: () => void;
     onSave: (data: IdentityVerificationData) => void;
     initialData?: IdentityVerificationData;
+    /** Mở màn hình đối chiếu để xác nhận đưa dữ liệu CCCD vào hồ sơ (do trang cha sở hữu). */
+    onRequestProfileConfirm?: () => void;
 }
 
 // Validation functions
@@ -77,7 +87,8 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
     isOpen,
     onClose,
     onSave,
-    initialData
+    initialData,
+    onRequestProfileConfirm
 }) => {
     const defaultData: IdentityVerificationData = {
         idNumber: '',
@@ -91,7 +102,6 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
     const [formData, setFormData] = useState<IdentityVerificationData>(initialData || defaultData);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = useState(false);
-    const [showProfileUpdateNotice, setShowProfileUpdateNotice] = useState(false);
     const [previews, setPreviews] = useState<{
         front: string | null;
         back: string | null;
@@ -105,17 +115,16 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
 
     // Reset form when modal opens
     useEffect(() => {
-        if (isOpen && !showProfileUpdateNotice) {
+        if (isOpen) {
             setFormData(initialData || defaultData);
             setPreviews({
                 front: initialData?.idFrontImageUrl || null,
                 back: initialData?.idBackImageUrl || null
             });
             setErrors({});
-            setShowProfileUpdateNotice(false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen, initialData, showProfileUpdateNotice]);
+    }, [isOpen, initialData]);
 
     // Pick a file → validate + preview locally. Ảnh chỉ được upload khi bấm "Gửi xác minh"
     // (endpoint CCCD yêu cầu cả 2 mặt cùng lúc).
@@ -190,7 +199,9 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
             }
 
             if (kyc.ocrSuccess) {
-                // CCCD là nguồn định danh chuẩn; BE đã đồng bộ họ tên, ngày sinh và giới tính.
+                // BE CHỈ lưu ảnh + dữ liệu OCR và xác minh danh tính; hồ sơ (họ tên, ngày sinh,
+                // giới tính, địa chỉ) chưa bị đụng tới. Trang cha mở màn hình đối chiếu để gia sư
+                // tự quyết định có áp dụng hay không.
                 toast.success('Đã lấy thông tin CCCD thành công!');
                 onSave({
                     ...formData,
@@ -201,17 +212,17 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
                     hometown: kyc.hometown || '',
                     address: kyc.address || '',
                     verificationStatus: 'verified',
+                    requiresProfileConfirmation: kyc.requiresProfileConfirmation,
+                    pendingProfileChanges: kyc.pendingProfileChanges ?? [],
                 });
-                if (kyc.profileDataUpdated) {
-                    setShowProfileUpdateNotice(true);
-                    return;
-                }
             } else {
                 // Không đọc được CCCD → ảnh đã lưu, chờ admin xác minh thủ công.
                 toast.success(kyc.message || 'Đã gửi CCCD. Admin sẽ xác minh trong 24-48 giờ.');
                 onSave({
                     ...formData,
                     verificationStatus: 'pending',
+                    requiresProfileConfirmation: false,
+                    pendingProfileChanges: [],
                 });
             }
             onClose();
@@ -222,11 +233,6 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
         } finally {
             setIsLoading(false);
         }
-    };
-
-    const acknowledgeProfileUpdate = () => {
-        setShowProfileUpdateNotice(false);
-        onClose();
     };
 
     const getStatusBadge = () => {
@@ -329,9 +335,8 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
     };
 
     return (
-        <>
         <EditModal
-            isOpen={isOpen && !showProfileUpdateNotice}
+            isOpen={isOpen}
             onClose={onClose}
             onSave={handleSaveOrClose}
             title="Xác minh danh tính"
@@ -407,6 +412,23 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
                                 <span className={styles.ekycValue}>{formData.address || '—'}</span>
                             </div>
                         </div>
+
+                        {/* Thông tin trên CCCD chỉ vào hồ sơ khi gia sư đồng ý — nếu còn treo thì
+                            nhắc ngay tại đây, chỗ gia sư đang nhìn thấy dữ liệu. */}
+                        {formData.requiresProfileConfirmation && onRequestProfileConfirm && (
+                            <div className={styles.pendingConfirmNotice}>
+                                <p>
+                                    Những thông tin này <strong>chưa được lưu vào hồ sơ</strong> của bạn.
+                                </p>
+                                <button
+                                    type="button"
+                                    className={styles.pendingConfirmBtn}
+                                    onClick={onRequestProfileConfirm}
+                                >
+                                    Xem và xác nhận cập nhật
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -420,33 +442,6 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
                 </div>
             </div>
         </EditModal>
-
-        {showProfileUpdateNotice && (
-            <div className={styles.profileUpdateOverlay} role="presentation">
-                <div
-                    className={styles.profileUpdateDialog}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="identity-profile-update-title"
-                    aria-describedby="identity-profile-update-description"
-                >
-                    <div className={styles.profileUpdateIcon} aria-hidden="true"><CheckIcon /></div>
-                    <h2 id="identity-profile-update-title">Thông tin đã được cập nhật</h2>
-                    <p id="identity-profile-update-description">
-                        Họ tên, ngày sinh, giới tính và địa chỉ thường trú của bạn đã được cập nhật
-                        theo CCCD để đảm bảo tính minh bạch và xác thực cho tài khoản.
-                    </p>
-                    <p id="identity-profile-update-teaching-area" className={styles.profileUpdateFootnote}>
-                        Khu vực dạy học của bạn không bị thay đổi — đây là trường riêng, bạn có thể
-                        chọn lại bất cứ lúc nào ở phần Thông tin cơ bản.
-                    </p>
-                    <button type="button" className={styles.profileUpdateConfirm} onClick={acknowledgeProfileUpdate}>
-                        Đồng ý
-                    </button>
-                </div>
-            </div>
-        )}
-        </>
     );
 };
 

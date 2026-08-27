@@ -66,6 +66,7 @@ const StepSchedule: React.FC<StepProps> = ({
         bookedSlotsError,
         hasSelectedSlotConflict,
         isBookedCell,
+        getContestedCount,
         wouldAvailabilityPickConflict,
         fixedWeekHasConflict,
         toggleAvailabilityPick,
@@ -290,6 +291,10 @@ const StepSchedule: React.FC<StepProps> = ({
                                                     const isSelectedStart = selectedCovering?.startTime === time;
                                                     const isSelectedContinuation = isSelected && !isSelectedStart;
                                                     const bookedCell = isBookedCell(dateKey, time);
+                                                    // Còn chọn được, nhưng >=2 người khác đã đặt cọc chờ gia sư xác nhận cho
+                                                    // đúng khung giờ này — cảnh báo nhẹ, không chặn chọn.
+                                                    const contestedCount = getContestedCount(dateKey, time);
+                                                    const isContestedCell = !bookedCell && contestedCount >= 2;
 
                                                     let clickable = false;
                                                     let isOpenButCannotStart = false;
@@ -323,11 +328,21 @@ const StepSchedule: React.FC<StepProps> = ({
                                                                     demoDow,
                                                                     time,
                                                                 );
+                                                            // Chặn bấm ở CẢ 2 kiểu trùng, để user thấy ngay thay vì bấm
+                                                            // vào rồi mới bị từ chối:
+                                                            //  - bookedCell: chính ô này đã bị khóa (gia sư đã có buổi
+                                                            //    đúng khung giờ này, ngay tuần đang xem) → nhãn "Đã có lịch".
+                                                            //  - conflictsWithExistingBooking: ô này trống ở tuần đang xem,
+                                                            //    nhưng buổi lặp hàng tuần sẽ đụng lịch gia sư ở một tuần
+                                                            //    SAU đó → nhãn "Trùng lịch" (xem showBooked/slotLabel bên
+                                                            //    dưới). Không nhìn thấy được trên tuần hiện tại nên bắt
+                                                            //    buộc phải tô/khóa, nếu không user không hiểu vì sao hỏng.
                                                             const canStartSession =
                                                                 isOpen &&
                                                                 fits &&
                                                                 date <= bookingDeadline &&
                                                                 !bookedSlotsLoading &&
+                                                                !bookedCell &&
                                                                 !conflictsWithExistingBooking;
 
                                                             clickable =
@@ -337,8 +352,12 @@ const StepSchedule: React.FC<StepProps> = ({
                                                                 isOpen && !canStartSession && !isSelectedContinuation;
                                                             isBlockedBySelectedSession =
                                                                 isSelectedContinuation || overlapsSelectedSession;
-                                                            onCellClick = () =>
-                                                                toggleAvailabilityPick(dateKey, demoDow, time);
+                                                            // Ô trùng lịch đã bị khóa ở canStartSession nên không cần chặn
+                                                            // lại ở đây. Ô ĐÃ CHỌN vẫn luôn bấm được (clickable qua
+                                                            // isSelectedStart) để bỏ chọn — kể cả khi nó vừa trở nên trùng
+                                                            // lịch sau khi được khôi phục từ draft; toggleAvailabilityPick
+                                                            // vào thẳng nhánh bỏ-chọn nên không bị guard nào cản.
+                                                            onCellClick = () => toggleAvailabilityPick(dateKey, demoDow, time);
                                                         } else if (isFixedPackage) {
                                                             const isComboCell = fixedPattern.some(
                                                                 (p) =>
@@ -361,6 +380,7 @@ const StepSchedule: React.FC<StepProps> = ({
                                                         }
                                                     }
                                                     const showAvailable = clickable && !isSelected;
+                                                    const showContested = showAvailable && isContestedCell;
                                                     const showBooked =
                                                         !isSelected &&
                                                         isOpen &&
@@ -372,6 +392,11 @@ const StepSchedule: React.FC<StepProps> = ({
                                                         <>
                                                             <Check size={13} />
                                                             Đã chọn
+                                                        </>
+                                                    ) : showContested ? (
+                                                        <>
+                                                            + Chọn
+                                                            <span className={styles.slotContestedBadge}>{contestedCount}</span>
                                                         </>
                                                     ) : showAvailable ? (
                                                         "+ Chọn"
@@ -405,15 +430,17 @@ const StepSchedule: React.FC<StepProps> = ({
                                                                 className={`${styles.slotButton} ${
                                                                     showSelectedState
                                                                         ? styles.slotSelected
-                                                                        : showAvailable
-                                                                          ? styles.slotAvailable
-                                                                          : showBooked
-                                                                            ? bookedCell
-                                                                                ? styles.slotBooked
-                                                                                : styles.slotConflict
-                                                                          : showBlockedChoose || isOpenButCannotStart
-                                                                            ? styles.slotOpen
-                                                                            : styles.slotUnavailable
+                                                                        : showContested
+                                                                          ? `${styles.slotAvailable} ${styles.slotContested}`
+                                                                          : showAvailable
+                                                                            ? styles.slotAvailable
+                                                                            : showBooked
+                                                                              ? bookedCell
+                                                                                  ? styles.slotBooked
+                                                                                  : styles.slotConflict
+                                                                              : showBlockedChoose || isOpenButCannotStart
+                                                                                ? styles.slotOpen
+                                                                                : styles.slotUnavailable
                                                                 }`}
                                                                 disabled={!clickable}
                                                                 onClick={() => onCellClick?.()}
@@ -421,6 +448,8 @@ const StepSchedule: React.FC<StepProps> = ({
                                                                 title={
                                                                     isSelectedContinuation
                                                                         ? `Thuộc buổi học bắt đầu lúc ${selectedCovering?.startTime}.`
+                                                                        : showContested
+                                                                          ? `Hiện có ${contestedCount} người muốn chọn khung giờ này. Nếu bạn muốn gia sư xác nhận nhanh hơn, bạn có thể chọn khung giờ khác.`
                                                                         : showBooked
                                                                           ? bookedCell
                                                                               ? "Gia sư đã có buổi học tại khung giờ này."

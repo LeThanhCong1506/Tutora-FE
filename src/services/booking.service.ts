@@ -25,6 +25,10 @@ export interface ScheduleItemPayload {
 export interface BookedSlotPayload {
     scheduledStart: string;
     scheduledEnd: string;
+    /** True nếu gia sư đã accept 1 booking khác trùng khung giờ này — chỉ trường hợp này mới thực sự khóa. */
+    isLocked: boolean;
+    /** Số booking khác nhau đang chờ gia sư xác nhận (đã đóng cọc) trùng khung giờ này. */
+    pendingCount: number;
 }
 
 /** Gói flexible: parent tự chọn từng buổi cụ thể (ngày + giờ). */

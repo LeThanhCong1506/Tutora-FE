@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Calendar, Check, ChevronRight, Clock, MessageCircle, Search, Star, User, Wallet, X } from 'lucide-react';
-import { Input, Modal, Pagination } from 'antd';
+import { BookOpen, Calendar, Check, ChevronRight, Clock, Eye, MessageCircle, Search, Star, User, Wallet, X } from 'lucide-react';
+import { Input, Modal, Pagination, Select } from 'antd';
 import { toast } from 'react-toastify';
 import { getApiErrorMessage } from '../../utils/apiError';
 import BookingMonthCalendar from '../../components/BookingMonthCalendar/BookingMonthCalendar';
@@ -123,6 +123,72 @@ const getUniqueSchedule = (booking: BookingResponseDTO) => {
   return Array.from(uniqueSlots.values());
 };
 
+const schedulesOverlap = (a: BookingResponseDTO['schedule'], b: BookingResponseDTO['schedule']): boolean =>
+  (a ?? []).some((slotA) =>
+    (b ?? []).some(
+      (slotB) =>
+        slotA.dayOfWeek === slotB.dayOfWeek &&
+        timeToMinutes(slotA.startTime) < timeToMinutes(slotB.endTime) &&
+        timeToMinutes(slotB.startTime) < timeToMinutes(slotA.endTime),
+    ),
+  );
+
+const timeToMinutes = (value: string) => {
+  const [h, m] = value.split(':').map(Number);
+  return h * 60 + (m || 0);
+};
+
+/**
+ * Nhóm các booking đang "Chờ xác nhận" theo khung giờ tuần trùng nhau — gia sư chỉ accept được 1
+ * trong số đó, các cái còn lại tự động bị hủy + hoàn tiền (xem BookingScheduleLockPolicy ở BE).
+ * Gom kiểu greedy theo cụm liên thông (đủ dùng cho vài chục request/trang, không cần union-find).
+ */
+const groupPendingByOverlap = (items: BookingResponseDTO[]): BookingResponseDTO[][] => {
+  const groups: BookingResponseDTO[][] = [];
+  for (const booking of items) {
+    const match = groups.find((group) =>
+      group.some((other) => schedulesOverlap(booking.schedule, other.schedule)),
+    );
+    if (match) match.push(booking);
+    else groups.push([booking]);
+  }
+  return groups;
+};
+
+/** Nhóm TOÀN BỘ request theo đúng khung giờ tuần (kể cả nhóm chỉ có 1 request) — dùng cho chế độ hiển thị "Theo khung giờ". */
+const groupByExactSchedule = (items: BookingResponseDTO[]): BookingResponseDTO[][] => {
+  const map = new Map<string, BookingResponseDTO[]>();
+  const order: string[] = [];
+  items.forEach((booking) => {
+    const key =
+      getUniqueSchedule(booking)
+        .map((slot) => `${slot.dayOfWeek}-${slot.startTime}-${slot.endTime}`)
+        .sort()
+        .join('|') || `no-schedule-${booking.bookingId}`;
+    if (!map.has(key)) {
+      map.set(key, []);
+      order.push(key);
+    }
+    map.get(key)!.push(booking);
+  });
+  return order.map((key) => map.get(key)!);
+};
+
+/** Nhóm TOÀN BỘ request theo học sinh — dùng cho chế độ hiển thị "Theo người đặt". */
+const groupByRequester = (items: BookingResponseDTO[]): BookingResponseDTO[][] => {
+  const map = new Map<string, BookingResponseDTO[]>();
+  const order: string[] = [];
+  items.forEach((booking) => {
+    const key = booking.student?.studentId || booking.parentId || `booking-${booking.bookingId}`;
+    if (!map.has(key)) {
+      map.set(key, []);
+      order.push(key);
+    }
+    map.get(key)!.push(booking);
+  });
+  return order.map((key) => map.get(key)!);
+};
+
 const getFeeBreakdown = (booking: BookingResponseDTO) => {
   const originalTuition = Math.max(0, booking.totalAmount ?? booking.price ?? 0);
   const discount = Math.max(0, booking.discountApplied ?? 0);
@@ -157,6 +223,7 @@ const TutorPortalBookings = () => {
   const [pageSize, setPageSize] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   const [declineModalVisible, setDeclineModalVisible] = useState(false);
+  const [acceptConfirmBookingId, setAcceptConfirmBookingId] = useState<number | null>(null);
   const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
   const [declineReason, setDeclineReason] = useState('');
   const [processingBooking, setProcessingBooking] = useState<{
@@ -171,6 +238,58 @@ const TutorPortalBookings = () => {
   });
   const currentTime = useCurrentTime();
   const navigate = useNavigate();
+
+  // Cách hiển thị danh sách "Chờ xác nhận" — chỉ ảnh hưởng cách NHÓM/HIỂN THỊ, không ảnh hưởng
+  // logic an toàn tiền bạc bên dưới (luôn tính theo trùng khung giờ THẬT, bất kể đang xem theo
+  // chế độ nào).
+  const [pendingGroupMode, setPendingGroupMode] = useState<'default' | 'time' | 'requester'>('default');
+
+  // Số request cạnh tranh THẬT (trùng khung giờ) — dùng để quyết định có cần cảnh báo trước khi
+  // accept hay không. Tính độc lập với pendingGroupMode để không bao giờ bị sai lệch bởi lựa chọn
+  // hiển thị của gia sư.
+  const overlapGroups = useMemo(
+    () => (activeTab === 'pending' ? groupPendingByOverlap(bookings) : []),
+    [bookings, activeTab],
+  );
+  const overlapCountByBookingId = useMemo(() => {
+    const map = new Map<number, number>();
+    overlapGroups.forEach((group) => group.forEach((booking) => map.set(booking.bookingId, group.length - 1)));
+    return map;
+  }, [overlapGroups]);
+
+  // Nhóm để HIỂN THỊ — theo đúng chế độ gia sư chọn ở dropdown.
+  const pendingGroups = useMemo(() => {
+    if (activeTab !== 'pending') return bookings.map((booking) => [booking]);
+    if (pendingGroupMode === 'time') return groupByExactSchedule(bookings);
+    if (pendingGroupMode === 'requester') return groupByRequester(bookings);
+    return overlapGroups.length > 0 ? overlapGroups : bookings.map((booking) => [booking]);
+  }, [bookings, activeTab, pendingGroupMode, overlapGroups]);
+  const orderedBookings = useMemo(() => pendingGroups.flat(), [pendingGroups]);
+  const groupInfoByBookingId = useMemo(() => {
+    const map = new Map<number, { size: number; isFirstInGroup: boolean; groupLabel: string; showWarning: boolean }>();
+    pendingGroups.forEach((group) => {
+      const first = group[0];
+      let groupLabel: string;
+      const showWarning = group.length > 1;
+      if (pendingGroupMode === 'requester') {
+        groupLabel = first.student?.fullName || 'Học sinh chưa cập nhật tên';
+      } else {
+        const uniqueSlots = getUniqueSchedule(first);
+        groupLabel =
+          uniqueSlots
+            .map((slot) => `${formatDayName(slot.dayOfWeek)} ${formatTime(slot.startTime)}-${formatTime(slot.endTime)}`)
+            .join(', ') || 'Chưa có lịch cụ thể';
+      }
+      group.forEach((booking, idx) => {
+        map.set(booking.bookingId, { size: group.length, isFirstInGroup: idx === 0, groupLabel, showWarning });
+      });
+    });
+    return map;
+  }, [pendingGroups, pendingGroupMode]);
+  const acceptConfirmBooking = orderedBookings.find((b) => b.bookingId === acceptConfirmBookingId) ?? null;
+  const acceptConfirmCompetitorCount = acceptConfirmBookingId
+    ? overlapCountByBookingId.get(acceptConfirmBookingId) ?? 0
+    : 0;
 
   /**
    * Nạp đánh giá cho các booking đã hoàn thành trên trang hiện tại. Gọi theo từng booking
@@ -382,6 +501,23 @@ const TutorPortalBookings = () => {
           ))}
         </div>
 
+        {activeTab === 'pending' && bookings.length > 0 && (
+          <div className={styles.pendingGroupFilter}>
+            <span>Hiển thị</span>
+            <Select
+              size="small"
+              value={pendingGroupMode}
+              onChange={(value) => setPendingGroupMode(value)}
+              options={[
+                { label: 'Mặc định', value: 'default' },
+                { label: 'Theo khung giờ', value: 'time' },
+                { label: 'Theo người đặt', value: 'requester' },
+              ]}
+              style={{ minWidth: 160 }}
+            />
+          </div>
+        )}
+
         {loading ? (
           <div className={styles.loadingContainer}>
             <div className={styles.spinner} aria-hidden="true" />
@@ -400,7 +536,7 @@ const TutorPortalBookings = () => {
           </div>
         ) : (
           <div className={styles.bookingList}>
-            {bookings.map((booking) => {
+            {orderedBookings.map((booking) => {
               const status = STATUS_CONFIG[booking.status] ?? {
                 label: booking.status,
                 tone: 'pending',
@@ -423,9 +559,24 @@ const TutorPortalBookings = () => {
                   : responseDeadline?.urgency === 'warning'
                     ? styles.deadlineBadgeWarning
                     : '';
+              const groupInfo = groupInfoByBookingId.get(booking.bookingId);
+              // Luôn dùng số trùng khung giờ THẬT (không phụ thuộc chế độ hiển thị) để quyết định
+              // có cần cảnh báo trước khi accept hay không.
+              const competitorCount = overlapCountByBookingId.get(booking.bookingId) ?? 0;
 
               return (
-                <article key={booking.bookingId} className={styles.bookingCard} data-tour="bookings-card">
+                <div key={booking.bookingId} className={styles.groupedCardWrap}>
+                {groupInfo?.isFirstInGroup && (pendingGroupMode !== 'default' || groupInfo.size > 1) && (
+                  <div className={styles.overlapGroupHeader}>
+                    <Clock size={14} />
+                    <span>
+                      {groupInfo.groupLabel} · {groupInfo.size} yêu cầu
+                      {groupInfo.showWarning &&
+                        ' đang chờ cùng khung giờ — chấp nhận 1 sẽ tự động hủy các yêu cầu còn lại'}
+                    </span>
+                  </div>
+                )}
+                <article className={styles.bookingCard} data-tour="bookings-card">
                   <div className={styles.cardHeader}>
                     <div className={styles.studentInfo}>
                       <div className={styles.avatar} aria-hidden="true">
@@ -672,6 +823,13 @@ const TutorPortalBookings = () => {
                     </div>
 
                     <div className={styles.actions} data-tour="bookings-actions">
+                      <button
+                        type="button"
+                        className={styles.chatBtn}
+                        onClick={() => navigate(`/tutor-portal/bookings/${booking.bookingId}`)}
+                      >
+                        <Eye size={16} /> Xem chi tiết
+                      </button>
                       {booking.status !== 'pending_tutor' && (
                         <button
                           type="button"
@@ -702,7 +860,11 @@ const TutorPortalBookings = () => {
                             type="button"
                             className={styles.acceptBtn}
                             disabled={isProcessing}
-                            onClick={() => handleAccept(booking.bookingId)}
+                            onClick={() =>
+                              competitorCount > 0
+                                ? setAcceptConfirmBookingId(booking.bookingId)
+                                : handleAccept(booking.bookingId)
+                            }
                           >
                             <Check size={16} />
                             {isAccepting ? 'Đang chấp nhận...' : 'Chấp nhận yêu cầu'}
@@ -712,6 +874,7 @@ const TutorPortalBookings = () => {
                     </div>
                   </footer>
                 </article>
+                </div>
               );
             })}
 
@@ -788,6 +951,55 @@ const TutorPortalBookings = () => {
             onClick={confirmDecline}
           >
             {processingBooking?.action === 'decline' ? 'Đang xử lý...' : 'Xác nhận từ chối'}
+          </button>
+        </div>
+      </Modal>
+
+      <Modal
+        title={null}
+        footer={null}
+        open={acceptConfirmBookingId !== null}
+        onCancel={() => setAcceptConfirmBookingId(null)}
+        width={480}
+        centered
+        className={styles.declineModal}
+      >
+        <div className={styles.declineHeader}>
+          <span className={styles.declineHeaderIcon}>
+            <Check size={20} />
+          </span>
+          <h2>Xác nhận chấp nhận yêu cầu</h2>
+        </div>
+
+        <div className={styles.declineContent}>
+          <p>
+            Khung giờ này hiện có <strong>{acceptConfirmCompetitorCount}</strong> yêu cầu khác đang chờ. Chấp nhận
+            yêu cầu của <strong>{acceptConfirmBooking?.student?.fullName || 'học sinh này'}</strong> sẽ{' '}
+            <strong>tự động hủy</strong> {acceptConfirmCompetitorCount === 1 ? 'yêu cầu' : 'toàn bộ các yêu cầu'} còn
+            lại trùng khung giờ, hoàn tiền cọc (nếu đã đóng) về ví của PHHS tương ứng.
+          </p>
+        </div>
+
+        <div className={styles.declineFooter}>
+          <button
+            type="button"
+            className={styles.declineCancelBtn}
+            disabled={processingBooking?.action === 'accept'}
+            onClick={() => setAcceptConfirmBookingId(null)}
+          >
+            Quay lại
+          </button>
+          <button
+            type="button"
+            className={styles.declineConfirmBtn}
+            disabled={processingBooking?.action === 'accept'}
+            onClick={async () => {
+              if (acceptConfirmBookingId === null) return;
+              await handleAccept(acceptConfirmBookingId);
+              setAcceptConfirmBookingId(null);
+            }}
+          >
+            {processingBooking?.action === 'accept' ? 'Đang xử lý...' : 'Xác nhận chấp nhận'}
           </button>
         </div>
       </Modal>
