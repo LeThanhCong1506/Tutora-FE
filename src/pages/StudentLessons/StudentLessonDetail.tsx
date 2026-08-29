@@ -6,6 +6,7 @@ import {
     FileText, ClipboardCheck, Star,
     User, PlayCircle, StopCircle, Paperclip, Download, CalendarClock,
     CheckCircle2, Clock3, XCircle, Sparkles, ChevronDown, Plus, ArrowUp, Link2,
+    Copy, Check,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import ReactMarkdown from 'react-markdown';
@@ -114,6 +115,46 @@ const AiMarkdown = ({ content }: { content: string }) => (
         </ReactMarkdown>
     </div>
 );
+
+/** Nút sao chép nguyên văn nội dung AI trả về (tóm tắt/hội thoại/chat) — đổi icon tạm thời sang dấu tick
+ * khi vừa copy xong để xác nhận, không cần chờ toast biến mất mới biết đã copy được chưa. */
+const CopyButton = ({ text }: { text: string }) => {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopied(true);
+            antMessage.success('Đã sao chép');
+            setTimeout(() => setCopied(false), 1500);
+        } catch {
+            antMessage.error('Không thể sao chép, vui lòng thử lại.');
+        }
+    };
+
+    return (
+        <button
+            type="button"
+            onClick={() => void handleCopy()}
+            title="Sao chép"
+            style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                alignSelf: 'flex-end',
+                background: 'transparent',
+                border: 'none',
+                padding: '2px 4px',
+                cursor: 'pointer',
+                color: copied ? '#16a34a' : '#8a94a6',
+                fontSize: 12,
+            }}
+        >
+            {copied ? <Check size={14} /> : <Copy size={14} />}
+            {copied ? 'Đã sao chép' : 'Sao chép'}
+        </button>
+    );
+};
 
 // ─────────────────────────────────────────────────────────────────────────
 const StudentLessonDetail = () => {
@@ -1494,11 +1535,19 @@ const StudentLessonDetail = () => {
                                                         : (summaryJob.transcriptText || 'Buổi học này chưa có hội thoại.')
                                                 }
                                             />
+                                            <CopyButton
+                                                text={
+                                                    summaryViewTab === 'summary'
+                                                        ? (summaryJob.resultText || '')
+                                                        : (summaryJob.transcriptText || '')
+                                                }
+                                            />
                                         </div>
 
                                         {chatTurns.map((msg, idx) => (
                                             <div key={idx} style={msg.role === 'assistant' ? aiBubbleAssistant : aiBubbleUser}>
                                                 {msg.role === 'assistant' ? <AiMarkdown content={msg.content} /> : msg.content}
+                                                {msg.role === 'assistant' && <CopyButton text={msg.content} />}
                                             </div>
                                         ))}
                                         {chatSending && (
