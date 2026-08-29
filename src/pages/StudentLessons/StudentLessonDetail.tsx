@@ -10,6 +10,9 @@ import {
 import dayjs from 'dayjs';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { getStudentLessonDetail, confirmStudentLesson, type StudentLessonDetailDto } from '../../services/student-lesson.service';
 import { getMaterials, type LearningMaterialResponse } from '../../services/materials.service';
 import {
@@ -102,10 +105,13 @@ const AI_SUGGESTIONS: { key: string; label: string; prompt: string }[] = [
     { key: 'examples', label: 'Cho ví dụ thực tế', prompt: 'Cho tôi vài ví dụ thực tế liên quan đến nội dung buổi học này.' },
 ];
 
-/** Render markdown Gemini trả về (in đậm, gạch đầu dòng, tiêu đề phụ...) thay vì hiện nguyên ký tự ** / -. */
+/** Render markdown Gemini trả về (in đậm, gạch đầu dòng, tiêu đề phụ...) và công thức LaTeX
+ * ($...$ / $$...$$) thành ký hiệu toán học, thay vì hiện nguyên ký tự ** / - / $...$. */
 const AiMarkdown = ({ content }: { content: string }) => (
     <div className="sld-markdown">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+            {content}
+        </ReactMarkdown>
     </div>
 );
 
@@ -1899,6 +1905,8 @@ styleTag.textContent = `
 .sld-markdown h1, .sld-markdown h2, .sld-markdown h3 { font-size: 14px; font-weight: 700; margin: 14px 0 6px; color: #1a2238; }
 .sld-markdown strong { font-weight: 700; color: #1a2238; }
 .sld-markdown code { background: #f1f5f9; padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+.sld-markdown .katex-display { margin: 8px 0; overflow-x: auto; overflow-y: hidden; }
+.sld-markdown .katex { font-size: 1em; }
 @media (max-width: 1180px) {
     .sld-3col-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; }
     .sld-3col-grid > *:first-child { grid-column: 1 / -1; }
