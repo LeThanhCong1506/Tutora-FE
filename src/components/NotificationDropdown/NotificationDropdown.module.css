@@ -231,34 +231,61 @@
     background-color: #d1d5db;
 }
 
-/* ===== LOADING STATE ===== */
-.loading {
+/* ===== SKELETON LOADING (initial load + "Xem thêm thông báo") ===== */
+.skeletonRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px 12px 18px;
+}
+
+.skeletonBlock {
+    background: linear-gradient(90deg, #eef0f3 25%, #e2e4e8 37%, #eef0f3 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.4s ease infinite;
+    border-radius: 6px;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200px 0; }
+    100% { background-position: calc(200px + 100%) 0; }
+}
+
+.skeletonIcon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+}
+
+.skeletonContent {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 56px 24px;
-    gap: 14px;
+    gap: 7px;
+    padding-top: 2px;
 }
 
-.spinner {
-    width: 30px;
-    height: 30px;
-    border: 2.5px solid #e5e7eb;
-    border-top-color: #1a2238;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+.skeletonTitle {
+    height: 12px;
+    width: 55%;
 }
 
-@keyframes spin {
-    to { transform: rotate(360deg); }
+.skeletonMessage {
+    height: 10px;
+    width: 92%;
 }
 
-.loading p {
-    margin: 0;
-    font-size: 13px;
-    color: #6b7280;
-    font-weight: 500;
+.skeletonMessageShort {
+    height: 10px;
+    width: 68%;
+}
+
+.skeletonTime {
+    height: 8px;
+    width: 28%;
+    margin-top: 2px;
 }
 
 /* ===== EMPTY STATE ===== */
@@ -310,37 +337,81 @@
     gap: 2px;
 }
 
-/* ===== FOOTER ===== */
+/* ===== LOAD MORE — mở rộng danh sách ngay trong dropdown, tách biệt trực quan khỏi
+   "Xem tất cả thông báo" ở footer (nút đó điều hướng sang trang riêng) ===== */
+.loadMoreBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 4px;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #1a2238;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.loadMoreBtn:hover {
+    background: #f1f5f9;
+    border-color: #d1d5db;
+}
+
+@keyframes fadeInSlide {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.revealItem {
+    animation: fadeInSlide 0.28s ease both;
+}
+
+/* ===== FOOTER — điều hướng sang trang "Tất cả thông báo", cố tình nhẹ hơn .loadMoreBtn
+   (link-style, không phải CTA đặc) để 2 hành động không trông giống hệt nhau ===== */
 .footer {
     flex-shrink: 0;
     border-top: 1px solid #f1f5f9;
-    padding: 12px 14px;
+    padding: 6px 10px;
     background: #ffffff;
 }
 
 .viewAllBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     width: 100%;
-    padding: 20px 18px;
-    font-size: 14px;
-    font-weight: 700;
-    color: #ffffff;
-    background: #1a2238;
-    border: 1px solid #1a2238;
-    border-radius: 10px;
+    padding: 11px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a2238;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    transition: background 0.15s ease, gap 0.15s ease;
     letter-spacing: 0.01em;
 }
 
+.viewAllBtn svg {
+    transition: transform 0.15s ease;
+}
+
 .viewAllBtn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 18px rgba(26, 34, 56, 0.22);
-    filter: brightness(1.06);
+    background: #f3f4f6;
+}
+
+.viewAllBtn:hover svg {
+    transform: translateX(2px);
 }
 
 .viewAllBtn:active {
-    transform: translateY(0);
-    filter: brightness(0.95);
+    background: #e5e7eb;
 }
 
 /* ===========================================================================
@@ -396,8 +467,9 @@
     .footer {
         position: sticky;
         bottom: 0;
-        padding: 10px 14px;
+        padding: 6px 10px;
         border-radius: 0 0 16px 16px;
+        background: #ffffff;
     }
 
     .viewAllBtn {
@@ -406,13 +478,10 @@
         touch-action: manipulation;
     }
 
-    .viewAllBtn:hover {
-        transform: none;
-        box-shadow: 0 4px 12px rgba(26, 34, 56, 0.2);
-    }
-
-    .viewAllBtn:active {
-        transform: scale(0.98);
+    .loadMoreBtn {
+        min-height: 44px;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
     }
 }
 
