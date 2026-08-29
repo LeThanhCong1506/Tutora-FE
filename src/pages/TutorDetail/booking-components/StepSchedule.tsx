@@ -58,6 +58,10 @@ const StepSchedule: React.FC<StepProps> = ({
         calendarTimes,
         calendarAvailability,
         pickedWeekSlots,
+        isDayFull,
+        isWeekFull,
+        remainingWeekPicks,
+        minLeadHours,
         selectedSlots,
         bookingWindowStart,
         bookingWindowEnd,
@@ -78,6 +82,9 @@ const StepSchedule: React.FC<StepProps> = ({
     // Chụp "bây giờ" tại thời điểm render — đủ để loại các ô giờ hôm nay đã trôi qua
     // (vd 2h sáng thì ô 1h sáng phải bị khoá), khác với `today` (mốc 00:00, chỉ so ngày).
     const now = new Date();
+    // Mốc sớm nhất được đặt — ô nào trước mốc này bị khóa y như ô đã trôi qua. Ngưỡng lấy từ
+    // hook vì nó khác nhau theo luồng (phụ huynh tự đặt vs học sinh gửi yêu cầu).
+    const earliestBookable = new Date(now.getTime() + minLeadHours * 60 * 60 * 1000);
 
     const selectCombo = (combo: FixedCombo) => {
         if (combo.id === formData.comboId) return;
@@ -116,10 +123,14 @@ const StepSchedule: React.FC<StepProps> = ({
                                         <strong>{bookingWindowStart && formatFullDate(bookingWindowStart)}</strong> →{" "}
                                         <strong>{bookingWindowEnd && formatFullDate(bookingWindowEnd)}</strong> ·{" "}
                                         <strong>{selectedSlots.length} buổi</strong>
+                                        {remainingWeekPicks > 0 && (
+                                            <> · còn <strong>{remainingWeekPicks} buổi</strong> nữa cho tuần mẫu</>
+                                        )}
                                     </>
                                 ) : (
                                     <>
-                                        Chọn buổi đầu tiên trên lịch · kết thúc sau <strong>1 tháng</strong>
+                                        Chọn <strong>{remainingWeekPicks} buổi</strong> trong một tuần (mỗi ngày 1 buổi)
+                                        · lịch lặp lại đến hết <strong>1 tháng</strong>
                                     </>
                                 )}
                             </span>
@@ -281,7 +292,7 @@ const StepSchedule: React.FC<StepProps> = ({
                                                     );
                                                     const cellStart = new Date(date);
                                                     cellStart.setHours(0, cellMin, 0, 0);
-                                                    const isPast = cellStart <= now;
+                                                    const isPast = cellStart < earliestBookable;
                                                     const selectedCovering = selectedSlots.find(
                                                         (s) =>
                                                             s.date === dateKey &&
@@ -343,15 +354,22 @@ const StepSchedule: React.FC<StepProps> = ({
                                                                 date <= bookingDeadline &&
                                                                 !bookedSlotsLoading &&
                                                                 !bookedCell &&
-                                                                !conflictsWithExistingBooking;
+                                                                !conflictsWithExistingBooking &&
+                                                                // Mỗi ngày tối đa 1 buổi, và không vượt số buổi/tuần
+                                                                // gia sư nhận dạy — khóa ô ngay thay vì để phụ huynh
+                                                                // chọn xong rồi mới bị backend từ chối lúc gửi.
+                                                                !isDayFull(dateKey) &&
+                                                                !isWeekFull;
 
+                                                            // Ô nối tiếp cũng bấm bỏ được (xem
+                                                            // toggleAvailabilityPick) — nó trông y hệt ô bắt đầu
+                                                            // nên khoá nó lại là bẫy người dùng.
                                                             clickable =
-                                                                isSelectedStart ||
+                                                                isSelected ||
                                                                 (canStartSession && !overlapsSelectedSession);
                                                             isOpenButCannotStart =
                                                                 isOpen && !canStartSession && !isSelectedContinuation;
-                                                            isBlockedBySelectedSession =
-                                                                isSelectedContinuation || overlapsSelectedSession;
+                                                            isBlockedBySelectedSession = overlapsSelectedSession;
                                                             // Ô trùng lịch đã bị khóa ở canStartSession nên không cần chặn
                                                             // lại ở đây. Ô ĐÃ CHỌN vẫn luôn bấm được (clickable qua
                                                             // isSelectedStart) để bỏ chọn — kể cả khi nó vừa trở nên trùng
@@ -447,7 +465,7 @@ const StepSchedule: React.FC<StepProps> = ({
                                                                 aria-label={`${formatShortDate(date)} lúc ${time}`}
                                                                 title={
                                                                     isSelectedContinuation
-                                                                        ? `Thuộc buổi học bắt đầu lúc ${selectedCovering?.startTime}.`
+                                                                        ? `Thuộc buổi học bắt đầu lúc ${selectedCovering?.startTime}. Bấm để bỏ buổi này.`
                                                                         : showContested
                                                                           ? `Hiện có ${contestedCount} người muốn chọn khung giờ này. Nếu bạn muốn gia sư xác nhận nhanh hơn, bạn có thể chọn khung giờ khác.`
                                                                         : showBooked

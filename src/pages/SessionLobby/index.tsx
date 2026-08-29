@@ -16,6 +16,7 @@ import {
   useDevicePreview,
   DevicePreview,
   ScheduleChangeModal,
+  AttendanceTimer,
   type LobbyPhase,
 } from './lobby-components';
 import styles from './styles.module.css';
@@ -220,6 +221,9 @@ const SessionLobby = () => {
                 ? `${capitalize(waitingForLabel)} đã có mặt. Kiểm tra camera/micro rồi vào lớp nhé.`
                 : `Kiểm tra camera và micro trong lúc chờ ${waitingForLabel} vào lớp.`}
             </p>
+
+            {/* Chỉ hiện khi đang chờ một mình — khi đủ hai phía thì vào lớp ngay, không đếm gì. */}
+            {!isReady && <AttendanceTimer waitingForLabel={waitingForLabel} />}
 
             {info && (
               <div className={styles.sessionMeta}>

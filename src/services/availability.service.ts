@@ -223,6 +223,33 @@ export const bulkCreateAvailabilities = async (
 };
 
 /**
+ * Thay TOÀN BỘ lịch rảnh bằng danh sách gửi lên — ĐƯỜNG LƯU CHÍNH THỨC của màn hình lịch rảnh.
+ * PUT /api/tutor/availabilities — body { availabilities: [{ dayofweek, starttime, endtime }] }
+ *
+ * Thay cho chuỗi DELETE → PATCH → POST trước đây: ràng buộc chéo với khung cố định của gói chỉ
+ * kiểm tra được trên TRẠNG THÁI CUỐI. Chuỗi nhiều request đi qua các trạng thái trung gian, nên
+ * BE chặn oan (vd bước DELETE xoá hết thứ Hai trước khi bước POST thêm lại khung mới).
+ *
+ * Danh sách rỗng là hợp lệ — gia sư tạm ngưng nhận booking.
+ */
+export const replaceAvailabilities = async (
+    data: CreateAvailabilityData[]
+): Promise<ApiResponse<AvailabilitySlot[]>> => {
+    const response = await api.put(
+        '/tutor/availabilities',
+        { availabilities: data.map(toUtcSlot) },
+        {
+            headers: {
+                ...getAuthHeaders(),
+                'Content-Type': 'application/json'
+            }
+        }
+    );
+    const r = response.data as ApiResponse<AvailabilitySlot[]>;
+    return { ...r, content: (r.content ?? []).map(toLocalSlot) };
+};
+
+/**
  * Cập nhật NHIỀU khung giờ trong 1 request (tại chỗ, giữ nguyên id).
  * PATCH /api/tutor/availabilities/bulk — body { availabilities: [{ availabilityid, ... }] }
  * Mỗi phần tử cần availabilityid hiện có. BE chặn nếu khung giờ cũ đang có buổi học được đặt (400).
