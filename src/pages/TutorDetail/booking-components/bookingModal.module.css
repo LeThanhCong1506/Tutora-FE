@@ -2981,3 +2981,79 @@
 .eligibilityLink:hover {
   color: #7c2d12;
 }
+
+/* ── Bộ đếm buổi cạnh nút "Tiếp theo" ────────────────────────────────────────
+   Nút bị khoá cho tới khi tuần mẫu đủ số buổi gia sư nhận dạy, nên cần nói rõ
+   còn thiếu bao nhiêu ngay tại chỗ bấm — không để phụ huynh đoán vì sao không đi
+   tiếp được. Số buổi mỗi tuần lấy từ cấu hình môn/lớp của gia sư. */
+.footerActions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.pickCounter {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.25;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-burgundy);
+  white-space: nowrap;
+}
+
+.pickCounter small {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-navy-60);
+}
+
+.pickCounterDone {
+  color: var(--color-green);
+}
+
+@media (max-width: 560px) {
+  .footerActions {
+    gap: 10px;
+  }
+
+  .pickCounter {
+    font-size: 12px;
+  }
+
+  .pickCounter small {
+    display: none;
+  }
+}
+
+/* ── Thông báo "phụ huynh sẽ duyệt và thanh toán" ────────────────────────────
+   KHÔNG dùng chung style với .eligibilityBanner: banner đó báo lỗi chặn (đỏ/cam),
+   còn đây là thông tin về quy trình bình thường. Dùng cùng màu để học sinh tưởng
+   mình đang bị chặn là sai thông điệp. */
+.parentPaymentNotice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 24px 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-navy-40);
+  border-radius: 12px;
+  background: var(--color-cream-light);
+  color: var(--color-navy);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.parentPaymentNotice svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--color-navy-60);
+}
+
+@media (max-width: 560px) {
+  .parentPaymentNotice {
+    margin: 0 16px 4px;
+    font-size: 12px;
+  }
+}

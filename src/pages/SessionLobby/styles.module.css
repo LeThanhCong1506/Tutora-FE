@@ -780,3 +780,60 @@
   font-size: 12px;
   line-height: 1.45;
 }
+/* ── Đồng hồ ghi nhận có mặt (chỉ hiện khi chờ một mình) ─────────────────────
+   Không phải rào chặn vào lớp — đủ hai phía thì server bắn sessionReady ngay.
+   Mục đích là cho người đang chờ biết ở lại thì có bằng chứng, thay vì đóng tab
+   sau vài chục giây rồi mất quyền khiếu nại. */
+.attendanceTimer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: min(620px, 100%);
+  margin: 14px auto 0;
+  padding: 12px 16px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 14px;
+  background: rgba(30, 41, 59, 0.42);
+  text-align: left;
+}
+
+.attendanceTimerDone {
+  border-color: rgba(74, 222, 128, 0.42);
+  background: rgba(20, 83, 45, 0.28);
+}
+
+.attendanceTimerClock {
+  flex: 0 0 auto;
+  min-width: 62px;
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: #e2e8f0;
+}
+
+.attendanceTimerDone .attendanceTimerClock {
+  color: #86efac;
+}
+
+.attendanceTimerText {
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(226, 232, 240, 0.82);
+}
+
+.attendanceTimerText strong {
+  color: #f1f5f9;
+}
+
+@media (max-width: 520px) {
+  .attendanceTimer {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .attendanceTimerClock {
+    min-width: 52px;
+    font-size: 19px;
+  }
+}

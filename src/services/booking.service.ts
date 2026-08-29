@@ -68,6 +68,12 @@ export interface CreateBookingPayload {
 export interface BookingResponseDTO {
     bookingId: number;
     parentId?: string;
+    /**
+     * Vai trò của người TẠO booking ("Student" / "Parent"). Booking do học sinh tạo dừng ở
+     * pending_payment chờ phụ huynh duyệt và thanh toán — dùng để gắn nhãn phân biệt trong cùng
+     * danh sách đặt lịch, vì hai loại này trông giống hệt nhau nếu chỉ nhìn trạng thái.
+     */
+    createdByRole?: string;
     student?: {
         studentId: string;
         fullName: string;

@@ -59,6 +59,14 @@ export interface BookingScheduleApi {
     bookedSlotsLoading: boolean;
     bookedSlotsError: boolean;
     hasSelectedSlotConflict: boolean;
+    /** Ngày này đã có buổi được chọn — mỗi ngày tối đa 1 buổi. */
+    isDayFull: (dateKey: string) => boolean;
+    /** Đã chọn đủ số buổi mỗi tuần theo cấu hình của gia sư. */
+    isWeekFull: boolean;
+    /** Còn thiếu bao nhiêu buổi nữa mới đủ tuần mẫu. */
+    remainingWeekPicks: number;
+    /** Ngưỡng báo trước đang áp dụng (giờ) — khác nhau giữa luồng phụ huynh và luồng học sinh. */
+    minLeadHours: number;
     isBookedCell: (dateKey: string, time: string) => boolean;
     /** Số người khác đang chờ gia sư xác nhận cho khung giờ này (0 nếu không tranh chấp hoặc đã bị khóa). */
     getContestedCount: (dateKey: string, time: string) => number;

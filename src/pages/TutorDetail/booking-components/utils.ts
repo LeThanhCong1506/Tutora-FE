@@ -227,22 +227,40 @@ export const sessionFitsAvailability = (
 };
 
 // Lặp pattern tuần từ startDate đến hết cửa sổ 1 tháng (bao gồm ngày cuối).
-export const buildScheduleFromPattern = (pattern: WeeklyPatternSlot[], startDate: Date): BookingSlot[] => {
+/**
+ * Trải mẫu tuần thành lịch cụ thể, bắt đầu từ THỜI ĐIỂM HỢP LỆ SỚM NHẤT.
+ *
+ * `notBefore` là mốc sớm nhất được đặt (hiện tại + thời gian báo trước), KHÔNG phải ngày của ô
+ * người dùng bấm. Tách hai thứ này ra là điểm mấu chốt: mẫu tuần định nghĩa "học thứ mấy, giờ
+ * nào", còn ngày bắt đầu do ràng buộc thời gian quyết định.
+ *
+ * Trước đây neo vào ô được bấm sớm nhất, nên mẫu 2-4-6 chọn sáng thứ Hai bị đẩy sang tuần sau
+ * nguyên vẹn (ô thứ Hai tuần này đã quá gần, không chọn được, mà mẫu lại bắt phải đủ 3 ô trong
+ * một tuần). Neo vào mốc hợp lệ thì lịch bắt đầu ngay từ thứ Tư tuần này — sớm hơn 5 ngày, và
+ * khớp với backend vốn đã cho phép tuần đầu thiếu buổi (BookingSchedulePolicy).
+ *
+ * Lọc theo ĐỦ ngày+giờ chứ không chỉ ngày: mốc hợp lệ rơi vào 15:00 thứ Tư thì ô 12:00 thứ Tư
+ * vẫn phải bị loại.
+ */
+export const buildScheduleFromPattern = (pattern: WeeklyPatternSlot[], notBefore: Date): BookingSlot[] => {
     if (!pattern.length) return [];
-    const windowEnd = getBookingValidityEnd(startDate);
+    const windowEnd = getBookingValidityEnd(notBefore);
     const slots: BookingSlot[] = [];
-    for (let day = new Date(startDate); day <= windowEnd; day = addDays(day, 1)) {
+    for (let day = new Date(notBefore); day <= windowEnd; day = addDays(day, 1)) {
         const demoDow = toDemoWeekday(day.getDay());
         pattern
             .filter((slot) => slot.dayOfWeek === demoDow)
-            .forEach((slot) =>
+            .forEach((slot) => {
+                const start = new Date(day);
+                start.setHours(0, timeToMinutes(slot.startTime), 0, 0);
+                if (start < notBefore) return;
                 slots.push({
                     dayOfWeek: slot.dayOfWeek,
                     startTime: slot.startTime,
                     durationHours: slot.durationHours,
                     date: toDateKey(day),
-                }),
-            );
+                });
+            });
     }
     return sortSlots(slots);
 };

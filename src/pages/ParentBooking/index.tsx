@@ -122,6 +122,16 @@ const formatLessonTime = (start?: string, end?: string) => {
   return `${startDate.toLocaleTimeString('vi-VN', options)} - ${endDate.toLocaleTimeString('vi-VN', options)}`;
 };
 
+/**
+ * Booking do CHÍNH HỌC SINH tạo và đang chờ phụ huynh duyệt + thanh toán.
+ *
+ * Nằm chung danh sách với booking phụ huynh tự đặt, và cùng ở trạng thái "Chờ thanh toán", nên
+ * không có nhãn riêng thì phụ huynh không phân biệt được cái nào mình đã chọn và cái nào con
+ * vừa đề xuất.
+ */
+const isStudentRequest = (booking: BookingResponseDTO) =>
+  booking.createdByRole?.toLowerCase() === 'student' && booking.status === 'pending_payment';
+
 const getPaymentAction = (booking: BookingResponseDTO) => {
   if (booking.status === 'accepted' || booking.status === 'pending_payment') {
     // Cọc = buổi học đầu tiên = finalPrice / số buổi (BE làm tròn về số nguyên đồng).
@@ -321,6 +331,11 @@ const ParentBooking = () => {
                       </div>
                     </div>
                     <span className={`${styles.statusBadge} ${styles[`status_${status.tone}`]}`}>{status.label}</span>
+                    {isStudentRequest(booking) && (
+                      <span className={styles.studentRequestBadge}>
+                        Con bạn đề xuất
+                      </span>
+                    )}
                   </div>
 
                   <div className={styles.summaryGrid}>

@@ -782,3 +782,31 @@
     flex-direction: column;
   }
 }
+
+/* ── Nhãn "Con bạn đề xuất" ──────────────────────────────────────────────────
+   Booking do học sinh tạo nằm CHUNG danh sách với booking phụ huynh tự đặt và
+   cùng ở trạng thái "Chờ thanh toán". Không có nhãn thì hai loại trông y hệt
+   nhau, phụ huynh không biết cái nào cần mình xem lại trước khi trả tiền.
+   Dùng burgundy của thương hiệu để tách khỏi thang màu trạng thái. */
+.studentRequestBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+  padding: 4px 10px;
+  border: 1px solid var(--color-burgundy);
+  border-radius: 999px;
+  background: var(--color-burgundy-10);
+  color: var(--color-burgundy);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .studentRequestBadge {
+    margin-left: 0;
+    margin-top: 6px;
+    font-size: 11px;
+  }
+}
