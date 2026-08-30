@@ -19,14 +19,6 @@ export interface PracticeGeneration {
 
 /**
  * Quản lý việc AI sinh đề, đặt Ở NGOÀI cây component của panel.
- *
- * Vì sao không để state trong PracticeTab: panel bên bị unmount khi gia sư đóng nó
- * (nút X) hoặc chuyển sang panel Ghi chú/Theo dõi. Lúc đó `generating` mất, nút quay
- * về trạng thái thường trong khi request vẫn đang chạy — gia sư tưởng hỏng nên bấm
- * lại, tạo ra 2 bộ đề trùng.
- *
- * Đặt hook này ở LiveSession (luôn mount suốt buổi học) thì tiến trình sống độc lập
- * với việc mở/đóng panel.
  */
 export const usePracticeGeneration = (): PracticeGeneration => {
   const [generating, setGenerating] = useState(false);
