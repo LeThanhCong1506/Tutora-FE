@@ -418,9 +418,11 @@ function App() {
                   <Route path="wallet/withdrawals" element={<ParentWalletWithdrawals />} />
                   <Route path="wallet/withdrawals/:id" element={<ParentWalletWithdrawalDetail />} />
                   <Route path="wallet/bank-account" element={<BankAccountPage />} />
-                  <Route path="disputes" element={<StudentDisputes />} />
-                  <Route path="disputes/:classSessionId" element={<StudentDisputeDetail />} />
                 </Route>
+                {/* Khiếu nại: học sinh do phụ huynh quản lý cũng được xem/tạo (phụ huynh vẫn được báo
+                    qua thông báo khi con tạo/phản hồi khiếu nại) — không đặt trong gate ví ở trên nữa. */}
+                <Route path="disputes" element={<StudentDisputes />} />
+                <Route path="disputes/:classSessionId" element={<StudentDisputeDetail />} />
                 <Route path="messages" element={<ParentMessage />} />
                 <Route path="profile" element={<StudentProfile />} />
                 <Route path="account" element={<StudentAccount />} />

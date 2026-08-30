@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ElementType } from 'react';
+import { useCallback, useContext, useEffect, useState, type ElementType } from 'react';
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Input, Modal, Spin, message as antMessage } from 'antd';
 import {
@@ -37,6 +37,7 @@ import {
 import { getBookingResponseDeadlineState } from '../../../utils/bookingDeadline';
 import { canLeaveBookingFeedback, getBookingFeedback, type FeedbackDto } from '../../../services/feedback.service';
 import { getPaymentBadge } from '../../../utils/paymentBadge';
+import { StudentProfileContext } from '../../../contexts/StudentProfileContext';
 import CreateFeedbackModal from '../../ParentLessons/components/CreateFeedbackModal';
 import styles from './styles.module.css';
 import { getApiErrorMessage } from '../../../utils/apiError';
@@ -277,6 +278,10 @@ const BookingDetailPage = () => {
   const basePath = pathname.startsWith('/student-portal') ? '/student-portal' : '/parent-portal';
   const bookingId = Number(id);
   const isValidBookingId = Boolean(id) && Number.isInteger(bookingId) && bookingId > 0;
+  // Trang dùng chung Parent/Student — ở /parent-portal không có StudentProfileProvider bọc
+  // ngoài nên đọc thẳng context (không dùng useStudentProfile(), nó throw khi ctx undefined).
+  // Tài khoản do phụ huynh quản lý chỉ được xem, không thanh toán được (xem StudentBooking).
+  const isParentManaged = useContext(StudentProfileContext)?.isParentManaged ?? false;
 
   const [booking, setBooking] = useState<BookingResponseDTO | null>(null);
   const [loading, setLoading] = useState(true);
@@ -407,11 +412,11 @@ const BookingDetailPage = () => {
   const canCancel =
     ['pending_tutor', 'accepted', 'pending_payment', 'deposit_paid', 'ongoing', 'paid'].includes(booking.status) &&
     !hasStartedLesson;
-  const canPayDeposit = ['accepted', 'pending_payment'].includes(booking.status);
+  const canPayDeposit = !isParentManaged && ['accepted', 'pending_payment'].includes(booking.status);
   // Chỉ cho thanh toán đợt 2 khi buổi học đầu tiên đã kết thúc.
   const isRemainingStage = ['deposit_paid', 'pending_remaining_payment'].includes(booking.status);
-  const canPayRemaining = isRemainingStage && isFirstLessonFinished(booking);
-  const remainingLocked = isRemainingStage && !isFirstLessonFinished(booking);
+  const canPayRemaining = !isParentManaged && isRemainingStage && isFirstLessonFinished(booking);
+  const remainingLocked = !isParentManaged && isRemainingStage && !isFirstLessonFinished(booking);
   const hasActions =
     canReview || canCancel || canFinalizeEarly || canPayDeposit || canPayRemaining || remainingLocked;
 

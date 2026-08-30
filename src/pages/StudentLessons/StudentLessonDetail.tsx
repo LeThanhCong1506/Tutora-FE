@@ -11,6 +11,7 @@ import {
 import dayjs from 'dayjs';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
@@ -39,6 +40,7 @@ import {
 } from '../../services/videoSummary.service';
 import { signalRService } from '../../services/signalr.service';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
+import { NOTIFICATION_TYPE } from '../../utils/notificationNavigation';
 import { message as antMessage, Spin, Modal } from 'antd';
 import { ClassSessionRecording, RescheduleProposalModal, SkipContinuationCard } from '../../components/shared';
 import CreateDisputeForm from '../ParentLessons/components/CreateDisputeForm';
@@ -110,7 +112,11 @@ const AI_SUGGESTIONS: { key: string; label: string; prompt: string }[] = [
  * ($...$ / $$...$$) thành ký hiệu toán học, thay vì hiện nguyên ký tự ** / - / $...$. */
 const AiMarkdown = ({ content }: { content: string }) => (
     <div className="sld-markdown">
-        <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+        {/* remarkBreaks: transcript của Gemini không phải lúc nào cũng có dòng trống thật (\n\n) giữa
+            mỗi lượt nói như prompt yêu cầu — nhiều khi chỉ có 1 dòng đơn (\n). Markdown chuẩn coi 1
+            dòng đơn là khoảng trắng bình thường (gộp chung 1 đoạn), khiến cả đoạn hội thoại dính liền
+            nhau không xuống dòng. remarkBreaks chuyển cả dòng đơn thành <br/> thật. */}
+        <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]} rehypePlugins={[rehypeKatex]}>
             {content}
         </ReactMarkdown>
     </div>
@@ -341,6 +347,20 @@ const StudentLessonDetail = () => {
         return () => window.clearInterval(timer);
     }, [summaryJob?.status, transcribing, fetchSummaryStatus]);
 
+    // Job tóm tắt xong lúc nào thì BE bắn "ReceiveNotification" (type lesson_video_summary_ready) qua
+    // SignalR ngay lúc đó — bắt sự kiện này để refetch NGAY thay vì đợi tới lượt poll 8s tiếp theo (worst
+    // case mất thêm gần 8s "chết" dù job đã xong). Vẫn giữ nguyên polling ở trên làm phương án dự phòng
+    // (mất kết nối SignalR tạm thời, hoặc job chép lời — job đó KHÔNG bắn notification riêng).
+    useEffect(() => {
+        if (!lessonId) return;
+        const unsubscribe = signalRService.subscribeToNotifications((notification: { type?: string | null; referenceid?: string | null }) => {
+            if (notification?.type !== NOTIFICATION_TYPE.LessonVideoSummaryReady) return;
+            if (String(notification.referenceid) !== String(lessonId)) return;
+            void fetchSummaryStatus();
+        });
+        return unsubscribe;
+    }, [lessonId, fetchSummaryStatus]);
+
     useEffect(() => {
         if (summaryJob?.status === 'completed') void fetchChatMessages();
     }, [summaryJob?.status, fetchChatMessages]);
@@ -539,12 +559,20 @@ const StudentLessonDetail = () => {
     const tutorName = (lesson as any).tutorName ?? (lesson as any).tutor?.fullName ?? 'Gia sư';
     const subjectName = (lesson as any).subjectName ?? (lesson as any).subject?.subjectName ?? 'Buổi học';
     const report = (lesson as any).report;
-    const canCreateDispute = !isParentManaged
-        && !TERMINAL_BOOKING_STATUSES.includes(String(lesson.bookingStatus || '').toLowerCase());
+    // Học sinh do phụ huynh quản lý giờ ĐƯỢC tự tạo khiếu nại / đề xuất đổi lịch (BE:
+    // ParentService.CreateDisputeAsync + ClassSessionRescheduleProposalService.IsLearnerSideActor
+    // đã nới guard chặn thẳng trước đây) — phụ huynh được báo qua thông báo khi con thực hiện.
+    const canCreateDispute = !TERMINAL_BOOKING_STATUSES.includes(String(lesson.bookingStatus || '').toLowerCase());
     const pendingReschedule = lesson.pendingRescheduleProposal;
     const canProposeReschedule =
-        lesson.status === 'scheduled' && !isParentManaged && !pendingReschedule && !lesson.skipConfirmedByBothSides;
-    const isRescheduleCounterpart = pendingReschedule?.counterpartRole === 'Student';
+        lesson.status === 'scheduled' && !pendingReschedule && !lesson.skipConfirmedByBothSides;
+    // Khi tài khoản do phụ huynh quản lý, đề xuất do gia sư gửi lưu counterpart là 'Parent' (phụ
+    // huynh vẫn là actor "chính" được lưu DB) nhưng BE giờ cho phép cả con phản hồi — xem
+    // RespondAsync's respondedByManagedStudent. Trang này chỉ render cho học sinh nên coi
+    // counterpartRole 'Parent' trên tài khoản managed cũng là "được phản hồi".
+    const isRescheduleCounterpart =
+        pendingReschedule?.counterpartRole === 'Student'
+        || (isParentManaged && pendingReschedule?.counterpartRole === 'Parent');
     const isRescheduleProposer = pendingReschedule?.proposedByRole === 'Student';
     const currentUserInfo = getUserInfoFromToken();
     const greetingName = currentUserInfo?.firstName

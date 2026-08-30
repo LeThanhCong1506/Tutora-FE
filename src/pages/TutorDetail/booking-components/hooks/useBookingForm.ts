@@ -84,21 +84,16 @@ export function useBookingForm({ isOpen, tutorId, tutorTeachingMode, resumeBooki
     const [loadingStudents, setLoadingStudents] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
-    // Học sinh do phụ huynh quản lý: vẫn chọn được gia sư và lịch, nhưng booking dừng ở
-    // pending_payment chờ phụ huynh duyệt và trả tiền. Không phải lỗi — chỉ cần nói rõ trước.
-    const [requiresParentPayment, setRequiresParentPayment] = useState(false);
     const [eligibilityBlock, setEligibilityBlock] =
         useState<{ reason: string; reasonCode: BookingReasonCode | null } | null>(null);
     const [checkingEligibility, setCheckingEligibility] = useState(false);
-    // Luồng mới: booking vừa tạo ở trạng thái `pending_payment`. Parent phải thanh toán
-    // buổi học đầu tiên (cọc) TRƯỚC khi yêu cầu được gửi tới gia sư (→ `pending_tutor`).
+    // Parent phải thanh toán buổi học đầu tiên (cọc) TRƯỚC khi yêu cầu được gửi tới gia sư
+    // (→ `pending_tutor`).
     //   form     → đang điền form đặt lịch
     //   payment  → đã tạo booking, đang mở bước thanh toán buổi đầu
     //   paid     → đã thanh toán, đang chờ gia sư xác nhận
     //   deferred → đã tạo booking nhưng tạm hoãn thanh toán (có 10 phút để trả sau)
-    // 'sent' = yêu cầu của học sinh đã gửi, chờ PHỤ HUYNH duyệt và thanh toán. Không có bước
-    // thanh toán nào cho học sinh — họ không phải người trả tiền.
-    const [bookingPhase, setBookingPhase] = useState<'form' | 'payment' | 'paid' | 'deferred' | 'sent'>('form');
+    const [bookingPhase, setBookingPhase] = useState<'form' | 'payment' | 'paid' | 'deferred'>('form');
     const [successBookingId, setSuccessBookingId] = useState<number | null>(null);
     const [slotDuration, setSlotDuration] = useState(2);
     const [formData, setFormData] = useState<BookingFormData>(defaultFormData);
@@ -119,7 +114,6 @@ export function useBookingForm({ isOpen, tutorId, tutorTeachingMode, resumeBooki
     useEffect(() => {
         if (!isOpen || userRole !== "Student") {
             setEligibilityBlock(null);
-            setRequiresParentPayment(false);
             return;
         }
         setCheckingEligibility(true);
@@ -128,10 +122,8 @@ export function useBookingForm({ isOpen, tutorId, tutorTeachingMode, resumeBooki
             setEligibilityBlock(e && !e.canBook
                 ? { reason: e.reason || "Bạn chưa đủ điều kiện đặt lịch học.", reasonCode: e.reasonCode }
                 : null);
-            setRequiresParentPayment(Boolean(e?.requiresParentPayment));
         }).catch(() => {
             setEligibilityBlock(null);
-            setRequiresParentPayment(false);
         }).finally(() => {
             setCheckingEligibility(false);
         });
@@ -267,13 +259,9 @@ export function useBookingForm({ isOpen, tutorId, tutorTeachingMode, resumeBooki
             setSuccessBookingId(result.content?.bookingId ?? null);
             clearDraft();
 
-            // Học sinh do phụ huynh quản lý KHÔNG tự thanh toán — booking dừng ở
-            // `pending_payment` và hiện trong danh sách của phụ huynh để duyệt và trả tiền.
-            // Mở bước thanh toán ở đây là sai người: học sinh không có quyền trả cho booking này.
-            //
-            // Người tự trả thì ngược lại: booking cũng ở `pending_payment` nhưng phải trả ngay
-            // (hạn 10 phút), chỉ sau khi cọc vào mới chuyển `pending_tutor` và tới tay gia sư.
-            setBookingPhase(requiresParentPayment ? 'sent' : 'payment');
+            // Booking ở `pending_payment`, phải trả ngay (hạn 10 phút) — sau khi cọc vào mới
+            // chuyển `pending_tutor` và tới tay gia sư.
+            setBookingPhase('payment');
         } catch (err: any) {
             console.error("createBooking failed:", err);
             const msg = err.response?.data?.message || "Có lỗi xảy ra khi tạo booking. Vui lòng thử lại.";
@@ -316,7 +304,6 @@ export function useBookingForm({ isOpen, tutorId, tutorTeachingMode, resumeBooki
         setSubmitError,
         handleSubmit,
         eligibilityBlock,
-        requiresParentPayment,
         checkingEligibility,
         // Post-create payment flow
         bookingPhase,
