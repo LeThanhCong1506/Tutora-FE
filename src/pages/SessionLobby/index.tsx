@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Wifi, type LucideIcon } from 'lucide-react';
 import { toast } from 'react-toastify';
 import SessionDeviceModal from '../../components/SessionDeviceModal';
+import { Grainient } from '../../components/Grainient';
 import {
   stageLiveSessionAdmission,
   useLiveSessionAdmission,
@@ -347,6 +348,32 @@ const SessionLobby = () => {
 
   return (
     <div className={styles.page}>
+      <div className={styles.pageBackdrop}>
+        <Grainient
+          color1="#2e0c0c"
+          color2="#57431a"
+          color3="#4f697c"
+          lightMode
+          intensity={1.2}
+          timeSpeed={0.15}
+          warpStrength={1.2}
+          warpFrequency={9.2}
+          warpSpeed={1.2}
+          warpAmplitude={38}
+          blendAngle={18}
+          blendSoftness={0.34}
+          rotationAmount={680}
+          noiseScale={2.5}
+          grainAmount={0.03}
+          grainScale={2}
+          contrast={1.85}
+          gamma={0.95}
+          saturation={1.3}
+          centerY={0.18}
+          zoom={1.45}
+        />
+      </div>
+
       <div className={styles.card}>{renderBody()}</div>
       {scheduleChangeState && (
         <ScheduleChangeModal

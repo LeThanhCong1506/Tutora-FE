@@ -19,7 +19,7 @@ interface LessonReportModalProps {
  * trong phòng live. Bọc lại `LessonReportForm` (cùng form với trang chi tiết buổi
  * học) và tự giữ danh sách tệp đính kèm đã upload nhưng chưa nộp.
  *
- * `maskClosable={false}`: bấm nhầm ra ngoài giữa lúc đang gõ báo cáo thì mất công
+ * `mask.closable = false`: bấm nhầm ra ngoài giữa lúc đang gõ báo cáo thì mất công
  * viết lại — muốn thoát thì bấm "Để sau" hoặc nút X.
  */
 const LessonReportModal: React.FC<LessonReportModalProps> = ({ open, classSessionId, onSkip, onSubmitted }) => {
@@ -33,7 +33,7 @@ const LessonReportModal: React.FC<LessonReportModalProps> = ({ open, classSessio
       footer={null}
       width={640}
       centered
-      maskClosable={false}
+      mask={{ closable: false }}
     >
       <p style={{ marginTop: 0, marginBottom: 16, color: '#6b7280', fontSize: 14 }}>
         Buổi học đã kết thúc. Ghi lại nội dung ngay lúc còn nhớ rõ — chưa viết bây giờ cũng được, báo cáo vẫn mở ở
