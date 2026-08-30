@@ -16,7 +16,10 @@ interface StudentProfileContextValue {
   refresh: () => Promise<void>;
 }
 
-const StudentProfileContext = createContext<StudentProfileContextValue | undefined>(undefined);
+// Exported (không chỉ hook useStudentProfile) để những trang DÙNG CHUNG giữa Parent/Student
+// portal (vd BookingDetailPage) đọc được isParentManaged một cách an toàn khi render ở
+// /parent-portal — nơi không có StudentProfileProvider bọc ngoài, nên useStudentProfile() sẽ throw.
+export const StudentProfileContext = createContext<StudentProfileContextValue | undefined>(undefined);
 
 /**
  * Hồ sơ học sinh được coi là "đầy đủ" khi có đủ thông tin học tập bắt buộc:
