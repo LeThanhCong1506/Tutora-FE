@@ -12,7 +12,7 @@ export function getPortalPrefix(): string {
  * `MV.DomainLayer/Constants/NotificationType.cs` ở BE.
  * Dùng khi BE truyền `type` field — ưu tiên cao hơn keyword match từ title/message.
  */
-const NOTIFICATION_TYPE = {
+export const NOTIFICATION_TYPE = {
     LessonCheckin: 'lesson_checkin',
     LessonReport: 'lesson_report',
     LessonNoShow: 'lesson_no_show',
