@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Steps } from 'antd';
+import { Alert, Button, Steps } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import {
   BankOutlined,
@@ -19,6 +19,8 @@ import WithdrawResultCard from './components/WithdrawResultCard';
 import '../../../styles/pages/tutor-finance.css';
 import { toast } from 'react-toastify';
 import { getApiErrorMessage } from '../../../utils/apiError';
+import { formatCurrency } from '../../../utils/formatters';
+import { DEFAULT_MIN_WITHDRAWAL, getMinWithdrawalAmount } from '../../../services/withdrawalLimit.service';
 
 const CreateWithdrawalPage: React.FC = () => {
   const navigate = useNavigate();
@@ -30,22 +32,20 @@ const CreateWithdrawalPage: React.FC = () => {
   const [withdrawAmount, setWithdrawAmount] = useState(0);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [resultStatus, setResultStatus] = useState<'success' | 'error' | 'warning' | null>(null);
+  const [minWithdraw, setMinWithdraw] = useState(DEFAULT_MIN_WITHDRAWAL);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [sum, info] = await Promise.all([getFinanceSummary(), getBankAccount()]);
+        const [sum, info, min] = await Promise.all([
+          getFinanceSummary(),
+          getBankAccount(),
+          getMinWithdrawalAmount(),
+        ]);
         setSummary(sum);
         setBankInfo(info);
-
-        if (sum.hasActiveDispute) {
-          toast.warn('Bạn đang có buổi học bị tranh chấp, vui lòng chờ xử lý xong trước khi tạo yêu cầu rút tiền', {
-            toastId: 'active-dispute-blocked',
-          });
-          navigate('/tutor-portal/finance');
-          return;
-        }
+        setMinWithdraw(min);
 
         const hasBankInfo = Boolean(info?.bankName && info?.accountNumber && info?.accountHolderName);
         if (!hasBankInfo) {
@@ -115,12 +115,26 @@ const CreateWithdrawalPage: React.FC = () => {
           />
         </section>
 
+        {/* Tranh chấp đang mở chỉ là cảnh báo, không chặn rút tiền: tiền của buổi bị tranh chấp
+            vẫn nằm trong escrow (Frozenbalance) và không được settle vào số dư khả dụng, nên số tiền
+            gia sư rút ở đây vốn dĩ đã loại trừ phần đang tranh chấp. */}
+        {currentStep < 2 && summary?.hasActiveDispute && (
+          <Alert
+            type="info"
+            showIcon
+            message="Bạn đang có buổi học bị tranh chấp"
+            description={`${formatCurrency(summary.disputedAmount ?? 0)} đang được giữ lại cho đến khi tranh chấp được xử lý xong và không nằm trong số dư khả dụng bên dưới. Bạn vẫn có thể rút phần số dư khả dụng bình thường.`}
+            className="finance-status-alert"
+          />
+        )}
+
         {currentStep < 2 ? (
           <div className="finance-withdraw-layout">
             <WithdrawForm
               balance={summary?.availableBalance ?? 0}
               bankInfo={bankInfo}
               loading={loading}
+              minWithdraw={minWithdraw}
               onSubmit={handleSubmitForm}
             />
 

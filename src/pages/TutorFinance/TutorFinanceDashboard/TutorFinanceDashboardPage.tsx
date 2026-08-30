@@ -11,8 +11,7 @@ import EarningsChart from './components/EarningsChart';
 import '../../../styles/pages/tutor-finance.css';
 import { toast } from 'react-toastify';
 import { getApiErrorMessage } from '../../../utils/apiError';
-
-const MIN_WITHDRAWAL = 10000;
+import { DEFAULT_MIN_WITHDRAWAL, getMinWithdrawalAmount } from '../../../services/withdrawalLimit.service';
 
 const TutorFinanceDashboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -20,19 +19,22 @@ const TutorFinanceDashboardPage: React.FC = () => {
   const [recentTransactions, setRecentTransactions] = useState<TutorTransaction[]>([]);
   const [escrowItems, setEscrowItems] = useState<EscrowStatusItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [minWithdrawal, setMinWithdrawal] = useState(DEFAULT_MIN_WITHDRAWAL);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        const [summaryRes, transRes, escrowRes] = await Promise.all([
+        const [summaryRes, transRes, escrowRes, minRes] = await Promise.all([
           getFinanceSummary(),
           getTransactions({ page: 1, pageSize: 5 }),
           getEscrowStatus(),
+          getMinWithdrawalAmount(),
         ]);
         setSummary(summaryRes);
         setRecentTransactions(transRes.transactions);
         setEscrowItems(escrowRes.items);
+        setMinWithdrawal(minRes);
       } catch (error) {
         console.error('Failed to fetch finance dashboard data:', error);
         toast.error(getApiErrorMessage(error, 'Không thể tải dữ liệu tổng quan tài chính'));
@@ -44,7 +46,7 @@ const TutorFinanceDashboardPage: React.FC = () => {
     fetchDashboardData();
   }, []);
 
-  const canWithdraw = (summary?.availableBalance ?? 0) >= MIN_WITHDRAWAL;
+  const canWithdraw = (summary?.availableBalance ?? 0) >= minWithdrawal;
 
   return (
     <FinancePageShell
@@ -52,7 +54,7 @@ const TutorFinanceDashboardPage: React.FC = () => {
       titleInfo="Theo dõi số dư, thu nhập, giao dịch và các yêu cầu rút tiền."
       actions={
         <Tooltip
-          title={!loading && !canWithdraw ? `Cần tối thiểu ${formatCurrency(MIN_WITHDRAWAL)} để rút tiền` : undefined}
+          title={!loading && !canWithdraw ? `Cần tối thiểu ${formatCurrency(minWithdrawal)} để rút tiền` : undefined}
         >
           <span>
             <Button

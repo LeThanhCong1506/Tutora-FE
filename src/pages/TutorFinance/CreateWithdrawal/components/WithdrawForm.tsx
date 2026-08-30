@@ -9,11 +9,11 @@ interface Props {
   bankInfo: BankAccount | null;
   onSubmit: (amount: number) => void;
   loading: boolean;
+  /** Ngưỡng tối thiểu admin đang áp dụng, lấy từ API để không lệch với luật chặn của backend. */
+  minWithdraw: number;
 }
 
-const MIN_WITHDRAW = 10000;
-
-const WithdrawForm: React.FC<Props> = ({ balance, bankInfo, onSubmit, loading }) => {
+const WithdrawForm: React.FC<Props> = ({ balance, bankInfo, onSubmit, loading, minWithdraw }) => {
   const [form] = Form.useForm();
   const [amount, setAmount] = useState(0);
 
@@ -45,10 +45,10 @@ const WithdrawForm: React.FC<Props> = ({ balance, bankInfo, onSubmit, loading })
           name="amount"
           label="Số tiền muốn rút"
           className="finance-amount-field"
-          extra={`Tối thiểu ${formatCurrency(MIN_WITHDRAW)} · Không vượt quá số dư khả dụng`}
+          extra={`Tối thiểu ${formatCurrency(minWithdraw)} · Không vượt quá số dư khả dụng`}
           rules={[
             { required: true, message: 'Vui lòng nhập số tiền' },
-            { type: 'number', min: MIN_WITHDRAW, message: `Số tiền tối thiểu là ${formatCurrency(MIN_WITHDRAW)}` },
+            { type: 'number', min: minWithdraw, message: `Số tiền tối thiểu là ${formatCurrency(minWithdraw)}` },
             { type: 'number', max: balance, message: `Số tiền tối đa là ${formatCurrency(balance)}` },
           ]}
         >
@@ -79,7 +79,7 @@ const WithdrawForm: React.FC<Props> = ({ balance, bankInfo, onSubmit, loading })
           <Button
             type="link"
             className="finance-text-action"
-            disabled={balance < MIN_WITHDRAW}
+            disabled={balance < minWithdraw}
             onClick={() => chooseAmount(balance)}
           >
             Rút toàn bộ
@@ -107,7 +107,7 @@ const WithdrawForm: React.FC<Props> = ({ balance, bankInfo, onSubmit, loading })
           block
           className="finance-primary-action finance-withdraw-submit"
           loading={loading}
-          disabled={amount < MIN_WITHDRAW || amount > balance}
+          disabled={amount < minWithdraw || amount > balance}
         >
           Tiếp tục xác nhận <ArrowRightOutlined />
         </Button>
