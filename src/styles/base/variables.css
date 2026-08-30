@@ -41,6 +41,9 @@
     --color-burgundy: #631b1b;
     --color-gold: #d4b483;
     --color-green: #3d4a3e;
+    --color-moss: #2c3530;
+    --color-moss-hover: #3a463f;
+    --color-moss-soft: rgba(44, 53, 48, 0.12);
     --color-umber: #3e2f28;
     --color-white: #ffffff;
     --color-primary: var(--color-burgundy);

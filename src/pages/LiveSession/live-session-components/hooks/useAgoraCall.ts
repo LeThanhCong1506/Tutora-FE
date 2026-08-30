@@ -22,6 +22,12 @@ import type { LiveSessionIdentity } from '../../../../utils/liveSessionIdentity'
 import { describeMediaError, type MediaErrorInfo } from '../../../../utils/mediaPermissionError';
 import type { ChatMessage, RemoteParticipant } from '../types';
 
+// Agora RTC mặc định in log mức DEBUG — mỗi buổi học đổ hàng trăm dòng
+// "[apiInvoke]", "[device-check]"... lấp hết console, lỗi thật của app bị chìm.
+// Dev: WARNING trở lên. Prod: chỉ ERROR.
+// Thang: 0 DEBUG | 1 INFO | 2 WARNING | 3 ERROR | 4 NONE.
+AgoraRTC.setLogLevel(import.meta.env.DEV ? 2 : 3);
+
 /**
  * Không có thao tác nào lâu hơn mốc này thì nhịp heartbeat tự khai là "idle". Đủ dài để một
  * người đang nghe giảng chăm chú không bị coi là bỏ đi, đủ ngắn để phòng bỏ trống lộ ra
@@ -39,6 +45,8 @@ const TRACKING_STOP_SIGNAL = '__TRACKING_STOP__';
  * "__ALERT__{json}". Đi cùng đường lưu qua backend: RTM lo hiển thị tức thì, backend lo lưu trữ.
  */
 const ALERT_SIGNAL_PREFIX = '__ALERT__';
+/** Gia sư vừa gửi một câu hỏi -> máy học sinh nạp lại danh sách bài tập ngay. */
+const PRACTICE_SENT_SIGNAL = '__PRACTICE_SENT__';
 
 /** Cảnh báo hành vi nhận qua RTM (phía gia sư). */
 export interface LiveEmotionAlert {
@@ -82,6 +90,10 @@ interface UseAgoraCallResult {
   broadcastSessionEnded: () => Promise<void>;
   /** Gia sư bật/tắt theo dõi hành vi: phát tín hiệu RTM tới máy học viên. */
   broadcastTracking: (on: boolean) => Promise<void>;
+  /** Gia sư gọi sau khi gửi câu hỏi; học sinh nhận và tự nạp lại. */
+  broadcastPracticeSent: () => void;
+  /** Tăng lên mỗi khi nhận tín hiệu có bài tập mới (phía học sinh). */
+  practiceSignal: number;
   toggleMic: () => Promise<void>;
   toggleCam: () => Promise<void>;
   toggleScreenShare: () => Promise<void>;
@@ -137,6 +149,7 @@ export const useAgoraCall = (
   const [scheduleConflictMessage, setScheduleConflictMessage] = useState<string | null>(null);
   const [sessionReplaced, setSessionReplaced] = useState(false);
   const [trackingRequested, setTrackingRequested] = useState(false);
+  const [practiceSignal, setPracticeSignal] = useState(0);
   const [emotionAlerts, setEmotionAlerts] = useState<LiveEmotionAlert[]>([]);
   const [emotionToasts, setEmotionToasts] = useState<LiveEmotionAlert[]>([]);
 
@@ -299,7 +312,13 @@ export const useAgoraCall = (
 
         // Đăng nhập RTM và subscribe kênh chat (cùng channel/token với RTC).
         try {
-          const rtm = new AgoraRTM.RTM(room.appId, String(room.uid));
+          // presenceTimeout/withPresence: RTM mặc định BẬT Presence, nhưng project
+          // Agora chưa bật dịch vụ đó -> SDK spam "Error Code -13001 - Presence
+          // service not connected" mỗi lần subscribe. Chat chỉ cần message; ai đang
+          // có mặt đã lấy từ heartbeat của BE (presenceStatus) rồi.
+          const rtm = new AgoraRTM.RTM(room.appId, String(room.uid), {
+            logLevel: import.meta.env.DEV ? 'warn' : 'error',
+          });
           rtm.addEventListener('tokenPrivilegeWillExpire', () => {
             void renewAgoraToken();
           });
@@ -322,6 +341,12 @@ export const useAgoraCall = (
               return;
             }
             // Cảnh báo hành vi từ máy học viên → xếp vào hàng đợi toast của gia sư.
+            // Bài tập mới -> chỉ là tín hiệu "hãy nạp lại", nội dung vẫn lấy từ API
+            // (RTM không đáng tin cho dữ liệu, chỉ dùng để báo hiệu).
+            if (text === PRACTICE_SENT_SIGNAL) {
+              setPracticeSignal((v) => v + 1);
+              return;
+            }
             if (text.startsWith(ALERT_SIGNAL_PREFIX)) {
               try {
                 const payload = JSON.parse(text.slice(ALERT_SIGNAL_PREFIX.length)) as {
@@ -357,7 +382,7 @@ export const useAgoraCall = (
             ]);
           });
           await rtm.login({ token: room.token });
-          await rtm.subscribe(room.channel);
+          await rtm.subscribe(room.channel, { withPresence: false });
           if (cancelled) {
             await rtm.logout();
           } else {
@@ -606,6 +631,16 @@ export const useAgoraCall = (
     }
   }, []);
 
+  /** Gia sư: báo cho học sinh có câu hỏi mới, khỏi phải tải lại cả phòng học. */
+  const broadcastPracticeSent = useCallback(() => {
+    const rtm = rtmClientRef.current;
+    const channel = rtmChannelRef.current;
+    if (!rtm || !channel) return;
+    rtm
+      .publish(channel, PRACTICE_SENT_SIGNAL)
+      .catch((err) => console.error('❌ Failed to broadcast practice signal:', err));
+  }, []);
+
   /** Học viên: bắn cảnh báo hành vi tới gia sư qua RTM (hiển thị tức thì, không chờ backend). */
   const sendEmotionAlert = useCallback((alert: Omit<LiveEmotionAlert, 'id' | 'at'>) => {
     const rtm = rtmClientRef.current;
@@ -697,6 +732,8 @@ export const useAgoraCall = (
     sendChatMessage,
     broadcastSessionEnded,
     broadcastTracking,
+    broadcastPracticeSent,
+    practiceSignal,
     toggleMic,
     toggleCam,
     toggleScreenShare,
