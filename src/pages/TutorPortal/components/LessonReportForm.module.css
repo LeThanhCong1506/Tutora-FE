@@ -73,10 +73,19 @@
   animation: aiFillBlink 1.4s ease-in-out infinite;
 }
 
+/* :disabled hiện chỉ xảy ra khi AI đang đọc video (xem aiFillRunning) — giữ nguyên độ đậm màu tím để
+   icon xoay (Loader2 của lucide-react) dễ thấy, chỉ tắt hiệu ứng nhấp nháy vì đã có icon xoay báo hiệu rồi. */
 .aiFillBadge:disabled {
-  cursor: default;
+  cursor: wait;
   animation: none;
-  opacity: 0.4;
+}
+
+@keyframes aiFillSpin {
+  to { transform: rotate(360deg); }
+}
+
+.spinIcon {
+  animation: aiFillSpin 0.8s linear infinite;
 }
 
 .actions {
