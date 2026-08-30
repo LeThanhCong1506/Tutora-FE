@@ -3,7 +3,8 @@
 
 /* ===== BASE STYLES ===== */
 @import "./styles/base/variables.css";
-@import "./styles/base/global.css";
+
+@import "./styles/base/global.css" layer(base);
 
 /* ===== LAYOUT STYLES ===== */
 
