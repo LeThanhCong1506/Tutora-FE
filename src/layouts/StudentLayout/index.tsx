@@ -394,10 +394,11 @@ const StudentLayoutInner: React.FC<StudentLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const showWallet = !loading && !isParentManaged;
-  // Học sinh do phụ huynh quản lý không tự tạo khiếu nại được (xem StudentLessonDetail) → ẩn luôn mục này.
-  const showDisputes = !loading && !isParentManaged;
+  // Học sinh do phụ huynh quản lý giờ ĐƯỢC tự tạo/xem khiếu nại (xem StudentLessonDetail) → không
+  // ẩn theo isParentManaged nữa, chỉ ẩn khi đang loading hồ sơ.
+  const showDisputes = !loading;
 
-  // Ví & khiếu nại ẩn đúng theo điều kiện của sidebar.
+  // Ví ẩn đúng theo điều kiện của sidebar; khiếu nại luôn hiện (trừ lúc đang tải hồ sơ).
   const profileMenuItems = useMemo<ProfileMenuItem[]>(
     () => buildStudentProfileMenuItems({ showWallet, showDisputes }),
     [showWallet, showDisputes],
