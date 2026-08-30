@@ -10,6 +10,7 @@ import TourWelcomePrompt from '../components/TutorTour/TourWelcomePrompt';
 import { usePortalTour, guardedNavigate, type PageTour } from '../components/TutorTour/usePortalTour';
 import { useUnreadMessageBadge } from '../hooks/useUnreadMessageBadge';
 import { useUnreadBadgesByTab } from '../hooks/useUnreadBadgesByTab';
+import { signalRService } from '../services/signalr.service';
 
 const MESSAGES_PATH = '/tutor-portal/messages';
 
@@ -584,6 +585,14 @@ const TutorPortalLayout: React.FC = () => {
         onSidebarOpen: () => setSidebarOpen(true),
         onSidebarClose: () => setSidebarOpen(false),
     });
+
+    // useUnreadMessageBadge/useUnreadBadgesByTab bên dưới chỉ ĐĂNG KÝ lắng nghe trên kết nối SignalR có
+    // sẵn — không tự mở kết nối. Trước đây không có nơi nào trong tutor portal gọi connect() (chỉ
+    // Header.tsx — không dùng ở layout này), nên mọi real-time (badge, AI điền báo cáo xong,...) chưa
+    // từng thực sự chạy, chỉ fetch 1 lần lúc load trang.
+    useEffect(() => {
+        signalRService.connect().catch(() => {/* đã tự xử lý bên trong service (silent, tự retry) */});
+    }, []);
 
     // Tin nhắn unread badge — fetch + SignalR real-time + auto-clear khi vào /messages.
     const unreadMessageCount = useUnreadMessageBadge(MESSAGES_PATH);
