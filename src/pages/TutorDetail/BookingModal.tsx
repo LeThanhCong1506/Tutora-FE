@@ -18,8 +18,6 @@ import {
     useBookingForm,
     useBookingSchedule,
     MIN_BOOKING_LEAD_HOURS,
-    MIN_LEAD_HOURS_STUDENT_REQUEST,
-    PARENT_REVIEW_HOURS,
 } from "./booking-components";
 import type { BookingModalProps, StepProps, Subject } from "./booking-components";
 import styles from "./booking-components/bookingModal.module.css";
@@ -61,7 +59,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
         setSubmitError,
         handleSubmit,
         eligibilityBlock,
-        requiresParentPayment,
         bookingPhase,
         successBookingId,
         handlePaymentSuccess,
@@ -202,8 +199,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         availabilities: availabilities || [],
         sessionHours,
         sessionsPerWeek: selectedSubjectGradePrice?.sessionsPerWeek ?? 1,
-        // Yêu cầu của học sinh cần thời gian báo trước dài hơn (phụ huynh duyệt + gia sư phản hồi).
-        minLeadHours: requiresParentPayment ? MIN_LEAD_HOURS_STUDENT_REQUEST : MIN_BOOKING_LEAD_HOURS,
+        minLeadHours: MIN_BOOKING_LEAD_HOURS,
         selectedCombo,
         subjectId: formData.subjectId,
         bookingMode: formData.bookingMode,
@@ -212,53 +208,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
         startDate: formData.startDate,
         setFormData,
     });
-
-    // Nhịp đồng hồ cho phần đếm ngược. Dùng state thay vì Date.now() trong useMemo: gọi hàm
-    // không thuần lúc render khiến giá trị lệch giữa các lần render, và số đếm cũng không tự chạy.
-    const [nowTs, setNowTs] = useState(() => Date.now());
-    useEffect(() => {
-        if (!isOpen) return;
-        const id = window.setInterval(() => setNowTs(Date.now()), 60_000);
-        return () => window.clearInterval(id);
-    }, [isOpen]);
-
-    /**
-     * Mốc phụ huynh phải thanh toán trước, tính từ buổi học SỚM NHẤT học sinh vừa chọn.
-     *
-     * Khớp `BookingLeadTimePolicy.ResolveParentPaymentDeadline`: sớm hơn giữa `bây giờ + 24h`
-     * và `buổi đầu − 24h`. Vế đầu buộc phụ huynh trả lời trong một ngày; vế sau là cùng luật mà
-     * phụ huynh tự đặt lịch phải tuân thủ. Phải hiện mốc THẬT chứ không ghi cứng con số giờ —
-     * buổi càng gần thì cửa sổ càng hẹp, có khi chỉ còn 2 tiếng, và học sinh cần thấy điều đó
-     * TRƯỚC khi gửi để còn kịp chọn buổi xa hơn.
-     */
-    const parentDeadline = useMemo(() => {
-        if (!requiresParentPayment || scheduling.selectedSlots.length === 0) return null;
-
-        const first = scheduling.selectedSlots
-            .map((slot) => new Date(`${slot.date}T${slot.startTime}`))
-            .filter((d) => !Number.isNaN(d.getTime()))
-            .sort((a, b) => a.getTime() - b.getTime())[0];
-        if (!first) return null;
-
-        const byLessonLead = first.getTime() - MIN_BOOKING_LEAD_HOURS * 60 * 60 * 1000;
-        const byReviewWindow = nowTs + PARENT_REVIEW_HOURS * 60 * 60 * 1000;
-        const deadline = new Date(Math.min(byLessonLead, byReviewWindow));
-        const msLeft = deadline.getTime() - nowTs;
-        if (msLeft <= 0) return null;
-
-        const hours = Math.floor(msLeft / (60 * 60 * 1000));
-        const minutes = Math.round((msLeft % (60 * 60 * 1000)) / (60 * 1000));
-
-        return {
-            text: deadline.toLocaleString("vi-VN", {
-                hour: "2-digit",
-                minute: "2-digit",
-                day: "2-digit",
-                month: "2-digit",
-            }),
-            remaining: hours > 0 ? `${hours} giờ ${minutes} phút` : `${minutes} phút`,
-        };
-    }, [requiresParentPayment, scheduling.selectedSlots, nowTs]);
 
     // Khoá scroll nền khi modal mở.
     useEffect(() => {
@@ -420,29 +369,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                             <X size={22} />
                         </button>
                         <div className={styles.successContent}>
-                            {bookingPhase === "sent" ? (
-                                <>
-                                    <span className={styles.successIcon}>
-                                        <CheckCircle2 size={42} />
-                                    </span>
-                                    <span className={styles.eyebrow}>Đã gửi cho phụ huynh</span>
-                                    <h2>Yêu cầu đặt lịch đã được gửi</h2>
-                                    <p>
-                                        Phụ huynh sẽ nhận được thông báo để xem lại và thanh toán buổi học đầu
-                                        tiên với <strong>{tutorName}</strong>.
-                                        {parentDeadline
-                                            ? ` Hạn thanh toán: ${parentDeadline.text}.`
-                                            : ""}{" "}
-                                        Sau khi phụ huynh thanh toán, yêu cầu mới được gửi tới gia sư xác nhận.
-                                    </p>
-                                    {successBookingId != null && (
-                                        <div className={styles.bookingCode}>
-                                            <span>Mã đặt lịch</span>
-                                            <strong>#{successBookingId}</strong>
-                                        </div>
-                                    )}
-                                </>
-                            ) : bookingPhase === "paid" ? (
+                            {bookingPhase === "paid" ? (
                                 <>
                                     <span className={styles.successIcon}>
                                         <CheckCircle2 size={42} />
@@ -550,24 +477,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                                 Xác minh ngay →
                                             </a>
                                         </>
-                                    )}
-                                </span>
-                            </div>
-                        )}
-
-                        {requiresParentPayment && !eligibilityBlock && (
-                            <div className={styles.parentPaymentNotice}>
-                                <ShieldAlert size={18} />
-                                <span>
-                                    Bạn chọn gia sư và khung giờ, sau đó yêu cầu sẽ được gửi tới phụ huynh
-                                    để duyệt và thanh toán.
-                                    {parentDeadline ? (
-                                        <>
-                                            {" "}Phụ huynh cần thanh toán trước{" "}
-                                            <strong>{parentDeadline.text}</strong> (còn {parentDeadline.remaining}).
-                                        </>
-                                    ) : (
-                                        <> Buổi học càng gần thì phụ huynh càng ít thời gian xác nhận.</>
                                     )}
                                 </span>
                             </div>
