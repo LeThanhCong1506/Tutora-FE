@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { PageContainer } from '../../components/shared';
 import styles from './styles.module.css';
@@ -12,33 +11,33 @@ import {
   StepSubjectRecords,
   StepAvailability,
   StepCombos,
-  OnboardingSummary,
   type OnboardingStep,
 } from './onboarding-components';
 
 // Bước đang xem sống trên URL (`?step=`) thay vì useState — reload/F5 hoặc share
-// link không còn văng về bước 1. `summary` là màn tổng kết sau khi bấm "Hoàn tất".
-const STEP_SLUGS = ['availability', 'pricing', 'packages', 'summary'] as const;
+// link không còn văng về bước 1.
+//
+// Không còn bước `summary`: bấm "Hoàn tất" là lưu xong và về thẳng dashboard, chỉ báo bằng toast.
+// Màn tổng kết trước đây chỉ đọc lại dữ liệu vừa nhập, buộc thêm một cú bấm mà không cho thêm
+// quyết định nào — gia sư đã thấy từng bước ngay trước đó rồi.
+const STEP_SLUGS = ['availability', 'pricing', 'packages'] as const;
 type StepSlug = (typeof STEP_SLUGS)[number];
 
 const STEP_BY_SLUG: Record<StepSlug, OnboardingStep> = {
   availability: 1,
   pricing: 2,
   packages: 3,
-  summary: 3,
 };
 const SLUG_BY_STEP: Record<OnboardingStep, StepSlug> = { 1: 'availability', 2: 'pricing', 3: 'packages' };
 const clampStep = (n: number): OnboardingStep => Math.min(3, Math.max(1, n)) as OnboardingStep;
 
 const TutorOnboarding: React.FC = () => {
-  const navigate = useNavigate();
   const onboarding = useOnboardingState();
   const { state, hydrate, canFinish } = onboarding;
   const sync = useOnboardingSync(hydrate);
   const { subjects, gradeLevels } = useLookups();
 
   const [stepSlug, setStepSlug] = useTabParam<StepSlug>(STEP_SLUGS, 'availability', { paramKey: 'step' });
-  const finished = stepSlug === 'summary';
   const currentStep = STEP_BY_SLUG[stepSlug];
 
   const goToStep = useCallback((step: OnboardingStep) => setStepSlug(SLUG_BY_STEP[step]), [setStepSlug]);
@@ -57,12 +56,11 @@ const TutorOnboarding: React.FC = () => {
 
   // URL có thể trỏ tới bước chưa mở khoá (link cũ, gõ tay, dữ liệu đã bị xoá).
   // Chờ hydrate xong mới biết bước nào hợp lệ, rồi kéo về bước xa nhất đang mở.
-  // `summary` chỉ đọc nên không chặn — cứ hiển thị theo dữ liệu đã load.
   useEffect(() => {
-    if (sync.loading || finished || isStepEnabled(currentStep)) return;
+    if (sync.loading || isStepEnabled(currentStep)) return;
     setStepSlug(SLUG_BY_STEP[availabilityReady ? (subjectsReady ? 3 : 2) : 1]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sync.loading, finished, currentStep, availabilityReady, subjectsReady]);
+  }, [sync.loading, currentStep, availabilityReady, subjectsReady]);
 
   const canProceedCurrent = currentStep === 1 ? availabilityReady : currentStep === 2 ? subjectsReady : canFinish;
 
@@ -88,10 +86,10 @@ const TutorOnboarding: React.FC = () => {
       }
       return;
     }
-    // Bước 3 — gói lịch học (kết thúc).
+    // Bước 3 — gói lịch học (kết thúc): chỉ báo bằng toast và Ở LẠI trang. Không màn tổng kết,
+    // cũng không tự điều hướng — gia sư tự quyết định đi đâu tiếp, và còn sửa lại được ngay.
     if (await sync.savePackages(state.combos)) {
       toast.success('Đã lưu gói lịch học. Hoàn tất thiết lập!');
-      setStepSlug('summary');
     }
   };
 
@@ -117,22 +115,6 @@ const TutorOnboarding: React.FC = () => {
             <p>{sync.loadError || 'Vui lòng chờ trong giây lát'}</p>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  if (finished) {
-    return (
-      <div className={styles.page}>
-        {pageHeader}
-        <OnboardingSummary
-          subjectRecords={state.subjectRecords}
-          availability={state.availability}
-          combos={state.combos}
-          gradeLevels={gradeLevels}
-          onBack={() => setStepSlug('packages', { tab: null })}
-          onFinish={() => navigate('/tutor-portal/dashboard')}
-        />
       </div>
     );
   }
