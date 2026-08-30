@@ -5,7 +5,7 @@ import {
     ArrowLeft, BookOpen, AlertCircle, Video,
     FileText, ClipboardCheck, Star,
     User, PlayCircle, StopCircle, Paperclip, Download, CalendarClock,
-    CheckCircle2, Clock3, XCircle, Sparkles, ChevronDown, Plus, ArrowUp, Link2,
+    CheckCircle2, Clock3, XCircle, Wand2, ChevronDown, Plus, ArrowUp, Link2,
     Copy, Check,
 } from 'lucide-react';
 import dayjs from 'dayjs';
@@ -1364,7 +1364,7 @@ const StudentLessonDetail = () => {
                                     onClick={() => setDiveDeeperOpen((open) => !open)}
                                 >
                                     <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <Sparkles size={15} style={{ color: TUTORA_BURGUNDY }} />
+                                        <Wand2 size={15} style={{ color: TUTORA_BURGUNDY }} />
                                         Đào sâu nội dung này
                                     </span>
                                     <ChevronDown
@@ -1402,7 +1402,7 @@ const StudentLessonDetail = () => {
                         <div style={aiPanelCard}>
                             <div style={aiPanelHeader}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                    <Sparkles size={18} style={{ color: TUTORA_BURGUNDY }} />
+                                    <Wand2 size={18} style={{ color: TUTORA_BURGUNDY }} />
                                     {summaryJob && summaryJob.status !== 'none' && (
                                         <div style={aiCompactTitle}>Tóm tắt buổi học bằng AI</div>
                                     )}
@@ -1449,7 +1449,7 @@ const StudentLessonDetail = () => {
                                                     disabled={!recordingAvailable || triggeringSummary}
                                                     onClick={() => handleAiSuggestionClick(item)}
                                                 >
-                                                    <Sparkles size={15} style={{ color: TUTORA_BURGUNDY, flexShrink: 0 }} />
+                                                    <Wand2 size={15} style={{ color: TUTORA_BURGUNDY, flexShrink: 0 }} />
                                                     {item.label}
                                                 </button>
                                             ))}
@@ -1485,7 +1485,7 @@ const StudentLessonDetail = () => {
                                             disabled={!recordingAvailable || triggeringSummary}
                                             onClick={() => void handleTriggerSummary()}
                                         >
-                                            <Sparkles size={16} /> Thử lại
+                                            <Wand2 size={16} /> Thử lại
                                         </button>
                                     </div>
                                 )}
@@ -1566,7 +1566,7 @@ const StudentLessonDetail = () => {
                                                         style={pillBtnGhost}
                                                         onClick={() => handleAiSuggestionClick(item)}
                                                     >
-                                                        <Sparkles size={15} style={{ color: TUTORA_BURGUNDY, flexShrink: 0 }} />
+                                                        <Wand2 size={15} style={{ color: TUTORA_BURGUNDY, flexShrink: 0 }} />
                                                         {item.label}
                                                     </button>
                                                 ))}
