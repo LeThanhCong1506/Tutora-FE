@@ -11,6 +11,7 @@ import {
 import dayjs from 'dayjs';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
@@ -110,7 +111,11 @@ const AI_SUGGESTIONS: { key: string; label: string; prompt: string }[] = [
  * ($...$ / $$...$$) thành ký hiệu toán học, thay vì hiện nguyên ký tự ** / - / $...$. */
 const AiMarkdown = ({ content }: { content: string }) => (
     <div className="sld-markdown">
-        <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+        {/* remarkBreaks: transcript của Gemini không phải lúc nào cũng có dòng trống thật (\n\n) giữa
+            mỗi lượt nói như prompt yêu cầu — nhiều khi chỉ có 1 dòng đơn (\n). Markdown chuẩn coi 1
+            dòng đơn là khoảng trắng bình thường (gộp chung 1 đoạn), khiến cả đoạn hội thoại dính liền
+            nhau không xuống dòng. remarkBreaks chuyển cả dòng đơn thành <br/> thật. */}
+        <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]} rehypePlugins={[rehypeKatex]}>
             {content}
         </ReactMarkdown>
     </div>
