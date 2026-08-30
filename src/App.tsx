@@ -53,6 +53,7 @@ const TutorPortalProfile = lazy(() => import('./pages/TutorPortal/TutorPortalPro
 const TutorPortalDashboard = lazy(() => import('./pages/TutorPortal/TutorPortalDashboard'));
 const TutorPortalMessages = lazy(() => import('./pages/TutorPortal/TutorPortalMessages'));
 const TutorPortalCalendar = lazy(() => import('./pages/TutorPortal/TutorPortalCalendar'));
+const TutorPortalClasses = lazy(() => import('./pages/TutorPortal/TutorPortalClasses'));
 const TutorPortalClassSessionDetail = lazy(() => import('./pages/TutorPortal/TutorPortalClassSessionDetail'));
 const TutorPortalDisputes = lazy(() => import('./pages/TutorPortal/TutorPortalDisputes'));
 const TutorPortalDisputeDetail = lazy(() => import('./pages/TutorPortal/TutorPortalDisputeDetail'));
@@ -339,8 +340,7 @@ function App() {
                   {/* Khiếu nại có trang riêng thay vì card nhúng trong chi tiết buổi học.
                       Param là classSessionId vì toàn bộ API khiếu nại keyed theo buổi học. */}
                   <Route path="disputes/:classSessionId" element={<TutorPortalDisputeDetail />} />
-                  {/* Legacy: URL /classes từng dùng bookingId, nên quay về lịch thay vì hiểu nhầm là classSessionId. */}
-                  <Route path="classes" element={<LegacyTutorClassesRedirect />} />
+                  <Route path="classes" element={<TutorPortalClasses />} />
                   <Route path="classes/:classId" element={<LegacyTutorClassesRedirect />} />
                   <Route path="students/:studentId" element={<TutorPortalStudentProfile />} />
                   <Route path="bookings" element={<TutorPortalBookings />} />
