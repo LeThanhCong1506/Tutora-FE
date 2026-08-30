@@ -57,6 +57,16 @@ const ClassIcon = () => (
     </svg>
 );
 
+// Bảng/màn chiếu — trang "Lớp học" (quản lý lớp + tiến độ + tài liệu).
+const ClassroomIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <rect x="1.5" y="2.5" width="15" height="11" rx="2" strokeLinecap="round" />
+        <path d="M9 13.5V16" strokeLinecap="round" />
+        <path d="M6 16H12" strokeLinecap="round" />
+        <path d="M5 9.5L7.5 7L9.5 9L13 5.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+);
+
 const FinanceIcon = () => (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
         <rect x="1" y="4" width="16" height="12" rx="2" strokeLinecap="round" />
@@ -116,6 +126,7 @@ const baseNavItems: NavItem[] = [
     { path: MESSAGES_PATH, label: 'Tin nhắn', icon: MessagesIcon, dataTour: 'nav-messages' },
     { path: '/tutor-portal/bookings', label: 'Yêu cầu đặt lịch', icon: BookingIcon, dataTour: 'nav-bookings' },
     { path: '/tutor-portal/calendar', label: 'Lịch dạy', icon: ClassIcon, dataTour: 'nav-classes' },
+    { path: '/tutor-portal/classes', label: 'Lớp học', icon: ClassroomIcon, dataTour: 'nav-classrooms' },
     { path: '/tutor-portal/disputes', label: 'Khiếu nại', icon: DisputeIcon, dataTour: 'nav-disputes' },
     { path: '/tutor-portal/finance', label: 'Tài chính', icon: FinanceIcon, dataTour: 'nav-finance' },
     { path: '/tutor-portal/account', label: 'Tài khoản', icon: AccountIcon, dataTour: 'nav-account' },

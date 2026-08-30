@@ -20,6 +20,7 @@ import { formatVNDNumber } from '../../utils/formatters';
 import { PageContainer } from '../../components/shared';
 import styles from './styles.module.css';
 import { getApiErrorMessage } from '../../utils/apiError';
+import { useStudentProfile } from '../../contexts/StudentProfileContext';
 
 const STATUS_TABS = [
   { key: 'all', label: 'Tất cả' },
@@ -159,6 +160,9 @@ const getPaymentAction = (booking: BookingResponseDTO) => {
 const StudentBooking = () => {
   const navigate = useNavigate();
   const currentTime = useCurrentTime();
+  // Tài khoản do phụ huynh quản lý không tự đặt lịch/thanh toán được (xem BookingService.
+  // CreateBookingAsync) — trang này chỉ còn cho xem chi tiết, ẩn hết nút đặt mới + thanh toán.
+  const { isParentManaged } = useStudentProfile();
   // Tab + trang sống trong URL (không phải useState cục bộ) — để "Xem chi tiết" rồi bấm back
   // (hoặc quay lại từ trang khác) trả về đúng tab/trang đang xem, thay vì luôn reset về "Tất cả".
   const [searchParams, setSearchParams] = useSearchParams();
@@ -215,12 +219,14 @@ const StudentBooking = () => {
       titleInfo="Quản lý lịch học, thanh toán và tiến độ các booking của bạn."
       maxWidth="wide"
       headerAction={
-        <div className={styles.headerActions}>
-          <button className={styles.newBookingBtn} type="button" onClick={() => navigate('/tutor-search')}>
-            <Plus size={17} />
-            Đặt gia sư mới
-          </button>
-        </div>
+        isParentManaged ? undefined : (
+          <div className={styles.headerActions}>
+            <button className={styles.newBookingBtn} type="button" onClick={() => navigate('/tutor-search')}>
+              <Plus size={17} />
+              Đặt gia sư mới
+            </button>
+          </div>
+        )
       }
     >
       <main className={styles.content}>
@@ -256,7 +262,7 @@ const StudentBooking = () => {
             </div>
             <h2>{emptyCopy.title}</h2>
             <p>{emptyCopy.description}</p>
-            {activeTab === 'all' && (
+            {activeTab === 'all' && !isParentManaged && (
               <button type="button" onClick={() => navigate('/tutor-search')}>
                 <Plus size={17} /> Đặt gia sư ngay
               </button>
@@ -269,7 +275,8 @@ const StudentBooking = () => {
                 label: booking.status,
                 tone: 'pending',
               };
-              const paymentAction = getPaymentAction(booking);
+              // Phụ huynh mới là người thanh toán cho tài khoản con — không tính toán/hiện nút này.
+              const paymentAction = isParentManaged ? null : getPaymentAction(booking);
               const relevantLesson = getRelevantLesson(booking);
               const lessonDate = formatDate(relevantLesson?.scheduledStart ?? booking.startDate);
               const lessonTime = formatLessonTime(relevantLesson?.scheduledStart, relevantLesson?.scheduledEnd);

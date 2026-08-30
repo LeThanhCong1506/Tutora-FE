@@ -7,14 +7,13 @@ import { getBankAccount, type BankAccount } from '../../services/bankAccount.ser
 import { setPendingRedirect } from '../../services/auth.service';
 import styles from './styles.module.css';
 import { getApiErrorMessage } from '../../utils/apiError';
+import { DEFAULT_MIN_WITHDRAWAL, getMinWithdrawalAmount } from '../../services/withdrawalLimit.service';
 
 interface Props {
   availableBalance: number;
   onClose: () => void;
   onSuccess: () => void;
 }
-
-const MIN_WITHDRAWAL = 10000;
 
 /**
  * Tài khoản nhận tiền giờ LUÔN là tài khoản ngân hàng đã lưu (giống Tutor) — không còn gõ tay mỗi
@@ -30,6 +29,8 @@ const WithdrawModal = ({ availableBalance, onClose, onSuccess }: Props) => {
   const [loadingAccount, setLoadingAccount] = useState(true);
   const [amount, setAmount] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  // Ngưỡng tối thiểu do admin cấu hình — phải đọc từ API, hardcode sẽ lệch với luật chặn backend.
+  const [minWithdrawal, setMinWithdrawal] = useState(DEFAULT_MIN_WITHDRAWAL);
 
   useEffect(() => {
     let mounted = true;
@@ -43,6 +44,9 @@ const WithdrawModal = ({ availableBalance, onClose, onSuccess }: Props) => {
       .finally(() => {
         if (mounted) setLoadingAccount(false);
       });
+    getMinWithdrawalAmount().then((min) => {
+      if (mounted) setMinWithdrawal(min);
+    });
     return () => {
       mounted = false;
     };
@@ -55,7 +59,7 @@ const WithdrawModal = ({ availableBalance, onClose, onSuccess }: Props) => {
   const amountNumber = Number(amount);
   const amountValid =
     !Number.isNaN(amountNumber) &&
-    amountNumber >= MIN_WITHDRAWAL &&
+    amountNumber >= minWithdrawal &&
     amountNumber <= availableBalance;
   const formValid = amountValid && hasBankAccount;
 
@@ -107,15 +111,15 @@ const WithdrawModal = ({ availableBalance, onClose, onSuccess }: Props) => {
               className={styles.input}
               type="number"
               inputMode="numeric"
-              min={MIN_WITHDRAWAL}
-              placeholder="Tối thiểu 10,000₫"
+              min={minWithdrawal}
+              placeholder={`Tối thiểu ${formatCurrency(minWithdrawal)}`}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
             />
             {amount !== '' && !amountValid && (
               <span className={styles.fieldError}>
-                {amountNumber < MIN_WITHDRAWAL
-                  ? 'Số tiền rút tối thiểu là 10,000₫.'
+                {amountNumber < minWithdrawal
+                  ? `Số tiền rút tối thiểu là ${formatCurrency(minWithdrawal)}.`
                   : 'Số tiền vượt quá số dư khả dụng.'}
               </span>
             )}

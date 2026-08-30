@@ -10,8 +10,6 @@ export { useBookingForm } from "./hooks/useBookingForm";
 export {
     useBookingSchedule,
     MIN_BOOKING_LEAD_HOURS,
-    MIN_LEAD_HOURS_STUDENT_REQUEST,
-    PARENT_REVIEW_HOURS,
 } from "./hooks/useBookingSchedule";
 export { usePromotion } from "./hooks/usePromotion";
 export * from "./types";

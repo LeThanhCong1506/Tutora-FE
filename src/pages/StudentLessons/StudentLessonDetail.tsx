@@ -559,12 +559,20 @@ const StudentLessonDetail = () => {
     const tutorName = (lesson as any).tutorName ?? (lesson as any).tutor?.fullName ?? 'Gia sư';
     const subjectName = (lesson as any).subjectName ?? (lesson as any).subject?.subjectName ?? 'Buổi học';
     const report = (lesson as any).report;
-    const canCreateDispute = !isParentManaged
-        && !TERMINAL_BOOKING_STATUSES.includes(String(lesson.bookingStatus || '').toLowerCase());
+    // Học sinh do phụ huynh quản lý giờ ĐƯỢC tự tạo khiếu nại / đề xuất đổi lịch (BE:
+    // ParentService.CreateDisputeAsync + ClassSessionRescheduleProposalService.IsLearnerSideActor
+    // đã nới guard chặn thẳng trước đây) — phụ huynh được báo qua thông báo khi con thực hiện.
+    const canCreateDispute = !TERMINAL_BOOKING_STATUSES.includes(String(lesson.bookingStatus || '').toLowerCase());
     const pendingReschedule = lesson.pendingRescheduleProposal;
     const canProposeReschedule =
-        lesson.status === 'scheduled' && !isParentManaged && !pendingReschedule && !lesson.skipConfirmedByBothSides;
-    const isRescheduleCounterpart = pendingReschedule?.counterpartRole === 'Student';
+        lesson.status === 'scheduled' && !pendingReschedule && !lesson.skipConfirmedByBothSides;
+    // Khi tài khoản do phụ huynh quản lý, đề xuất do gia sư gửi lưu counterpart là 'Parent' (phụ
+    // huynh vẫn là actor "chính" được lưu DB) nhưng BE giờ cho phép cả con phản hồi — xem
+    // RespondAsync's respondedByManagedStudent. Trang này chỉ render cho học sinh nên coi
+    // counterpartRole 'Parent' trên tài khoản managed cũng là "được phản hồi".
+    const isRescheduleCounterpart =
+        pendingReschedule?.counterpartRole === 'Student'
+        || (isParentManaged && pendingReschedule?.counterpartRole === 'Parent');
     const isRescheduleProposer = pendingReschedule?.proposedByRole === 'Student';
     const currentUserInfo = getUserInfoFromToken();
     const greetingName = currentUserInfo?.firstName

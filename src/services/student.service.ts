@@ -138,11 +138,6 @@ export interface StudentBookingEligibility {
   reasonCode: BookingReasonCode | null;
   reason: string | null;
   isParentManaged: boolean;
-  /**
-   * Học sinh chọn được gia sư và khung giờ nhưng không tự thanh toán — booking dừng ở
-   * pending_payment chờ phụ huynh duyệt. Đi kèm canBook = true.
-   */
-  requiresParentPayment: boolean;
   needProfile: boolean;
   needAgeVerification: boolean;
   isUnderage: boolean;
