@@ -3,6 +3,8 @@ import { Form, Input, Button } from 'antd';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { getApiErrorMessage } from '../../../utils/apiError';
+import { signalRService } from '../../../services/signalr.service';
+import { NOTIFICATION_TYPE } from '../../../utils/notificationNavigation';
 import {
   submitClassSessionReport,
   triggerReportAiFill,
@@ -171,6 +173,25 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
     }, 8000);
     return () => window.clearInterval(timer);
   }, [aiJobStatus, classSessionId, applyAiJob]);
+
+  // BE bắn "ReceiveNotification" (type lesson_report_ai_fill_ready) qua SignalR ngay lúc job xong — bắt
+  // sự kiện này để refetch NGAY thay vì đợi tới lượt poll 8s tiếp theo. Vẫn giữ nguyên polling ở trên làm
+  // phương án dự phòng (mất kết nối SignalR tạm thời).
+  useEffect(() => {
+    const unsubscribe = signalRService.subscribeToNotifications((notification: { type?: string | null; referenceid?: string | null }) => {
+      if (notification?.type !== NOTIFICATION_TYPE.LessonReportAiFillReady) return;
+      if (String(notification.referenceid) !== String(classSessionId)) return;
+      void (async () => {
+        try {
+          const response = await getReportAiFillStatus(classSessionId);
+          applyAiJob(response.content);
+        } catch (error) {
+          console.error('Failed to refetch AI report fill status', error);
+        }
+      })();
+    });
+    return unsubscribe;
+  }, [classSessionId, applyAiJob]);
 
   const handleAiFillField = async (field: AiFillableField) => {
     // Đã có kết quả sẵn (field khác trigger trước đó, hoặc job cũ vừa nạp lúc mở form) — áp dụng ngay,

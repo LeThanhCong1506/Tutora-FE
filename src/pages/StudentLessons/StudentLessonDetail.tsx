@@ -40,6 +40,7 @@ import {
 } from '../../services/videoSummary.service';
 import { signalRService } from '../../services/signalr.service';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
+import { NOTIFICATION_TYPE } from '../../utils/notificationNavigation';
 import { message as antMessage, Spin, Modal } from 'antd';
 import { ClassSessionRecording, RescheduleProposalModal, SkipContinuationCard } from '../../components/shared';
 import CreateDisputeForm from '../ParentLessons/components/CreateDisputeForm';
@@ -345,6 +346,20 @@ const StudentLessonDetail = () => {
         const timer = window.setInterval(() => void fetchSummaryStatus(), 8000);
         return () => window.clearInterval(timer);
     }, [summaryJob?.status, transcribing, fetchSummaryStatus]);
+
+    // Job tóm tắt xong lúc nào thì BE bắn "ReceiveNotification" (type lesson_video_summary_ready) qua
+    // SignalR ngay lúc đó — bắt sự kiện này để refetch NGAY thay vì đợi tới lượt poll 8s tiếp theo (worst
+    // case mất thêm gần 8s "chết" dù job đã xong). Vẫn giữ nguyên polling ở trên làm phương án dự phòng
+    // (mất kết nối SignalR tạm thời, hoặc job chép lời — job đó KHÔNG bắn notification riêng).
+    useEffect(() => {
+        if (!lessonId) return;
+        const unsubscribe = signalRService.subscribeToNotifications((notification: { type?: string | null; referenceid?: string | null }) => {
+            if (notification?.type !== NOTIFICATION_TYPE.LessonVideoSummaryReady) return;
+            if (String(notification.referenceid) !== String(lessonId)) return;
+            void fetchSummaryStatus();
+        });
+        return unsubscribe;
+    }, [lessonId, fetchSummaryStatus]);
 
     useEffect(() => {
         if (summaryJob?.status === 'completed') void fetchChatMessages();
