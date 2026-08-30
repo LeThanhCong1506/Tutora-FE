@@ -53,7 +53,7 @@ const SessionHeader = ({
           className={styles.headerIconBtn}
           onClick={onTogglePanel}
           title={panelOpen ? 'Ẩn bảng bên' : 'Hiện bảng bên'}
-          aria-label={panelOpen ? 'Ẩn trò chuyện và ghi chú' : 'Hiện trò chuyện và ghi chú'}
+          aria-label={panelOpen ? 'Ẩn bảng bên' : 'Hiện bảng bên'}
           aria-pressed={panelOpen}
         >
           {panelOpen ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}

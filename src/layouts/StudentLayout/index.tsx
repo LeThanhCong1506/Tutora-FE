@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { PortalLayout } from '../../components/shared/PortalLayout';
+import { signalRService } from '../../services/signalr.service';
 import type { NavItem, ProfileMenuItem } from '../../components/shared/PortalLayout';
 import { buildStudentProfileMenuItems } from '../shared/profileMenus';
 import { useUnreadMessageBadge } from '../../hooks/useUnreadMessageBadge';
@@ -387,6 +388,14 @@ const WALLET_PATH = '/student-portal/wallet';
 
 // Inner: nằm TRONG StudentProfileProvider nên đọc được isParentManaged để lọc menu.
 const StudentLayoutInner: React.FC<StudentLayoutProps> = ({ children }) => {
+  // useUnreadMessageBadge/useUnreadBadgesByTab bên dưới chỉ ĐĂNG KÝ lắng nghe (subscribeTo...) trên kết
+  // nối SignalR có sẵn — không tự mở kết nối. Trước đây không có ai gọi connect() cho toàn bộ portal học
+  // sinh (chỉ Header.tsx — không dùng ở layout này — và trang tin nhắn phụ huynh mới gọi), nên mọi badge/
+  // sự kiện real-time (kể cả AI tóm tắt xong) chưa từng thực sự chạy, chỉ fetch 1 lần lúc load trang.
+  useEffect(() => {
+    signalRService.connect().catch(() => {/* đã tự xử lý bên trong service (silent, tự retry) */});
+  }, []);
+
   const unreadMessageCount = useUnreadMessageBadge(MESSAGES_PATH);
   const badgesByPath = useUnreadBadgesByTab(NOTIFICATION_TYPES_BY_PATH);
   // Tài khoản do phụ huynh quản lý: chỉ vào học & tương tác → ẩn menu ví (chỉ hiện khi chắc chắn tự đăng ký).

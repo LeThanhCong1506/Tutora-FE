@@ -35,7 +35,8 @@ const SessionDeviceModal = ({
       onCancel={wasReplaced || confirmLoading ? undefined : onCancel}
       confirmLoading={confirmLoading}
       closable={!wasReplaced && !confirmLoading}
-      maskClosable={!wasReplaced && !confirmLoading}
+      // antd mới: maskClosable đã deprecated, chuyển sang mask.closable.
+      mask={{ closable: !wasReplaced && !confirmLoading }}
       keyboard={!wasReplaced && !confirmLoading}
       cancelButtonProps={wasReplaced ? { style: { display: 'none' } } : { disabled: confirmLoading }}
       centered

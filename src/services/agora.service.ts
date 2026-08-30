@@ -17,6 +17,8 @@ export interface AgoraRoomInfo {
   channel: string;
   /** ID buổi học hiện tại — dùng để gia hạn token / heartbeat. */
   classSessionId: number;
+  /** Booking chứa buổi này — tài liệu và bài tập đều gắn theo booking, không theo buổi. */
+  bookingId?: number;
   uid: string;
   token: string;
   appId: string;

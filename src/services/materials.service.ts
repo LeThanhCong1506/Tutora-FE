@@ -29,6 +29,11 @@ export interface LearningMaterialResponse {
     fileSize?: number;
     isPublic?: boolean;
     createdAt?: string;
+    /**
+     * Trạng thái trích nội dung để AI sinh bài tập: 'processing' | 'ready' | 'failed'.
+     */
+    contentStatus?: 'processing' | 'ready' | 'failed';
+    pageCount?: number;
 }
 
 export const getMaterials = async (bookingId: number): Promise<ApiResponse<LearningMaterialResponse[]>> => {

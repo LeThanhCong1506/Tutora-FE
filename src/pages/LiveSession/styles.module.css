@@ -1,9 +1,63 @@
 /*
-  Design tokens lấy theo đúng bảng màu/typography Tutora đang dùng (không phải màu
-  generic) — khớp với frame "Live Session" trong Figma AGORA (node 2459:20858):
-  nền Mirage #1a2238, panel kính mờ (bg trắng 5%, border trắng 10%), tiêu đề
-  Bricolage Grotesque, phần thân IBM Plex Sans, đỏ nhấn Persian Plum #631b1b.
+  Phòng học trực tuyến — tông TỐI toàn trang: nền đen ngả xám trung tính (#1a1a1a),
+  KHÔNG ngả xanh/tím. Áp cho cả vùng video lẫn panel chat/tài liệu/bài tập.
+
+  Phòng chờ vẫn giữ tông kem.
+
+  MỌI màu đi qua biến bên dưới — sửa tông chỉ cần sửa ở đây.
+  Nhấn: Burgundy #631b1b · Moss #3d4a3e · Gold #d4b483.
 */
+
+.page {
+  /* nền & bề mặt — xám trung tính, không ám xanh/tím */
+  --ls-bg: #141414;
+  --ls-surface: #1e1e1e;
+  --ls-surface-soft: rgba(255, 255, 255, 0.06);
+  --ls-surface-hover: rgba(255, 255, 255, 0.12);
+
+  /* chữ trên nền tối */
+  --ls-text: rgba(255, 255, 255, 0.92);
+  --ls-text-muted: rgba(255, 255, 255, 0.62);
+  --ls-text-faint: rgba(255, 255, 255, 0.42);
+
+  --ls-line: rgba(255, 255, 255, 0.1);
+  --ls-line-strong: rgba(255, 255, 255, 0.2);
+
+  /* hành động chính */
+  /* Burgundy gốc #631b1b gần như chìm vào nền #141414 -> dùng bản sáng hơn cho nút. */
+  --ls-accent: #9d3030;
+  --ls-accent-hover: #b53d3d;
+  --ls-accent-soft: rgba(143, 43, 43, 0.2);
+  --ls-on-accent: #ffffff;
+
+  /* Moss đậm — hành động "xác nhận/tạo mới" (tải lên). Khác --ls-accent (burgundy)
+     vốn dành cho hành động chính của phòng học. Nguồn: --color-moss (variables.css). */
+  --ls-moss: var(--color-moss, #2c3530);
+  --ls-moss-hover: var(--color-moss-hover, #3a463f);
+  --ls-moss-soft: rgba(44, 53, 48, 0.28);
+
+  /* trạng thái — sáng hơn bản nền sáng để nổi trên nền tối */
+  --ls-ok: #7fa382;
+  --ls-ok-soft: rgba(127, 163, 130, 0.16);
+  --ls-ok-line: rgba(127, 163, 130, 0.4);
+  --ls-wait: #d4b483;
+  --ls-wait-soft: rgba(212, 180, 131, 0.16);
+  --ls-danger: #e08a8a;
+  --ls-danger-soft: rgba(224, 138, 138, 0.14);
+  --ls-danger-line: rgba(224, 138, 138, 0.4);
+
+  /* Ô video sẫm hơn nền trang một bậc để khung hình tách khỏi nền. */
+  --ls-video-bg: #0d0d0d;
+  --ls-video-bg-deep: #0a0a0a;
+  /* Chip/nhãn nổi TRÊN video (tên người, icon mic) — phải tối để đọc được trên mọi
+     khung hình, kể cả khi camera đang chiếu nền sáng. */
+  --ls-video-overlay: rgba(0, 0, 0, 0.62);
+  --ls-video-overlay-strong: rgba(0, 0, 0, 0.72);
+  --ls-video-line: rgba(255, 255, 255, 0.1);
+  --ls-on-video: rgba(255, 255, 255, 0.92);
+  --ls-on-video-muted: rgba(255, 255, 255, 0.6);
+  --ls-on-video-soft: rgba(255, 255, 255, 0.12);
+}
 
 .page {
   position: fixed;
@@ -11,8 +65,8 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  color: #f8fafc;
-  background: radial-gradient(circle at 18% 0%, rgba(54, 80, 125, 0.18), transparent 34%), #151e32;
+  color: var(--ls-text);
+  background: var(--ls-bg);
   z-index: 1000;
   font-family: 'IBM Plex Sans', sans-serif;
 }
@@ -20,7 +74,7 @@
 .page button:focus-visible,
 .page input:focus-visible,
 .page textarea:focus-visible {
-  outline: 2px solid rgba(147, 197, 253, 0.9);
+  outline: 2px solid var(--ls-accent);
   outline-offset: 2px;
 }
 
@@ -33,9 +87,9 @@
   min-height: 64px;
   padding: 10px 16px 10px 20px;
   box-sizing: border-box;
-  background: rgba(10, 16, 30, 0.72);
+  background: var(--ls-surface);
   backdrop-filter: blur(14px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid var(--ls-line);
   flex-shrink: 0;
 }
 
@@ -44,7 +98,7 @@
   align-items: center;
   gap: 18px;
   min-width: 0;
-  color: #fff;
+  color: var(--ls-text);
 }
 
 .headerStatusGroup,
@@ -67,13 +121,13 @@
   width: 7px;
   height: 7px;
   border-radius: 9999px;
-  background: #ef4444;
-  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.11);
+  background: var(--ls-danger);
+  box-shadow: 0 0 0 4px var(--ls-danger-soft);
   flex-shrink: 0;
 }
 
 .liveLabel {
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.85px;
   text-transform: uppercase;
@@ -86,9 +140,9 @@
   gap: 5px;
   padding: 4px 9px;
   border-radius: 9999px;
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  color: #fecaca;
+  background: var(--ls-danger-soft);
+  border: 1px solid var(--ls-danger-soft);
+  color: var(--ls-danger);
   flex-shrink: 0;
 }
 
@@ -96,13 +150,13 @@
   width: 7px;
   height: 7px;
   border-radius: 9999px;
-  background: #ef4444;
+  background: var(--ls-danger);
   flex-shrink: 0;
   animation: recordingPulse 1.6s ease-in-out infinite;
 }
 
 .recordingLabel {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -113,11 +167,11 @@
   0%,
   100% {
     opacity: 1;
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+    box-shadow: 0 0 0 0 var(--ls-danger-soft);
   }
   50% {
     opacity: 0.5;
-    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0);
+    box-shadow: 0 0 0 4px var(--ls-danger-soft);
   }
 }
 
@@ -138,12 +192,11 @@
   gap: 8px;
   padding: 10px 14px;
   border-radius: 12px;
-  background: rgba(254, 243, 199, 0.96);
-  border: 1px solid rgba(217, 119, 6, 0.35);
-  color: #92400e;
+  background: var(--ls-wait-soft);
+  border: 1px solid var(--ls-wait);
+  color: var(--ls-wait);
   font-size: 13px;
   font-weight: 600;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
   animation: autoEndWarningPulse 2s ease-in-out infinite;
 }
 
@@ -151,7 +204,7 @@
   width: 7px;
   height: 7px;
   border-radius: 9999px;
-  background: #d97706;
+  background: var(--ls-wait);
   flex-shrink: 0;
 }
 
@@ -163,11 +216,9 @@
 @keyframes autoEndWarningPulse {
   0%,
   100% {
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
-  }
+    }
   50% {
-    box-shadow: 0 10px 28px rgba(217, 119, 6, 0.35);
-  }
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -179,15 +230,15 @@
 .headerDivider {
   width: 1px;
   height: 24px;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--ls-surface-soft);
   flex-shrink: 0;
 }
 
 .headerSubject {
   max-width: min(34vw, 440px);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ls-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -198,13 +249,13 @@
   align-items: center;
   gap: 5px;
   padding: 5px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ls-line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.055);
-  font-size: 10.5px;
+  background: var(--ls-surface-soft);
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.55px;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--ls-text-muted);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
@@ -223,27 +274,27 @@
   width: 36px;
   height: 36px;
   border-radius: 9px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
+  border: 1px solid var(--ls-line);
+  background: var(--ls-surface-soft);
+  color: var(--ls-text);
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .headerIconBtn:hover {
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--ls-surface-soft);
 }
 
 .attendanceBtn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #fff;
-  color: #1a2238;
+  background: var(--ls-accent);
+  color: var(--ls-on-accent);
   border: none;
   border-radius: 10px;
   padding: 8px 16px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -333,10 +384,9 @@
 /* ── Video tile ── */
 .videoTile {
   position: relative;
-  background: radial-gradient(circle at 50% 44%, rgba(53, 68, 103, 0.2), transparent 38%), #0d1629;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--ls-video-bg);
+  border: 1px solid var(--ls-video-line);
   border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(4, 9, 20, 0.16);
   overflow: hidden;
   min-height: 0;
   width: 100%;
@@ -374,12 +424,12 @@
   width: 72px;
   height: 72px;
   border-radius: 9999px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  background: #1a2238;
+  border: 3px solid var(--ls-line);
+  background: var(--ls-video-bg-deep);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--ls-on-video);
   font-size: 24px;
   font-weight: 700;
   font-family: 'Bricolage Grotesque', sans-serif;
@@ -401,11 +451,11 @@
   align-items: center;
   gap: 6px;
   padding: 5px 10px;
-  background: rgba(4, 10, 21, 0.68);
+  background: var(--ls-video-overlay-strong);
   backdrop-filter: blur(8px);
   border-radius: 9999px;
-  color: #fff;
-  font-size: 11px;
+  color: var(--ls-on-video);
+  font-size: 12.5px;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -421,19 +471,19 @@
 }
 
 .audioDotOn {
-  background: #22c55e;
+  background: var(--ls-ok);
 }
 
 .audioDotOff {
-  background: #ef4444;
+  background: var(--ls-danger);
 }
 
 .videoTileMicIcon {
   position: absolute;
   top: 10px;
   right: 10px;
-  background: rgba(4, 10, 21, 0.62);
-  color: #fff;
+  background: var(--ls-video-overlay);
+  color: var(--ls-on-video);
   border-radius: 9999px;
   padding: 6px;
   display: flex;
@@ -450,8 +500,8 @@
   padding: 6px;
   border: none;
   border-radius: 9999px;
-  background: rgba(4, 10, 21, 0.62);
-  color: #fff;
+  background: var(--ls-video-overlay);
+  color: var(--ls-on-video);
   cursor: pointer;
   opacity: 0;
   transform: scale(0.9);
@@ -470,15 +520,15 @@
 }
 
 .pinBtn:hover {
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--ls-video-overlay-strong);
 }
 
 .pinBtnActive {
-  background: #2563eb;
+  background: var(--ls-accent);
 }
 
 .pinBtnActive:hover {
-  background: #3b82f6;
+  background: var(--ls-accent-hover);
 }
 
 /* ── Control bar (kiểu Google Meet: nút tròn nổi ở đáy) ── */
@@ -491,15 +541,17 @@
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  background: rgba(9, 16, 30, 0.84);
+  /* Thanh công cụ nổi TRÊN vùng video nên giữ tối — đặt nền sáng ở đây sẽ chìm vào
+     khung hình khi video đang chiếu cảnh sáng. */
+  background: var(--ls-video-overlay-strong);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
-  box-shadow: 0 12px 32px -10px rgba(0, 0, 0, 0.72);
   z-index: 3;
 }
 
 .controlBtn {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -507,8 +559,8 @@
   height: 42px;
   border-radius: 9999px;
   border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: var(--ls-on-video-soft);
+  color: var(--ls-on-video);
   cursor: pointer;
   transition:
     background 0.15s ease,
@@ -516,7 +568,7 @@
 }
 
 .controlBtn:hover {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .controlBtn:active {
@@ -524,27 +576,49 @@
 }
 
 .controlBtnOff {
-  background: #631b1b;
-  color: #fff;
+  background: var(--ls-accent);
+  color: var(--ls-on-accent);
+}
+
+/* Badge tin chưa đọc trên nút Trò chuyện — panel đóng thì đây là tín hiệu duy nhất
+   báo có tin mới. */
+.controlBtnBadge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  background: var(--ls-accent);
+  color: var(--ls-on-accent);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .controlBtnOff:hover {
-  background: #7a2222;
+  background: var(--ls-accent-hover);
 }
 
 .controlBtnActive {
-  background: #2f6f4f;
+  background: var(--ls-ok);
 }
 
 .controlBtnActive:hover {
-  background: #368058;
+  background: #4a5c4b;
 }
 
 .controlDivider {
   width: 1px;
   height: 24px;
-  background: rgba(255, 255, 255, 0.1);
-  margin: 0 2px;
+  /* Toolbar nền rất tối (overlay đen 72%) nên trắng 6% gần như tàng hình —
+     dùng 22% để vạch ngăn thấy được mà vẫn không cướp nhìn khỏi các nút. */
+  background: rgba(255, 255, 255, 0.22);
+  margin: 0 6px;
 }
 
 .leaveBtn {
@@ -555,16 +629,16 @@
   padding: 0 18px;
   border-radius: 9999px;
   border: none;
-  background: #dc2626;
-  color: #fff;
-  font-size: 12px;
+  background: var(--ls-accent-hover);
+  color: var(--ls-text);
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .leaveBtn:hover {
-  background: #ef4444;
+  background: var(--ls-danger);
 }
 
 /* ── Banner "Bạn đang chia sẻ màn hình" (chỉ hiện với người đang share) ── */
@@ -577,12 +651,11 @@
   align-items: center;
   gap: 10px;
   padding: 8px 8px 8px 14px;
-  background: rgba(9, 16, 30, 0.9);
+  background: var(--ls-video-overlay-strong);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(52, 211, 153, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 9999px;
-  box-shadow: 0 12px 32px -10px rgba(0, 0, 0, 0.72);
-  color: #fff;
+  color: var(--ls-on-video);
   font-size: 13px;
   font-weight: 600;
   z-index: 3;
@@ -592,7 +665,7 @@
   width: 7px;
   height: 7px;
   border-radius: 9999px;
-  background: #34d399;
+  background: #7fa382;
   flex-shrink: 0;
   animation: screenShareBannerPulse 1.8s ease-in-out infinite;
 }
@@ -620,16 +693,16 @@
   padding: 0 12px;
   border-radius: 9999px;
   border: none;
-  background: #dc2626;
-  color: #fff;
-  font-size: 12px;
+  background: var(--ls-accent-hover);
+  color: var(--ls-on-video);
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .screenShareStopBtn:hover {
-  background: #ef4444;
+  background: var(--ls-danger);
 }
 
 /* ── Side panel ── */
@@ -639,28 +712,25 @@
   flex-shrink: 0;
   margin: 12px 12px 12px 0;
   overflow: hidden;
-  background: rgba(12, 20, 36, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--ls-surface);
+  border: 1px solid var(--ls-line);
   border-radius: 16px;
-  box-shadow: 0 18px 42px rgba(3, 8, 18, 0.2);
   backdrop-filter: blur(14px);
   display: flex;
   flex-direction: column;
 }
 
 .sidePanelCloseBtn {
-  position: absolute;
-  top: 14px;
-  right: 14px;
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   width: 28px;
   height: 28px;
   border: none;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.6);
+  background: var(--ls-surface-soft);
+  color: var(--ls-text-muted);
   cursor: pointer;
   z-index: 2;
   transition:
@@ -669,46 +739,34 @@
 }
 
 .sidePanelCloseBtn:hover {
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
+  background: var(--ls-surface-soft);
+  color: var(--ls-text);
 }
 
-.sidePanelTabs {
+/* Header panel: tiêu đề + nút đóng. Thay cho tab-bar cũ — điều hướng đã chuyển
+   xuống thanh công cụ, panel chỉ còn hiển thị đúng một nội dung. */
+.sidePanelHeader {
+  /* Tooltip của tab xổ LÊN TRÊN, vượt khỏi header -> không được cắt.
+     .sidePanel có overflow: hidden nên header tự nâng z-index để tooltip nổi trên
+     phần nội dung phía dưới. */
+  position: relative;
+  z-index: 2;
+  overflow: visible;
   display: flex;
-  gap: 4px;
-  margin: 12px 50px 10px 12px;
-  padding: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.035);
-  flex-shrink: 0;
-}
-
-.sidePanelTab {
-  flex: 1;
-  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-width: 0;
-  padding: 7px 8px;
-  border: none;
-  background: transparent;
-  border-radius: 7px;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.25px;
-  color: rgba(255, 255, 255, 0.4);
-  cursor: pointer;
-  transition:
-    background 0.15s ease,
-    color 0.15s ease;
+  gap: 8px;
+  padding: 12px 12px 10px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--ls-line);
 }
 
-.sidePanelTabActive {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.11);
-  box-shadow: 0 2px 8px rgba(2, 6, 14, 0.16);
+.sidePanelTitle {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ls-text);
 }
 
 .sidePanelBody {
@@ -727,9 +785,9 @@
   padding: 0 4px;
   margin-left: 6px;
   border-radius: 9999px;
-  background: #dc2626;
-  color: #fff;
-  font-size: 9px;
+  background: var(--ls-accent-hover);
+  color: var(--ls-text);
+  font-size: 11px;
   font-weight: 700;
   vertical-align: middle;
 }
@@ -759,16 +817,16 @@
   flex-direction: column;
   align-items: center;
   gap: 7px;
-  color: rgba(255, 255, 255, 0.42);
-  font-size: 11.5px;
+  color: var(--ls-text-faint);
+  font-size: 13px;
   line-height: 1.55;
   text-align: center;
   padding: 24px 8px;
 }
 
 .chatEmpty strong {
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 12.5px;
+  color: var(--ls-text);
+  font-size: 13.5px;
 }
 
 .chatEmptyIcon {
@@ -778,10 +836,10 @@
   align-items: center;
   justify-content: center;
   margin-bottom: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ls-line);
   border-radius: 13px;
-  background: rgba(255, 255, 255, 0.055);
-  color: rgba(255, 255, 255, 0.62);
+  background: var(--ls-surface-soft);
+  color: var(--ls-text-muted);
 }
 
 .chatBubbleRow {
@@ -795,33 +853,33 @@
 
 .chatBubble {
   max-width: 82%;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--ls-surface-soft);
   border-radius: 12px;
   padding: 8px 12px;
 }
 
 .chatBubbleLocal {
-  background: #2f6f4f;
+  background: var(--ls-ok);
 }
 
 .chatSender {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ls-text-muted);
   margin-bottom: 3px;
 }
 
 .chatText {
   font-size: 13px;
-  color: #fff;
+  color: var(--ls-text);
   line-height: 1.45;
   word-break: break-word;
   white-space: pre-wrap;
 }
 
 .chatTime {
-  font-size: 9px;
-  color: rgba(255, 255, 255, 0.4);
+  font-size: 11px;
+  color: var(--ls-text-faint);
   text-align: right;
   margin-top: 3px;
 }
@@ -830,8 +888,8 @@
   display: flex;
   gap: 8px;
   padding: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(5, 11, 23, 0.34);
+  border-top: 1px solid var(--ls-line);
+  background: var(--ls-surface-soft);
   flex-shrink: 0;
 }
 
@@ -854,8 +912,8 @@
 }
 
 .notesHint {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  font-size: 12.5px;
+  color: var(--ls-text-faint);
   line-height: 1.4;
 }
 
@@ -868,59 +926,59 @@
   flex-shrink: 0;
   border: none;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.6);
+  background: var(--ls-surface-soft);
+  color: var(--ls-text-muted);
   cursor: pointer;
 }
 
 .notesClearBtn:hover {
-  background: rgba(220, 38, 38, 0.25);
-  color: #fca5a5;
+  background: var(--ls-danger-soft);
+  color: var(--ls-danger);
 }
 
 .notesTextarea {
   flex: 1;
   min-height: 0;
   resize: none;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--ls-line);
+  background: var(--ls-surface-soft);
   border-radius: 12px;
   padding: 12px 14px;
   font-size: 13px;
   line-height: 1.6;
-  color: #fff;
+  color: var(--ls-text);
   font-family: 'IBM Plex Sans', sans-serif;
   outline: none;
 }
 
 .notesTextarea::placeholder {
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--ls-line-strong);
 }
 
 .notesTextarea:focus {
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: var(--ls-line-strong);
 }
 
 .notesFooter {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.35);
+  font-size: 11px;
+  color: var(--ls-text-faint);
   flex-shrink: 0;
 }
 
 .sidePanelInput {
   flex: 1;
   min-width: 0;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--ls-line);
+  background: var(--ls-surface-soft);
   border-radius: 10px;
   padding: 10px 12px;
-  font-size: 12px;
-  color: #fff;
+  font-size: 13px;
+  color: var(--ls-text);
   font-family: 'IBM Plex Sans', sans-serif;
 }
 
 .sidePanelInput::placeholder {
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--ls-line-strong);
 }
 
 .sidePanelInput:disabled {
@@ -929,8 +987,8 @@
 
 .sidePanelInput:focus,
 .notesTextarea:focus {
-  border-color: rgba(147, 197, 253, 0.42);
-  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--ls-line-strong);
+  background: var(--ls-surface-soft);
   outline: none;
 }
 
@@ -939,8 +997,8 @@
   height: 38px;
   border-radius: 10px;
   border: none;
-  background: #fff;
-  color: #1a2238;
+  background: var(--ls-accent);
+  color: var(--ls-on-accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -949,14 +1007,14 @@
 }
 
 .sidePanelSendBtn:disabled {
-  background: rgba(255, 255, 255, 0.14);
-  color: rgba(255, 255, 255, 0.32);
+  background: var(--ls-surface-soft);
+  color: var(--ls-text-faint);
   cursor: not-allowed;
 }
 
 .chatList,
 .spotlightStrip {
-  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+  scrollbar-color: var(--ls-line) transparent;
   scrollbar-width: thin;
 }
 
@@ -968,7 +1026,7 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ls-text-muted);
 }
 
 .errorScreen {
@@ -986,8 +1044,8 @@
   width: 64px;
   height: 64px;
   border-radius: 9999px;
-  background: rgba(239, 68, 68, 0.12);
-  color: #ef4444;
+  background: var(--ls-danger-soft);
+  color: var(--ls-danger);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -995,14 +1053,14 @@
 }
 
 .errorTitle {
-  color: #fff;
+  color: var(--ls-text);
   font-size: 18px;
   font-weight: 700;
   font-family: 'Bricolage Grotesque', sans-serif;
 }
 
 .errorMessage {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--ls-text-faint);
   font-size: 14px;
   max-width: 380px;
   line-height: 1.6;
@@ -1022,8 +1080,8 @@
   align-items: center;
   gap: 6px;
   padding: 10px 20px;
-  background: #fff;
-  color: #1a2238;
+  background: var(--ls-accent);
+  color: var(--ls-on-accent);
   font-size: 13px;
   font-weight: 700;
   border: none;
@@ -1032,7 +1090,7 @@
 }
 
 .errorRetryBtn:hover {
-  background: rgba(255, 255, 255, 0.88);
+  background: var(--ls-surface);
 }
 
 /* Nút phụ: rời khỏi màn hình lỗi — viền mờ, không cần nổi bật bằng nút Thử lại. */
@@ -1042,17 +1100,17 @@
   gap: 6px;
   padding: 10px 20px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--ls-text);
   font-size: 13px;
   font-weight: 700;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid var(--ls-line);
   border-radius: 10px;
   cursor: pointer;
 }
 
 .errorBackBtn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--ls-surface-soft);
+  border-color: var(--ls-line-strong);
 }
 
 /* ── Responsive: giữ vùng học là ưu tiên, panel chuyển thành lớp nổi trên màn hình hẹp. ── */
@@ -1101,7 +1159,7 @@
 
   .headerSubject {
     max-width: 28vw;
-    font-size: 11px;
+    font-size: 12.5px;
   }
 
   .headerTimer {
@@ -1217,4 +1275,1027 @@
   .controlBar {
     bottom: 10px;
   }
+}
+
+/* Tài liệu & bài tập trong panel Trò chuyện
+   Dùng chung token --ls-* với cả trang (panel giờ nền trắng, không còn nền tối). */
+
+/* Tab icon trong header panel Chat. */
+.chatTabs {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.chatTab {
+  /* Mốc neo cho .chatTabTooltip. */
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ls-text-faint);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.chatTab:hover {
+  color: var(--ls-text-muted);
+}
+
+.chatTabTooltip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  padding: 4px 8px;
+  border: 1px solid var(--ls-line-strong);
+  border-radius: 6px;
+  background: #262626;
+  color: var(--ls-text);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.12s ease,
+    visibility 0.12s ease;
+}
+
+.chatTab:hover .chatTabTooltip,
+.chatTab:focus-visible .chatTabTooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.chatTabActive {
+  background: #3d5c40;
+  color: #ffffff;
+}
+
+.chatTabActive:hover {
+  background: #496b4c;
+}
+
+.practiceScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.practiceEmpty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 16px;
+  color: var(--ls-text-faint);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Ảnh dùng THAY icon vector trong tab bar — cùng cỡ với icon lucide (15px) để 3 tab
+   thẳng hàng. object-fit: contain giữ tỉ lệ ảnh, không méo. */
+.tabImageIcon {
+  width: 17px;
+  height: 17px;
+  object-fit: contain;
+  display: block;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Ảnh minh hoạ trạng thái rỗng (thư mục trống / chưa có câu hỏi). Dùng ảnh thay icon
+   vector để có chút ấm áp, đỡ khô khan khi panel chưa có nội dung gì. */
+.emptyStateIcon {
+  width: 96px;
+  height: auto;
+  margin-bottom: 2px;
+  opacity: 0.9;
+  user-select: none;
+  pointer-events: none;
+}
+
+.practiceSpin {
+  animation: practiceSpin 1s linear infinite;
+}
+
+@keyframes practiceSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Tài liệu: trình bày kiểu TIN NHẮN */
+
+.materialFeed,
+.practiceList,
+.materialPickerList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.materialFeed {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.materialPost {
+  display: flex;
+  gap: 8px;
+}
+
+.materialAvatar {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  margin-top: 2px;
+  border-radius: 6px;
+  object-fit: contain;
+  background: var(--ls-surface-soft);
+}
+
+.materialPostBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.materialPostHead {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.materialPostAuthor {
+  font-weight: 600;
+  color: var(--ls-text);
+}
+
+.materialPostDate {
+  color: var(--ls-text-faint);
+}
+
+.materialCard {
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--ls-line);
+  border-radius: 8px;
+  background: var(--ls-surface-soft);
+  transition: border-color 0.15s ease;
+}
+
+.materialCard:hover {
+  border-color: var(--ls-line-strong);
+}
+
+.materialPreview {
+  display: block;
+  height: 96px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--ls-line);
+  /* Nền sáng cho khung xem trước: PDF/ảnh tài liệu vốn nền trắng, đặt trên nền tối
+     sẽ lệch tông và khó nhìn. */
+  background: #f4f5f7; /* cố ý sáng: PDF/ảnh vốn nền trắng */
+}
+
+.materialPreviewImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+/* pointer-events: none để click rơi vào thẻ <a> bọc ngoài, không bị iframe nuốt. */
+.materialPreviewFrame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  pointer-events: none;
+}
+
+.materialPreviewNote {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: rgba(26, 34, 56, 0.45);
+  font-size: 12.5px;
+}
+
+.materialCardFoot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+}
+
+.materialIcon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--ls-accent-soft);
+  color: var(--ls-accent);
+}
+
+.materialBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.materialTitle {
+  font-size: 13.5px;
+  color: var(--ls-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.materialMeta,
+.materialPickerHint {
+  font-size: 12px;
+  color: var(--ls-text-faint);
+}
+
+.materialOpenHint {
+  flex-shrink: 0;
+  color: var(--ls-text-faint);
+}
+
+.materialPending {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 6px 0 0;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--ls-wait-soft);
+  color: var(--ls-wait);
+  font-size: 12px;
+  width: fit-content;
+}
+
+/* Khu tạo đề (gia sư)  */
+.practiceCompose {
+  padding-bottom: 12px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--ls-line);
+}
+
+.materialPickerRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--ls-line);
+  border-radius: 8px;
+}
+
+.materialPickerInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.materialPickerLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--ls-text-faint);
+}
+
+.materialPickerValue {
+  font-size: 13px;
+  color: var(--ls-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.materialPickerList {
+  margin-top: 6px;
+  border: 1px solid var(--ls-line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.materialPickerItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.materialPickerItem:enabled:hover {
+  background: var(--ls-surface-soft);
+}
+
+.materialPickerItem:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.materialPickerName {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--ls-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.materialCheckbox {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--ls-line-strong);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ls-text);
+  cursor: pointer;
+}
+
+.materialCheckboxOn {
+  background: var(--ls-accent);
+  border-color: var(--ls-accent);
+}
+
+.practicePrompt {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--ls-line);
+  border-radius: 8px;
+  background: var(--ls-surface-soft);
+  color: var(--ls-text);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+}
+
+.practicePrompt::placeholder {
+  color: var(--ls-text-faint);
+}
+
+.practicePrompt:focus {
+  border-color: var(--ls-line-strong);
+}
+
+.practicePrimaryBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--ls-accent);
+  color: var(--ls-on-accent);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.practicePrimaryBtn:hover:enabled {
+  background: var(--ls-accent-hover);
+}
+
+.practicePrimaryBtn:disabled {
+  background: var(--ls-surface-soft);
+  color: var(--ls-text-faint);
+  cursor: not-allowed;
+}
+
+.practiceSmallBtn,
+.practiceGhostBtn {
+  flex-shrink: 0;
+  padding: 5px 12px;
+  border: none;
+  border-radius: 6px;
+  background: var(--ls-accent);
+  color: var(--ls-on-accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.practiceGhostBtn {
+  background: transparent;
+  color: var(--ls-text-faint);
+}
+
+/* ── Danh sách câu hỏi ── */
+
+.practiceSectionLabel {
+  margin: 4px 0 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--ls-text-faint);
+}
+
+.practiceItem {
+  border-bottom: 1px solid var(--ls-line);
+}
+
+.practiceItemBtn {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 2px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.practiceItemBtn:hover {
+  background: var(--ls-surface-soft);
+}
+
+.practiceIndex {
+  flex-shrink: 0;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ls-text-faint);
+}
+
+.practiceItemBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.practiceItemContent {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ls-text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.practiceItemMeta {
+  font-size: 12px;
+  color: var(--ls-text-faint);
+}
+
+/* ── Modal câu hỏi ── */
+
+/* Modal portal ra document.body -> NẰM NGOÀI .page nên không kế thừa được biến
+   --ls-* khai báo ở đó, chữ rơi về navy của CSS toàn cục và chìm vào nền tối.
+   Khai báo lại token ở đây cho nhánh portal. */
+.practiceModalOverlay {
+  --ls-surface-soft: rgba(255, 255, 255, 0.06);
+  --ls-surface-hover: rgba(255, 255, 255, 0.12);
+  --ls-text: rgba(255, 255, 255, 0.92);
+  --ls-text-muted: rgba(255, 255, 255, 0.62);
+  --ls-text-faint: rgba(255, 255, 255, 0.42);
+  --ls-line: rgba(255, 255, 255, 0.1);
+  --ls-line-strong: rgba(255, 255, 255, 0.2);
+  --ls-accent: #9d3030;
+  --ls-accent-hover: #b53d3d;
+  --ls-accent-soft: rgba(157, 48, 48, 0.2);
+  --ls-on-accent: #ffffff;
+  --ls-ok: #7fa382;
+  --ls-ok-soft: rgba(127, 163, 130, 0.16);
+  --ls-wait: #d4b483;
+  --ls-wait-soft: rgba(212, 180, 131, 0.16);
+  --ls-danger: #e08a8a;
+  --ls-danger-soft: rgba(224, 138, 138, 0.14);
+
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  color: var(--ls-text);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.practiceModal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 520px;
+  max-height: 82vh;
+  overflow: hidden;
+  border: 1px solid var(--ls-line-strong);
+  border-radius: 12px;
+  /* Sáng hơn --ls-surface một bậc: modal phải NỔI lên trên panel, mà panel cũng
+     đang dùng --ls-surface. */
+  background: #262626;
+}
+
+.practiceModalHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--ls-line);
+}
+
+.practiceModalTitleWrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.practiceModalTitle {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ls-text);
+}
+
+.practiceModalSub {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--ls-text);
+}
+
+.practiceModalBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px;
+}
+
+.practiceModalFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--ls-line);
+}
+
+.practiceFooterActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.practiceIconBtn {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ls-text-faint);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.practiceIconBtn:hover {
+  background: var(--ls-surface-soft);
+  color: var(--ls-text);
+}
+
+.practiceQuestionText {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ls-text);
+}
+
+.practiceOptions {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.practiceOptionRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.practiceOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--ls-line);
+  border-radius: 8px;
+  background: var(--ls-surface-soft);
+  color: var(--ls-text);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.practiceOption:hover:enabled {
+  border-color: var(--ls-line-strong);
+}
+
+.practiceOption:disabled {
+  cursor: default;
+}
+
+/* Moss Green — đúng; Burgundy — sai. Không dùng đỏ/xanh tươi. */
+.practiceOptionCorrect {
+  border-color: var(--ls-ok);
+  background: var(--ls-ok-soft);
+  color: var(--ls-ok);
+}
+
+.practiceOptionWrong {
+  border-color: var(--ls-danger);
+  background: var(--ls-accent-soft);
+  color: var(--ls-danger);
+}
+
+.practiceOptionKey {
+  flex-shrink: 0;
+  min-width: 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ls-text-faint);
+}
+
+.practiceOptionInput {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--ls-line);
+  border-radius: 6px;
+  background: var(--ls-surface-soft);
+  color: var(--ls-text);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.practiceFieldRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.practiceEssay {
+  margin-top: 12px;
+}
+
+.practiceHint {
+  margin: 14px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  /* Gợi ý là nội dung ĐỌC KỸ (lời giải từng bước), không phải chú thích phụ —
+     để mờ 62% thì công thức KaTeX xen kẽ rất khó theo dõi. */
+  color: var(--ls-text);
+}
+
+.practiceNote {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--ls-text-faint);
+}
+
+/* Tải tài liệu lên (tab Tài liệu, chỉ gia sư) */
+
+.materialsPane {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Nút neo ở đáy panel, không cuộn theo danh sách. */
+.materialsFooter {
+  flex-shrink: 0;
+  padding: 10px 12px;
+  border-top: 1px solid var(--ls-line);
+}
+
+.uploadTriggerBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: var(--ls-moss);
+  color: var(--ls-on-accent);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.uploadTriggerBtn:hover {
+  background: var(--ls-moss-hover);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* ── Modal ── */
+
+.uploadOverlay {
+  /* Portal ra body -> ngoài .page nên khai báo lại token cần dùng. */
+  --ls-surface-soft: rgba(255, 255, 255, 0.06);
+  --ls-text: rgba(255, 255, 255, 0.92);
+  --ls-text-muted: rgba(255, 255, 255, 0.62);
+  --ls-text-faint: rgba(255, 255, 255, 0.42);
+  --ls-line: rgba(255, 255, 255, 0.1);
+  --ls-line-strong: rgba(255, 255, 255, 0.2);
+  --ls-accent: #9d3030;
+  --ls-accent-hover: #b53d3d;
+  --ls-accent-soft: rgba(157, 48, 48, 0.2);
+  --ls-on-accent: #ffffff;
+  --ls-moss: var(--color-moss, #2c3530);
+  --ls-moss-hover: var(--color-moss-hover, #3a463f);
+  --ls-moss-soft: rgba(44, 53, 48, 0.28);
+  --ls-danger: #e08a8a;
+  --ls-danger-soft: rgba(224, 138, 138, 0.14);
+  --ls-danger-line: rgba(224, 138, 138, 0.4);
+
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.72);
+  color: var(--ls-text);
+}
+
+.uploadModal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  /* 3/4 của 520px — modal upload không có nội dung dài, rộng quá thì vùng kéo-thả
+     loãng và mắt phải quét ngang nhiều. */
+  max-width: 390px;
+  max-height: 85vh;
+  padding: 20px;
+  overflow-y: auto;
+  border: 1px solid var(--ls-line-strong);
+  border-radius: 14px;
+  background: #262626;
+}
+
+.uploadCloseBtn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: var(--ls-surface-soft);
+  color: var(--ls-text-muted);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.uploadCloseBtn:hover:enabled {
+  background: var(--ls-line-strong);
+  color: var(--ls-text);
+}
+
+.uploadDropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 32px 20px;
+  border: 2px dashed var(--ls-line-strong);
+  border-radius: 12px;
+  text-align: center;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.uploadDropzoneActive {
+  border-color: var(--ls-accent);
+  background: var(--ls-accent-soft);
+}
+
+.uploadIcon {
+  width: 84px;
+  height: auto;
+  margin-bottom: 6px;
+  user-select: none;
+  pointer-events: none;
+}
+
+.uploadHeadline {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ls-text);
+}
+
+.uploadBrowseBtn {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--ls-wait);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.uploadHint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ls-text-faint);
+}
+
+.uploadFileList {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.uploadFileItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--ls-line);
+  border-radius: 8px;
+}
+
+.uploadFileIcon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: var(--ls-accent-soft);
+  color: var(--ls-text);
+}
+
+.uploadFileBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.uploadFileName {
+  font-size: 13.5px;
+  color: var(--ls-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uploadFileMeta {
+  font-size: 12px;
+  color: var(--ls-text-faint);
+}
+
+.uploadRemoveBtn {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ls-text-faint);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.uploadRemoveBtn:hover:enabled {
+  background: var(--ls-accent-soft);
+  color: var(--ls-text);
+}
+
+.uploadFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.uploadGhostBtn {
+  padding: 9px 16px;
+  border: 1px solid var(--ls-danger-line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ls-danger);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.uploadGhostBtn:hover:enabled {
+  background: var(--ls-danger-soft);
+  border-color: var(--ls-danger);
+}
+
+.uploadPrimaryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 8px;
+  background: var(--ls-moss);
+  color: var(--ls-on-accent);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  /* Moss #2c3530 chỉ hơn nền modal #262626 khoảng 1.2 lần độ sáng -> tự thân nút
+     không thấy ranh giới. Viền sáng mảnh để khối nút hiện rõ. */
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.uploadPrimaryBtn:hover:enabled {
+  background: var(--ls-moss-hover);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.uploadPrimaryBtn:disabled,
+.uploadGhostBtn:disabled,
+.uploadCloseBtn:disabled,
+.uploadRemoveBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

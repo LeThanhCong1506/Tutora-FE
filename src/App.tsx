@@ -158,6 +158,21 @@ function LegacyPolicyRedirect() {
   return <Navigate to={slug ? `/about/${slug}` : '/about'} replace />;
 }
 
+/**
+ * `/live-session/:id/demo-ui` -> render CHÍNH trang LiveSession ở chế độ mock.
+ * `mock=1` vào URL để trang tự chạy nhánh dữ liệu giả (không Agora, không API).
+ */
+// function DemoUiRoute() {
+//   const [searchParams] = useSearchParams();
+
+//   if (searchParams.get('mock') !== '1') {
+//     const params = new URLSearchParams(searchParams);
+//     params.set('mock', '1');
+//     return <Navigate to={{ search: `?${params.toString()}` }} replace />;
+//   }
+//   return <LiveSession />;
+// }
+
 function App() {
   const location = useLocation();
   const [showSessionExpired, setShowSessionExpired] = useState(false);
@@ -434,6 +449,8 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            {/* <Route path="/live-session/:classSessionId/demo-ui" element={<DemoUiRoute />} /> */}
 
             {/* Phòng chờ trước buổi học — chờ đủ 2 phía rồi tự chuyển vào live-session */}
             <Route

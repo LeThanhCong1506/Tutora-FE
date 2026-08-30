@@ -1,8 +1,45 @@
 /*
-  Phòng chờ (lobby) trước khi vào lớp — cùng ngôn ngữ thiết kế với trang Live Session:
-  nền Mirage #1a2238, panel kính mờ (bg trắng 5%, border trắng 10%),
-  tiêu đề Bricolage Grotesque, phần thân IBM Plex Sans.
+  Phòng chờ (lobby)
+
+  MỌI màu đi qua biến bên dưới — sửa tông chỉ cần sửa ở đây, không rải rác 90 chỗ.
+  Bảng màu: Ivory #f2efde · Midnight #1a2238 · Burgundy #631b1b · Moss #3d4a3e · Gold #d4b483.
 */
+
+.page {
+  /* nền & bề mặt */
+  --lb-bg: #f2efde;
+  --lb-surface: #ffffff;
+  --lb-surface-soft: rgba(26, 34, 56, 0.04);
+  --lb-surface-hover: rgba(26, 34, 56, 0.07);
+
+  /* chữ — pha từ Midnight, KHÔNG dùng xám lạnh trung tính */
+  --lb-text: #1a2238;
+  --lb-text-muted: rgba(26, 34, 56, 0.62);
+  /* 0.55 chứ không phải 0.42: trên nền trắng, 0.42 chỉ đạt tương phản 2.5 — chữ mờ khó đọc. */
+  --lb-text-faint: rgba(26, 34, 56, 0.55);
+
+  /* viền mảnh thay cho đổ bóng */
+  --lb-line: rgba(26, 34, 56, 0.12);
+  --lb-line-strong: rgba(26, 34, 56, 0.22);
+
+  /* hành động chính */
+  --lb-accent: #631b1b;
+  --lb-accent-hover: #7a2222;
+  --lb-accent-soft: rgba(99, 27, 27, 0.08);
+  --lb-on-accent: #ffffff;
+
+  /* trạng thái: Moss = xong/có mặt, Gold = đang chờ, Burgundy = lỗi/từ chối */
+  --lb-ok: #3d4a3e;
+  --lb-ok-soft: rgba(61, 74, 62, 0.1);
+  --lb-ok-line: rgba(61, 74, 62, 0.32);
+  /* Sẫm hơn Gold gốc (#d4b483) để chữ trên nền vàng nhạt đạt tương phản >= 4.5. */
+  --lb-wait: #6f5622;
+  --lb-wait-soft: rgba(212, 180, 131, 0.2);
+  --lb-wait-line: rgba(212, 180, 131, 0.55);
+  --lb-danger: #631b1b;
+  --lb-danger-soft: rgba(99, 27, 27, 0.08);
+  --lb-danger-line: rgba(99, 27, 27, 0.3);
+}
 
 .page {
   position: fixed;
@@ -10,25 +47,50 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #1a2238;
+  /* Nền dự phòng khi WebGL không khả dụng; Aurora vẽ đè lên trong .pageBackdrop. */
+  background: var(--lb-bg);
   z-index: 1000;
   font-family: 'IBM Plex Sans', sans-serif;
   padding: 24px;
 }
 
+/* Lớp nền động (Grainient): phủ kín trang, nằm DƯỚI thẻ nội dung, không nhận chuột. */
+.pageBackdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  /* Chỉ chiếm 80% CHIỀU CAO dưới: phần trên để trắng cho modal/thẻ nổi rõ, chữ không
+     bị dải màu làm chìm. Sóng dồn xuống gần đáy. */
+  top: 20%;
+}
+
+/* Chuyển mềm từ vùng trắng phía trên xuống dải màu — không để đường cắt ngang. */
+.pageBackdrop::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 30%;
+  z-index: 1;
+  background: linear-gradient(to bottom, var(--lb-bg), transparent);
+}
+
 .card {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 480px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  /* Hơi trong để dải Aurora ánh qua, vẫn đủ đục cho chữ đọc rõ. */
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--lb-line);
   border-radius: 20px;
-  backdrop-filter: blur(8px);
   padding: 40px 32px 32px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  color: #fff;
+  color: var(--lb-text);
 }
 
 /* ── Quỹ đạo chờ ── */
@@ -44,7 +106,7 @@
   position: absolute;
   inset: 20px;
   border-radius: 50%;
-  background: rgba(212, 180, 131, 0.28);
+  background: var(--lb-wait-soft);
   filter: blur(15px);
   animation: spinnerGlow 2.4s ease-in-out infinite;
 }
@@ -53,10 +115,7 @@
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow:
-    inset 0 0 18px rgba(255, 255, 255, 0.025),
-    0 0 24px rgba(212, 180, 131, 0.08);
+  border: 1px solid var(--lb-line);
 }
 
 .spinnerOrbit {
@@ -75,14 +134,14 @@
   background: conic-gradient(
     from 210deg,
     transparent 0deg,
-    rgba(212, 180, 131, 0.08) 80deg,
-    rgba(212, 180, 131, 0.48) 185deg,
-    #f1d6ad 260deg,
+    var(--lb-wait-soft) 80deg,
+    var(--lb-wait-soft) 185deg,
+    var(--lb-wait) 260deg,
     transparent 330deg
   );
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
   mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
-  filter: drop-shadow(0 0 5px rgba(212, 180, 131, 0.55));
+  filter: drop-shadow(0 0 5px var(--lb-wait-soft));
 }
 
 .spinnerOrbitDot {
@@ -92,10 +151,8 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #f1d6ad;
-  box-shadow:
-    0 0 0 4px rgba(212, 180, 131, 0.12),
-    0 0 12px rgba(241, 214, 173, 0.75);
+  background: var(--lb-wait);
+  box-shadow: 0 0 0 4px var(--lb-wait-soft);
   transform: translateX(-50%);
 }
 
@@ -106,12 +163,9 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  color: #f1d6ad;
-  background: radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.13), transparent 42%), rgba(212, 180, 131, 0.1);
-  border: 1px solid rgba(212, 180, 131, 0.3);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 10px 28px rgba(0, 0, 0, 0.2);
+  color: var(--lb-wait);
+  background: radial-gradient(circle at 35% 28%, var(--lb-line), transparent 42%), var(--lb-wait-soft);
+  border: 1px solid var(--lb-wait-soft);
   animation: spinnerBreathe 2.4s ease-in-out infinite;
 }
 
@@ -149,8 +203,8 @@
   height: 88px;
   margin-bottom: 28px;
   border-radius: 50%;
-  background: rgba(34, 197, 94, 0.15);
-  border: 3px solid #22c55e;
+  background: var(--lb-ok-soft);
+  border: 3px solid var(--lb-ok);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -180,7 +234,7 @@
 .subtitle {
   font-size: 14px;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--lb-text-muted);
   margin: 0 0 24px;
 }
 
@@ -211,13 +265,13 @@
 /* ── Thông tin buổi học ── */
 .sessionMeta {
   width: 100%;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--lb-surface-soft);
+  border: 1px solid var(--lb-line);
   border-radius: 14px;
   padding: 14px 18px;
   margin-bottom: 20px;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--lb-text-muted);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -230,13 +284,13 @@
 }
 
 .metaLabel {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--lb-text-faint);
   flex-shrink: 0;
 }
 
 .metaValue {
   font-weight: 600;
-  color: #fff;
+  color: var(--lb-text);
   text-align: right;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -260,29 +314,29 @@
   border-radius: 9999px;
   font-size: 13px;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.55);
+  background: var(--lb-surface-soft);
+  border: 1px solid var(--lb-line);
+  color: var(--lb-text-muted);
   max-width: 100%;
 }
 
 .presenceChipActive {
-  background: rgba(34, 197, 94, 0.12);
-  border-color: rgba(34, 197, 94, 0.45);
-  color: #d1fae5;
+  background: var(--lb-ok-soft);
+  border-color: var(--lb-ok-line);
+  color: var(--lb-ok);
 }
 
 .presenceDot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--lb-line-strong);
   flex-shrink: 0;
 }
 
 .presenceChipActive .presenceDot {
-  background: #22c55e;
-  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
+  background: var(--lb-ok);
+  box-shadow: 0 0 0 4px var(--lb-ok-line);
 }
 
 .chipName {
@@ -302,9 +356,9 @@
 .btnSecondary {
   padding: 10px 22px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid var(--lb-line);
   background: transparent;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--lb-text);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -315,16 +369,18 @@
 }
 
 .btnSecondary:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--lb-surface-soft);
+  border-color: var(--lb-line-strong);
 }
 
 .btnPrimary {
   padding: 10px 22px;
   border-radius: 12px;
   border: none;
-  background: #f59e0b;
-  color: #1a2238;
+  /* Hành động CHÍNH -> Burgundy đặc, chữ trắng. Trước đây là nền vàng nhạt +
+     chữ trắng: trên nền kem gần như không đọc được. */
+  background: var(--lb-accent);
+  color: var(--lb-on-accent);
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
@@ -335,13 +391,14 @@
 }
 
 .btnPrimary:hover {
-  filter: brightness(1.08);
+  background: var(--lb-accent-hover);
 }
 
 .btnPrimary:disabled {
-  opacity: 0.5;
+  /* opacity 0.5 trên nền sáng làm chữ trắng chìm hẳn — dùng nền xám + chữ mờ. */
+  background: var(--lb-surface-hover);
+  color: var(--lb-text-faint);
   cursor: not-allowed;
-  filter: none;
 }
 
 .btnPrimary:disabled:hover {
@@ -363,8 +420,8 @@
   aspect-ratio: 16 / 9;
   border-radius: 16px;
   overflow: hidden;
-  background: #0f1626;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--lb-surface);
+  border: 1px solid var(--lb-line);
 }
 
 .previewVideo {
@@ -373,7 +430,7 @@
   object-fit: cover;
   transform: scaleX(-1); /* gương như ảnh selfie */
   display: block;
-  background: #0f1626;
+  background: var(--lb-surface);
 }
 
 .previewOverlay {
@@ -384,8 +441,8 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  background: #0f1626;
-  color: rgba(255, 255, 255, 0.6);
+  background: var(--lb-surface);
+  color: var(--lb-text-muted);
 }
 
 .previewAvatar {
@@ -397,9 +454,9 @@
   font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
   font-size: 26px;
   font-weight: 700;
-  color: #fff;
-  background: rgba(212, 180, 131, 0.18);
-  border: 1px solid rgba(212, 180, 131, 0.35);
+  color: var(--lb-text);
+  background: var(--lb-wait-soft);
+  border: 1px solid var(--lb-wait-soft);
 }
 
 .previewOverlayText {
@@ -415,8 +472,8 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: rgba(239, 68, 68, 0.9);
-  color: #fff;
+  background: var(--lb-danger);
+  color: var(--lb-text);
 }
 
 /* Banner lỗi camera/micro — cùng ngôn ngữ với .scheduleConflictBanner: khung đỏ nhạt,
@@ -428,9 +485,9 @@
   width: 100%;
   margin-top: 12px;
   padding: 14px 16px;
-  border: 1px solid rgba(248, 113, 113, 0.38);
+  border: 1px solid var(--lb-danger-line);
   border-radius: 14px;
-  background: rgba(127, 29, 29, 0.22);
+  background: var(--lb-danger-soft);
   text-align: left;
 }
 
@@ -442,8 +499,8 @@
   height: 30px;
   margin-top: 1px;
   border-radius: 9999px;
-  color: #fca5a5;
-  background: rgba(248, 113, 113, 0.16);
+  color: var(--lb-danger);
+  background: var(--lb-danger-soft);
 }
 
 .previewErrorBody {
@@ -454,12 +511,12 @@
 }
 
 .previewErrorBody strong {
-  color: #fca5a5;
+  color: var(--lb-danger);
   font-size: 14px;
 }
 
 .previewErrorBody span {
-  color: #fecaca;
+  color: var(--lb-danger);
   font-size: 12.5px;
   line-height: 1.5;
 }
@@ -470,10 +527,10 @@
   gap: 6px;
   flex: 0 0 auto;
   padding: 7px 12px;
-  border: 1px solid rgba(248, 113, 113, 0.45);
+  border: 1px solid var(--lb-danger-line);
   border-radius: 10px;
   background: transparent;
-  color: #fecaca;
+  color: var(--lb-danger);
   font-size: 12.5px;
   font-weight: 600;
   font-family: inherit;
@@ -484,8 +541,8 @@
 }
 
 .previewErrorRetryBtn:hover {
-  background: rgba(248, 113, 113, 0.14);
-  border-color: rgba(248, 113, 113, 0.65);
+  background: var(--lb-danger-soft);
+  border-color: var(--lb-danger-line);
 }
 
 @media (max-width: 420px) {
@@ -510,9 +567,9 @@
   width: 54px;
   height: 54px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  border: 1px solid var(--lb-line);
+  background: var(--lb-surface-soft);
+  color: var(--lb-text);
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -523,8 +580,8 @@
 }
 
 .deviceBtn:hover {
-  background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(255, 255, 255, 0.28);
+  background: var(--lb-surface-hover);
+  border-color: var(--lb-line-strong);
 }
 
 .deviceBtn:active {
@@ -532,13 +589,13 @@
 }
 
 .deviceBtnOff {
-  background: #ef4444;
+  background: var(--lb-danger);
   border-color: transparent;
-  color: #fff;
+  color: var(--lb-text);
 }
 
 .deviceBtnOff:hover {
-  background: #dc2626;
+  background: var(--lb-accent-hover);
   border-color: transparent;
 }
 
@@ -574,8 +631,8 @@
   display: grid;
   place-items: center;
   padding: 20px;
-  background: rgba(4, 10, 24, 0.82);
-  backdrop-filter: blur(8px);
+  /* KHÔNG phủ tối/blur lên nền: nền Aurora là điểm nhấn của trang, che đi thì mất
+     hết. Modal đã tự nổi nhờ nền trắng đặc + viền, đủ tách khỏi nền phía sau. */
 }
 
 .scheduleModal {
@@ -583,13 +640,12 @@
   width: min(620px, 100%);
   max-height: calc(100vh - 40px);
   overflow-y: auto;
-  border: 1px solid rgba(241, 214, 173, 0.28);
   border-radius: 20px;
   padding: 30px;
-  color: #f8fafc;
+  color: var(--lb-text);
   text-align: left;
-  background: #151e33;
-  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.5);
+  background: var(--lb-surface);
+  border: 1px solid var(--lb-line);
 }
 
 .scheduleModalClose {
@@ -602,8 +658,8 @@
   height: 36px;
   border: 0;
   border-radius: 50%;
-  color: #cbd5e1;
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--lb-text-muted);
+  background: var(--lb-surface-soft);
   cursor: pointer;
 }
 
@@ -614,8 +670,8 @@
   height: 52px;
   margin-bottom: 16px;
   border-radius: 14px;
-  color: #f6d49f;
-  background: rgba(245, 158, 11, 0.14);
+  color: var(--lb-wait);
+  background: var(--lb-wait-soft);
 }
 
 .scheduleModalTitle {
@@ -625,7 +681,7 @@
 
 .scheduleModalDescription {
   margin: 0 0 20px;
-  color: #b8c2d6;
+  color: var(--lb-text-muted);
   font-size: 14px;
   line-height: 1.6;
 }
@@ -635,8 +691,8 @@
   gap: 10px;
   padding: 16px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.045);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--lb-surface-soft);
+  border: 1px solid var(--lb-line);
 }
 
 .scheduleSummary > div {
@@ -646,12 +702,12 @@
 }
 
 .scheduleSummary span {
-  color: #8f9ab0;
+  color: var(--lb-text-faint);
   font-size: 13px;
 }
 
 .scheduleSummary strong {
-  color: #f8fafc;
+  color: var(--lb-text);
   font-size: 13px;
   text-align: right;
 }
@@ -670,29 +726,29 @@
   gap: 12px;
   padding: 13px 14px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  border: 1px solid var(--lb-line);
 }
 
-.confirmationPending { background: rgba(245, 158, 11, 0.06); }
-.confirmationDone { background: rgba(34, 197, 94, 0.09); border-color: rgba(34, 197, 94, 0.3); }
-.confirmationRejected { background: rgba(248, 113, 113, 0.09); border-color: rgba(248, 113, 113, 0.3); }
-.confirmationStatusIcon { display: grid; place-items: center; color: #f6d49f; }
-.confirmationDone .confirmationStatusIcon { color: #4ade80; }
-.confirmationRejected .confirmationStatusIcon { color: #fca5a5; }
+.confirmationPending { background: var(--lb-wait-soft); }
+.confirmationDone { background: var(--lb-ok-soft); border-color: var(--lb-ok-line); }
+.confirmationRejected { background: var(--lb-danger-soft); border-color: var(--lb-danger-line); }
+.confirmationStatusIcon { display: grid; place-items: center; color: var(--lb-wait); }
+.confirmationDone .confirmationStatusIcon { color: var(--lb-ok); }
+.confirmationRejected .confirmationStatusIcon { color: var(--lb-danger); }
 .confirmationPending strong,
 .confirmationDone strong,
 .confirmationRejected strong { display: block; font-size: 14px; }
 .confirmationPending small,
 .confirmationDone small,
-.confirmationRejected small { display: block; margin-top: 3px; color: #98a3b8; font-size: 12px; }
+.confirmationRejected small { display: block; margin-top: 3px; color: var(--lb-text-faint); font-size: 12px; }
 
 .scheduleAuditNote {
   display: flex;
   gap: 10px;
   padding: 12px 14px;
   border-radius: 12px;
-  color: #c7d2fe;
-  background: rgba(99, 102, 241, 0.1);
+  color: var(--lb-text-muted);
+  background: var(--lb-surface-soft);
   font-size: 12.5px;
   line-height: 1.5;
 }
@@ -707,21 +763,21 @@
   padding: 5px 13px;
   border-radius: 999px;
   border: 1px solid rgba(244, 199, 127, 0.35);
-  background: rgba(244, 199, 127, 0.1);
-  color: #f4c77f;
+  background: var(--lb-wait-soft);
+  color: var(--lb-wait);
   font: 700 12px 'IBM Plex Sans', sans-serif;
   letter-spacing: 0.1px;
 }
 .scheduleExpiryPill svg { flex: 0 0 auto; }
 .scheduleExpiryPillUrgent {
-  border-color: rgba(248, 113, 113, 0.4);
-  background: rgba(248, 113, 113, 0.1);
-  color: #fca5a5;
+  border-color: var(--lb-danger-line);
+  background: var(--lb-danger-soft);
+  color: var(--lb-danger);
 }
 
 .scheduleWaiting,
-.scheduleRejected { margin: 16px 0 0; color: #fcd34d; font-size: 13px; line-height: 1.5; }
-.scheduleRejected { color: #fca5a5; }
+.scheduleRejected { margin: 16px 0 0; color: var(--lb-wait); font-size: 13px; line-height: 1.5; }
+.scheduleRejected { color: var(--lb-danger); }
 
 /* Khối cảnh báo hết hạn — cùng bố cục icon-trái/chữ-phải với .scheduleAuditNote để nhất quán,
    đổi sang tông đỏ vì đây là trạng thái cần hành động lại, không chỉ là thông tin tham khảo. */
@@ -731,19 +787,41 @@
   margin-top: 16px;
   padding: 12px 14px;
   border-radius: 12px;
-  border: 1px solid rgba(248, 113, 113, 0.28);
-  background: rgba(248, 113, 113, 0.09);
-  color: #fca5a5;
+  border: 1px solid var(--lb-danger-line);
+  background: var(--lb-danger-soft);
+  color: var(--lb-danger);
   font-size: 13px;
   line-height: 1.5;
 }
 .scheduleExpiredNote svg { flex: 0 0 auto; margin-top: 1px; }
-.scheduleApproved { display: flex; gap: 8px; align-items: center; margin-top: 16px; color: #86efac; font-size: 13px; }
+.scheduleApproved { display: flex; gap: 8px; align-items: center; margin-top: 16px; color: var(--lb-ok); font-size: 13px; }
 .scheduleModalActions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
 .scheduleRejectButton,
-.scheduleConfirmButton { padding: 10px 18px; border-radius: 10px; font: 700 14px 'IBM Plex Sans', sans-serif; cursor: pointer; }
-.scheduleRejectButton { border: 1px solid rgba(248, 113, 113, 0.45); color: #fecaca; background: transparent; }
-.scheduleConfirmButton { border: 0; color: #172036; background: #f4c77f; }
+.scheduleConfirmButton {
+  padding: 10px 18px;
+  border-radius: 10px;
+  font: 700 14px 'IBM Plex Sans', sans-serif;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.scheduleRejectButton { border: 1px solid var(--lb-danger-line); color: var(--lb-danger); background: transparent; }
+.scheduleConfirmButton { border: 0; color: var(--lb-on-accent); background: var(--lb-accent); }
+
+/* Hover NHẸ: chỉ đổi nền/viền, không phóng to hay nhấc lên — hai nút này quyết định
+   việc đổi lịch buổi học, hiệu ứng mạnh dễ khiến bấm nhầm. */
+.scheduleRejectButton:enabled:hover {
+  background: var(--lb-danger-soft);
+  border-color: var(--lb-danger);
+}
+
+.scheduleConfirmButton:enabled:hover {
+  background: var(--lb-accent-hover);
+}
+
 .scheduleRejectButton:disabled,
 .scheduleConfirmButton:disabled { opacity: 0.55; cursor: wait; }
 
@@ -758,15 +836,15 @@
   width: min(620px, 100%);
   margin: 16px auto 0;
   padding: 14px 16px;
-  border: 1px solid rgba(248, 113, 113, 0.38);
+  border: 1px solid var(--lb-danger-line);
   border-radius: 14px;
-  color: #fecaca;
+  color: var(--lb-danger);
   text-align: left;
-  background: rgba(127, 29, 29, 0.22);
+  background: var(--lb-danger-soft);
 }
 
 .scheduleConflictBanner strong {
-  color: #fca5a5;
+  color: var(--lb-danger);
   font-size: 14px;
 }
 
@@ -776,7 +854,7 @@
 }
 
 .scheduleConflictBanner small {
-  color: #cbd5e1;
+  color: var(--lb-text-muted);
   font-size: 12px;
   line-height: 1.45;
 }
