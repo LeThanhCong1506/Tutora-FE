@@ -6,9 +6,7 @@ import { getUserIdFromToken } from '../../../../services/auth.service';
 import { getPricing, updatePricing } from '../../../../services/tutorProfile.service';
 import {
   getMyAvailability,
-  bulkCreateAvailabilities,
-  bulkUpdateAvailabilities,
-  bulkDeleteAvailabilities,
+  replaceAvailabilities,
   type AvailabilitySlot,
 } from '../../../../services/availability.service';
 import {
@@ -25,7 +23,7 @@ import {
   priceItemsToRecords,
   recordsToPricingPayload,
   expandAvailabilityToCells,
-  diffAvailability,
+  cellsToReplacePayload,
   normalizeHHmm,
   isoDayToFe,
   packageToFixedCombo,
@@ -192,21 +190,11 @@ export function useOnboardingSync(hydrate: HydrateFn) {
       };
 
       try {
-        // Gộp ô 30' liền kề → cụm, rồi diff theo ngày thành 3 nhóm thao tác tối thiểu.
-        // Vd T2 06:00-10:00 + 15:00-18:00 → 2 record (mỗi cụm 1 record), không phải 14 ô.
-        const { toCreate, toUpdate, toDelete } = diffAvailability(availability, rawAvailabilityRef.current);
-
-        // Không đổi gì → bỏ qua mọi request (idempotent), chỉ đảm bảo có gói linh hoạt.
-        if (toCreate.length === 0 && toUpdate.length === 0 && toDelete.length === 0) {
-          if (availability.length > 0) await ensureFlexiblePackage(userIdRef.current);
-          return true;
-        }
-
-        // Thứ tự bắt buộc: DELETE → PATCH → POST. Cụm mong muốn không bao giờ chồng nhau,
-        // nên thứ tự này không kích hoạt guard "trùng giờ" của BE (slot cũ đã bị xoá/đổi trước).
-        if (toDelete.length > 0) await bulkDeleteAvailabilities(toDelete);
-        if (toUpdate.length > 0) await bulkUpdateAvailabilities(toUpdate);
-        if (toCreate.length > 0) await bulkCreateAvailabilities(toCreate);
+        // MỘT request duy nhất mang trạng thái mong muốn, thay cho chuỗi DELETE → PATCH → POST.
+        // Chuỗi cũ đi qua các trạng thái trung gian (vd đã xoá hết thứ Hai nhưng chưa thêm lại),
+        // khiến BE kiểm tra ràng buộc "khung cố định của gói phải nằm trong lịch rảnh" trên một
+        // trạng thái không phải cái người dùng muốn lưu, và chặn oan. Xem ReplaceAvailabilityRequest.
+        await replaceAvailabilities(cellsToReplacePayload(availability));
 
         await resyncRef();
         if (availability.length > 0) {

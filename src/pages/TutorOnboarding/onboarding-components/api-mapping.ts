@@ -204,6 +204,20 @@ export interface AvailabilityDiff {
  * Caller PHẢI gọi theo thứ tự DELETE → PATCH → POST. Vì các cụm mong muốn không bao giờ
  * chồng nhau, thứ tự này không bao giờ kích hoạt guard "trùng giờ" của BE.
  */
+/**
+ * Lưới ô 30' → payload cho PUT /tutor/availabilities (thay toàn bộ).
+ * Gộp ô liền kề thành cụm giống hệt diffAvailability để BE lưu ít record, và đổi thứ FE 0-6 →
+ * ISO 1-7. Không cần diff gì cả — gửi thẳng trạng thái mong muốn.
+ */
+export const cellsToReplacePayload = (
+  desiredCells: TutorAvailabilitySlot[],
+): CreateAvailabilityData[] =>
+  mergeCellsToClusters(desiredCells).map((c) => ({
+    dayofweek: feDayToIso(c.dayOfWeek),
+    starttime: normalizeHHmm(c.startTime),
+    endtime: normalizeHHmm(c.endTime),
+  }));
+
 export const diffAvailability = (
   desiredCells: TutorAvailabilitySlot[],
   loaded: AvailabilitySlot[],

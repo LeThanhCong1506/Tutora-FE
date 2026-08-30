@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Form, Input, Button } from 'antd';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { getApiErrorMessage } from '../../../utils/apiError';
 import {
@@ -187,12 +188,15 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
     try {
       const response = await triggerReportAiFill(classSessionId);
       applyAiJob(response.content);
+      toast.info('AI đang đọc video buổi học, vui lòng chờ — nội dung sẽ tự động điền vào form khi xong.');
     } catch (error: unknown) {
       setAiJobStatus('failed');
       pendingAiFieldsRef.current.clear();
       toast.error(getApiErrorMessage(error, 'Không thể gợi ý nội dung bằng AI. Vui lòng thử lại.'));
     }
   };
+
+  const aiFillRunning = aiJobStatus === 'pending' || aiJobStatus === 'processing';
 
   const renderLabel = (field: AiFillableField, text: string) => (
     <span>
@@ -201,14 +205,18 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
         <button
           type="button"
           className={styles.aiFillBadge}
-          disabled={aiJobStatus === 'pending' || aiJobStatus === 'processing'}
+          disabled={aiFillRunning}
           onClick={(event) => {
             event.preventDefault();
             void handleAiFillField(field);
           }}
-          title="Điền nội dung này bằng AI (đọc video buổi học)"
+          title={
+            aiFillRunning
+              ? 'AI đang đọc video buổi học, vui lòng chờ...'
+              : 'Điền nội dung này bằng AI (đọc video buổi học)'
+          }
         >
-          *
+          {aiFillRunning ? <Loader2 size={12} className={styles.spinIcon} /> : '*'}
         </button>
       )}
     </span>

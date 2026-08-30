@@ -29,6 +29,19 @@ interface Args {
     availabilities: AvailabilitySlot[];
     // Số giờ mỗi buổi theo cấu hình môn/lớp đã chọn.
     sessionHours: number;
+    /**
+     * Số buổi mỗi tuần gia sư nhận dạy. Phụ huynh phải chọn ĐÚNG chừng này buổi trong tuần mẫu —
+     * pattern đó được lặp lại cho các tuần sau, nên chọn thiếu/thừa là lệch cấu hình của gia sư.
+     * Khớp với BookingSchedulePolicy ở backend; chặn tại đây để phụ huynh biết ngay khi bấm thay
+     * vì chọn xong 5 buổi mới bị từ chối lúc gửi.
+     */
+    sessionsPerWeek: number;
+    /**
+     * Buổi học phải cách hiện tại ít nhất chừng này giờ. Khác nhau theo luồng: phụ huynh tự đặt
+     * thì 24 giờ, học sinh gửi yêu cầu cho phụ huynh duyệt thì 28 giờ. Nếu FE dùng ngưỡng thấp
+     * hơn backend, người dùng chọn được ô mà lúc gửi mới bị từ chối.
+     */
+    minLeadHours: number;
     selectedCombo: Combo | undefined;
     // Theo dõi để reset khi phụ huynh đổi lựa chọn.
     subjectId: number;
@@ -43,12 +56,36 @@ interface Args {
 // demo weekday (1..7, CN=7) → backend (0=CN..6=T7).
 const toBackendDow = (demoDow: number) => (demoDow === 7 ? 0 : demoDow);
 
-// Buổi [dateKey, startTime] có còn ở tương lai không — so đủ ngày+giờ (không chỉ ngày),
-// để loại các khung giờ hôm nay đã trôi qua khỏi việc chọn tuần bắt đầu cho gói cố định.
-const isFutureSlot = (dateKey: string, startTime: string): boolean => {
+/**
+ * Buổi học phải cách hiện tại ít nhất chừng này giờ mới được đặt. Phải khớp với
+ * `BookingLeadTimePolicy.MinimumLeadHours` ở backend.
+ *
+ * Không chỉ là "chưa trôi qua": hạn phản hồi của gia sư được tính lùi từ giờ học, nên đặt quá sát
+ * thì hạn đó rơi vào quá khứ ngay khi booking vừa sinh ra — gia sư không kịp trả lời và booking
+ * tự hủy. Backend chặn ở ValidateSlotsAsync; khóa luôn trên lịch để phụ huynh không chọn hụt.
+ */
+export const MIN_BOOKING_LEAD_HOURS = 24;
+
+/**
+ * Yêu cầu do HỌC SINH tạo cần xa hơn một chút: phụ huynh phải kịp thanh toán trước mốc 24 giờ,
+ * nên phải chừa thêm ít nhất 2 giờ để họ thao tác.
+ * Khớp `BookingLeadTimePolicy.MinimumLeadHoursForStudentRequest`.
+ */
+export const MIN_LEAD_HOURS_STUDENT_REQUEST = 26;
+
+/**
+ * Phụ huynh phải phản hồi yêu cầu của con trong vòng chừng này giờ kể từ lúc gửi.
+ * Khớp `BookingLeadTimePolicy.ParentReviewHours`.
+ */
+export const PARENT_REVIEW_HOURS = 24;
+
+// Buổi [dateKey, startTime] đã đủ xa để đặt chưa — so đủ ngày+giờ, không chỉ ngày.
+const isFutureSlot = (dateKey: string, startTime: string, leadHours: number): boolean => {
     const start = fromDateKey(dateKey);
     start.setHours(0, timeToMinutes(startTime), 0, 0);
-    return start > new Date();
+    const earliest = new Date();
+    earliest.setHours(earliest.getHours() + leadHours);
+    return start >= earliest;
 };
 
 const endTimeOf = (startTime: string, durationHours: number) =>
@@ -64,6 +101,8 @@ export function useBookingSchedule({
     tutorId,
     availabilities,
     sessionHours,
+    sessionsPerWeek,
+    minLeadHours,
     selectedCombo,
     subjectId,
     bookingMode,
@@ -274,9 +313,13 @@ export function useBookingSchedule({
                 durationHours: slot.durationHours,
                 date: toDateKey(addDays(weekMonday, slot.dayOfWeek - 1)),
             }))
-            .filter((slot) => isFutureSlot(slot.date, slot.startTime));
+            .filter((slot) => isFutureSlot(slot.date, slot.startTime, minLeadHours));
         if (!futureInWeek.length) return [];
-        return buildScheduleFromPattern(pattern, fromDateKey(sortSlots(futureInWeek)[0].date));
+        // Gói cố định: phụ huynh CHỦ ĐỘNG chọn tuần bắt đầu nên tôn trọng lựa chọn đó, chỉ đảm
+        // bảo không sinh buổi sớm hơn mốc hợp lệ.
+        const weekStart = fromDateKey(sortSlots(futureInWeek)[0].date);
+        const earliest = earliestBookableAt();
+        return buildScheduleFromPattern(pattern, weekStart > earliest ? weekStart : earliest);
     };
 
     const fixedWeekHasConflict = (weekMonday: Date): boolean =>
@@ -305,27 +348,49 @@ export function useBookingSchedule({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedSlots]);
 
-    // Chiếu pattern tuần (thứ + giờ các ô đã bấm) ra cả cửa sổ, bắt đầu từ ngày sớm nhất.
+    // Chiếu pattern tuần (thứ + giờ các ô đã bấm) ra cả cửa sổ, bắt đầu từ mốc hợp lệ sớm nhất.
     const projectFromWeekPicks = (weekSlots: BookingSlot[]) => {
         if (!weekSlots.length) {
             setSelectedSlots([]);
             return;
         }
-        const sorted = sortSlots(weekSlots);
         const pattern: WeeklyPatternSlot[] = weekSlots.map((slot) => ({
             dayOfWeek: slot.dayOfWeek,
             startTime: slot.startTime,
             durationHours: slot.durationHours,
         }));
-        setSelectedSlots(buildScheduleFromPattern(pattern, fromDateKey(sorted[0].date)));
+        // Neo vào mốc hợp lệ sớm nhất, KHÔNG phải ngày của ô được bấm: mẫu tuần chỉ định nghĩa
+        // "học thứ mấy, giờ nào", còn lịch bắt đầu ngay khi đủ điều kiện thời gian.
+        setSelectedSlots(buildScheduleFromPattern(pattern, earliestBookableAt()));
     };
+
+    /**
+     * Thời điểm sớm nhất được đặt = bây giờ + thời gian báo trước của luồng đang chạy.
+     * Đây là mốc neo lịch, thay cho ngày của ô người dùng bấm — xem buildScheduleFromPattern.
+     */
+    const earliestBookableAt = () => new Date(Date.now() + minLeadHours * 60 * 60 * 1000);
+
+    // Mỗi ngày tối đa 1 buổi: hai buổi liền trong cùng ngày không phải ý đồ của "N buổi/tuần",
+    // và backend cũng chặn (BookingSchedulePolicy.MaxSessionsPerDay).
+    const isDayFull = (dateKey: string) => pickedWeekSlots.some((p) => p.date === dateKey);
+
+    // Đã chọn đủ số buổi của tuần mẫu → không cho thêm nữa (bỏ bớt thì bấm lại ô đã chọn).
+    const isWeekFull = sessionsPerWeek > 0 && pickedWeekSlots.length >= sessionsPerWeek;
+
+    // Còn thiếu bao nhiêu buổi nữa mới đủ tuần mẫu — dùng cho nhãn hướng dẫn ở UI.
+    const remainingWeekPicks = Math.max(0, sessionsPerWeek - pickedWeekSlots.length);
 
     // Tự chọn lịch rảnh: bấm 1 ô = đặt buổi [giờ bấm, +sessionHours], khóa tuần. Bấm lại để bỏ.
     const toggleAvailabilityPick = (dateKey: string, dayOfWeek: number, startTime: string) => {
         const cellMin = timeToMinutes(startTime);
-        const selectedStart = pickedWeekSlots.find((p) => p.date === dateKey && p.startTime === startTime);
-        if (selectedStart) {
-            const next = pickedWeekSlots.filter((p) => p !== selectedStart);
+        // Bấm BẤT KỲ ô nào thuộc buổi đã chọn đều bỏ được, không chỉ ô bắt đầu. Buổi 1 tiếng phủ
+        // hai ô 30 phút trông y hệt nhau (cùng nhãn "Đã chọn"), nên bắt người dùng đoán ô nào bấm
+        // được là vô lý — trước đây chỉ ô bắt đầu mới bỏ chọn được.
+        const covering = pickedWeekSlots.find(
+            (p) => p.date === dateKey && slotCoversCell(p.startTime, p.durationHours, cellMin),
+        );
+        if (covering) {
+            const next = pickedWeekSlots.filter((p) => p !== covering);
             setPickedWeekSlots(next);
             projectFromWeekPicks(next);
             return;
@@ -340,6 +405,8 @@ export function useBookingSchedule({
             bookedSlotsLoading ||
             wouldAvailabilityPickConflict(dateKey, dayOfWeek, startTime) ||
             overlapsSelectedSession ||
+            isDayFull(dateKey) ||
+            isWeekFull ||
             !sessionFitsAvailability(dayOfWeek, startTime, sessionHours, calendarAvailability)
         ) {
             return;
@@ -365,10 +432,12 @@ export function useBookingSchedule({
             date: toDateKey(addDays(weekMonday, slot.dayOfWeek - 1)), // demo: T2=1 → offset 0
         }));
         // Tuần 1 chỉ gồm buổi từ GIỜ HIỆN TẠI trở đi (không chỉ từ hôm nay); pattern vẫn lặp đủ các tuần sau.
-        const futureInWeek = datedInWeek.filter((slot) => isFutureSlot(slot.date, slot.startTime));
+        const futureInWeek = datedInWeek.filter((slot) => isFutureSlot(slot.date, slot.startTime, minLeadHours));
         if (!futureInWeek.length) return;
         setPickedWeekSlots(futureInWeek);
-        setSelectedSlots(buildScheduleFromPattern(pattern, fromDateKey(sortSlots(futureInWeek)[0].date)));
+        const weekStart = fromDateKey(sortSlots(futureInWeek)[0].date);
+        const earliest = earliestBookableAt();
+        setSelectedSlots(buildScheduleFromPattern(pattern, weekStart > earliest ? weekStart : earliest));
     };
 
     const clearPicks = () => {
@@ -394,6 +463,10 @@ export function useBookingSchedule({
         bookedSlotsLoading,
         bookedSlotsError,
         hasSelectedSlotConflict,
+        isDayFull,
+        isWeekFull,
+        remainingWeekPicks,
+        minLeadHours,
         isBookedCell,
         getContestedCount,
         wouldAvailabilityPickConflict,
