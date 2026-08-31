@@ -444,10 +444,6 @@ const TutorPortalClassSessionDetail = () => {
                     <Clock3 size={15} />
                     {schedule.dateLabel} · {schedule.timeLabel}
                   </span>
-                  <span>
-                    <UserRound size={15} />
-                    Học sinh: <strong>{studentName}</strong>
-                  </span>
                 </div>
               </div>
 
@@ -652,14 +648,6 @@ const TutorPortalClassSessionDetail = () => {
                     <div className={styles.dateBadge} aria-hidden="true">
                       <span>{String(schedule.start.getDate()).padStart(2, '0')}</span>
                       <small>Tháng {schedule.start.getMonth() + 1}</small>
-                    </div>
-                    <div className={styles.scheduleCopy}>
-                      <span className={styles.sectionLabel}>Lịch học</span>
-                      <h2>{schedule.dateLabel}</h2>
-                      <p>
-                        <Clock3 size={17} />
-                        {schedule.timeLabel}
-                      </p>
                     </div>
                     <div className={styles.summaryMetrics}>
                       <div className={styles.metric}>
@@ -896,10 +884,6 @@ const TutorPortalClassSessionDetail = () => {
                       </div>
                     </div>
                     <dl className={styles.infoList}>
-                      <div>
-                        <dt>Mã buổi học</dt>
-                        <dd>#{session.classSessionId}</dd>
-                      </div>
                       <div>
                         <dt>Mã đặt lịch</dt>
                         <dd>{session.bookingId ? `#${session.bookingId}` : '—'}</dd>
