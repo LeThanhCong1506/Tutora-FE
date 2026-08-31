@@ -509,11 +509,17 @@
   text-overflow: ellipsis;
 }
 
+/*
+ * Selector cũ là `.infoBanner div` — nó bắt luôn khối nút bên trong banner, ép cụm
+ * "Từ chối / Đồng ý đổi lịch" thành cột dọc rồi hai nút lệch nhau. Giờ khối chữ có class
+ * riêng, khối nút có class riêng, không cái nào đè cái nào.
+ */
 .infoBanner {
   display: flex;
   padding: 14px 16px;
-  align-items: flex-start;
-  gap: 11px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
   border: 1px solid #cfe8e4;
   border-radius: 14px;
   background: #eef8f6;
@@ -521,14 +527,31 @@
 }
 
 .infoBanner > svg {
-  margin-top: 1px;
   flex: 0 0 auto;
 }
 
-.infoBanner div {
+/* Banner nằm trong hero: `.hero` là block nên không có gap nào giữa nó và khối tiêu đề
+   phía trên — nút hành động dính sát mép banner. Banner ở vùng nội dung không cần luật
+   này vì cột ở đó đã có gap riêng. */
+.hero .infoBanner {
+  margin-top: 14px;
+}
+
+.infoBannerText {
   display: flex;
+  flex: 1 1 240px;
+  min-width: 0;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
+}
+
+/* Đẩy nút về sát mép phải, giữ trên một hàng. */
+.bannerActions {
+  display: flex;
+  margin-left: auto;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 9px;
 }
 
 .infoBanner strong {

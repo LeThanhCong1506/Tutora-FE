@@ -527,7 +527,7 @@ const TutorPortalClassSessionDetail = () => {
             {status === 'interrupted' && session.continuationSessionId && session.continuationScheduledStart && (
               <div className={styles.infoBanner}>
                 <Link2 size={18} />
-                <div>
+                <div className={styles.infoBannerText}>
                   <strong>
                     Buổi phụ #{session.continuationSessionId}: {formatDate(session.continuationScheduledStart)} ·{' '}
                     {formatTime(session.continuationScheduledStart)}–{formatTime(session.continuationScheduledEnd)}
@@ -543,7 +543,7 @@ const TutorPortalClassSessionDetail = () => {
             {pendingReschedule && (
               <div className={styles.infoBanner}>
                 <CalendarClock size={18} />
-                <div>
+                <div className={styles.infoBannerText}>
                   <strong>
                     Đề xuất dời sang {formatDateTime(pendingReschedule.proposedScheduledStart)}
                   </strong>
@@ -554,7 +554,7 @@ const TutorPortalClassSessionDetail = () => {
                   </span>
                 </div>
                 {isRescheduleCounterpart && (
-                  <div className={styles.heroActions}>
+                  <div className={styles.bannerActions}>
                     <button
                       type="button"
                       className={styles.secondaryButton}
@@ -695,7 +695,7 @@ const TutorPortalClassSessionDetail = () => {
                   {session.meetingLink && status === 'scheduled' && (
                     <div className={styles.infoBanner}>
                       <Video size={18} />
-                      <div>
+                      <div className={styles.infoBannerText}>
                         <strong>Phòng học đã sẵn sàng</strong>
                         <span>Hệ thống tự điểm danh khi gia sư và học sinh cùng vào phòng.</span>
                       </div>
