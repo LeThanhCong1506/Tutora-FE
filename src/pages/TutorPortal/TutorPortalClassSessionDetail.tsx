@@ -444,10 +444,6 @@ const TutorPortalClassSessionDetail = () => {
                     <Clock3 size={15} />
                     {schedule.dateLabel} · {schedule.timeLabel}
                   </span>
-                  <span>
-                    <UserRound size={15} />
-                    Học sinh: <strong>{studentName}</strong>
-                  </span>
                 </div>
               </div>
 
@@ -527,7 +523,7 @@ const TutorPortalClassSessionDetail = () => {
             {status === 'interrupted' && session.continuationSessionId && session.continuationScheduledStart && (
               <div className={styles.infoBanner}>
                 <Link2 size={18} />
-                <div>
+                <div className={styles.infoBannerText}>
                   <strong>
                     Buổi phụ #{session.continuationSessionId}: {formatDate(session.continuationScheduledStart)} ·{' '}
                     {formatTime(session.continuationScheduledStart)}–{formatTime(session.continuationScheduledEnd)}
@@ -543,7 +539,7 @@ const TutorPortalClassSessionDetail = () => {
             {pendingReschedule && (
               <div className={styles.infoBanner}>
                 <CalendarClock size={18} />
-                <div>
+                <div className={styles.infoBannerText}>
                   <strong>
                     Đề xuất dời sang {formatDateTime(pendingReschedule.proposedScheduledStart)}
                   </strong>
@@ -554,7 +550,7 @@ const TutorPortalClassSessionDetail = () => {
                   </span>
                 </div>
                 {isRescheduleCounterpart && (
-                  <div className={styles.heroActions}>
+                  <div className={styles.bannerActions}>
                     <button
                       type="button"
                       className={styles.secondaryButton}
@@ -653,14 +649,6 @@ const TutorPortalClassSessionDetail = () => {
                       <span>{String(schedule.start.getDate()).padStart(2, '0')}</span>
                       <small>Tháng {schedule.start.getMonth() + 1}</small>
                     </div>
-                    <div className={styles.scheduleCopy}>
-                      <span className={styles.sectionLabel}>Lịch học</span>
-                      <h2>{schedule.dateLabel}</h2>
-                      <p>
-                        <Clock3 size={17} />
-                        {schedule.timeLabel}
-                      </p>
-                    </div>
                     <div className={styles.summaryMetrics}>
                       <div className={styles.metric}>
                         <span className={styles.metricIcon}>
@@ -695,7 +683,7 @@ const TutorPortalClassSessionDetail = () => {
                   {session.meetingLink && status === 'scheduled' && (
                     <div className={styles.infoBanner}>
                       <Video size={18} />
-                      <div>
+                      <div className={styles.infoBannerText}>
                         <strong>Phòng học đã sẵn sàng</strong>
                         <span>Hệ thống tự điểm danh khi gia sư và học sinh cùng vào phòng.</span>
                       </div>
@@ -896,10 +884,6 @@ const TutorPortalClassSessionDetail = () => {
                       </div>
                     </div>
                     <dl className={styles.infoList}>
-                      <div>
-                        <dt>Mã buổi học</dt>
-                        <dd>#{session.classSessionId}</dd>
-                      </div>
                       <div>
                         <dt>Mã đặt lịch</dt>
                         <dd>{session.bookingId ? `#${session.bookingId}` : '—'}</dd>
