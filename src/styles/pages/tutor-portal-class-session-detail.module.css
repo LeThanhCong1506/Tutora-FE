@@ -379,12 +379,14 @@
   padding: 20px;
 }
 
+/* Cột chữ ở giữa (thứ + ngày + giờ) đã bỏ: nó lặp nguyên văn dòng meta ở hero, cách đó
+   chưa tới một màn hình. Còn lại ô ngày và ba chỉ số không trùng chỗ nào khác. */
 .scheduleCard {
   display: grid;
   padding: 18px;
-  grid-template-columns: 76px minmax(190px, 1fr) minmax(330px, 1.6fr);
+  grid-template-columns: 76px minmax(0, 1fr);
   align-items: center;
-  gap: 18px;
+  gap: 20px;
 }
 
 .dateBadge {
@@ -416,10 +418,6 @@
   text-transform: uppercase;
 }
 
-.scheduleCopy {
-  min-width: 0;
-}
-
 .sectionLabel {
   display: block;
   color: #8a92a2;
@@ -430,7 +428,6 @@
   text-transform: uppercase;
 }
 
-.scheduleCopy h2,
 .cardHeader h2,
 .cardHeaderCompact h2,
 .studentCard h2 {
@@ -448,26 +445,11 @@
   margin-top: 5px;
 }
 
-.scheduleCopy h2 {
-  text-transform: capitalize;
-}
-
-.scheduleCopy p {
-  display: flex;
-  margin: 7px 0 0;
-  align-items: center;
-  gap: 6px;
-  color: #5f687b;
-  font-size: 13px;
-  font-weight: 600;
-}
-
 .summaryMetrics {
-  display: grid;
-  padding-left: 18px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  border-left: 1px solid #edf0f3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 34px;
 }
 
 .metric {
@@ -509,11 +491,17 @@
   text-overflow: ellipsis;
 }
 
+/*
+ * Selector cũ là `.infoBanner div` — nó bắt luôn khối nút bên trong banner, ép cụm
+ * "Từ chối / Đồng ý đổi lịch" thành cột dọc rồi hai nút lệch nhau. Giờ khối chữ có class
+ * riêng, khối nút có class riêng, không cái nào đè cái nào.
+ */
 .infoBanner {
   display: flex;
   padding: 14px 16px;
-  align-items: flex-start;
-  gap: 11px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
   border: 1px solid #cfe8e4;
   border-radius: 14px;
   background: #eef8f6;
@@ -521,14 +509,31 @@
 }
 
 .infoBanner > svg {
-  margin-top: 1px;
   flex: 0 0 auto;
 }
 
-.infoBanner div {
+/* Banner nằm trong hero: `.hero` là block nên không có gap nào giữa nó và khối tiêu đề
+   phía trên — nút hành động dính sát mép banner. Banner ở vùng nội dung không cần luật
+   này vì cột ở đó đã có gap riêng. */
+.hero .infoBanner {
+  margin-top: 14px;
+}
+
+.infoBannerText {
   display: flex;
+  flex: 1 1 240px;
+  min-width: 0;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
+}
+
+/* Đẩy nút về sát mép phải, giữ trên một hàng. */
+.bannerActions {
+  display: flex;
+  margin-left: auto;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 9px;
 }
 
 .infoBanner strong {
