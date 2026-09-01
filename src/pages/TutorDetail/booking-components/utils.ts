@@ -244,16 +244,53 @@ export const sessionFitsAvailability = (
  */
 export const buildScheduleFromPattern = (pattern: WeeklyPatternSlot[], notBefore: Date): BookingSlot[] => {
     if (!pattern.length) return [];
-    const windowEnd = getBookingValidityEnd(notBefore);
+
+    const atTime = (day: Date, startTime: string): Date => {
+        const at = new Date(day);
+        at.setHours(0, timeToMinutes(startTime), 0, 0);
+        return at;
+    };
+
+    const startOfDay = (d: Date): Date => {
+        const day = new Date(d);
+        day.setHours(0, 0, 0, 0);
+        return day;
+    };
+
+    // Tìm BUỔI ĐẦU TIÊN hợp lệ trước, rồi mới tính cửa sổ một tháng TỪ CHÍNH BUỔI ĐÓ.
+    //
+    // Không neo cửa sổ vào notBefore: đó chỉ là "thời điểm sớm nhất được phép", thường rơi vào
+    // một ngày KHÔNG có buổi nào trong mẫu. Neo vào đó thì lịch bắt đầu 02/09 nhưng lại hết hạn
+    // 01/10, mất buổi ngày 02/10 — trong khi luật là "kéo dài một tháng kể từ buổi đầu".
+    //
+    // Mẫu lặp theo tuần nên buổi đầu chắc chắn nằm trong 7 ngày kể từ notBefore; quét 14 ngày cho
+    // chắc, và trả về rỗng nếu mẫu không khớp ngày nào (dữ liệu hỏng) thay vì lặp vô hạn.
+    let firstDay: Date | null = null;
+    const scanUntil = addDays(startOfDay(notBefore), 14);
+    for (let day = startOfDay(notBefore); day <= scanUntil; day = addDays(day, 1)) {
+        const demoDow = toDemoWeekday(day.getDay());
+        const hasSlotToday = pattern
+            .filter((slot) => slot.dayOfWeek === demoDow)
+            .some((slot) => atTime(day, slot.startTime) >= notBefore);
+
+        if (hasSlotToday) {
+            firstDay = day;
+            break;
+        }
+    }
+    if (!firstDay) return [];
+
+    // firstDay đã ở nửa đêm nên so sánh với windowEnd (cũng nửa đêm) bao gồm đúng ngày cuối.
+    const windowEnd = getBookingValidityEnd(firstDay);
+
     const slots: BookingSlot[] = [];
-    for (let day = new Date(notBefore); day <= windowEnd; day = addDays(day, 1)) {
+    for (let day = new Date(firstDay); day <= windowEnd; day = addDays(day, 1)) {
         const demoDow = toDemoWeekday(day.getDay());
         pattern
             .filter((slot) => slot.dayOfWeek === demoDow)
             .forEach((slot) => {
-                const start = new Date(day);
-                start.setHours(0, timeToMinutes(slot.startTime), 0, 0);
-                if (start < notBefore) return;
+                // Ô cùng ngày nhưng chưa đủ xa vẫn phải loại (mốc hợp lệ 15:00, ô 12:00).
+                if (atTime(day, slot.startTime) < notBefore) return;
                 slots.push({
                     dayOfWeek: slot.dayOfWeek,
                     startTime: slot.startTime,
