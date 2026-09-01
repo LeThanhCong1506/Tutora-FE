@@ -397,9 +397,17 @@ const TutorPortalClassSessionDetail = () => {
   const needsTutorResponse = Boolean(
     dispute && !dispute.tutorResponse && !['resolved', 'closed', 'confirmed_no_show'].includes(dispute.status ?? ''),
   );
-  // Cùng điều kiện buổi học phía BE cho phép tạo dispute (pending_confirmation/completed),
-  // và chỉ khi buổi học này chưa có dispute nào.
-  const canCreateDispute = !dispute && (status === 'pending_confirmation' || status === 'completed');
+  // Đối xứng với ParentLessonDetail/StudentLessonDetail: gia sư cũng được khiếu nại buổi CHƯA
+  // diễn ra (báo học sinh/phụ huynh vắng mặt), không chỉ pending_confirmation/completed — trước
+  // đây chỉ 2 trạng thái này được phép, khiến gia sư không có cách báo ngay khi học sinh không
+  // vào lớp mà phải chờ job tự động phát hiện sau 12h.
+  // CỜ TEST — xem ghi chú ở DisputeSettlementPolicy.AllowDisputeBeforeSessionStart (BE) và
+  // ParentLessonDetail.tsx (phụ huynh). Cả 3 cờ phải TẮT/BẬT cùng nhau. Đặt lại `false` khi test xong.
+  const ALLOW_DISPUTE_BEFORE_START = true;
+  const hasSessionStarted = ALLOW_DISPUTE_BEFORE_START || new Date(session.scheduledStart).getTime() <= Date.now();
+  const canCreateDispute =
+    !dispute &&
+    (status === 'pending_confirmation' || status === 'completed' || (status === 'scheduled' && hasSessionStarted));
   return (
     <div className={styles.page}>
       <main className={styles.main}>
