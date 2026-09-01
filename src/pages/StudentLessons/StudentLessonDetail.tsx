@@ -50,7 +50,7 @@ import { useStudentProfile } from '../../contexts/StudentProfileContext';
 import { getUserInfoFromToken } from '../../services/auth.service';
 import s from '../StudentPages.module.css';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
-import { canJoinLiveSession, isWithinJoinWindow } from '../../utils/liveSession';
+import { canJoinLiveSession, canReportTutorNoShow, isWithinJoinWindow } from '../../utils/liveSession';
 import { isAwaitingReport } from './lesson-components';
 import { getApiErrorMessage } from '../../utils/apiError';
 
@@ -824,7 +824,7 @@ const StudentLessonDetail = () => {
                     </div>
                 )}
 
-                {renderLegacyTopActions && lesson.status === 'scheduled' && !isParentManaged && (
+                {renderLegacyTopActions && lesson.status === 'scheduled' && !isParentManaged && canReportTutorNoShow(lesson.scheduledStart) && (
                     <div style={actionCardConfirm}>
                         <div style={actionCardIconWrap}>
                             <AlertCircle size={20} style={{ color: '#d97706' }} />
@@ -1075,7 +1075,7 @@ const StudentLessonDetail = () => {
                                 </SidebarSection>
                             )}
 
-                            {lesson.status === 'scheduled' && !isParentManaged && (
+                            {lesson.status === 'scheduled' && !isParentManaged && canReportTutorNoShow(lesson.scheduledStart) && (
                                 <SidebarSection label="Gia sư chưa vào lớp">
                                     <div style={sidebarActionBlock}>
                                         <div style={sidebarActionText}>Nếu gia sư vắng mặt, bạn có thể báo cáo ngay.</div>

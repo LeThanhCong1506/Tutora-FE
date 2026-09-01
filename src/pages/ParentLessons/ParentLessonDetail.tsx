@@ -40,6 +40,7 @@ import {
 import { getDisputeStatusMeta, getDisputeTypeLabel } from '../../components/disputes';
 import { formatVNDNumber } from '../../utils/formatters';
 import { formatLocalDate, formatLocalDateTime, formatLocalTime } from '../../utils/datetime';
+import { canReportTutorNoShow } from '../../utils/liveSession';
 import styles from './lesson-detail.module.css';
 
 const TERMINAL_BOOKING_STATUSES = ['completed', 'cancelled', 'cancelled_noshow'];
@@ -272,7 +273,7 @@ const ParentLessonDetail: React.FC = () => {
   });
 
   const showConfirmAction = lesson.status === 'pending_confirmation';
-  const showNoShowAction = lesson.status === 'scheduled';
+  const showNoShowAction = lesson.status === 'scheduled' && canReportTutorNoShow(lesson.scheduledStart);
   const showNoShowResolution = lesson.status === 'no_show' && dispute?.status === 'confirmed_no_show';
   const showReportTutorAction = lesson.status === 'completed' && !dispute && canCreateDispute;
   const pendingReschedule = lesson.pendingRescheduleProposal;

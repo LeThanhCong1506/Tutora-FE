@@ -412,6 +412,22 @@ const BookingDetailPage = () => {
   const canCancel =
     ['pending_tutor', 'accepted', 'pending_payment', 'deposit_paid', 'ongoing', 'paid'].includes(booking.status) &&
     !hasStartedLesson;
+  // Khớp với TrialCancelWindowHours ở BookingService.cs (BE) — trong vòng 2h trước buổi học đầu
+  // tiên, BE từ chối yêu cầu hủy tự do của phụ huynh/học sinh (dù nút vẫn hiện phía FE trước đây),
+  // buộc phải chờ hoặc báo cáo gia sư không vào lớp qua luồng no-show có sẵn. Nếu BE đổi mốc này thì
+  // sửa luôn hằng số dưới đây.
+  const TRIAL_CANCEL_WINDOW_HOURS = 2;
+  const nextUncancelledLesson = lessons.find((lesson) => lesson.status !== 'cancelled');
+  const firstUpcomingLessonStart = parseDate(nextUncancelledLesson?.scheduledStart);
+  const isWithinTrialCancelWindow =
+    firstUpcomingLessonStart != null &&
+    firstUpcomingLessonStart.getTime() - currentTime < TRIAL_CANCEL_WINDOW_HOURS * 60 * 60 * 1000;
+  const cancelBlockedByTrialWindow = canCancel && (depositPaid || remainingPaid) && isWithinTrialCancelWindow;
+  const lessonDetailPath = nextUncancelledLesson
+    ? basePath === '/student-portal'
+      ? `${basePath}/calendar/${nextUncancelledLesson.lessonId}`
+      : `${basePath}/lessons/${nextUncancelledLesson.lessonId}`
+    : null;
   const canPayDeposit = !isParentManaged && ['accepted', 'pending_payment'].includes(booking.status);
   // Chỉ cho thanh toán đợt 2 khi buổi học đầu tiên đã kết thúc.
   const isRemainingStage = ['deposit_paid', 'pending_remaining_payment'].includes(booking.status);
@@ -948,10 +964,44 @@ const BookingDetailPage = () => {
                     <span>Bạn có thể thanh toán các buổi học còn lại sau khi buổi học đầu tiên kết thúc.</span>
                   </div>
                 )}
-                {(canCancel || canFinalizeEarly) && (
-                  <button className={styles.cancelBtn} type="button" onClick={() => setShowCancelModal(true)}>
-                    <XCircle size={17} /> Hủy đặt lịch
-                  </button>
+                {cancelBlockedByTrialWindow ? (
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: 8,
+                      alignItems: 'flex-start',
+                      padding: '12px 14px',
+                      borderRadius: 10,
+                      background: '#fff7ed',
+                      border: '1px solid #fed7aa',
+                      color: '#9a3412',
+                      fontSize: 13,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    <Clock3 size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+                    <span>
+                      Đã trong vòng {TRIAL_CANCEL_WINDOW_HOURS}h trước buổi học đầu tiên nên không thể tự hủy để
+                      nhận hoàn tiền nữa.{' '}
+                      {lessonDetailPath ? (
+                        <>
+                          Nếu gia sư không vào lớp, hãy{' '}
+                          <a href={lessonDetailPath} onClick={(event) => { event.preventDefault(); navigate(lessonDetailPath); }}>
+                            báo cáo vắng mặt tại buổi học này
+                          </a>
+                          .
+                        </>
+                      ) : (
+                        'Nếu gia sư không vào lớp, hãy báo cáo vắng mặt ngay tại buổi học đó.'
+                      )}
+                    </span>
+                  </div>
+                ) : (
+                  (canCancel || canFinalizeEarly) && (
+                    <button className={styles.cancelBtn} type="button" onClick={() => setShowCancelModal(true)}>
+                      <XCircle size={17} /> Hủy đặt lịch
+                    </button>
+                  )
                 )}
               </section>
             )}
