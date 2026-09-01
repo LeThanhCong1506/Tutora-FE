@@ -11,8 +11,8 @@ import {
   type StudentCredentials,
 } from '../../../../services/student.service';
 import { extractApiErrorMessage, hasApiErrorCode } from '../apiMessages';
-import { buildStudentInsights, EMPTY_INSIGHT } from '../utils';
-import type { StudentWithInsight } from '../types';
+import { buildStudentBookings } from '../utils';
+import type { StudentWithBookings } from '../types';
 
 /**
  * Một lượt tải phủ hết lịch sử buổi học của tất cả các con — `GET /api/parent/class-sessions`
@@ -37,7 +37,7 @@ const readSessionList = (content: unknown): ClassSessionResponse[] | null => {
 };
 
 export interface UseParentStudentsResult {
-  rows: StudentWithInsight[];
+  rows: StudentWithBookings[];
   /** Đang tải danh sách con — khung trang chưa dựng được. */
   loading: boolean;
   /** Danh sách con đã có nhưng số liệu buổi học còn đang về. */
@@ -55,7 +55,7 @@ export interface UseParentStudentsResult {
 
 export function useParentStudents(): UseParentStudentsResult {
   const { students, loading, refreshStudents } = useStudentContext();
-  const [insights, setInsights] = useState<ReturnType<typeof buildStudentInsights>>({});
+  const [bookings, setBookings] = useState<ReturnType<typeof buildStudentBookings>>({});
   const [insightsLoading, setInsightsLoading] = useState(true);
   const [insightsFailed, setInsightsFailed] = useState(false);
   const [credentials, setCredentials] = useState<StudentCredentials | null>(null);
@@ -74,7 +74,7 @@ export function useParentStudents(): UseParentStudentsResult {
         const sessions = readSessionList(response.content);
         if (!sessions) throw new Error('GET /parent/class-sessions trả về shape không đọc được');
 
-        const map = buildStudentInsights(sessions);
+        const map = buildStudentBookings(sessions);
 
         // Có buổi học nhưng không buổi nào khớp studentId nào của trang → lệch khoá, không phải
         // "chưa học buổi nào". Báo lỗi để phụ huynh không tin nhầm là con chưa có lịch.
@@ -88,19 +88,19 @@ export function useParentStudents(): UseParentStudentsResult {
           console.warn(
             '[ParentStudent] buổi học nhận được:',
             sessions.length,
-            '· học sinh có số liệu:',
+            '· học sinh có khoá học:',
             Object.keys(map),
             '· mẫu:',
             sessions[0],
           );
         }
 
-        setInsights(map);
+        setBookings(map);
         setInsightsFailed(false);
       } catch (err) {
         if (!active) return;
         console.error('ParentStudent: không lấy được danh sách buổi học', err);
-        setInsights({});
+        setBookings({});
         setInsightsFailed(true);
       } finally {
         if (active) setInsightsLoading(false);
@@ -113,9 +113,9 @@ export function useParentStudents(): UseParentStudentsResult {
     };
   }, [sessionsKey]);
 
-  const rows = useMemo<StudentWithInsight[]>(
-    () => students.map((student) => ({ student, insight: insights[student.studentId] ?? EMPTY_INSIGHT })),
-    [students, insights],
+  const rows = useMemo<StudentWithBookings[]>(
+    () => students.map((student) => ({ student, bookings: bookings[student.studentId] ?? [] })),
+    [students, bookings],
   );
 
   const addStudent = useCallback(

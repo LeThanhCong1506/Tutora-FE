@@ -1,5 +1,10 @@
 import type { StatusVariant } from '../../../../components/shared';
 import type { TutorClassStatus } from '../../../../services/classSession.service';
+import {
+    isBookingCancelled,
+    isBookingCompleted,
+    reservedSessionsReason,
+} from '../../../../utils/bookingStatus';
 
 /**
  * Ảnh cover cho card lớp — texture màu nước lấy từ app mobile (assets/images/common).
@@ -33,6 +38,19 @@ export const classStatusMeta = (
 export const progressOf = (completed: number, total: number) =>
     total <= 0 ? 0 : Math.round((completed / total) * 100);
 
+/**
+ * Mẫu số của thanh tiến độ = buổi đã mở + buổi còn giữ chỗ.
+ *
+ * `totalSessions` từ BE cố ý KHÔNG tính buổi `reserved` (một lớp vừa được nhận phải báo 1 buổi,
+ * không phải cả gói) — nhưng lấy nguyên nó làm mẫu số thì thẻ tự mâu thuẫn: "Tiến độ 1/1 buổi ·
+ * 100%" đứng cạnh nhãn "Đang giữ chỗ" và dòng "4 buổi chờ mở". Cộng buổi giữ chỗ vào MẪU SỐ (chỉ
+ * ở đây, không đổi ý nghĩa của `totalSessions`) thì thanh chỉ đầy khi thật sự không còn gì.
+ */
+export const totalSessionsWithReserved = (item: {
+    totalSessions: number;
+    reservedSessions?: number;
+}) => item.totalSessions + (item.reservedSessions ?? 0);
+
 export const initialsOf = (name?: string) => {
     const parts = (name || '').trim().split(/\s+/).filter(Boolean);
     if (!parts.length) return 'HS';
@@ -49,6 +67,34 @@ const DATE_TIME = new Intl.DateTimeFormat('vi-VN', {
 });
 
 export const formatDateTime = (iso?: string | null) => (iso ? DATE_TIME.format(new Date(iso)) : '—');
+
+/**
+ * Nội dung dòng "Buổi kế tiếp" của một lớp.
+ *
+ * Trước đây dòng này chỉ là `formatDateTime(nextSessionStart)`, nên lớp không còn buổi đã mở chỉ
+ * hiện một dấu "—" — không cho gia sư biết là khoá đã xong, hay còn buổi đang chờ phụ huynh trả
+ * nốt tiền để mở. Hai tình huống đó cần hai hành động khác nhau, nên phải phân biệt được.
+ */
+export const nextSessionLabel = (item: {
+    nextSessionStart?: string | null;
+    reservedSessions?: number;
+    nextReservedStart?: string | null;
+    bookingStatus?: string;
+}): string => {
+    if (item.nextSessionStart) return formatDateTime(item.nextSessionStart);
+
+    if (isBookingCancelled(item.bookingStatus)) return 'Khoá học đã huỷ';
+
+    const reserved = item.reservedSessions ?? 0;
+    if (reserved > 0) {
+        const reason = reservedSessionsReason(item.bookingStatus);
+        const when = item.nextReservedStart ? ` (dự kiến ${formatDateTime(item.nextReservedStart)})` : '';
+        return `${reserved} buổi chờ mở${when}${reason ? ` — ${reason}` : ''}`;
+    }
+
+    if (isBookingCompleted(item.bookingStatus)) return 'Đã dạy xong toàn bộ khoá';
+    return '—';
+};
 
 const WEEKDAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 

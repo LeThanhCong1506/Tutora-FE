@@ -4,6 +4,8 @@ import { CheckCircleFilled, InfoCircleOutlined, SafetyCertificateOutlined } from
 import { toast } from 'react-toastify';
 import { getApiErrorMessage } from '../../../utils/apiError';
 import { getBankAccount, type BankAccount } from '../../../services/bankAccount.service';
+import { DEFAULT_MIN_WITHDRAWAL, getMinWithdrawalAmount } from '../../../services/withdrawalLimit.service';
+import { formatCurrency } from '../../../utils/formatters';
 import FinancePageShell from '../components/FinancePageShell';
 import BankAccountCard from '../../../components/BankAccount/BankAccountCard';
 import BankAccountForm from '../../../components/BankAccount/BankAccountForm';
@@ -15,6 +17,9 @@ const BankInfoManagementPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  // Lấy từ API thay vì ghi cứng: ngưỡng này do admin cấu hình, hardcode ở đây sẽ lệch với mức
+  // backend thực sự chặn (trước đó ghi 10,000 VND trong khi hệ thống đang áp dụng 50,000 VND).
+  const [minWithdraw, setMinWithdraw] = useState(DEFAULT_MIN_WITHDRAWAL);
 
   const fetchData = async () => {
     setLoading(true);
@@ -31,6 +36,8 @@ const BankInfoManagementPage: React.FC = () => {
 
   useEffect(() => {
     fetchData();
+    // getMinWithdrawalAmount không bao giờ throw, hỏng API thì rơi về DEFAULT_MIN_WITHDRAWAL.
+    getMinWithdrawalAmount().then(setMinWithdraw);
   }, []);
 
   const handleUpdateSuccess = () => {
@@ -78,7 +85,7 @@ const BankInfoManagementPage: React.FC = () => {
             </li>
             <li>
               <CheckCircleFilled aria-hidden="true" />
-              <span>Số tiền rút tối thiểu là 10,000 VND cho mỗi giao dịch.</span>
+              <span>Số tiền rút tối thiểu là {formatCurrency(minWithdraw)} cho mỗi giao dịch.</span>
             </li>
             <li>
               <CheckCircleFilled aria-hidden="true" />

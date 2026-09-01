@@ -1,6 +1,12 @@
 import { StatusBadge } from '../../../../components/shared';
 import type { ClassItem } from './types';
-import { classStatusMeta, formatDateTime, initialsOf, progressOf } from './utils';
+import {
+    classStatusMeta,
+    initialsOf,
+    nextSessionLabel,
+    progressOf,
+    totalSessionsWithReserved,
+} from './utils';
 
 interface ClassTableProps {
     items: ClassItem[];
@@ -26,7 +32,8 @@ export default function ClassTable({ items, onOpen }: ClassTableProps) {
                 <tbody>
                     {items.map((item) => {
                         const status = classStatusMeta(item.status);
-                        const percent = progressOf(item.completedSessions, item.totalSessions);
+                        const totalSessions = totalSessionsWithReserved(item);
+                        const percent = progressOf(item.completedSessions, totalSessions);
 
                         return (
                             <tr
@@ -62,12 +69,12 @@ export default function ClassTable({ items, onOpen }: ClassTableProps) {
                                             />
                                         </div>
                                         <span className="whitespace-nowrap text-[12px] text-[#7a6a60]">
-                                            {item.completedSessions}/{item.totalSessions}
+                                            {item.completedSessions}/{totalSessions}
                                         </span>
                                     </div>
                                 </td>
                                 <td className="px-4 py-3 text-[13px] text-[#7a6a60]">
-                                    {formatDateTime(item.nextSessionStart)}
+                                    {nextSessionLabel(item)}
                                 </td>
                                 <td className="px-4 py-3">
                                     <StatusBadge variant={status.variant} shape="tag">
