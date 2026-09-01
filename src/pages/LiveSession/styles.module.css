@@ -1564,6 +1564,19 @@
   border-bottom: 1px solid var(--ls-line);
 }
 
+.practiceQuotaNote {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 6px 9px;
+  border-radius: 6px;
+  background: var(--ls-wait-soft);
+  color: var(--ls-wait);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
 .materialPickerRow {
   display: flex;
   align-items: center;

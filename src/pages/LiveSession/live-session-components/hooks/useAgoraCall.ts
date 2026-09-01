@@ -47,6 +47,22 @@ const TRACKING_STOP_SIGNAL = '__TRACKING_STOP__';
 const ALERT_SIGNAL_PREFIX = '__ALERT__';
 /** Gia sư vừa gửi một câu hỏi -> máy học sinh nạp lại danh sách bài tập ngay. */
 const PRACTICE_SENT_SIGNAL = '__PRACTICE_SENT__';
+/** Tài liệu vừa xử lý xong -> máy gia sư nạp lại tab Tài liệu. */
+const MATERIAL_READY_SIGNAL = '__MATERIAL_READY__';
+/** Học sinh vừa trả lời -> gia sư thấy ngay đúng/sai, không phải hỏi miệng. */
+const ANSWER_SIGNAL_PREFIX = '__PRACTICE_ANSWER__';
+
+/** Học sinh vừa trả lời một câu — gia sư nhận qua RTM để hiện toast. */
+export interface PracticeAnswerSignal {
+  /** Tóm tắt đề, chỉ để gia sư nhận ra câu nào. */
+  questionPreview: string;
+  format: 'mc' | 'essay';
+  /** Đáp án học sinh chọn (mc) hoặc đoạn đầu bài làm (essay). */
+  answer: string;
+  /** null với câu tự luận — hệ thống không tự chấm. */
+  isCorrect: boolean | null;
+  at?: number;
+}
 
 /** Cảnh báo hành vi nhận qua RTM (phía gia sư). */
 export interface LiveEmotionAlert {
@@ -94,6 +110,13 @@ interface UseAgoraCallResult {
   broadcastPracticeSent: () => void;
   /** Tăng lên mỗi khi nhận tín hiệu có bài tập mới (phía học sinh). */
   practiceSignal: number;
+  /** Tăng lên khi tài liệu xử lý xong (phía gia sư). */
+  materialSignal: number;
+  broadcastMaterialReady: () => void;
+  /** Học sinh báo vừa trả lời; gia sư nhận để hiện toast. */
+  broadcastAnswer: (payload: PracticeAnswerSignal) => void;
+  /** Lượt trả lời mới nhất nhận được (phía gia sư). Null khi chưa có. */
+  latestAnswer: PracticeAnswerSignal | null;
   toggleMic: () => Promise<void>;
   toggleCam: () => Promise<void>;
   toggleScreenShare: () => Promise<void>;
@@ -150,6 +173,8 @@ export const useAgoraCall = (
   const [sessionReplaced, setSessionReplaced] = useState(false);
   const [trackingRequested, setTrackingRequested] = useState(false);
   const [practiceSignal, setPracticeSignal] = useState(0);
+  const [materialSignal, setMaterialSignal] = useState(0);
+  const [latestAnswer, setLatestAnswer] = useState<PracticeAnswerSignal | null>(null);
   const [emotionAlerts, setEmotionAlerts] = useState<LiveEmotionAlert[]>([]);
   const [emotionToasts, setEmotionToasts] = useState<LiveEmotionAlert[]>([]);
 
@@ -345,6 +370,23 @@ export const useAgoraCall = (
             // (RTM không đáng tin cho dữ liệu, chỉ dùng để báo hiệu).
             if (text === PRACTICE_SENT_SIGNAL) {
               setPracticeSignal((v) => v + 1);
+              return;
+            }
+            if (text === MATERIAL_READY_SIGNAL) {
+              setMaterialSignal((v) => v + 1);
+              return;
+            }
+            if (text.startsWith(ANSWER_SIGNAL_PREFIX)) {
+              try {
+                const payload = JSON.parse(
+                  text.slice(ANSWER_SIGNAL_PREFIX.length),
+                ) as PracticeAnswerSignal;
+                // Gắn mốc thời gian để mỗi lượt trả lời là một object mới -> effect
+                // bên gia sư luôn bắn toast, kể cả khi trả lời trùng nội dung.
+                setLatestAnswer({ ...payload, at: Date.now() });
+              } catch {
+                // payload hỏng — bỏ qua, không ảnh hưởng chat
+              }
               return;
             }
             if (text.startsWith(ALERT_SIGNAL_PREFIX)) {
@@ -641,6 +683,27 @@ export const useAgoraCall = (
       .catch((err) => console.error('❌ Failed to broadcast practice signal:', err));
   }, []);
 
+  /** Gia sư: báo tài liệu đã xử lý xong (dùng cho chính máy mình + máy còn lại). */
+  const broadcastMaterialReady = useCallback(() => {
+    const rtm = rtmClientRef.current;
+    const channel = rtmChannelRef.current;
+    setMaterialSignal((v) => v + 1); // cập nhật ngay tại máy vừa tải lên
+    if (!rtm || !channel) return;
+    rtm
+      .publish(channel, MATERIAL_READY_SIGNAL)
+      .catch((err) => console.error('❌ Failed to broadcast material signal:', err));
+  }, []);
+
+  /** Học sinh: báo vừa trả lời một câu để gia sư thấy ngay đúng/sai. */
+  const broadcastAnswer = useCallback((payload: PracticeAnswerSignal) => {
+    const rtm = rtmClientRef.current;
+    const channel = rtmChannelRef.current;
+    if (!rtm || !channel) return;
+    rtm
+      .publish(channel, `${ANSWER_SIGNAL_PREFIX}${JSON.stringify(payload)}`)
+      .catch((err) => console.error('❌ Failed to broadcast answer signal:', err));
+  }, []);
+
   /** Học viên: bắn cảnh báo hành vi tới gia sư qua RTM (hiển thị tức thì, không chờ backend). */
   const sendEmotionAlert = useCallback((alert: Omit<LiveEmotionAlert, 'id' | 'at'>) => {
     const rtm = rtmClientRef.current;
@@ -734,6 +797,10 @@ export const useAgoraCall = (
     broadcastTracking,
     broadcastPracticeSent,
     practiceSignal,
+    materialSignal,
+    broadcastMaterialReady,
+    broadcastAnswer,
+    latestAnswer,
     toggleMic,
     toggleCam,
     toggleScreenShare,

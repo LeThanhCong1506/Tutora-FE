@@ -17,11 +17,15 @@ import { isZaloMiniApp } from '../../services/zalo-env';
 import { PageContainer, StatCard } from '../../components/shared';
 import styles from './styles.module.css';
 import { getApiErrorMessage } from '../../utils/apiError';
+import { useStudentProfile } from '../../contexts/StudentProfileContext';
 
 const inMiniApp = isZaloMiniApp();
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
+  // Học sinh do phụ huynh quản lý không tự đặt lịch, giấu luôn nút thao tác nhanh, tránh bấm vào rồi bị đá ngược về đây.
+  const { isParentManaged, loading: profileLoading } = useStudentProfile();
+  const canBook = !profileLoading && !isParentManaged;
   const [lessons, setLessons] = useState<any[]>([]); // all lessons
   const [pendingLessons, setPendingLessons] = useState<any[]>([]); // pending only
   const [bookings, setBookings] = useState<any[]>([]);
@@ -209,12 +213,14 @@ const StudentDashboard = () => {
             <div className={styles.greeting}>
               <h2 className={styles.greetingTitle}>Xin chào, {userName}!</h2>
               <div className={styles.quickActions} data-tour="student-dashboard-actions">
-                <Link to="/student-portal/booking" className={styles.quickActionBtn}>
-                  <div className={styles.quickActionIcon}>
-                    <BookOpen size={18} />
-                  </div>
-                  Đặt lịch học
-                </Link>
+                {canBook && (
+                  <Link to="/student-portal/booking" className={styles.quickActionBtn}>
+                    <div className={styles.quickActionIcon}>
+                      <BookOpen size={18} />
+                    </div>
+                    Đặt lịch học
+                  </Link>
+                )}
                 <Link to="/student-portal/calendar" className={styles.quickActionBtn}>
                   Thời khóa biểu
                 </Link>

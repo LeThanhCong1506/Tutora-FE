@@ -4,7 +4,7 @@ import styles from './styles.module.css';
 import ChatArea from './ChatArea';
 import MessageListSidebar from './MessageListSidebar';
 import SupportChatPage from '../Support/SupportChatPage';
-import type { ChatChannel } from '../../services/chat.service';
+import { getChats, type ChatChannel } from '../../services/chat.service';
 import { getUserIdFromToken } from '../../services/auth.service';
 
 const MOBILE_BREAKPOINT = 768;
@@ -14,11 +14,36 @@ const ParentMessage = () => {
   const location = useLocation();
   // Mở thẳng cuộc trò chuyện khi được điều hướng kèm `openChannel`
   // (vd bấm "Nhắn tin" trên thẻ gia sư ở trang tìm kiếm).
+  const navState = location.state as { openChannel?: ChatChannel; openBookingId?: number } | null;
   const [selectedChannel, setSelectedChannel] = useState<ChatChannel | null>(
-    () => (location.state as { openChannel?: ChatChannel } | null)?.openChannel ?? null,
+    () => navState?.openChannel ?? null,
   );
   const [isMobile, setIsMobile] = useState(window.innerWidth <= MOBILE_BREAKPOINT);
   const [showAdminChat, setShowAdminChat] = useState(false);
+
+  // Mở thẳng kênh chat của một booking.
+  const openBookingId = navState?.openBookingId ?? null;
+  useEffect(() => {
+    if (!openBookingId) return;
+    let cancelled = false;
+    const openByBooking = async () => {
+      try {
+        const response = await getChats();
+        if (cancelled || response.statusCode !== 200) return;
+        const channel = response.content.find((item) => item.bookingId === openBookingId);
+        if (channel) {
+          setShowAdminChat(false);
+          setSelectedChannel(channel);
+        }
+      } catch (err) {
+        console.error('Error opening chat channel by booking:', err);
+      }
+    };
+    void openByBooking();
+    return () => {
+      cancelled = true;
+    };
+  }, [openBookingId]);
 
   // Track viewport size
   useEffect(() => {

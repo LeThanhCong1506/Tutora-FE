@@ -6,7 +6,7 @@ import {
     FileText, ClipboardCheck, Star,
     User, PlayCircle, StopCircle, Paperclip, Download, CalendarClock,
     CheckCircle2, Clock3, XCircle, Wand2, ChevronDown, Plus, ArrowUp, Link2,
-    Copy, Check,
+    Copy, Check, MessageCircle,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import ReactMarkdown from 'react-markdown';
@@ -62,6 +62,7 @@ import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 import { canJoinLiveSession, canReportTutorNoShow, isWithinJoinWindow } from '../../utils/liveSession';
 import { isAwaitingReport } from './lesson-components';
 import { getApiErrorMessage } from '../../utils/apiError';
+import { getChats, getOrCreateBookingChannel, type ChatChannel } from '../../services/chat.service';
 
 // ── Status definitions — nguồn duy nhất là classSessionStatus.ts (khớp BE ClassSessionStatus) ──
 type StatusInfo = { label: string; color: string; bg: string; icon: string };
@@ -181,6 +182,7 @@ const StudentLessonDetail = () => {
     const [loading, setLoading] = useState(true);
     const [confirming, setConfirming] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [openingChat, setOpeningChat] = useState(false);
     const [showDisputeForm, setShowDisputeForm] = useState(false);
     const [showNoShowActionModal, setShowNoShowActionModal] = useState(false);
     // Nhịp đồng hồ để nút Khiếu nại tự hiện đúng lúc buổi học bắt đầu — người đang mở sẵn trang chờ
@@ -572,6 +574,41 @@ const StudentLessonDetail = () => {
     const nearJoinWindow = isWithinJoinWindow(lesson.scheduledStart);
     const tutorName = (lesson as any).tutorName ?? (lesson as any).tutor?.fullName ?? 'Gia sư';
     const subjectName = (lesson as any).subjectName ?? (lesson as any).subject?.subjectName ?? 'Buổi học';
+
+    // Mở chat với gia sư của buổi học
+    const chatBookingId = lesson.bookingId;
+    const handleOpenTutorChat = async () => {
+        if (openingChat || !chatBookingId) return;
+        try {
+            setOpeningChat(true);
+            const channelResponse = await getOrCreateBookingChannel(chatBookingId);
+            const channelId = channelResponse.content?.channelId;
+            if (!channelId) throw new Error('Thiếu channelId');
+
+            const channelsResponse = await getChats();
+            const existingChannel = channelsResponse.content.find((channel) => channel.channelId === channelId);
+            const openChannel: ChatChannel = existingChannel
+                ? { ...existingChannel, bookingId: chatBookingId }
+                : {
+                      channelId,
+                      bookingId: chatBookingId,
+                      otherUserId: (lesson as any).tutor?.tutorId ?? '',
+                      otherUserName: tutorName,
+                      otherUserAvatarUrl: (lesson as any).tutorAvatar ?? (lesson as any).tutor?.avatarUrl ?? '',
+                      otherUserRole: 'Tutor',
+                      isOtherUserParentManaged: null,
+                      status: 'active',
+                      lastMessageAt: '',
+                      lastMessagePreview: '',
+                  };
+
+            navigate('/student-portal/messages', { state: { openChannel } });
+        } catch (error) {
+            antMessage.error(getApiErrorMessage(error, 'Không mở được cuộc trò chuyện với gia sư. Vui lòng thử lại.'));
+        } finally {
+            setOpeningChat(false);
+        }
+    };
     const report = (lesson as any).report;
     // Học sinh do phụ huynh quản lý giờ ĐƯỢC tự tạo khiếu nại / đề xuất đổi lịch (BE:
     // ParentService.CreateDisputeAsync + ClassSessionRescheduleProposalService.IsLearnerSideActor
@@ -1322,7 +1359,18 @@ const StudentLessonDetail = () => {
                                     active
                                     icon={<User size={14} />}
                                     title={tutorName}
-                                    meta="Người dạy của bạn"
+                                    action={chatBookingId ? (
+                                        <button
+                                            type="button"
+                                            className="sld-side-chat-btn"
+                                            style={sidebarChatButton}
+                                            disabled={openingChat}
+                                            onClick={() => void handleOpenTutorChat()}
+                                        >
+                                            <MessageCircle size={13} />
+                                            {openingChat ? 'Đang mở…' : 'Trò chuyện'}
+                                        </button>
+                                    ) : undefined}
                                 />
                             </SidebarSection>
 
@@ -1472,7 +1520,6 @@ const StudentLessonDetail = () => {
                         )}
                     </div>
                     <LessonContentCard lessonContent={lesson.lessonContent} homework={lesson.homework} attachments={report?.attachments} />
-                    <TutorReportCard report={report} materials={materials} />
                     </div>
                     </div>
                     </div>
@@ -1806,6 +1853,7 @@ const ReportRow = ({ label, value }: { label: string; value: string }) => (
 );
 
 const embeddedSectionCard: React.CSSProperties = {
+    gridColumn: '1 / -1',
     background: '#fff',
     border: '1px solid #d9e1eb',
     borderRadius: 14,
@@ -1846,30 +1894,6 @@ const LessonContentCard = ({
                                 </a>
                             ))}
                         </div>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
-
-const TutorReportCard = ({ report, materials }: { report?: any; materials: LearningMaterialResponse[] }) => {
-    if (!report && materials.length === 0) return null;
-    return (
-        <div className="sld-hover-card" style={embeddedSectionCard}>
-                <div style={sectionHeaderRow}>
-                    <div style={sectionIconWrap}><ClipboardCheck size={16} style={{ color: LESSON_RAIL_ACCENT }} /></div>
-                <div style={sectionTitleText}>Ghi chú buổi học từ gia sư</div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {report?.contentCovered && <ReportRow label="Nội dung đã dạy" value={report.contentCovered} />}
-                {report?.homeworkAssigned && <ReportRow label="Bài tập giao" value={report.homeworkAssigned} />}
-                {report && (
-                    <div style={ratingRow}>
-                        <span style={reportLabelStyle}>Đánh giá học sinh</span>
-                        {report.studentPerformanceRating > 0 ? (
-                            <div style={ratingStars}>{[1, 2, 3, 4, 5].map((i) => <Star key={i} size={16} fill={i <= report.studentPerformanceRating ? '#fbbf24' : '#e5e7eb'} color={i <= report.studentPerformanceRating ? '#f59e0b' : '#d1d5db'} strokeWidth={1.5} />)}<span style={ratingNumber}>{report.studentPerformanceRating}/5</span></div>
-                        ) : <span style={{ fontSize: 13, color: '#999' }}>Chưa đánh giá</span>}
                     </div>
                 )}
             </div>
@@ -1984,11 +2008,13 @@ const SidebarItemRow = ({
     icon,
     title,
     meta,
+    action,
     active,
 }: {
     icon: React.ReactNode;
     title: React.ReactNode;
     meta?: React.ReactNode;
+    action?: React.ReactNode;
     active?: boolean;
 }) => (
     <div className="sld-side-item" style={active ? sidebarItemRowActive : sidebarItemRow}>
@@ -1997,6 +2023,7 @@ const SidebarItemRow = ({
             <div style={sidebarItemTitle}>{title}</div>
             {meta && <div style={sidebarItemMeta}>{meta}</div>}
         </div>
+        {action}
     </div>
 );
 
@@ -2029,6 +2056,7 @@ styleTag.textContent = `
 .sld-markdown code { background: #f1f5f9; padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
 .sld-markdown .katex-display { margin: 8px 0; overflow-x: auto; overflow-y: hidden; }
 .sld-markdown .katex { font-size: 1em; }
+.sld-side-chat-btn:hover { background: #f6f4ec; border-color: rgba(62,47,40,0.28); }
 @media (max-width: 1180px) {
     .sld-3col-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; }
     .sld-3col-grid > *:first-child { grid-column: 1 / -1; }
@@ -2575,6 +2603,22 @@ const sidebarItemTitle: React.CSSProperties = {
     fontWeight: 600,
     color: TUTORA_MIDNIGHT,
     lineHeight: 1.4,
+};
+
+const sidebarChatButton: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 5,
+    flexShrink: 0,
+    padding: '5px 10px',
+    borderRadius: 8,
+    border: '1px solid rgba(62,47,40,0.14)',
+    background: '#ffffff',
+    color: '#1a2238',
+    fontSize: 12,
+    fontWeight: 600,
+    fontFamily: 'inherit',
+    cursor: 'pointer',
 };
 
 const sidebarItemMeta: React.CSSProperties = {

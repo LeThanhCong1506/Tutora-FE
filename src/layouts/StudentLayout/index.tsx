@@ -387,6 +387,7 @@ interface StudentLayoutProps {
 }
 
 const WALLET_PATH = '/student-portal/wallet';
+const BOOKING_PATH = '/student-portal/booking';
 
 // Inner: nằm TRONG StudentProfileProvider nên đọc được isParentManaged để lọc menu.
 const StudentLayoutInner: React.FC<StudentLayoutProps> = ({ children }) => {
@@ -405,20 +406,23 @@ const StudentLayoutInner: React.FC<StudentLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const showWallet = !loading && !isParentManaged;
+  // Đặt lịch: chỉ phụ huynh mới được đặt lịch cho con → ẩn y như ví với tài khoản do phụ huynh quản lý.
+  const showBooking = !loading && !isParentManaged;
   // Học sinh do phụ huynh quản lý giờ ĐƯỢC tự tạo/xem khiếu nại (xem StudentLessonDetail) → không
   // ẩn theo isParentManaged nữa, chỉ ẩn khi đang loading hồ sơ.
   const showDisputes = !loading;
 
   // Ví ẩn đúng theo điều kiện của sidebar; khiếu nại luôn hiện (trừ lúc đang tải hồ sơ).
   const profileMenuItems = useMemo<ProfileMenuItem[]>(
-    () => buildStudentProfileMenuItems({ showWallet, showDisputes }),
-    [showWallet, showDisputes],
+    () => buildStudentProfileMenuItems({ showWallet, showDisputes, showBooking }),
+    [showWallet, showDisputes, showBooking],
   );
 
   const navItems = useMemo<NavItem[]>(
     () =>
       baseStudentNavItems
         .filter((item) => showWallet || item.path !== WALLET_PATH)
+        .filter((item) => showBooking || item.path !== BOOKING_PATH)
         .filter((item) => showDisputes || item.path !== DISPUTES_PATH)
         .map((item) => {
           if (item.path === MESSAGES_PATH) {
@@ -427,17 +431,17 @@ const StudentLayoutInner: React.FC<StudentLayoutProps> = ({ children }) => {
           const count = badgesByPath[item.path];
           return count ? { ...item, badge: count } : item;
         }),
-    [unreadMessageCount, badgesByPath, showWallet, showDisputes],
+    [unreadMessageCount, badgesByPath, showWallet, showBooking, showDisputes],
   );
 
   // Modal chọn trang không được liệt kê tour cho trang mà chính sidebar của user cũng
   // không hiện (Ví/Khiếu nại ẩn khi tài khoản do phụ huynh quản lý).
   const pageTours = useMemo(
     () =>
-      PAGE_TOURS.filter((tour) => showWallet || tour.key !== 'wallet').filter(
-        (tour) => showDisputes || tour.key !== 'disputes',
-      ),
-    [showWallet, showDisputes],
+      PAGE_TOURS.filter((tour) => showWallet || tour.key !== 'wallet')
+        .filter((tour) => showBooking || tour.key !== 'booking')
+        .filter((tour) => showDisputes || tour.key !== 'disputes'),
+    [showWallet, showBooking, showDisputes],
   );
 
   const tour = usePortalTour(pageTours, 'student', {

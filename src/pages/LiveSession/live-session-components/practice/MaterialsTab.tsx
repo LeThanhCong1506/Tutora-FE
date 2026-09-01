@@ -8,6 +8,9 @@ interface MaterialsTabProps {
   bookingId: number | null;
   /** Chỉ GIA SƯ mới được tải tài liệu lên. */
   canUpload: boolean;
+  refreshToken: number;
+  /** Gọi sau khi tải lên xong để báo cho phía còn lại. */
+  onUploaded: () => void;
 }
 
 const IMAGE_TYPES = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
@@ -24,7 +27,7 @@ const formatSize = (bytes?: number) => {
 /**
  * Tài liệu học tập của khoá — gia sư và học sinh đều xem được.
  */
-const MaterialsTab = ({ bookingId, canUpload }: MaterialsTabProps) => {
+const MaterialsTab = ({ bookingId, canUpload, refreshToken, onUploaded }: MaterialsTabProps) => {
   const [materials, setMaterials] = useState<LearningMaterialResponse[]>([]);
   const [loading, setLoading] = useState(bookingId != null);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +55,7 @@ const MaterialsTab = ({ bookingId, canUpload }: MaterialsTabProps) => {
     return () => {
       cancelled = true;
     };
-  }, [bookingId, reloadTick]);
+  }, [bookingId, reloadTick, refreshToken]);
 
   // Nút "Tải lên"
   const body = loading ? (
@@ -175,7 +178,10 @@ const MaterialsTab = ({ bookingId, canUpload }: MaterialsTabProps) => {
         <UploadMaterialModal
           bookingId={bookingId}
           onClose={() => setUploadOpen(false)}
-          onUploaded={() => setReloadTick((v) => v + 1)}
+          onUploaded={() => {
+            setReloadTick((v) => v + 1);
+            onUploaded();
+          }}
         />
       )}
     </div>
