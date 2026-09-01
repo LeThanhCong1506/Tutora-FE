@@ -13,6 +13,7 @@ import {
   type PracticeAnswerOption,
 } from '../../../../services/practice.service';
 import MathText from './MathText';
+import type { PracticeAnswerSignal } from '../hooks/useAgoraCall';
 import MathInputModal from './MathInputModal';
 import styles from '../../styles.module.css';
 
@@ -25,13 +26,23 @@ interface QuestionModalProps {
   onChanged: () => void;
   /** Gọi riêng khi GỬI câu hỏi — để báo cho máy học sinh qua RTM. */
   onSent: () => void;
+  /** Học sinh trả lời xong -> báo gia sư qua RTM để hiện toast. */
+  onAnswered: (payload: PracticeAnswerSignal) => void;
 }
 
 /**
  * Gia sư: xem/sửa/xoá 1 câu rồi gửi cả bộ.
  * Học sinh: làm câu đó — trắc nghiệm phản hồi ngay, tự luận lưu lại để hỏi gia sư.
  */
-const QuestionModal = ({ set, question, isTutor, onClose, onChanged, onSent }: QuestionModalProps) => {
+const QuestionModal = ({
+  set,
+  question,
+  isTutor,
+  onClose,
+  onChanged,
+  onSent,
+  onAnswered,
+}: QuestionModalProps) => {
   const [editing, setEditing] = useState(false);
   const [content, setContent] = useState(question.content);
   const [options, setOptions] = useState<PracticeAnswerOption[]>(question.answerOptions ?? []);
@@ -142,6 +153,14 @@ const QuestionModal = ({ set, question, isTutor, onClose, onChanged, onSent }: Q
       // của lần nộp — dùng luôn để tô đúng/sai ngay, không phải tải lại.
       if (result.correctAnswer) setRevealedCorrect(result.correctAnswer);
       if (result.explanation) setRevealedExplanation(result.explanation);
+
+      // Báo gia sư biết em vừa làm câu nào, đúng hay sai — khỏi phải hỏi miệng.
+      onAnswered({
+        questionPreview: question.content.replace(/\$[^$]*\$/g, '…').slice(0, 48),
+        format: question.questionFormat,
+        answer: question.questionFormat === 'mc' ? answer : answer.slice(0, 60),
+        isCorrect: result.isCorrect,
+      });
       onChanged();
     }, 'Không lưu được bài làm.');
 

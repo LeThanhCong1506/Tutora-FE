@@ -39,7 +39,8 @@ export const EmptyState = ({
 }: {
   filtered: boolean;
   period: string;
-  onBooking: () => void;
+  /** Bỏ trống để ẩn hẳn nút CTA (học sinh do phụ huynh quản lý không tự đặt lịch). */
+  onBooking?: () => void;
   /** Nhãn nút CTA khi trống — trang gia sư đổi thành "Thiết lập lịch rảnh". */
   ctaLabel?: string;
   description?: string;
@@ -50,7 +51,7 @@ export const EmptyState = ({
     </span>
     <strong>{filtered ? 'Không có buổi học phù hợp' : `Chưa có buổi học trong ${period}`}</strong>
     <p>{filtered ? 'Hãy chọn trạng thái khác để xem lịch học.' : description}</p>
-    {!filtered && (
+    {!filtered && onBooking && (
       <button type="button" onClick={onBooking}>
         {ctaLabel} <ArrowUpRight size={15} />
       </button>
