@@ -109,6 +109,12 @@ export function useBookingSchedule({
         [bookingDeadline],
     );
     const thisWeekStart = useMemo(() => mondayOf(today), [today]);
+
+    /**
+     * Thời điểm sớm nhất được đặt = bây giờ + thời gian báo trước của luồng đang chạy.
+     * Mọi nơi dựng lịch đều kẹp theo mốc này để không sinh buổi mà backend sẽ từ chối.
+     */
+    const earliestBookableAt = () => new Date(Date.now() + minLeadHours * 60 * 60 * 1000);
     const calendarAvailability = useMemo(() => toCalendarAvailability(availabilities), [availabilities]);
 
     const [visibleWeekIndex, setVisibleWeekIndex] = useState(0);
@@ -359,20 +365,28 @@ export function useBookingSchedule({
             startTime: slot.startTime,
             durationHours: slot.durationHours,
         }));
-        // Neo vào mốc hợp lệ sớm nhất, KHÔNG phải ngày của ô được bấm: mẫu tuần chỉ định nghĩa
-        // "học thứ mấy, giờ nào", còn lịch bắt đầu ngay khi đủ điều kiện thời gian.
-        setSelectedSlots(buildScheduleFromPattern(pattern, earliestBookableAt()));
+        // Neo vào ô SỚM NHẤT NGƯỜI DÙNG CHỌN, kẹp không sớm hơn mốc hợp lệ.
+        //
+        // Không neo thẳng vào mốc hợp lệ: phụ huynh cố ý chọn tuần 10/09 mà lịch lại bắt đầu từ
+        // 03/09 là phớt lờ lựa chọn của họ. Trước đây phải neo như vậy vì mẫu buộc phải đủ trong
+        // MỘT tuần, khiến mẫu 2-4-6 chọn sáng thứ Hai bị đẩy sang tuần sau; giờ điều hướng tuần
+        // đã mở khoá nên người dùng gom được ô từ nhiều tuần, và ô sớm nhất tự nhiên rơi vào tuần
+        // gần nhất — không cần ép nữa.
+        const earliest = earliestBookableAt();
+        const firstPick = fromDateKey(sortSlots(weekSlots)[0].date);
+        setSelectedSlots(
+            buildScheduleFromPattern(pattern, firstPick > earliest ? firstPick : earliest),
+        );
     };
 
-    /**
-     * Thời điểm sớm nhất được đặt = bây giờ + thời gian báo trước của luồng đang chạy.
-     * Đây là mốc neo lịch, thay cho ngày của ô người dùng bấm — xem buildScheduleFromPattern.
-     */
-    const earliestBookableAt = () => new Date(Date.now() + minLeadHours * 60 * 60 * 1000);
 
-    // Mỗi ngày tối đa 1 buổi: hai buổi liền trong cùng ngày không phải ý đồ của "N buổi/tuần",
-    // và backend cũng chặn (BookingSchedulePolicy.MaxSessionsPerDay).
-    const isDayFull = (dateKey: string) => pickedWeekSlots.some((p) => p.date === dateKey);
+    // Mỗi THỨ tối đa 1 buổi — không phải mỗi NGÀY. Mẫu tuần chỉ mang thứ + giờ, nên thứ Năm 03/09
+    // và thứ Năm 10/09 là CÙNG một khung trong mẫu. Từ khi điều hướng tuần được mở khoá, so theo
+    // ngày sẽ cho phép bấm cả hai, sinh ra hai khung thứ Năm trùng nhau và nhân đôi mọi buổi.
+    const isDayFull = (dateKey: string) => {
+        const dow = toDemoWeekday(fromDateKey(dateKey).getDay());
+        return pickedWeekSlots.some((p) => p.dayOfWeek === dow);
+    };
 
     // Đã chọn đủ số buổi của tuần mẫu → không cho thêm nữa (bỏ bớt thì bấm lại ô đã chọn).
     const isWeekFull = sessionsPerWeek > 0 && pickedWeekSlots.length >= sessionsPerWeek;
@@ -419,7 +433,7 @@ export function useBookingSchedule({
         // hai ô 30 phút trông y hệt nhau (cùng nhãn "Đã chọn"), nên bắt người dùng đoán ô nào bấm
         // được là vô lý — trước đây chỉ ô bắt đầu mới bỏ chọn được.
         const covering = pickedWeekSlots.find(
-            (p) => p.date === dateKey && slotCoversCell(p.startTime, p.durationHours, cellMin),
+            (p) => p.dayOfWeek === dayOfWeek && slotCoversCell(p.startTime, p.durationHours, cellMin),
         );
         if (covering) {
             const next = pickedWeekSlots.filter((p) => p !== covering);
@@ -430,7 +444,7 @@ export function useBookingSchedule({
 
         const overlapsSelectedSession = pickedWeekSlots.some(
             (p) =>
-                p.date === dateKey &&
+                p.dayOfWeek === dayOfWeek &&
                 rangesOverlap(timeToMinutes(p.startTime), p.durationHours, cellMin, sessionHours),
         );
         if (

@@ -20,6 +20,7 @@ import { formatVNDNumber } from '../../utils/formatters';
 import { PageContainer } from '../../components/shared';
 import styles from './styles.module.css';
 import { getApiErrorMessage } from '../../utils/apiError';
+import { useStudentProfile } from '../../contexts/StudentProfileContext';
 
 const STATUS_TABS = [
   { key: 'all', label: 'Tất cả' },
@@ -32,7 +33,20 @@ const STATUS_TABS = [
   { key: 'pending_remaining_payment', label: 'Thanh toán còn lại' },
   { key: 'ongoing', label: 'Đang học' },
   { key: 'completed', label: 'Hoàn thành' },
-  { key: 'cancelled,cancelled_noshow,payment_timeout', label: 'Đã hủy' },
+  { key: 'cancelled,cancelled_noshow,payment_timeout,cancelled_by_staff,cancelled_by_dispute', label: 'Đã hủy' },
+];
+
+// Tab "Đã hủy" gộp năm trạng thái có nguyên nhân rất khác nhau — bên nào chủ động hủy, quá hạn
+// thanh toán, admin can thiệp, hay kết quả khiếu nại. Gộp chung thì không tra được theo lý do.
+const CANCELLED_TAB_KEY = 'cancelled,cancelled_noshow,payment_timeout,cancelled_by_staff,cancelled_by_dispute';
+
+const CANCEL_REASON_OPTIONS = [
+  { value: 'all', label: 'Tất cả lý do', status: CANCELLED_TAB_KEY },
+  { value: 'cancelled', label: 'Hủy thường', status: 'cancelled' },
+  { value: 'noshow', label: 'Hủy do vắng mặt', status: 'cancelled_noshow' },
+  { value: 'timeout', label: 'Hết hạn thanh toán', status: 'payment_timeout' },
+  { value: 'staff', label: 'Hủy bởi quản trị viên', status: 'cancelled_by_staff' },
+  { value: 'dispute', label: 'Hủy theo khiếu nại', status: 'cancelled_by_dispute' },
 ];
 
 const STATUS_CONFIG: Record<string, { label: string; tone: string }> = {
@@ -47,6 +61,11 @@ const STATUS_CONFIG: Record<string, { label: string; tone: string }> = {
   cancelled: { label: 'Đã hủy', tone: 'cancelled' },
   cancelled_noshow: { label: 'Hủy do vắng mặt', tone: 'cancelled' },
   payment_timeout: { label: 'Hết hạn thanh toán', tone: 'cancelled' },
+  // Hai trạng thái kết thúc do CMS/tranh chấp tạo ra. Trước đây không có nhãn và cũng không nằm
+  // trong bộ lọc của tab nào, nên booking rơi vào đây biến mất khỏi mọi danh sách — người dùng
+  // nhận thông báo "đã hủy" rồi đi tìm thì không thấy đâu.
+  cancelled_by_staff: { label: 'Hủy bởi quản trị viên', tone: 'cancelled' },
+  cancelled_by_dispute: { label: 'Hủy theo khiếu nại', tone: 'cancelled' },
 };
 
 const EMPTY_STATE_COPY: Record<string, { title: string; description: string }> = {
@@ -78,7 +97,7 @@ const EMPTY_STATE_COPY: Record<string, { title: string; description: string }> =
     title: 'Chưa có lớp hoàn thành',
     description: 'Những lớp đã hoàn thành sẽ được lưu tại đây.',
   },
-  'cancelled,cancelled_noshow,payment_timeout': {
+  'cancelled,cancelled_noshow,payment_timeout,cancelled_by_staff,cancelled_by_dispute': {
     title: 'Chưa có lịch đã hủy',
     description: 'Các booking bị hủy, hết hạn hoặc vắng mặt sẽ được lưu tại đây.',
   },
@@ -159,11 +178,22 @@ const getPaymentAction = (booking: BookingResponseDTO) => {
 const StudentBooking = () => {
   const navigate = useNavigate();
   const currentTime = useCurrentTime();
+  // Tài khoản do phụ huynh quản lý không tự đặt lịch/thanh toán được (xem BookingService.
+  // CreateBookingAsync) — trang này chỉ còn cho xem chi tiết, ẩn hết nút đặt mới + thanh toán.
+  const { isParentManaged } = useStudentProfile();
   // Tab + trang sống trong URL (không phải useState cục bộ) — để "Xem chi tiết" rồi bấm back
   // (hoặc quay lại từ trang khác) trả về đúng tab/trang đang xem, thay vì luôn reset về "Tất cả".
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('status') || 'all';
   const currentPage = Number(searchParams.get('page')) || 1;
+
+  // Lý do hủy nằm trên URL cùng tab để link chia sẻ giữ nguyên bộ lọc. Chỉ có tác dụng trong tab
+  // "Đã hủy"; tab khác luôn dùng status của chính nó, kể cả khi `?reason=` còn sót lại.
+  const cancelReason = searchParams.get('reason') || 'all';
+  const activeCancelReason =
+    CANCEL_REASON_OPTIONS.find((option) => option.value === cancelReason) ?? CANCEL_REASON_OPTIONS[0];
+  const isCancelledTab = activeTab === CANCELLED_TAB_KEY;
+  const effectiveStatus = isCancelledTab ? activeCancelReason.status : activeTab;
   const [bookings, setBookings] = useState<BookingResponseDTO[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -173,7 +203,7 @@ const StudentBooking = () => {
     try {
       setLoading(true);
       const response = await getStudentBookings({
-        status: activeTab === 'all' ? undefined : activeTab,
+        status: activeTab === 'all' ? undefined : effectiveStatus,
         page: currentPage,
         pageSize,
       });
@@ -189,15 +219,25 @@ const StudentBooking = () => {
   useEffect(() => {
     fetchBookings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, currentPage]);
+  }, [activeTab, effectiveStatus, currentPage]);
 
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  const emptyCopy = EMPTY_STATE_COPY[activeTab] ?? EMPTY_STATE_COPY.all;
+  // Đang lọc theo một lý do cụ thể mà rỗng thì câu "Chưa có lịch đã hủy" là sai — tab có thể đầy
+  // booking, chỉ là không cái nào thuộc lý do đang chọn.
+  const emptyCopy =
+    isCancelledTab && cancelReason !== 'all'
+      ? {
+          title: `Không có booking nào thuộc lý do “${activeCancelReason.label}”`,
+          description: 'Chọn “Tất cả lý do” để xem toàn bộ booking đã hủy.',
+        }
+      : (EMPTY_STATE_COPY[activeTab] ?? EMPTY_STATE_COPY.all);
 
   const handleTabChange = (tabKey: string) => {
     const next = new URLSearchParams(searchParams);
     if (tabKey === 'all') next.delete('status');
     else next.set('status', tabKey);
+    // Rời tab "Đã hủy" thì bộ lọc lý do mất nghĩa — xoá luôn để URL không mang tham số chết.
+    if (tabKey !== CANCELLED_TAB_KEY) next.delete('reason');
     next.delete('page');
     setSearchParams(next);
   };
@@ -215,12 +255,14 @@ const StudentBooking = () => {
       titleInfo="Quản lý lịch học, thanh toán và tiến độ các booking của bạn."
       maxWidth="wide"
       headerAction={
-        <div className={styles.headerActions}>
-          <button className={styles.newBookingBtn} type="button" onClick={() => navigate('/tutor-search')}>
-            <Plus size={17} />
-            Đặt gia sư mới
-          </button>
-        </div>
+        isParentManaged ? undefined : (
+          <div className={styles.headerActions}>
+            <button className={styles.newBookingBtn} type="button" onClick={() => navigate('/tutor-search')}>
+              <Plus size={17} />
+              Đặt gia sư mới
+            </button>
+          </div>
+        )
       }
     >
       <main className={styles.content}>
@@ -241,6 +283,28 @@ const StudentBooking = () => {
           ))}
         </div>
 
+        {isCancelledTab && (
+          <div className={styles.cancelReasonFilter}>
+            <span>Lý do hủy</span>
+            <select
+              value={cancelReason}
+              onChange={(event) => {
+                const next = new URLSearchParams(searchParams);
+                if (event.target.value === 'all') next.delete('reason');
+                else next.set('reason', event.target.value);
+                next.delete('page');
+                setSearchParams(next);
+              }}
+            >
+              {CANCEL_REASON_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {loading ? (
           <div className={styles.loadingContainer}>
             <div className={styles.spinner} aria-hidden="true" />
@@ -256,7 +320,7 @@ const StudentBooking = () => {
             </div>
             <h2>{emptyCopy.title}</h2>
             <p>{emptyCopy.description}</p>
-            {activeTab === 'all' && (
+            {activeTab === 'all' && !isParentManaged && (
               <button type="button" onClick={() => navigate('/tutor-search')}>
                 <Plus size={17} /> Đặt gia sư ngay
               </button>
@@ -269,7 +333,8 @@ const StudentBooking = () => {
                 label: booking.status,
                 tone: 'pending',
               };
-              const paymentAction = getPaymentAction(booking);
+              // Phụ huynh mới là người thanh toán cho tài khoản con — không tính toán/hiện nút này.
+              const paymentAction = isParentManaged ? null : getPaymentAction(booking);
               const relevantLesson = getRelevantLesson(booking);
               const lessonDate = formatDate(relevantLesson?.scheduledStart ?? booking.startDate);
               const lessonTime = formatLessonTime(relevantLesson?.scheduledStart, relevantLesson?.scheduledEnd);
@@ -318,7 +383,14 @@ const StudentBooking = () => {
                         </div>
                       </div>
                     </div>
-                    <span className={`${styles.statusBadge} ${styles[`status_${status.tone}`]}`}>{status.label}</span>
+                    <div className={styles.cardBadges}>
+                      {/* Mã booking: thông báo và tin nhắn hỗ trợ đều gọi booking theo số này, nên
+                          không có nó thì không đối chiếu được card đang xem với cái đang được nhắc. */}
+                      <span className={styles.bookingIdBadge} title={`Mã booking #${booking.bookingId}`}>
+                        #{booking.bookingId}
+                      </span>
+                      <span className={`${styles.statusBadge} ${styles[`status_${status.tone}`]}`}>{status.label}</span>
+                    </div>
                   </div>
 
                   <div className={styles.summaryGrid}>

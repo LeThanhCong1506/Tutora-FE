@@ -23,7 +23,6 @@ import { toast } from 'react-toastify';
 import CountdownTimer from './components/CountdownTimer';
 import ConfirmLessonModal from './components/ConfirmLessonModal';
 import CreateDisputeForm from './components/CreateDisputeForm';
-import ReportNoShowModal from './components/ReportNoShowModal';
 import NoShowActionModal from './components/NoShowActionModal';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 import {
@@ -93,8 +92,14 @@ const ParentLessonDetail: React.FC = () => {
   // Modal states
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showDisputeForm, setShowDisputeForm] = useState(false);
-  const [showNoShowModal, setShowNoShowModal] = useState(false);
   const [showNoShowActionModal, setShowNoShowActionModal] = useState(false);
+  // Nhịp đồng hồ để nút Khiếu nại tự hiện đúng lúc buổi học bắt đầu — người đang mở sẵn trang chờ
+  // gia sư sẽ không phải tải lại mới thấy nút.
+  const [nowTs, setNowTs] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNowTs(Date.now()), 30_000);
+    return () => clearInterval(timer);
+  }, []);
   // Chỉ đủ để vẽ phần tóm tắt khiếu nại — bằng chứng và kênh trao đổi nằm ở trang khiếu nại riêng.
   const [dispute, setDispute] = useState<DisputeDetailResponse | null>(null);
 
@@ -207,7 +212,6 @@ const ParentLessonDetail: React.FC = () => {
   const handleActionSuccess = () => {
     setShowConfirmModal(false);
     setShowDisputeForm(false);
-    setShowNoShowModal(false);
     setShowNoShowActionModal(false);
     fetchLesson();
     fetchDispute();
@@ -272,9 +276,22 @@ const ParentLessonDetail: React.FC = () => {
   });
 
   const showConfirmAction = lesson.status === 'pending_confirmation';
-  const showNoShowAction = lesson.status === 'scheduled';
+  // Khiếu nại mở từ ĐÚNG GIỜ BẮT ĐẦU, không còn chờ gia sư nộp báo cáo — trước đây buổi phải sang
+  // pending_confirmation mới hiện nút, nên đúng ca cần khiếu nại nhất (gia sư không tới, không bao
+  // giờ có báo cáo) lại là ca không mở được. Nút "Báo gia sư vắng mặt" riêng đã bỏ: form khiếu nại
+  // có sẵn loại "Gia sư vắng mặt" và tự chuyển buổi sang no_show.
+  // CỜ TEST — xem ghi chú ở DisputeSettlementPolicy.AllowDisputeBeforeSessionStart (BE).
+  // Hai cờ phải TẮT/BẬT cùng nhau: tắt mỗi bên này thì nút vẫn hiện nhưng BE trả 400, tắt mỗi bên
+  // kia thì nút không hiện nên không bấm được. Đặt lại `false` khi test xong.
+  const ALLOW_DISPUTE_BEFORE_START = true;
+  const hasSessionStarted = ALLOW_DISPUTE_BEFORE_START || new Date(lesson.scheduledStart).getTime() <= nowTs;
+  // `!dispute` là sai: bản ghi khiếu nại KHÔNG biến mất khi admin đóng, nó chỉ chuyển sang
+  // 'closed'. Chỉ khiếu nại đang MỞ mới chặn tạo cái mới — khớp guard ở BE (d.Status != 'closed').
+  const hasOpenDispute = !!dispute && dispute.status !== 'closed';
+  const showDisputeAction =
+    canCreateDispute && !hasOpenDispute && hasSessionStarted && lesson.status === 'scheduled';
   const showNoShowResolution = lesson.status === 'no_show' && dispute?.status === 'confirmed_no_show';
-  const showReportTutorAction = lesson.status === 'completed' && !dispute && canCreateDispute;
+  const showReportTutorAction = lesson.status === 'completed' && !hasOpenDispute && canCreateDispute;
   const pendingReschedule = lesson.pendingRescheduleProposal;
   const canProposeReschedule = lesson.status === 'scheduled' && !pendingReschedule;
   const isRescheduleCounterpart = pendingReschedule?.counterpartRole === 'Parent';
@@ -338,9 +355,9 @@ const ParentLessonDetail: React.FC = () => {
               )}
             </>
           )}
-          {showNoShowAction && (
-            <Button danger onClick={() => setShowNoShowModal(true)}>
-              Báo gia sư vắng mặt
+          {showDisputeAction && (
+            <Button danger onClick={() => setShowDisputeForm(true)}>
+              Khiếu nại
             </Button>
           )}
           {showNoShowResolution && (
@@ -830,13 +847,6 @@ const ParentLessonDetail: React.FC = () => {
         lessonId={id}
         onSuccess={handleActionSuccess}
         onCancel={() => setShowDisputeForm(false)}
-      />
-
-      <ReportNoShowModal
-        open={showNoShowModal}
-        lessonId={id}
-        onSuccess={handleActionSuccess}
-        onCancel={() => setShowNoShowModal(false)}
       />
 
       <NoShowActionModal

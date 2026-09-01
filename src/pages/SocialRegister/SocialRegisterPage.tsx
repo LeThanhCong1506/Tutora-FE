@@ -71,6 +71,11 @@ const SocialRegisterPage: React.FC = () => {
   }, [location.state]);
 
   const [token] = useState(initial?.socialRegistrationToken || "");
+  // TẠM GỠ cùng các thay đổi Zalo phía BE (xem SocialRegistrationService.BeginAsync).
+  //  // BE không còn hỏi vai trò ngay ở bước đổi code, vì lúc đó nó mới chỉ tra được theo
+  //  // zalo_user_id — khoá đã chứng minh là không ổn định. Vai trò chỉ được hỏi sau khi số
+  //  // điện thoại cho thấy đúng là người mới, nên cờ này phải là state để nhận cập nhật đó.
+  //  const [needRole, setNeedRole] = useState(initial?.requiresRoleSelection ?? false);
   const needRole = initial?.requiresRoleSelection ?? false;
 
   const [step, setStep] = useState<Step>("collect");
@@ -152,6 +157,14 @@ const SocialRegisterPage: React.FC = () => {
         handleFatal(message);
         return;
       }
+      // TẠM GỠ — chỉ có tác dụng khi BE hoãn hỏi vai trò sang bước này.
+      //  // SĐT không thuộc về tài khoản nào → đây thật sự là người mới, và giờ BE mới hỏi vai trò.
+      //  // Giữ nguyên SĐT vừa nhập để người dùng chỉ phải bổ sung phần còn thiếu.
+      //  if (error.response?.data?.content?.requiresRoleSelection) {
+      //    setNeedRole(true);
+      //    toast.warning(message);
+      //    return;
+      //  }
       toast.error(message);
     } finally {
       setIsSubmitting(false);

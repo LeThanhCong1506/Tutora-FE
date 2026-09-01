@@ -18,6 +18,7 @@ const STATUS_META: Record<string, { label: string; variant: StatusVariant }> = {
   completed: { label: 'Hoàn thành', variant: 'success' },
   cancelled: { label: 'Đã hủy', variant: 'error' },
   cancelled_by_dispute: { label: 'Đã hủy (theo tranh chấp)', variant: 'error' },
+  cancelled_by_staff: { label: 'Hủy bởi quản trị viên', variant: 'error' },
   cancelled_noshow: { label: 'Hủy do vắng mặt', variant: 'error' },
   declined: { label: 'Đã từ chối', variant: 'error' },
   payment_timeout: { label: 'Hết hạn thanh toán', variant: 'error' },
@@ -210,12 +211,16 @@ const TutorPortalBookingDetail = () => {
                       <span className={styles.infoRowLabel}>Thời điểm hủy</span>
                       <span className={styles.infoRowValue}>{formatDateTime(booking.cancelledAt)}</span>
                     </div>
-                    {booking.refundAmount != null && (
-                      <div className={styles.infoRow}>
-                        <span className={styles.infoRowLabel}>Số tiền hoàn</span>
-                        <span className={styles.infoRowValue}>{formatMoney(booking.refundAmount)}</span>
-                      </div>
-                    )}
+                    {/* Nói rõ khoản này hoàn cho AI: đứng trên trang của gia sư, "Số tiền hoàn"
+                        trơ trọi dễ bị đọc nhầm thành tiền gia sư phải trả lại. */}
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoRowLabel}>Hoàn cho phụ huynh</span>
+                      <span className={styles.infoRowValue}>
+                        {booking.refundAmount != null && booking.refundAmount > 0
+                          ? formatMoney(booking.refundAmount)
+                          : 'Không có khoản hoàn'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </SectionCard>

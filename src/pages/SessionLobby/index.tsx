@@ -243,6 +243,18 @@ const SessionLobby = () => {
               </div>
             )}
 
+            {scheduleChangeState?.isEarlyEntry && (
+              <div className={styles.earlyEntryBanner} role="status">
+                <strong>Đang vào lớp sớm hơn giờ hẹn</strong>
+                <span>
+                  Buổi học dự kiến bắt đầu sau {scheduleChangeState.minutesEarly ?? 0} phút.
+                </span>
+                <small>
+                  Hai bên có mặt đủ là học được ngay, không cần chờ tới giờ. Buổi vẫn tính đủ thời lượng.
+                </small>
+              </div>
+            )}
+
             {scheduleChangeState?.rescheduleProposalPending && (
               <div className={styles.scheduleConflictBanner} role="alert">
                 <strong>Chưa thể vào học ngoài giờ lúc này</strong>

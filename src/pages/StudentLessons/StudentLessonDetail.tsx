@@ -5,12 +5,13 @@ import {
     ArrowLeft, BookOpen, AlertCircle, Video,
     FileText, ClipboardCheck, Star,
     User, PlayCircle, StopCircle, Paperclip, Download, CalendarClock,
-    CheckCircle2, Clock3, XCircle, Sparkles, ChevronDown, Plus, ArrowUp, Link2,
+    CheckCircle2, Clock3, XCircle, Wand2, ChevronDown, Plus, ArrowUp, Link2,
     Copy, Check,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
@@ -39,11 +40,21 @@ import {
 } from '../../services/videoSummary.service';
 import { signalRService } from '../../services/signalr.service';
 import { useLessonStartedListener } from '../../hooks/useLessonStartedListener';
+import { NOTIFICATION_TYPE } from '../../utils/notificationNavigation';
 import { message as antMessage, Spin, Modal } from 'antd';
 import { ClassSessionRecording, RescheduleProposalModal, SkipContinuationCard } from '../../components/shared';
 import CreateDisputeForm from '../ParentLessons/components/CreateDisputeForm';
-import ReportNoShowModal from '../ParentLessons/components/ReportNoShowModal';
 import NoShowActionModal from '../ParentLessons/components/NoShowActionModal';
+import { getDisputeStatusMeta } from '../../components/disputes';
+
+/** Màu cho từng variant của getDisputeStatusMeta — giữ đúng bảng màu badge đang dùng ở trang này. */
+const DISPUTE_STATUS_TONES: Record<string, { color: string; background: string }> = {
+    success: { color: '#166534', background: '#dcfce7' },
+    info: { color: '#1e40af', background: '#dbeafe' },
+    warning: { color: '#92400e', background: '#fef3c7' },
+    error: { color: '#991b1b', background: '#fee2e2' },
+    neutral: { color: '#475467', background: '#f2f4f7' },
+};
 import { useStudentProfile } from '../../contexts/StudentProfileContext';
 import { getUserInfoFromToken } from '../../services/auth.service';
 import s from '../StudentPages.module.css';
@@ -110,7 +121,11 @@ const AI_SUGGESTIONS: { key: string; label: string; prompt: string }[] = [
  * ($...$ / $$...$$) thành ký hiệu toán học, thay vì hiện nguyên ký tự ** / - / $...$. */
 const AiMarkdown = ({ content }: { content: string }) => (
     <div className="sld-markdown">
-        <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+        {/* remarkBreaks: transcript của Gemini không phải lúc nào cũng có dòng trống thật (\n\n) giữa
+            mỗi lượt nói như prompt yêu cầu — nhiều khi chỉ có 1 dòng đơn (\n). Markdown chuẩn coi 1
+            dòng đơn là khoảng trắng bình thường (gộp chung 1 đoạn), khiến cả đoạn hội thoại dính liền
+            nhau không xuống dòng. remarkBreaks chuyển cả dòng đơn thành <br/> thật. */}
+        <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]} rehypePlugins={[rehypeKatex]}>
             {content}
         </ReactMarkdown>
     </div>
@@ -167,8 +182,14 @@ const StudentLessonDetail = () => {
     const [confirming, setConfirming] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [showDisputeForm, setShowDisputeForm] = useState(false);
-    const [showNoShowModal, setShowNoShowModal] = useState(false);
     const [showNoShowActionModal, setShowNoShowActionModal] = useState(false);
+    // Nhịp đồng hồ để nút Khiếu nại tự hiện đúng lúc buổi học bắt đầu — người đang mở sẵn trang chờ
+    // gia sư sẽ không phải tải lại mới thấy nút.
+    const [nowTs, setNowTs] = useState(() => Date.now());
+    useEffect(() => {
+        const timer = setInterval(() => setNowTs(Date.now()), 30_000);
+        return () => clearInterval(timer);
+    }, []);
     const [dispute, setDispute] = useState<DisputeDetailResponse | null>(null);
     const [thread, setThread] = useState<DisputeMessage[]>([]);
     const [threadInput, setThreadInput] = useState('');
@@ -341,6 +362,20 @@ const StudentLessonDetail = () => {
         return () => window.clearInterval(timer);
     }, [summaryJob?.status, transcribing, fetchSummaryStatus]);
 
+    // Job tóm tắt xong lúc nào thì BE bắn "ReceiveNotification" (type lesson_video_summary_ready) qua
+    // SignalR ngay lúc đó — bắt sự kiện này để refetch NGAY thay vì đợi tới lượt poll 8s tiếp theo (worst
+    // case mất thêm gần 8s "chết" dù job đã xong). Vẫn giữ nguyên polling ở trên làm phương án dự phòng
+    // (mất kết nối SignalR tạm thời, hoặc job chép lời — job đó KHÔNG bắn notification riêng).
+    useEffect(() => {
+        if (!lessonId) return;
+        const unsubscribe = signalRService.subscribeToNotifications((notification: { type?: string | null; referenceid?: string | null }) => {
+            if (notification?.type !== NOTIFICATION_TYPE.LessonVideoSummaryReady) return;
+            if (String(notification.referenceid) !== String(lessonId)) return;
+            void fetchSummaryStatus();
+        });
+        return unsubscribe;
+    }, [lessonId, fetchSummaryStatus]);
+
     useEffect(() => {
         if (summaryJob?.status === 'completed') void fetchChatMessages();
     }, [summaryJob?.status, fetchChatMessages]);
@@ -389,7 +424,6 @@ const StudentLessonDetail = () => {
     const handleActionSuccess = () => {
         setShowConfirmModal(false);
         setShowDisputeForm(false);
-        setShowNoShowModal(false);
         setShowNoShowActionModal(false);
         fetchDetail();
         fetchDispute();
@@ -539,12 +573,46 @@ const StudentLessonDetail = () => {
     const tutorName = (lesson as any).tutorName ?? (lesson as any).tutor?.fullName ?? 'Gia sư';
     const subjectName = (lesson as any).subjectName ?? (lesson as any).subject?.subjectName ?? 'Buổi học';
     const report = (lesson as any).report;
-    const canCreateDispute = !isParentManaged
-        && !TERMINAL_BOOKING_STATUSES.includes(String(lesson.bookingStatus || '').toLowerCase());
+    // Học sinh do phụ huynh quản lý giờ ĐƯỢC tự tạo khiếu nại / đề xuất đổi lịch (BE:
+    // ParentService.CreateDisputeAsync + ClassSessionRescheduleProposalService.IsLearnerSideActor
+    // đã nới guard chặn thẳng trước đây) — phụ huynh được báo qua thông báo khi con thực hiện.
+    const canCreateDispute = !TERMINAL_BOOKING_STATUSES.includes(String(lesson.bookingStatus || '').toLowerCase());
+
+    // Khiếu nại mở từ ĐÚNG GIỜ BẮT ĐẦU — cùng luật với trang phụ huynh (ParentLessonDetail) và với
+    // BE (DisputeSettlementPolicy.IsEligibleClassSession). Nút "Báo gia sư vắng mặt" riêng đã bỏ:
+    // form khiếu nại có sẵn loại "Gia sư vắng mặt" và tự chuyển buổi sang no_show.
+    //
+    // CỜ TEST — xem ghi chú ở DisputeSettlementPolicy.AllowDisputeBeforeSessionStart (BE). Ba cờ
+    // (BE, trang phụ huynh, trang này) phải bật/tắt cùng nhau.
+    // Khiếu nại đã kết thúc — 'resolved' (admin ra phán quyết) và 'closed' (admin đóng do hai bên
+    // hoà giải) đều là trạng thái cuối, không còn gì để trao đổi thêm.
+    const isDisputeSettled = dispute?.status === 'resolved' || dispute?.status === 'closed';
+
+    // Chỉ khiếu nại đang MỞ mới chặn tạo cái mới — khớp với guard ở BE (d.Status != 'closed').
+    const hasOpenDispute = !!dispute && dispute.status !== 'closed';
+
+    const ALLOW_DISPUTE_BEFORE_START = true;
+    const hasSessionStarted = ALLOW_DISPUTE_BEFORE_START || new Date(lesson.scheduledStart).getTime() <= nowTs;
+    // `!dispute` là sai: bản ghi khiếu nại KHÔNG biến mất khi admin đóng, nó chỉ chuyển sang
+    // 'closed'. Dùng nó làm điều kiện thì một buổi từng bị khiếu nại nhầm sẽ mất nút vĩnh viễn,
+    // kể cả sau khi admin đã hoà giải và trả buổi về trạng thái bình thường.
+    //
+    // Bỏ luôn ràng buộc !isParentManaged: BE (ParentService.CreateDisputeAsync) đã cho phép học
+    // sinh do phụ huynh quản lý tự tạo khiếu nại — phụ huynh vẫn được báo qua thông báo và vẫn giữ
+    // quyền tài chính. Giữ chặn ở FE chỉ khiến các em không có đường nào phản ánh.
+    const showDisputeAction =
+        canCreateDispute && !hasOpenDispute && hasSessionStarted && lesson.status === 'scheduled';
+
     const pendingReschedule = lesson.pendingRescheduleProposal;
     const canProposeReschedule =
-        lesson.status === 'scheduled' && !isParentManaged && !pendingReschedule && !lesson.skipConfirmedByBothSides;
-    const isRescheduleCounterpart = pendingReschedule?.counterpartRole === 'Student';
+        lesson.status === 'scheduled' && !pendingReschedule && !lesson.skipConfirmedByBothSides;
+    // Khi tài khoản do phụ huynh quản lý, đề xuất do gia sư gửi lưu counterpart là 'Parent' (phụ
+    // huynh vẫn là actor "chính" được lưu DB) nhưng BE giờ cho phép cả con phản hồi — xem
+    // RespondAsync's respondedByManagedStudent. Trang này chỉ render cho học sinh nên coi
+    // counterpartRole 'Parent' trên tài khoản managed cũng là "được phản hồi".
+    const isRescheduleCounterpart =
+        pendingReschedule?.counterpartRole === 'Student'
+        || (isParentManaged && pendingReschedule?.counterpartRole === 'Parent');
     const isRescheduleProposer = pendingReschedule?.proposedByRole === 'Student';
     const currentUserInfo = getUserInfoFromToken();
     const greetingName = currentUserInfo?.firstName
@@ -807,8 +875,8 @@ const StudentLessonDetail = () => {
                                 Nếu gia sư không có mặt, bạn có thể báo cáo vắng mặt ngay.
                             </div>
                         </div>
-                        <button style={actionBtnDispute} onClick={() => setShowNoShowModal(true)}>
-                            Báo gia sư vắng mặt
+                        <button style={actionBtnDispute} onClick={() => setShowDisputeForm(true)}>
+                            Khiếu nại
                         </button>
                     </div>
                 )}
@@ -836,7 +904,7 @@ const StudentLessonDetail = () => {
                     </div>
                 )}
 
-                {renderLegacyTopActions && lesson.status === 'completed' && !dispute && canCreateDispute && (
+                {renderLegacyTopActions && lesson.status === 'completed' && !hasOpenDispute && canCreateDispute && (
                     <div style={actionCardFeedback}>
                         <div style={{ ...actionCardIconWrap, background: 'rgba(26,34,56,0.08)' }}>
                             <Star size={20} style={{ color: '#1a2238' }} />
@@ -1047,11 +1115,11 @@ const StudentLessonDetail = () => {
                                 </SidebarSection>
                             )}
 
-                            {lesson.status === 'scheduled' && !isParentManaged && (
-                                <SidebarSection label="Gia sư chưa vào lớp">
+                            {showDisputeAction && (
+                                <SidebarSection label="Buổi học có vấn đề?">
                                     <div style={sidebarActionBlock}>
-                                        <div style={sidebarActionText}>Nếu gia sư vắng mặt, bạn có thể báo cáo ngay.</div>
-                                        <button style={sidebarDangerAction} onClick={() => setShowNoShowModal(true)}><AlertCircle size={15} /> Báo gia sư vắng mặt</button>
+                                        <div style={sidebarActionText}>Gia sư vắng mặt hoặc buổi học không như thỏa thuận, bạn có thể khiếu nại.</div>
+                                        <button style={sidebarDangerAction} onClick={() => setShowDisputeForm(true)}><AlertCircle size={15} /> Khiếu nại</button>
                                     </div>
                                 </SidebarSection>
                             )}
@@ -1068,7 +1136,7 @@ const StudentLessonDetail = () => {
                                 </SidebarSection>
                             )}
 
-                            {lesson.status === 'completed' && !dispute && canCreateDispute && (
+                            {lesson.status === 'completed' && !hasOpenDispute && canCreateDispute && (
                                 <SidebarSection label="Hỗ trợ buổi học">
                                     <div style={sidebarActionBlock}>
                                         <div style={sidebarActionText}>Báo cáo nếu có vấn đề với buổi học đã hoàn thành.</div>
@@ -1082,23 +1150,27 @@ const StudentLessonDetail = () => {
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                                             <span style={{ fontSize: 12, color: '#667085' }}>Trạng thái xử lý</span>
-                                            <span style={{
-                                                flexShrink: 0,
-                                                fontSize: 11,
-                                                fontWeight: 700,
-                                                padding: '4px 8px',
-                                                borderRadius: 999,
-                                                color: dispute.status === 'resolved' || dispute.status === 'confirmed_no_show' ? '#166534' : dispute.status === 'investigating' ? '#1e40af' : '#92400e',
-                                                background: dispute.status === 'resolved' || dispute.status === 'confirmed_no_show' ? '#dcfce7' : dispute.status === 'investigating' ? '#dbeafe' : '#fef3c7',
-                                            }}>
-                                                {dispute.status === 'resolved'
-                                                    ? 'Đã giải quyết'
-                                                    : dispute.status === 'confirmed_no_show'
-                                                        ? 'Đã xác nhận vắng mặt'
-                                                        : dispute.status === 'investigating'
-                                                            ? 'Đang xem xét'
-                                                            : 'Chờ xử lý'}
-                                            </span>
+                                            {/* Dùng getDisputeStatusMeta thay vì tự viết chuỗi ternary: chuỗi cũ chỉ biết
+                                                resolved/confirmed_no_show/investigating, nên mọi trạng thái khác — kể cả
+                                                'closed' — rơi vào nhánh cuối và bị gán nhãn "Chờ xử lý". Khiếu nại đã được
+                                                admin đóng vẫn hiện như đang chờ, đúng thứ người dùng vừa gặp. */}
+                                            {(() => {
+                                                const meta = getDisputeStatusMeta(dispute.status, (dispute as any).statusDisplay);
+                                                const tone = DISPUTE_STATUS_TONES[meta.variant] ?? DISPUTE_STATUS_TONES.neutral;
+                                                return (
+                                                    <span style={{
+                                                        flexShrink: 0,
+                                                        fontSize: 11,
+                                                        fontWeight: 700,
+                                                        padding: '4px 8px',
+                                                        borderRadius: 999,
+                                                        color: tone.color,
+                                                        background: tone.background,
+                                                    }}>
+                                                        {meta.label}
+                                                    </span>
+                                                );
+                                            })()}
                                         </div>
 
                                         <div style={{ ...sidebarActionText, color: '#475467' }}>
@@ -1131,17 +1203,25 @@ const StudentLessonDetail = () => {
                                             </div>
                                         )}
 
-                                        {dispute.status === 'resolved' && (
+                                        {/* 'closed' (admin đóng do hai bên hoà giải) cũng là trạng thái KẾT THÚC như
+                                            'resolved'. Trước đây chỉ kiểm 'resolved', nên khiếu nại đã đóng vừa không hiện
+                                            kết quả, vừa để ngỏ ô chat với admin cho một vụ đã xong. */}
+                                        {isDisputeSettled && (
                                             <div style={{ padding: '10px 12px', background: '#f7f4ed', borderRadius: 10 }}>
-                                                <div style={reportLabelStyle}>Kết quả xử lý</div>
+                                                <div style={reportLabelStyle}>
+                                                    {dispute.status === 'closed' ? 'Kết quả hoà giải' : 'Kết quả xử lý'}
+                                                </div>
                                                 <div style={{ marginTop: 4, fontSize: 13, color: TUTORA_MIDNIGHT }}>{dispute.resolutionNote || 'Không có ghi chú.'}</div>
-                                                {typeof dispute.refundPercentage === 'number' && (
+                                                {/* Hoà giải KHÔNG phải phán quyết — BE cố ý set refundPercentage = 0 cho khớp
+                                                    báo cáo tài chính (DisputeService.CloseDisputeAsync). Hiện "Tỷ lệ hoàn tiền:
+                                                    0%" ở đây sẽ bị đọc thành "admin xử thua", nên chỉ hiện với 'resolved'. */}
+                                                {dispute.status === 'resolved' && typeof dispute.refundPercentage === 'number' && (
                                                     <div style={{ marginTop: 4, fontSize: 13, color: TUTORA_MIDNIGHT }}>Tỷ lệ hoàn tiền: {dispute.refundPercentage}%</div>
                                                 )}
                                             </div>
                                         )}
 
-                                        {dispute.status !== 'resolved' && (
+                                        {!isDisputeSettled && (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                                 <span style={reportLabelStyle}>Trao đổi với admin</span>
                                                 {thread.length > 0 && (
@@ -1364,7 +1444,7 @@ const StudentLessonDetail = () => {
                                     onClick={() => setDiveDeeperOpen((open) => !open)}
                                 >
                                     <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <Sparkles size={15} style={{ color: TUTORA_BURGUNDY }} />
+                                        <Wand2 size={15} style={{ color: TUTORA_BURGUNDY }} />
                                         Đào sâu nội dung này
                                     </span>
                                     <ChevronDown
@@ -1402,7 +1482,7 @@ const StudentLessonDetail = () => {
                         <div style={aiPanelCard}>
                             <div style={aiPanelHeader}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                    <Sparkles size={18} style={{ color: TUTORA_BURGUNDY }} />
+                                    <Wand2 size={18} style={{ color: TUTORA_BURGUNDY }} />
                                     {summaryJob && summaryJob.status !== 'none' && (
                                         <div style={aiCompactTitle}>Tóm tắt buổi học bằng AI</div>
                                     )}
@@ -1449,7 +1529,7 @@ const StudentLessonDetail = () => {
                                                     disabled={!recordingAvailable || triggeringSummary}
                                                     onClick={() => handleAiSuggestionClick(item)}
                                                 >
-                                                    <Sparkles size={15} style={{ color: TUTORA_BURGUNDY, flexShrink: 0 }} />
+                                                    <Wand2 size={15} style={{ color: TUTORA_BURGUNDY, flexShrink: 0 }} />
                                                     {item.label}
                                                 </button>
                                             ))}
@@ -1485,7 +1565,7 @@ const StudentLessonDetail = () => {
                                             disabled={!recordingAvailable || triggeringSummary}
                                             onClick={() => void handleTriggerSummary()}
                                         >
-                                            <Sparkles size={16} /> Thử lại
+                                            <Wand2 size={16} /> Thử lại
                                         </button>
                                     </div>
                                 )}
@@ -1566,7 +1646,7 @@ const StudentLessonDetail = () => {
                                                         style={pillBtnGhost}
                                                         onClick={() => handleAiSuggestionClick(item)}
                                                     >
-                                                        <Sparkles size={15} style={{ color: TUTORA_BURGUNDY, flexShrink: 0 }} />
+                                                        <Wand2 size={15} style={{ color: TUTORA_BURGUNDY, flexShrink: 0 }} />
                                                         {item.label}
                                                     </button>
                                                 ))}
@@ -1679,13 +1759,6 @@ const StudentLessonDetail = () => {
                     lessonId={lesson.lessonId}
                     onSuccess={handleActionSuccess}
                     onCancel={() => setShowDisputeForm(false)}
-                />
-
-                <ReportNoShowModal
-                    open={showNoShowModal}
-                    lessonId={lesson.lessonId}
-                    onSuccess={handleActionSuccess}
-                    onCancel={() => setShowNoShowModal(false)}
                 />
 
                 <NoShowActionModal

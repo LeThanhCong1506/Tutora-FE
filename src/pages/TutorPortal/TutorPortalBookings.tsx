@@ -26,6 +26,7 @@ import { PageContainer } from '../../components/shared';
 const STATUS_TABS = [
   {
     key: 'pending',
+    section: 'requests',
     label: 'Chờ xác nhận',
     status: 'pending_tutor',
     empty: {
@@ -35,6 +36,7 @@ const STATUS_TABS = [
   },
   {
     key: 'paid',
+    section: 'bookings',
     label: 'Đã thanh toán',
     status: 'deposit_paid,pending_remaining_payment,paid,ongoing',
     empty: {
@@ -44,6 +46,7 @@ const STATUS_TABS = [
   },
   {
     key: 'completed',
+    section: 'bookings',
     label: 'Hoàn thành',
     status: 'completed',
     empty: {
@@ -53,8 +56,9 @@ const STATUS_TABS = [
   },
   {
     key: 'cancelled',
+    section: 'bookings',
     label: 'Đã hủy',
-    status: 'cancelled,cancelled_noshow,payment_timeout',
+    status: 'cancelled,cancelled_noshow,payment_timeout,cancelled_by_staff,cancelled_by_dispute',
     empty: {
       title: 'Chưa có yêu cầu đã hủy',
       description: 'Các yêu cầu bị hủy, từ chối hoặc hết hạn sẽ được lưu tại đây.',
@@ -64,6 +68,47 @@ const STATUS_TABS = [
 
 type BookingTab = (typeof STATUS_TABS)[number]['key'];
 const BOOKING_TAB_KEYS = STATUS_TABS.map((tab) => tab.key);
+
+// Trang này gộp hai công việc khác hẳn nhau: TRẢ LỜI yêu cầu mới (có hạn phản hồi, có nút
+// chấp nhận/từ chối, có cảnh báo trùng khung giờ) và THEO DÕI booking đã chốt. Trước đây cả
+// bốn tab nằm ngang hàng nên hai việc trộn lẫn, và tab mặc định luôn là "Chờ xác nhận" —
+// gia sư đi tìm một booking đã hủy sẽ mở trúng danh sách yêu cầu chờ.
+const SECTION_TABS = [
+  {
+    key: 'requests',
+    label: 'Quản lý yêu cầu đặt lịch',
+    hint: 'Yêu cầu mới từ phụ huynh, cần bạn phản hồi trước hạn.',
+  },
+  {
+    key: 'bookings',
+    label: 'Quản lý booking đang có',
+    hint: 'Các lớp đã chốt: đang học, đã hoàn thành và đã hủy.',
+  },
+] as const;
+
+type BookingSection = (typeof SECTION_TABS)[number]['key'];
+const SECTION_KEYS = SECTION_TABS.map((section) => section.key);
+
+/** Tab trạng thái đầu tiên của một nhóm — dùng khi chuyển nhóm để không giữ lại tab không thuộc nhóm mới. */
+const firstTabOfSection = (section: BookingSection): BookingTab =>
+  (STATUS_TABS.find((tab) => tab.section === section) ?? STATUS_TABS[0]).key;
+
+// Tab "Đã hủy" gộp năm trạng thái có nguyên nhân rất khác nhau — gia sư tự hủy, phụ huynh không
+// thanh toán kịp, admin can thiệp, kết quả khiếu nại... Gộp chung thì không trả lời được câu hỏi
+// hay gặp nhất: "bao nhiêu lớp mất vì phía tôi, bao nhiêu vì phía kia?".
+const CANCELLED_STATUS = STATUS_TABS.find((tab) => tab.key === 'cancelled')!.status;
+
+const CANCEL_REASON_OPTIONS = [
+  { value: 'all', label: 'Tất cả lý do', status: CANCELLED_STATUS },
+  { value: 'cancelled', label: 'Hủy thường', status: 'cancelled' },
+  { value: 'noshow', label: 'Hủy do vắng mặt', status: 'cancelled_noshow' },
+  { value: 'timeout', label: 'Hết hạn thanh toán', status: 'payment_timeout' },
+  { value: 'staff', label: 'Hủy bởi quản trị viên', status: 'cancelled_by_staff' },
+  { value: 'dispute', label: 'Hủy theo khiếu nại', status: 'cancelled_by_dispute' },
+] as const;
+
+type CancelReason = (typeof CANCEL_REASON_OPTIONS)[number]['value'];
+const CANCEL_REASON_KEYS = CANCEL_REASON_OPTIONS.map((option) => option.value);
 
 const STATUS_CONFIG: Record<string, { label: string; tone: string }> = {
   pending_tutor: { label: 'Chờ xác nhận', tone: 'pending' },
@@ -78,6 +123,11 @@ const STATUS_CONFIG: Record<string, { label: string; tone: string }> = {
   cancelled_noshow: { label: 'Hủy do vắng mặt', tone: 'cancelled' },
   declined: { label: 'Đã từ chối', tone: 'cancelled' },
   payment_timeout: { label: 'Hết hạn thanh toán', tone: 'cancelled' },
+  // Hai trạng thái kết thúc do CMS/tranh chấp tạo ra. Trước đây không có nhãn và cũng không nằm
+  // trong bộ lọc của tab nào, nên booking rơi vào đây biến mất khỏi mọi danh sách — gia sư nhận
+  // thông báo "đã hủy" rồi đi tìm thì không tab nào chứa nó.
+  cancelled_by_staff: { label: 'Hủy bởi quản trị viên', tone: 'cancelled' },
+  cancelled_by_dispute: { label: 'Hủy theo khiếu nại', tone: 'cancelled' },
 };
 
 const formatDayName = (dayOfWeek: number) => {
@@ -217,8 +267,32 @@ const getFeeBreakdown = (booking: BookingResponseDTO) => {
 const TutorPortalBookings = () => {
   const [bookings, setBookings] = useState<BookingResponseDTO[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeSection, setActiveSection] = useTabParam<BookingSection>(SECTION_KEYS, 'requests', {
+    paramKey: 'section',
+  });
   const [activeTab, setActiveTab] = useTabParam<BookingTab>(BOOKING_TAB_KEYS, 'pending');
-  const activeTabConfig = STATUS_TABS.find((tab) => tab.key === activeTab) ?? STATUS_TABS[0];
+  const [cancelReason, setCancelReason] = useTabParam<CancelReason>(CANCEL_REASON_KEYS, 'all', {
+    paramKey: 'reason',
+  });
+  const visibleTabs = STATUS_TABS.filter((tab) => tab.section === activeSection);
+
+  // URL có thể mang cặp không hợp lệ (`?section=bookings&tab=pending` từ link cũ) — khi đó rơi về
+  // tab đầu của nhóm đang xem, thay vì fetch nhầm danh sách hoặc vẽ ra tab bar không mục nào chọn.
+  //
+  // Tính từ hai CHUỖI ổn định, không lấy `.key` của phần tử trong `visibleTabs`: mảng đó tạo mới
+  // mỗi lần render nên React Compiler không chứng minh được tính ổn định, và bỏ luôn memo hoá của
+  // các useMemo phía dưới ("Existing memoization could not be preserved").
+  const activeTabKey: BookingTab = STATUS_TABS.some((tab) => tab.key === activeTab && tab.section === activeSection)
+    ? activeTab
+    : firstTabOfSection(activeSection);
+  const activeTabConfig = STATUS_TABS.find((tab) => tab.key === activeTabKey)!;
+
+  // Bộ lọc lý do chỉ thu hẹp TRONG tab "Đã hủy"; các tab khác luôn dùng nguyên status của mình,
+  // kể cả khi `?reason=` còn sót lại trên URL từ lần xem trước.
+  const activeStatusFilter =
+    activeTabKey === 'cancelled'
+      ? (CANCEL_REASON_OPTIONS.find((option) => option.value === cancelReason) ?? CANCEL_REASON_OPTIONS[0]).status
+      : activeTabConfig.status;
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
@@ -248,8 +322,8 @@ const TutorPortalBookings = () => {
   // accept hay không. Tính độc lập với pendingGroupMode để không bao giờ bị sai lệch bởi lựa chọn
   // hiển thị của gia sư.
   const overlapGroups = useMemo(
-    () => (activeTab === 'pending' ? groupPendingByOverlap(bookings) : []),
-    [bookings, activeTab],
+    () => (activeTabKey === 'pending' ? groupPendingByOverlap(bookings) : []),
+    [bookings, activeTabKey],
   );
   const overlapCountByBookingId = useMemo(() => {
     const map = new Map<number, number>();
@@ -259,11 +333,11 @@ const TutorPortalBookings = () => {
 
   // Nhóm để HIỂN THỊ — theo đúng chế độ gia sư chọn ở dropdown.
   const pendingGroups = useMemo(() => {
-    if (activeTab !== 'pending') return bookings.map((booking) => [booking]);
+    if (activeTabKey !== 'pending') return bookings.map((booking) => [booking]);
     if (pendingGroupMode === 'time') return groupByExactSchedule(bookings);
     if (pendingGroupMode === 'requester') return groupByRequester(bookings);
     return overlapGroups.length > 0 ? overlapGroups : bookings.map((booking) => [booking]);
-  }, [bookings, activeTab, pendingGroupMode, overlapGroups]);
+  }, [bookings, activeTabKey, pendingGroupMode, overlapGroups]);
   const orderedBookings = useMemo(() => pendingGroups.flat(), [pendingGroups]);
   const groupInfoByBookingId = useMemo(() => {
     const map = new Map<number, { size: number; isFirstInGroup: boolean; groupLabel: string; showWarning: boolean }>();
@@ -324,7 +398,7 @@ const TutorPortalBookings = () => {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const response = await getTutorBookings({ status: activeTabConfig.status, page: currentPage, pageSize });
+      const response = await getTutorBookings({ status: activeStatusFilter, page: currentPage, pageSize });
 
       // API can return either a paged payload or a direct array in older environments.
       const payload = response.content as unknown as
@@ -368,11 +442,19 @@ const TutorPortalBookings = () => {
   useEffect(() => {
     fetchBookings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, currentPage, pageSize]);
+  }, [activeTabKey, activeStatusFilter, currentPage, pageSize]);
 
   const handleTabChange = (tabKey: BookingTab) => {
     setCurrentPage(1);
     setActiveTab(tabKey);
+  };
+
+  const handleSectionChange = (sectionKey: BookingSection) => {
+    if (sectionKey === activeSection) return;
+    setCurrentPage(1);
+    // Ghi cả `section` lẫn `tab` trong MỘT lượt: useTabParam đọc cùng một snapshot params, nên
+    // hai lần setSearchParams liên tiếp sẽ khiến lượt sau xoá mất lượt trước.
+    setActiveSection(sectionKey, { tab: firstTabOfSection(sectionKey) });
   };
 
   const handleAccept = async (id: number) => {
@@ -474,34 +556,75 @@ const TutorPortalBookings = () => {
     }
   };
 
-  const emptyCopy = activeTabConfig.empty;
+  // Đang lọc theo một lý do cụ thể mà rỗng thì câu "Chưa có yêu cầu đã hủy" là sai — tab có thể
+  // đầy booking, chỉ là không cái nào thuộc lý do đang chọn. Nói đúng để gia sư biết cần bỏ lọc.
+  const activeCancelReason = CANCEL_REASON_OPTIONS.find((option) => option.value === cancelReason);
+  const isFilteredCancelView = activeTabConfig.key === 'cancelled' && cancelReason !== 'all';
+  const emptyCopy = isFilteredCancelView
+    ? {
+        title: `Không có booking nào thuộc lý do “${activeCancelReason?.label ?? ''}”`,
+        description: 'Chọn “Tất cả lý do” để xem toàn bộ booking đã hủy.',
+      }
+    : activeTabConfig.empty;
 
   return (
     <PageContainer
       className={styles.container}
-      title="Yêu cầu đặt lịch"
-      titleInfo="Kiểm tra thông tin lớp học và phản hồi yêu cầu từ phụ huynh."
+      title="Quản lý đặt lịch"
+      titleInfo="Phản hồi yêu cầu mới từ phụ huynh và theo dõi các lớp đã chốt."
       maxWidth="wide"
     >
       <main className={styles.content}>
-        <div className={styles.tabBar} role="tablist" aria-label="Lọc yêu cầu theo trạng thái" data-tour="bookings-tabs">
-          {STATUS_TABS.map((tab) => (
+        <div className={styles.sectionBar} role="tablist" aria-label="Chọn nhóm quản lý">
+          {SECTION_TABS.map((section) => (
             <button
-              key={tab.key}
+              key={section.key}
               type="button"
               role="tab"
-              aria-selected={activeTab === tab.key}
-              className={`${styles.tabButton} ${activeTab === tab.key ? styles.tabButtonActive : ''}`}
-              onClick={() => handleTabChange(tab.key)}
+              aria-selected={activeSection === section.key}
+              className={`${styles.sectionButton} ${activeSection === section.key ? styles.sectionButtonActive : ''}`}
+              onClick={() => handleSectionChange(section.key)}
             >
-              <span className={styles.tabDot} aria-hidden="true" />
-              {tab.label}
-              {activeTab === tab.key && !loading && <span className={styles.tabCount}>{totalCount}</span>}
+              <span className={styles.sectionLabel}>{section.label}</span>
+              <span className={styles.sectionHint}>{section.hint}</span>
             </button>
           ))}
         </div>
 
-        {activeTab === 'pending' && bookings.length > 0 && (
+        <div className={styles.tabBar} role="tablist" aria-label="Lọc theo trạng thái" data-tour="bookings-tabs">
+          {visibleTabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              role="tab"
+              aria-selected={activeTabConfig.key === tab.key}
+              className={`${styles.tabButton} ${activeTabConfig.key === tab.key ? styles.tabButtonActive : ''}`}
+              onClick={() => handleTabChange(tab.key)}
+            >
+              <span className={styles.tabDot} aria-hidden="true" />
+              {tab.label}
+              {activeTabConfig.key === tab.key && !loading && <span className={styles.tabCount}>{totalCount}</span>}
+            </button>
+          ))}
+        </div>
+
+        {activeTabConfig.key === 'cancelled' && (
+          <div className={styles.pendingGroupFilter}>
+            <span>Lý do hủy</span>
+            <Select
+              size="small"
+              value={cancelReason}
+              onChange={(value) => {
+                setCurrentPage(1);
+                setCancelReason(value);
+              }}
+              options={CANCEL_REASON_OPTIONS.map((option) => ({ label: option.label, value: option.value }))}
+              style={{ minWidth: 200 }}
+            />
+          </div>
+        )}
+
+        {activeTabConfig.key === 'pending' && bookings.length > 0 && (
           <div className={styles.pendingGroupFilter}>
             <span>Hiển thị</span>
             <Select
@@ -585,6 +708,12 @@ const TutorPortalBookings = () => {
                       <div className={styles.studentIdentity}>
                         <div className={styles.studentNameRow}>
                           <h3>{booking.student?.fullName || 'Học sinh chưa cập nhật tên'}</h3>
+                          {/* Mã booking hiển thị ngay trên card: thông báo, tin nhắn hỗ trợ và log
+                              đều gọi booking theo số này, nên không có nó thì không đối chiếu được
+                              cái đang xem với cái đang được nhắc tới. */}
+                          <span className={styles.bookingIdBadge} title={`Mã booking #${booking.bookingId}`}>
+                            #{booking.bookingId}
+                          </span>
                           <span className={`${styles.statusBadge} ${styles[`status_${status.tone}`]}`}>
                             {status.label}
                           </span>
