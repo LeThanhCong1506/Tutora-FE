@@ -70,6 +70,10 @@ const STATUS_CONFIG: Record<string, StatusConfig> = {
   cancelled: { label: 'Đã hủy', className: 'statusCancelled', icon: XCircle },
   cancelled_noshow: { label: 'Đã hủy do vắng mặt', className: 'statusCancelled', icon: XCircle },
   payment_timeout: { label: 'Hết hạn thanh toán', className: 'statusCancelled', icon: XCircle },
+  // Hai trạng thái kết thúc do CMS/khiếu nại tạo ra. Thiếu chúng ở đây thì booking rơi vào fallback
+  // `pending_tutor` bên dưới và trang hiện "Chờ gia sư xác nhận" cho một booking đã hủy hẳn.
+  cancelled_by_staff: { label: 'Đã hủy bởi quản trị viên', className: 'statusCancelled', icon: XCircle },
+  cancelled_by_dispute: { label: 'Đã hủy theo khiếu nại', className: 'statusCancelled', icon: XCircle },
 };
 
 const LESSON_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
@@ -353,7 +357,14 @@ const BookingDetailPage = () => {
     );
   }
 
-  const statusConfig = STATUS_CONFIG[booking.status] ?? STATUS_CONFIG.pending_tutor;
+  // Fallback KHÔNG được là một trạng thái cụ thể: status lạ (BE thêm mới, dữ liệu cũ) sẽ bị mô tả
+  // sai hoàn toàn thay vì chỉ mơ hồ — đúng lỗi đã xảy ra với cancelled_by_dispute, hiện thành
+  // "Chờ gia sư xác nhận" trên một booking đã hủy.
+  const statusConfig: StatusConfig =
+    STATUS_CONFIG[booking.status] ??
+    (booking.status?.startsWith('cancelled')
+      ? { label: 'Đã hủy', className: 'statusCancelled', icon: XCircle }
+      : { label: booking.status || 'Không xác định', className: 'statusPending', icon: Clock3 });
   const StatusIcon = statusConfig.icon;
   const lessons = [...(booking.lessons ?? [])].sort(
     (first, second) => new Date(first.scheduledStart).getTime() - new Date(second.scheduledStart).getTime(),
@@ -377,7 +388,33 @@ const BookingDetailPage = () => {
   const completedProgressSteps = isCourseCompleted ? progressSteps.length : progressIndex;
   const progressValue = `${completedProgressSteps}/${progressSteps.length}`;
   const progressBarWidth = Math.round((completedProgressSteps / progressSteps.length) * 100);
-  const isCancelled = ['cancelled', 'cancelled_noshow', 'payment_timeout'].includes(booking.status);
+  const isCancelled = [
+    'cancelled',
+    'cancelled_noshow',
+    'payment_timeout',
+    'cancelled_by_staff',
+    'cancelled_by_dispute',
+  ].includes(booking.status);
+
+  // Số tiền ĐÃ TRẢ THẬT. Phải neo vào các mốc *PaidAt chứ không phải depositAmount: trường đó luôn
+  // có giá trị (là số tiền cọc phải trả), kể cả khi phụ huynh chưa trả đồng nào — dùng nó trực tiếp
+  // sẽ báo "đã thanh toán" cho một booking bị hủy vì quá hạn thanh toán.
+  const paidSoFar = booking.remainingPaidAt
+    ? booking.finalPrice
+    : booking.depositPaidAt
+      ? (booking.depositAmount ?? 0)
+      : 0;
+  const refundAmount = booking.refundAmount ?? 0;
+  const REFUND_STATUS_LABELS: Record<string, string> = {
+    pending: 'Đang xử lý',
+    processing: 'Đang xử lý',
+    completed: 'Đã hoàn',
+    refunded: 'Đã hoàn',
+    failed: 'Hoàn tiền thất bại',
+  };
+  const refundStatusLabel = booking.refundStatus
+    ? (REFUND_STATUS_LABELS[booking.refundStatus.toLowerCase()] ?? booking.refundStatus)
+    : null;
   const responseDeadline =
     booking.status === 'pending_tutor' ? getBookingResponseDeadlineState(booking.responseDeadline, currentTime) : null;
   const responseDeadlineTone = responseDeadline
@@ -412,6 +449,22 @@ const BookingDetailPage = () => {
   const canCancel =
     ['pending_tutor', 'accepted', 'pending_payment', 'deposit_paid', 'ongoing', 'paid'].includes(booking.status) &&
     !hasStartedLesson;
+  // Khớp với TrialCancelWindowHours ở BookingService.cs (BE) — trong vòng 2h trước buổi học đầu
+  // tiên, BE từ chối yêu cầu hủy tự do của phụ huynh/học sinh (dù nút vẫn hiện phía FE trước đây),
+  // buộc phải chờ hoặc báo cáo gia sư không vào lớp qua luồng no-show có sẵn. Nếu BE đổi mốc này thì
+  // sửa luôn hằng số dưới đây.
+  const TRIAL_CANCEL_WINDOW_HOURS = 2;
+  const nextUncancelledLesson = lessons.find((lesson) => lesson.status !== 'cancelled');
+  const firstUpcomingLessonStart = parseDate(nextUncancelledLesson?.scheduledStart);
+  const isWithinTrialCancelWindow =
+    firstUpcomingLessonStart != null &&
+    firstUpcomingLessonStart.getTime() - currentTime < TRIAL_CANCEL_WINDOW_HOURS * 60 * 60 * 1000;
+  const cancelBlockedByTrialWindow = canCancel && (depositPaid || remainingPaid) && isWithinTrialCancelWindow;
+  const lessonDetailPath = nextUncancelledLesson
+    ? basePath === '/student-portal'
+      ? `${basePath}/calendar/${nextUncancelledLesson.lessonId}`
+      : `${basePath}/lessons/${nextUncancelledLesson.lessonId}`
+    : null;
   const canPayDeposit = !isParentManaged && ['accepted', 'pending_payment'].includes(booking.status);
   // Chỉ cho thanh toán đợt 2 khi buổi học đầu tiên đã kết thúc.
   const isRemainingStage = ['deposit_paid', 'pending_remaining_payment'].includes(booking.status);
@@ -824,6 +877,32 @@ const BookingDetailPage = () => {
                       : booking.cancellationReason || 'Lịch đặt đã được hủy theo yêu cầu.'}
                   </p>
                   {booking.cancelledAt && <time>{formatDateTime(booking.cancelledAt)}</time>}
+
+                  {/* Câu hỏi đầu tiên khi thấy lớp bị hủy luôn là "tiền của tôi đâu?" — trước đây
+                      trang chỉ báo đã hủy rồi im lặng, phải mở ví ra tự dò giao dịch. */}
+                  <dl className={styles.refundSummary}>
+                    <div>
+                      <dt>Đã thanh toán</dt>
+                      <dd>{formatPrice(paidSoFar)}</dd>
+                    </div>
+                    <div>
+                      <dt>Số tiền hoàn</dt>
+                      <dd className={refundAmount > 0 ? styles.refundPositive : undefined}>
+                        {refundAmount > 0 ? formatPrice(refundAmount) : 'Không có khoản hoàn'}
+                      </dd>
+                    </div>
+                    {refundStatusLabel && (
+                      <div>
+                        <dt>Trạng thái hoàn tiền</dt>
+                        <dd>{refundStatusLabel}</dd>
+                      </div>
+                    )}
+                  </dl>
+                  <small className={styles.refundNote}>
+                    {refundAmount > 0
+                      ? 'Khoản hoàn đã được cộng vào ví Tutora của bạn; xem chi tiết ở trang Ví.'
+                      : 'Các buổi đã dạy được thanh toán cho gia sư nên không phát sinh khoản hoàn.'}
+                  </small>
                 </div>
               </section>
             )}
@@ -948,10 +1027,44 @@ const BookingDetailPage = () => {
                     <span>Bạn có thể thanh toán các buổi học còn lại sau khi buổi học đầu tiên kết thúc.</span>
                   </div>
                 )}
-                {(canCancel || canFinalizeEarly) && (
-                  <button className={styles.cancelBtn} type="button" onClick={() => setShowCancelModal(true)}>
-                    <XCircle size={17} /> Hủy đặt lịch
-                  </button>
+                {cancelBlockedByTrialWindow ? (
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: 8,
+                      alignItems: 'flex-start',
+                      padding: '12px 14px',
+                      borderRadius: 10,
+                      background: '#fff7ed',
+                      border: '1px solid #fed7aa',
+                      color: '#9a3412',
+                      fontSize: 13,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    <Clock3 size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+                    <span>
+                      Đã trong vòng {TRIAL_CANCEL_WINDOW_HOURS}h trước buổi học đầu tiên nên không thể tự hủy để
+                      nhận hoàn tiền nữa.{' '}
+                      {lessonDetailPath ? (
+                        <>
+                          Nếu gia sư không vào lớp, hãy{' '}
+                          <a href={lessonDetailPath} onClick={(event) => { event.preventDefault(); navigate(lessonDetailPath); }}>
+                            báo cáo vắng mặt tại buổi học này
+                          </a>
+                          .
+                        </>
+                      ) : (
+                        'Nếu gia sư không vào lớp, hãy báo cáo vắng mặt ngay tại buổi học đó.'
+                      )}
+                    </span>
+                  </div>
+                ) : (
+                  (canCancel || canFinalizeEarly) && (
+                    <button className={styles.cancelBtn} type="button" onClick={() => setShowCancelModal(true)}>
+                      <XCircle size={17} /> Hủy đặt lịch
+                    </button>
+                  )
                 )}
               </section>
             )}

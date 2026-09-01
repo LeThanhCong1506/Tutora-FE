@@ -124,7 +124,7 @@ const baseNavItems: NavItem[] = [
     { path: '/tutor-portal/profile', label: 'Hồ sơ gia sư', icon: ProfileIcon, dataTour: 'nav-profile' },
     { path: '/tutor-portal/onboarding', label: 'Thiết lập giảng dạy', icon: TeachingSetupIcon, dataTour: 'nav-onboarding' },
     { path: MESSAGES_PATH, label: 'Tin nhắn', icon: MessagesIcon, dataTour: 'nav-messages' },
-    { path: '/tutor-portal/bookings', label: 'Yêu cầu đặt lịch', icon: BookingIcon, dataTour: 'nav-bookings' },
+    { path: '/tutor-portal/bookings', label: 'Đặt lịch', icon: BookingIcon, dataTour: 'nav-bookings' },
     { path: '/tutor-portal/calendar', label: 'Lịch dạy', icon: ClassIcon, dataTour: 'nav-classes' },
     { path: '/tutor-portal/classes', label: 'Lớp học', icon: ClassroomIcon, dataTour: 'nav-classrooms' },
     { path: '/tutor-portal/disputes', label: 'Khiếu nại', icon: DisputeIcon, dataTour: 'nav-disputes' },

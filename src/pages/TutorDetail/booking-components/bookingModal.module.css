@@ -3057,3 +3057,58 @@
     font-size: 12px;
   }
 }
+
+/* ── Gợi ý chuyển tuần khi tuần đang xem hết chỗ ─────────────────────────────
+   Không dùng style của .noFitNotice (báo lỗi, đỏ) — đây là chỉ dẫn cho một tình
+   huống bình thường: gia sư chỉ rảnh vài ngày, và ngày đầu tuần chưa đủ 24 giờ
+   báo trước. Người dùng không làm gì sai, chỉ cần biết đi đâu tiếp. */
+.weekExhaustedNotice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--color-gold);
+  border-radius: 12px;
+  background: var(--color-cream-light);
+  color: var(--color-navy);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.weekExhaustedNotice svg {
+  flex: 0 0 auto;
+  color: var(--color-burgundy);
+}
+
+.weekExhaustedNotice span {
+  flex: 1;
+}
+
+.weekExhaustedAction {
+  flex: 0 0 auto;
+  padding: 7px 14px;
+  border: 1px solid var(--color-navy);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-navy);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.weekExhaustedAction:hover {
+  background: var(--color-navy);
+  color: var(--color-white);
+}
+
+@media (max-width: 560px) {
+  .weekExhaustedNotice {
+    flex-wrap: wrap;
+  }
+
+  .weekExhaustedAction {
+    width: 100%;
+  }
+}

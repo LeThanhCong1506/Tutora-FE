@@ -61,6 +61,7 @@ const StepSchedule: React.FC<StepProps> = ({
         isDayFull,
         isWeekFull,
         remainingWeekPicks,
+        hasSelectableSlotInVisibleWeek,
         minLeadHours,
         selectedSlots,
         bookingWindowStart,
@@ -219,6 +220,29 @@ const StepSchedule: React.FC<StepProps> = ({
                             <AlertTriangle size={15} />
                             Lịch đã chọn trùng với một buổi học hiện có. Vui lòng bỏ buổi đang chọn và chọn giờ khác.
                         </p>
+                    )}
+
+                    {/* Tuần đang xem hết ô trống mà mẫu chưa đủ — chỉ thẳng đường thay vì để phụ
+                        huynh nhìn bộ đếm đứng im. Hay gặp khi gia sư chỉ rảnh vài ngày cố định và
+                        ngày đầu tuần chưa đủ 24 giờ báo trước. */}
+                    {isAvailabilityMode
+                        && remainingWeekPicks > 0
+                        && !hasSelectableSlotInVisibleWeek
+                        && visibleWeekIndex < maxVisibleWeekIndex && (
+                        <div className={styles.weekExhaustedNotice} role="status">
+                            <AlertTriangle size={15} />
+                            <span>
+                                Tuần này không còn khung trống phù hợp. Chuyển sang tuần sau để chọn nốt{" "}
+                                <strong>{remainingWeekPicks} buổi</strong> — các buổi đã chọn vẫn được giữ.
+                            </span>
+                            <button
+                                type="button"
+                                className={styles.weekExhaustedAction}
+                                onClick={() => setVisibleWeekIndex((c) => Math.min(maxVisibleWeekIndex, c + 1))}
+                            >
+                                Tuần sau →
+                            </button>
+                        </div>
                     )}
 
                     <div className={styles.scheduleLayout}>
