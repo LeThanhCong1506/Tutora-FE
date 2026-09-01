@@ -25,6 +25,7 @@ import {
   type StatusFilter,
 } from './lesson-components';
 import styles from './styles.module.css';
+import { useStudentProfile } from '../../contexts/StudentProfileContext';
 
 dayjs.locale('vi');
 
@@ -100,6 +101,8 @@ const matchesStatusFilter = (lesson: LessonSummary, status: StatusFilter): boole
 
 const StudentLessons = () => {
   const navigate = useNavigate();
+  const { isParentManaged, loading: profileLoading } = useStudentProfile();
+  const canBook = !profileLoading && !isParentManaged;
   const [searchParams, setSearchParams] = useSearchParams();
   const [lessons, setLessons] = useState<LessonSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -359,7 +362,7 @@ const StudentLessons = () => {
               <EmptyState
                 filtered={isFilteredEmpty}
                 period={viewMode === 'calendar' ? 'tuần này' : 'tháng này'}
-                onBooking={() => navigate('/student-portal/booking')}
+                onBooking={canBook ? () => navigate('/student-portal/booking') : undefined}
               />
             ) : viewMode === 'calendar' ? (
               <CalendarLessonView

@@ -55,16 +55,18 @@ export const studentDisputesMenuItem: ProfileMenuItem = {
  * do phụ huynh tạo bị chặn ở route (StudentSelfRegisteredGate)
  */
 export const buildStudentProfileMenuItems = (
-    options: { showWallet?: boolean; showDisputes?: boolean } = {},
+    options: { showWallet?: boolean; showDisputes?: boolean; showBooking?: boolean } = {},
 ): ProfileMenuItem[] => {
-    const { showWallet = false, showDisputes = false } = options;
+    const { showWallet = false, showDisputes = false, showBooking = false } = options;
 
     return [
         { key: '/student-portal/dashboard', label: 'Trang học sinh', materialIcon: 'dashboard' },
         { key: '/student-portal/account', label: 'Tài khoản của tôi', materialIcon: 'manage_accounts' },
         { key: '/student-portal/profile', label: 'Hồ sơ học sinh', materialIcon: 'school' },
         { key: '/student-portal/calendar', label: 'Thời khóa biểu', materialIcon: 'calendar_month', startsGroup: true },
-        { key: '/student-portal/booking', label: 'Đặt lịch học', materialIcon: 'event_available' },
+        ...(showBooking
+            ? [{ key: '/student-portal/booking', label: 'Đặt lịch học', materialIcon: 'event_available' }]
+            : []),
         { key: '/student-portal/favorites', label: 'Danh sách yêu thích', materialIcon: 'favorite' },
         { key: '/student-portal/messages', label: 'Tin nhắn', materialIcon: 'chat' },
         ...(showWallet ? [studentWalletMenuItem, studentBankAccountMenuItem] : []),
@@ -87,6 +89,7 @@ export const getProfileMenuItemsByRole = (
         case 'student': return buildStudentProfileMenuItems({
             showWallet: options.studentSelfRegistered,
             showDisputes: options.studentSelfRegistered,
+            showBooking: options.studentSelfRegistered,
         });
         case 'admin': return adminProfileMenuItems;
         default: return [];
