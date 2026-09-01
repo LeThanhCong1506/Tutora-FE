@@ -1,13 +1,36 @@
-export { default as StudentCard } from './StudentCard';
-export type { StudentCardProps } from './StudentCard';
+export { default as StudentSection } from './StudentSection';
+export type { StudentSectionProps } from './StudentSection';
 
+export { default as StudentSectionSkeleton } from './StudentSectionSkeleton';
+
+export { default as BookingCard } from './BookingCard';
+export type { BookingCardProps } from './BookingCard';
+
+export { default as StudentOverview } from './StudentOverview';
+export type { StudentOverviewProps } from './StudentOverview';
 export { default as EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
 
 export { useParentStudents } from './hooks/useParentStudents';
 export type { UseParentStudentsResult } from './hooks/useParentStudents';
 
-export { buildStudentInsights, buildStudentMeta, EMPTY_INSIGHT, formatSessionSlot, getInitials } from './utils';
+export {
+  bookingNextSessionLabel,
+  bookingProgress,
+  bookingScheduleAnchor,
+  bookingStatusMeta,
+  buildStudentBookings,
+  buildStudentMeta,
+  coverForBooking,
+  formatSessionSlot,
+  getInitials,
+  summarizeStudentBookings,
+  summaryNextSessionLabel,
+  summaryScheduleAnchor,
+} from './utils';
+
+export type { StatusCount, StudentSummary } from './utils';
+
 export { extractApiErrorMessage, hasApiErrorCode } from './apiMessages';
 
-export type { NextSessionInfo, StudentInsight, StudentInsightMap, StudentWithInsight } from './types';
+export type { BookingProgress, NextSessionInfo, StudentBookingsMap, StudentWithBookings } from './types';
