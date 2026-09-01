@@ -406,114 +406,114 @@ const ParentLessonDetail: React.FC = () => {
       {/* Phụ huynh chỉ xác nhận đổi giờ ở đây; phụ huynh không vào phòng học. */}
       {scheduleChange?.requiredLearnerRole === 'Parent' &&
         (scheduleChange.requiresConfirmation || scheduleChange.status === 'expired') && (
-        <SectionCard
-          title="Xác nhận thay đổi giờ học"
-          headerAction={<CalendarClock size={18} color="#8a6116" aria-hidden="true" />}
-        >
-          <div className={styles.sectionBody}>
-            <p className={styles.sectionLead}>
-              Gia sư và học viên đang muốn học ngoài thời gian mặc định. Phụ huynh chỉ xác nhận tại đây; học viên và gia
-              sư là hai người vào phòng học.
-              {scheduleChange.requestedAt && scheduleChange.expiresAt && (
-                <>
-                  {' '}
-                  Yêu cầu lúc {formatTime(scheduleChange.requestedAt)}, hạn phản hồi{' '}
-                  {formatTime(scheduleChange.expiresAt)} {formatDate(scheduleChange.expiresAt)}.
-                </>
-              )}
-            </p>
-
-            <div className={styles.confirmPair}>
-              <div className={styles.confirmTile}>
-                {scheduleChange.tutorConfirmedAt ? (
-                  <CheckCircle2 size={19} color="#059669" />
-                ) : (
-                  <Clock3 size={19} color="#d97706" />
+          <SectionCard
+            title="Xác nhận thay đổi giờ học"
+            headerAction={<CalendarClock size={18} color="#8a6116" aria-hidden="true" />}
+          >
+            <div className={styles.sectionBody}>
+              <p className={styles.sectionLead}>
+                Gia sư và học viên đang muốn học ngoài thời gian mặc định. Phụ huynh chỉ xác nhận tại đây; học viên và gia
+                sư là hai người vào phòng học.
+                {scheduleChange.requestedAt && scheduleChange.expiresAt && (
+                  <>
+                    {' '}
+                    Yêu cầu lúc {formatTime(scheduleChange.requestedAt)}, hạn phản hồi{' '}
+                    {formatTime(scheduleChange.expiresAt)} {formatDate(scheduleChange.expiresAt)}.
+                  </>
                 )}
-                <div>
-                  <div className={styles.confirmTileLabel}>Gia sư</div>
-                  <div className={styles.confirmTileValue}>
-                    {scheduleChange.tutorConfirmedAt
-                      ? `Đã xác nhận lúc ${formatTime(scheduleChange.tutorConfirmedAt)}`
-                      : 'Đang chờ xác nhận'}
+              </p>
+
+              <div className={styles.confirmPair}>
+                <div className={styles.confirmTile}>
+                  {scheduleChange.tutorConfirmedAt ? (
+                    <CheckCircle2 size={19} color="#059669" />
+                  ) : (
+                    <Clock3 size={19} color="#d97706" />
+                  )}
+                  <div>
+                    <div className={styles.confirmTileLabel}>Gia sư</div>
+                    <div className={styles.confirmTileValue}>
+                      {scheduleChange.tutorConfirmedAt
+                        ? `Đã xác nhận lúc ${formatTime(scheduleChange.tutorConfirmedAt)}`
+                        : 'Đang chờ xác nhận'}
+                    </div>
+                  </div>
+                </div>
+                <div className={styles.confirmTile}>
+                  {scheduleChange.learnerConfirmedAt ? (
+                    <CheckCircle2 size={19} color="#059669" />
+                  ) : (
+                    <Clock3 size={19} color="#d97706" />
+                  )}
+                  <div>
+                    <div className={styles.confirmTileLabel}>Phụ huynh</div>
+                    <div className={styles.confirmTileValue}>
+                      {scheduleChange.learnerConfirmedAt
+                        ? `Đã xác nhận lúc ${formatTime(scheduleChange.learnerConfirmedAt)}`
+                        : 'Đang chờ xác nhận'}
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className={styles.confirmTile}>
-                {scheduleChange.learnerConfirmedAt ? (
-                  <CheckCircle2 size={19} color="#059669" />
-                ) : (
-                  <Clock3 size={19} color="#d97706" />
-                )}
-                <div>
-                  <div className={styles.confirmTileLabel}>Phụ huynh</div>
-                  <div className={styles.confirmTileValue}>
-                    {scheduleChange.learnerConfirmedAt
-                      ? `Đã xác nhận lúc ${formatTime(scheduleChange.learnerConfirmedAt)}`
-                      : 'Đang chờ xác nhận'}
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            {scheduleChange.approvedAt ? (
-              scheduleChange.scheduleConflict ? (
+              {scheduleChange.approvedAt ? (
+                scheduleChange.scheduleConflict ? (
+                  <div className={`${styles.notice} ${styles.noticeWarning} ${styles.blockGap}`}>
+                    <span>
+                      <strong>Đã đủ xác nhận nhưng chưa thể bắt đầu:</strong> {scheduleChange.scheduleConflict.message}{' '}
+                      Hệ thống sẽ tự kiểm tra lại, phụ huynh không cần xác nhận lần nữa.
+                    </span>
+                  </div>
+                ) : (
+                  <div className={`${styles.notice} ${styles.noticeSuccess} ${styles.blockGap}`}>
+                    Đã đủ xác nhận. Học viên và gia sư có thể vào học; thời gian buổi học sẽ được cập nhật khi họ bắt
+                    đầu.
+                  </div>
+                )
+              ) : scheduleChange.status === 'rejected' ? (
+                <div className={`${styles.notice} ${styles.noticeDanger} ${styles.blockGap}`}>
+                  Yêu cầu đổi lịch đã bị từ chối. Học viên và gia sư chưa thể vào buổi học ngoài lịch này.
+                </div>
+              ) : scheduleChange.status === 'expired' ? (
                 <div className={`${styles.notice} ${styles.noticeWarning} ${styles.blockGap}`}>
+                  <Clock3 size={16} aria-hidden="true" />
                   <span>
-                    <strong>Đã đủ xác nhận nhưng chưa thể bắt đầu:</strong> {scheduleChange.scheduleConflict.message}{' '}
-                    Hệ thống sẽ tự kiểm tra lại, phụ huynh không cần xác nhận lần nữa.
+                    <strong>
+                      Yêu cầu xác nhận đã hết hạn
+                      {scheduleChange.expiresAt ? ` lúc ${formatDateTime(scheduleChange.expiresAt)}` : ''}.
+                    </strong>{' '}
+                    Chưa đủ hai bên xác nhận trong thời gian quy định nên yêu cầu đã tự huỷ. Vui lòng nhờ gia sư mở lại
+                    phòng chờ để hệ thống tạo yêu cầu xác nhận mới.
                   </span>
                 </div>
-              ) : (
-                <div className={`${styles.notice} ${styles.noticeSuccess} ${styles.blockGap}`}>
-                  Đã đủ xác nhận. Học viên và gia sư có thể vào học; thời gian buổi học sẽ được cập nhật khi họ bắt
-                  đầu.
+              ) : scheduleChange.currentUserConfirmed ? (
+                <div className={`${styles.notice} ${styles.noticeInfo} ${styles.blockGap}`}>
+                  Phụ huynh đã xác nhận. Đang chờ gia sư xác nhận.
                 </div>
-              )
-            ) : scheduleChange.status === 'rejected' ? (
-              <div className={`${styles.notice} ${styles.noticeDanger} ${styles.blockGap}`}>
-                Yêu cầu đổi lịch đã bị từ chối. Học viên và gia sư chưa thể vào buổi học ngoài lịch này.
-              </div>
-            ) : scheduleChange.status === 'expired' ? (
-              <div className={`${styles.notice} ${styles.noticeWarning} ${styles.blockGap}`}>
-                <Clock3 size={16} aria-hidden="true" />
-                <span>
-                  <strong>
-                    Yêu cầu xác nhận đã hết hạn
-                    {scheduleChange.expiresAt ? ` lúc ${formatDateTime(scheduleChange.expiresAt)}` : ''}.
-                  </strong>{' '}
-                  Chưa đủ hai bên xác nhận trong thời gian quy định nên yêu cầu đã tự huỷ. Vui lòng nhờ gia sư mở lại
-                  phòng chờ để hệ thống tạo yêu cầu xác nhận mới.
-                </span>
-              </div>
-            ) : scheduleChange.currentUserConfirmed ? (
-              <div className={`${styles.notice} ${styles.noticeInfo} ${styles.blockGap}`}>
-                Phụ huynh đã xác nhận. Đang chờ gia sư xác nhận.
-              </div>
-            ) : scheduleChange.canCurrentUserConfirm ? (
-              <div className={styles.decisionRow}>
-                <Button
-                  danger
-                  icon={<XCircle size={16} />}
-                  loading={submittingScheduleDecision}
-                  onClick={() => void handleScheduleChangeDecision(false)}
-                >
-                  Từ chối
-                </Button>
-                <Button
-                  type="primary"
-                  className={styles.primaryAction}
-                  icon={<CheckCircle2 size={16} />}
-                  loading={submittingScheduleDecision}
-                  onClick={() => void handleScheduleChangeDecision(true)}
-                >
-                  Xác nhận đổi lịch
-                </Button>
-              </div>
-            ) : null}
-          </div>
-        </SectionCard>
-      )}
+              ) : scheduleChange.canCurrentUserConfirm ? (
+                <div className={styles.decisionRow}>
+                  <Button
+                    danger
+                    icon={<XCircle size={16} />}
+                    loading={submittingScheduleDecision}
+                    onClick={() => void handleScheduleChangeDecision(false)}
+                  >
+                    Từ chối
+                  </Button>
+                  <Button
+                    type="primary"
+                    className={styles.primaryAction}
+                    icon={<CheckCircle2 size={16} />}
+                    loading={submittingScheduleDecision}
+                    onClick={() => void handleScheduleChangeDecision(true)}
+                  >
+                    Xác nhận đổi lịch
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          </SectionCard>
+        )}
 
       {pendingReschedule && (
         <SectionCard
