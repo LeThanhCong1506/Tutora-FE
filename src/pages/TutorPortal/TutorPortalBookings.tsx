@@ -370,6 +370,20 @@ const TutorPortalBookings = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, currentPage, pageSize]);
 
+  // Tab "Chờ xác nhận" hiển thị mốc "Hết hạn phản hồi" tính hoàn toàn phía client (so
+  // responseDeadline với currentTime) — khi hết hạn, TutorResponseTimeoutJob ở BE sẽ tự hủy +
+  // hoàn cọc trong vòng tối đa 1h, nhưng danh sách này trước đây chỉ nạp 1 lần lúc vào tab nên
+  // thẻ vẫn hiện y nguyên "Chờ xác nhận" dù BE đã xử lý xong, khiến gia sư tưởng hệ thống không
+  // làm gì. Poll lại định kỳ để thẻ tự rơi khỏi tab này ngay khi BE đã hủy.
+  useEffect(() => {
+    if (activeTab !== 'pending') return undefined;
+    const timer = window.setInterval(() => {
+      void fetchBookings();
+    }, 60_000);
+    return () => window.clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, currentPage, pageSize]);
+
   const handleTabChange = (tabKey: BookingTab) => {
     setCurrentPage(1);
     setActiveTab(tabKey);
