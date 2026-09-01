@@ -53,6 +53,7 @@ const TutorPortalProfile = lazy(() => import('./pages/TutorPortal/TutorPortalPro
 const TutorPortalDashboard = lazy(() => import('./pages/TutorPortal/TutorPortalDashboard'));
 const TutorPortalMessages = lazy(() => import('./pages/TutorPortal/TutorPortalMessages'));
 const TutorPortalCalendar = lazy(() => import('./pages/TutorPortal/TutorPortalCalendar'));
+const TutorPortalClasses = lazy(() => import('./pages/TutorPortal/TutorPortalClasses'));
 const TutorPortalClassSessionDetail = lazy(() => import('./pages/TutorPortal/TutorPortalClassSessionDetail'));
 const TutorPortalDisputes = lazy(() => import('./pages/TutorPortal/TutorPortalDisputes'));
 const TutorPortalDisputeDetail = lazy(() => import('./pages/TutorPortal/TutorPortalDisputeDetail'));
@@ -157,6 +158,21 @@ function LegacyPolicyRedirect() {
 
   return <Navigate to={slug ? `/about/${slug}` : '/about'} replace />;
 }
+
+/**
+ * `/live-session/:id/demo-ui` -> render CHÍNH trang LiveSession ở chế độ mock.
+ * `mock=1` vào URL để trang tự chạy nhánh dữ liệu giả (không Agora, không API).
+ */
+// function DemoUiRoute() {
+//   const [searchParams] = useSearchParams();
+
+//   if (searchParams.get('mock') !== '1') {
+//     const params = new URLSearchParams(searchParams);
+//     params.set('mock', '1');
+//     return <Navigate to={{ search: `?${params.toString()}` }} replace />;
+//   }
+//   return <LiveSession />;
+// }
 
 function App() {
   const location = useLocation();
@@ -324,8 +340,7 @@ function App() {
                   {/* Khiếu nại có trang riêng thay vì card nhúng trong chi tiết buổi học.
                       Param là classSessionId vì toàn bộ API khiếu nại keyed theo buổi học. */}
                   <Route path="disputes/:classSessionId" element={<TutorPortalDisputeDetail />} />
-                  {/* Legacy: URL /classes từng dùng bookingId, nên quay về lịch thay vì hiểu nhầm là classSessionId. */}
-                  <Route path="classes" element={<LegacyTutorClassesRedirect />} />
+                  <Route path="classes" element={<TutorPortalClasses />} />
                   <Route path="classes/:classId" element={<LegacyTutorClassesRedirect />} />
                   <Route path="students/:studentId" element={<TutorPortalStudentProfile />} />
                   <Route path="bookings" element={<TutorPortalBookings />} />
@@ -403,9 +418,11 @@ function App() {
                   <Route path="wallet/withdrawals" element={<ParentWalletWithdrawals />} />
                   <Route path="wallet/withdrawals/:id" element={<ParentWalletWithdrawalDetail />} />
                   <Route path="wallet/bank-account" element={<BankAccountPage />} />
-                  <Route path="disputes" element={<StudentDisputes />} />
-                  <Route path="disputes/:classSessionId" element={<StudentDisputeDetail />} />
                 </Route>
+                {/* Khiếu nại: học sinh do phụ huynh quản lý cũng được xem/tạo (phụ huynh vẫn được báo
+                    qua thông báo khi con tạo/phản hồi khiếu nại) — không đặt trong gate ví ở trên nữa. */}
+                <Route path="disputes" element={<StudentDisputes />} />
+                <Route path="disputes/:classSessionId" element={<StudentDisputeDetail />} />
                 <Route path="messages" element={<ParentMessage />} />
                 <Route path="profile" element={<StudentProfile />} />
                 <Route path="account" element={<StudentAccount />} />
@@ -432,6 +449,8 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            {/* <Route path="/live-session/:classSessionId/demo-ui" element={<DemoUiRoute />} /> */}
 
             {/* Phòng chờ trước buổi học — chờ đủ 2 phía rồi tự chuyển vào live-session */}
             <Route

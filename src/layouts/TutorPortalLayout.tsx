@@ -10,6 +10,7 @@ import TourWelcomePrompt from '../components/TutorTour/TourWelcomePrompt';
 import { usePortalTour, guardedNavigate, type PageTour } from '../components/TutorTour/usePortalTour';
 import { useUnreadMessageBadge } from '../hooks/useUnreadMessageBadge';
 import { useUnreadBadgesByTab } from '../hooks/useUnreadBadgesByTab';
+import { signalRService } from '../services/signalr.service';
 
 const MESSAGES_PATH = '/tutor-portal/messages';
 
@@ -53,6 +54,16 @@ const ClassIcon = () => (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
         <path d="M9 2L1 6L9 10L17 6L9 2Z" />
         <path d="M1 12L9 16L17 12" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
+    </svg>
+);
+
+// Bảng/màn chiếu — trang "Lớp học" (quản lý lớp + tiến độ + tài liệu).
+const ClassroomIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <rect x="1.5" y="2.5" width="15" height="11" rx="2" strokeLinecap="round" />
+        <path d="M9 13.5V16" strokeLinecap="round" />
+        <path d="M6 16H12" strokeLinecap="round" />
+        <path d="M5 9.5L7.5 7L9.5 9L13 5.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
 );
 
@@ -115,6 +126,7 @@ const baseNavItems: NavItem[] = [
     { path: MESSAGES_PATH, label: 'Tin nhắn', icon: MessagesIcon, dataTour: 'nav-messages' },
     { path: '/tutor-portal/bookings', label: 'Yêu cầu đặt lịch', icon: BookingIcon, dataTour: 'nav-bookings' },
     { path: '/tutor-portal/calendar', label: 'Lịch dạy', icon: ClassIcon, dataTour: 'nav-classes' },
+    { path: '/tutor-portal/classes', label: 'Lớp học', icon: ClassroomIcon, dataTour: 'nav-classrooms' },
     { path: '/tutor-portal/disputes', label: 'Khiếu nại', icon: DisputeIcon, dataTour: 'nav-disputes' },
     { path: '/tutor-portal/finance', label: 'Tài chính', icon: FinanceIcon, dataTour: 'nav-finance' },
     { path: '/tutor-portal/account', label: 'Tài khoản', icon: AccountIcon, dataTour: 'nav-account' },
@@ -584,6 +596,14 @@ const TutorPortalLayout: React.FC = () => {
         onSidebarOpen: () => setSidebarOpen(true),
         onSidebarClose: () => setSidebarOpen(false),
     });
+
+    // useUnreadMessageBadge/useUnreadBadgesByTab bên dưới chỉ ĐĂNG KÝ lắng nghe trên kết nối SignalR có
+    // sẵn — không tự mở kết nối. Trước đây không có nơi nào trong tutor portal gọi connect() (chỉ
+    // Header.tsx — không dùng ở layout này), nên mọi real-time (badge, AI điền báo cáo xong,...) chưa
+    // từng thực sự chạy, chỉ fetch 1 lần lúc load trang.
+    useEffect(() => {
+        signalRService.connect().catch(() => {/* đã tự xử lý bên trong service (silent, tự retry) */});
+    }, []);
 
     // Tin nhắn unread badge — fetch + SignalR real-time + auto-clear khi vào /messages.
     const unreadMessageCount = useUnreadMessageBadge(MESSAGES_PATH);

@@ -33,6 +33,8 @@ import {
   useLiveSessionGuard,
 } from './live-session-components';
 import type { ChatMessage } from './live-session-components/types';
+import type { SidePanelKind } from './live-session-components/SidePanel';
+import { usePracticeGeneration } from './live-session-components/practice/usePracticeGeneration';
 import { useEmotionMonitor } from './emotion/useEmotionMonitor';
 import EmotionAlertToast from './emotion/EmotionAlertToast';
 import { primeAlertSound } from './emotion/alertSound';
@@ -44,6 +46,9 @@ const WhiteboardOverlay = lazy(() => import('./live-session-components/Whiteboar
 
 /** Bắt đầu hiện cảnh báo đếm ngược khi còn ít hơn mốc này tới lúc hệ thống tự đóng phòng. */
 const AUTO_END_WARNING_SEC = 5 * 60;
+
+/** Booking giả cho ?mock=1 — chỉ để dựng UI tài liệu/bài tập khi chưa có phòng thật. */
+const MOCK_BOOKING_ID = 1;
 
 const formatElapsed = (seconds: number): string => {
   const m = Math.floor(seconds / 60)
@@ -98,7 +103,14 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
   const [mockCamOn, setMockCamOn] = useState(initialCamOn);
   const [mockScreenSharing, setMockScreenSharing] = useState(false);
   const [mockMessages, setMockMessages] = useState<ChatMessage[]>([]);
-  const [panelOpen, setPanelOpen] = useState(true);
+  // Panel bên phải: mở ĐÚNG MỘT cái, chọn từ thanh công cụ (mẫu Preply). Mặc định
+  // mở Trò chuyện như trước để không đổi thói quen người dùng.
+  const [activePanel, setActivePanel] = useState<SidePanelKind>('chat');
+  // Mốc "đã đọc": số tin đã thấy lúc rời khỏi panel Trò chuyện.
+  const [seenMessageCount, setSeenMessageCount] = useState(0);
+  // Đặt Ở ĐÂY (không phải trong panel) để tiến trình "Đang tạo câu hỏi" và prompt
+  // đang gõ sống sót khi gia sư đóng panel hoặc chuyển sang Ghi chú/Theo dõi.
+  const practiceGeneration = usePracticeGeneration();
   const [whiteboardOpen, setWhiteboardOpen] = useState(false);
   // Modal "Kết thúc"/"Rời đi" gộp chung 2 lựa chọn: kết thúc bình thường hoặc báo ngắt giữa chừng
   // do sự cố đột xuất — trước đây là 2 nút/2 modal tách rời (1 ở ControlBar, 1 icon riêng ở header).
@@ -122,7 +134,10 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
     if (routeAdmission) onAdmissionReady(routeAdmission);
   }, [onAdmissionReady, routeAdmission]);
 
-  const role = (getCurrentUserRole() || '').toLowerCase();
+  // ?mock=1&role=tutor|student — xem trước cả hai vai mà không phải đăng nhập 2 tài
+  // khoản. Chỉ có tác dụng ở chế độ mock; phiên thật luôn lấy vai từ token.
+  const mockRole = isMock ? (searchParams.get('role') || 'tutor').toLowerCase() : null;
+  const role = mockRole ?? (getCurrentUserRole() || '').toLowerCase();
   const isTutor = role === 'tutor';
   const isStudent = role === 'student';
   const currentUserId = getUserIdFromToken();
@@ -237,6 +252,8 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
     sendChatMessage: realSendChatMessage,
     broadcastSessionEnded,
     broadcastTracking,
+    broadcastPracticeSent,
+    practiceSignal,
     toggleMic,
     toggleCam,
     toggleScreenShare,
@@ -261,10 +278,18 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
   const camOn = isMock ? mockCamOn : realCamOn;
   const isScreenSharing = isMock ? mockScreenSharing : realIsScreenSharing;
   const remoteParticipants = isMock
-    ? [{ uid: 'mock-peer', name: 'Học sinh Demo', hasVideo: false, hasAudio: true }]
+    ? [{
+        uid: 'mock-peer',
+        name: isTutor ? 'Học sinh Demo' : 'Gia sư Demo',
+        hasVideo: false,
+        hasAudio: true,
+      }]
     : realRemoteParticipants;
 
   const chatMessages = isMock ? mockMessages : realChatMessages;
+  // Panel Trò chuyện đang mở = coi như đã đọc hết; đóng/ở panel khác thì đếm tin đến sau mốc.
+  const unreadMessageCount =
+    activePanel === 'chat' ? 0 : Math.max(0, chatMessages.length - seenMessageCount);
   const sendChatMessage = isMock
     ? (text: string) =>
         setMockMessages((prev) => [
@@ -346,7 +371,7 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
   }, [isMock, joined, presenceStatus?.isCheckedIn, sessionIdNum]);
 
   const participantLabel = useMemo(() => {
-    if (isMock) return 'Học sinh Demo';
+    if (isMock) return 'Gia sư Demo, Học sinh Demo';
     if (!room) return '';
     return [room.tutorName, room.studentName].filter(Boolean).join(', ');
   }, [isMock, room]);
@@ -553,8 +578,16 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
       <SessionHeader
         participantLabel={participantLabel}
         elapsedLabel={formatElapsed(elapsedSeconds)}
-        panelOpen={panelOpen}
-        onTogglePanel={() => setPanelOpen((v) => !v)}
+        panelOpen={activePanel !== null}
+        onTogglePanel={() =>
+          setActivePanel((current) => {
+            if (current !== null) {
+              setSeenMessageCount(chatMessages.length);
+              return null;
+            }
+            return 'chat';
+          })
+        }
         isRecording={isMock ? true : Boolean(presenceStatus?.isRecording)}
       />
       {autoEndCountdownSec !== null && (
@@ -636,11 +669,35 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
               setEndModalOpen(true);
             }}
             leaveLabel={isTutor ? 'Kết thúc' : 'Rời đi'}
+            activePanel={activePanel}
+            onSelectPanel={(kind) =>
+              setActivePanel((current) => {
+                // Ghi nhận đã đọc tới đây trước khi rời panel Trò chuyện.
+                if (current === 'chat') setSeenMessageCount(chatMessages.length);
+                // Bấm lại đúng panel đang mở = đóng.
+                return current === kind ? null : kind;
+              })
+            }
+            showBehavior={isTutor}
+            unreadCount={unreadMessageCount}
           />
         </VideoStage>
         <SidePanel
-          open={panelOpen}
-          onClose={() => setPanelOpen(false)}
+          kind={activePanel}
+          // Tài liệu & bài tập gắn theo BOOKING (dùng lại được cho buổi sau), lấy từ
+          // room info của Agora để không phải gọi thêm API buổi học.
+          // ?mock=1 không có admission thật -> dùng booking giả để duyệt UI; API sẽ
+          // trả rỗng/401 và tab hiện trạng thái tương ứng.
+          bookingId={room?.bookingId ?? (isMock ? MOCK_BOOKING_ID : null)}
+          classSessionId={sessionIdNum}
+          isTutor={isTutor}
+          generation={practiceGeneration}
+          onPracticeSent={broadcastPracticeSent}
+          practiceSignal={practiceSignal}
+          onClose={() => {
+            if (activePanel === 'chat') setSeenMessageCount(chatMessages.length);
+            setActivePanel(null);
+          }}
           messages={chatMessages}
           onSendMessage={sendChatMessage}
           notesStorageKey={classSessionId ?? 'mock'}

@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Form, Input, Button } from 'antd';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { getApiErrorMessage } from '../../../utils/apiError';
+import { signalRService } from '../../../services/signalr.service';
+import { NOTIFICATION_TYPE } from '../../../utils/notificationNavigation';
 import {
   submitClassSessionReport,
   triggerReportAiFill,
@@ -171,6 +174,25 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
     return () => window.clearInterval(timer);
   }, [aiJobStatus, classSessionId, applyAiJob]);
 
+  // BE bắn "ReceiveNotification" (type lesson_report_ai_fill_ready) qua SignalR ngay lúc job xong — bắt
+  // sự kiện này để refetch NGAY thay vì đợi tới lượt poll 8s tiếp theo. Vẫn giữ nguyên polling ở trên làm
+  // phương án dự phòng (mất kết nối SignalR tạm thời).
+  useEffect(() => {
+    const unsubscribe = signalRService.subscribeToNotifications((notification: { type?: string | null; referenceid?: string | null }) => {
+      if (notification?.type !== NOTIFICATION_TYPE.LessonReportAiFillReady) return;
+      if (String(notification.referenceid) !== String(classSessionId)) return;
+      void (async () => {
+        try {
+          const response = await getReportAiFillStatus(classSessionId);
+          applyAiJob(response.content);
+        } catch (error) {
+          console.error('Failed to refetch AI report fill status', error);
+        }
+      })();
+    });
+    return unsubscribe;
+  }, [classSessionId, applyAiJob]);
+
   const handleAiFillField = async (field: AiFillableField) => {
     // Đã có kết quả sẵn (field khác trigger trước đó, hoặc job cũ vừa nạp lúc mở form) — áp dụng ngay,
     // không cần gọi lại API.
@@ -187,12 +209,15 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
     try {
       const response = await triggerReportAiFill(classSessionId);
       applyAiJob(response.content);
+      toast.info('AI đang đọc video buổi học, vui lòng chờ — nội dung sẽ tự động điền vào form khi xong.');
     } catch (error: unknown) {
       setAiJobStatus('failed');
       pendingAiFieldsRef.current.clear();
       toast.error(getApiErrorMessage(error, 'Không thể gợi ý nội dung bằng AI. Vui lòng thử lại.'));
     }
   };
+
+  const aiFillRunning = aiJobStatus === 'pending' || aiJobStatus === 'processing';
 
   const renderLabel = (field: AiFillableField, text: string) => (
     <span>
@@ -201,14 +226,18 @@ const LessonReportForm: React.FC<LessonReportFormProps> = ({
         <button
           type="button"
           className={styles.aiFillBadge}
-          disabled={aiJobStatus === 'pending' || aiJobStatus === 'processing'}
+          disabled={aiFillRunning}
           onClick={(event) => {
             event.preventDefault();
             void handleAiFillField(field);
           }}
-          title="Điền nội dung này bằng AI (đọc video buổi học)"
+          title={
+            aiFillRunning
+              ? 'AI đang đọc video buổi học, vui lòng chờ...'
+              : 'Điền nội dung này bằng AI (đọc video buổi học)'
+          }
         >
-          *
+          {aiFillRunning ? <Loader2 size={12} className={styles.spinIcon} /> : '*'}
         </button>
       )}
     </span>

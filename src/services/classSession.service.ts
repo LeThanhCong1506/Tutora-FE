@@ -309,10 +309,12 @@ export const getTutorClassSessions = async (
     pageSize: number = 100,
     fromDate?: string,
     status?: string,
+    /** Lọc theo 1 lớp (booking) — dùng cho modal chi tiết lớp ở trang "Lớp học". */
+    bookingId?: number,
 ): Promise<ApiResponse<ClassSessionResponse[]>> => {
     const response = await api.get('/tutor/class-sessions', {
         headers: getAuthHeaders(),
-        params: { page, pageSize, fromDate, status },
+        params: { page, pageSize, fromDate, status, bookingId },
     });
     return response.data;
 };
@@ -321,6 +323,8 @@ export type TutorClassStatus =
     | 'scheduled'
     | 'in_progress'
     | 'pending_confirmation'
+    /** Mọi buổi đã mở đều xong nhưng còn buổi giữ chỗ — chờ phụ huynh trả nốt để mở tiếp. */
+    | 'reserved'
     | 'completed'
     | 'cancelled';
 

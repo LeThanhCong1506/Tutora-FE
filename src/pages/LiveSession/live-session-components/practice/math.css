@@ -1,0 +1,26 @@
+/*
+ * Chỉnh KaTeX cho khớp bối cảnh panel hẹp — port từ tutora-homework/src/index.css.
+ */
+
+/* Công thức khối: cuộn ngang thay vì vỡ layout.
+   overflow-y PHẢI là visible — hidden cắt cụt tử/mẫu của phân số cao. */
+.katex-display {
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 0.5rem 0;
+}
+
+:not(.katex-display) > .katex {
+  display: inline-block;
+  vertical-align: middle;
+  line-height: 1.2;
+}
+
+/* Phân số/căn inline cần thêm khoảng thở trên dưới để không dính dòng kế. */
+:not(.katex-display) > .katex:has(.mfrac, .sqrt) {
+  margin-block: 0.3em;
+}
+
+.katex {
+  font-family: KaTeX_Main, 'Times New Roman', serif;
+}

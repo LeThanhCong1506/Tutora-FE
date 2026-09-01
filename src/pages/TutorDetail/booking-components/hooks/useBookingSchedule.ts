@@ -66,19 +66,6 @@ const toBackendDow = (demoDow: number) => (demoDow === 7 ? 0 : demoDow);
  */
 export const MIN_BOOKING_LEAD_HOURS = 24;
 
-/**
- * Yêu cầu do HỌC SINH tạo cần xa hơn một chút: phụ huynh phải kịp thanh toán trước mốc 24 giờ,
- * nên phải chừa thêm ít nhất 2 giờ để họ thao tác.
- * Khớp `BookingLeadTimePolicy.MinimumLeadHoursForStudentRequest`.
- */
-export const MIN_LEAD_HOURS_STUDENT_REQUEST = 26;
-
-/**
- * Phụ huynh phải phản hồi yêu cầu của con trong vòng chừng này giờ kể từ lúc gửi.
- * Khớp `BookingLeadTimePolicy.ParentReviewHours`.
- */
-export const PARENT_REVIEW_HOURS = 24;
-
 // Buổi [dateKey, startTime] đã đủ xa để đặt chưa — so đủ ngày+giờ, không chỉ ngày.
 const isFutureSlot = (dateKey: string, startTime: string, leadHours: number): boolean => {
     const start = fromDateKey(dateKey);
