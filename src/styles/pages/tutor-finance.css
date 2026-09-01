@@ -1,4 +1,7 @@
-.tutor-finance-container {
+/* Bảng màu khai báo ở :root chứ không nằm trong .tutor-finance-container:
+   Modal/Dropdown của antd render qua portal ra thẳng <body>, nằm ngoài container
+   nên biến khai báo trong container sẽ không kế thừa xuống được (var() rỗng). */
+:root {
   --finance-navy: #1a2238;
   --finance-navy-soft: #2d3855;
   --finance-ink: #302b28;
@@ -9,6 +12,9 @@
   --finance-gold: #d4b483;
   --finance-green: #3d4a3e;
   --finance-burgundy: #7b3535;
+}
+
+.tutor-finance-container {
   min-height: 100%;
   padding: clamp(24px, 2.2vw, 36px);
   color: var(--finance-navy);
@@ -227,7 +233,9 @@
   box-shadow: 0 12px 32px rgba(26, 34, 56, 0.055);
 }
 
-.tutor-finance-container .finance-primary-action.ant-btn-primary:not(:disabled) {
+/* Kèm .finance-modal vì nút OK của Modal nằm trong portal, ngoài .tutor-finance-container. */
+.tutor-finance-container .finance-primary-action.ant-btn-primary:not(:disabled),
+.finance-modal .finance-primary-action.ant-btn-primary:not(:disabled) {
   color: #fff;
   background: var(--finance-navy);
   border-color: var(--finance-navy);
@@ -235,21 +243,25 @@
 }
 
 .tutor-finance-container .finance-primary-action.ant-btn-primary:not(:disabled):hover,
-.tutor-finance-container .finance-primary-action.ant-btn-primary:not(:disabled):focus-visible {
+.tutor-finance-container .finance-primary-action.ant-btn-primary:not(:disabled):focus-visible,
+.finance-modal .finance-primary-action.ant-btn-primary:not(:disabled):hover,
+.finance-modal .finance-primary-action.ant-btn-primary:not(:disabled):focus-visible {
   color: #fff;
   background: var(--finance-navy-soft);
   border-color: var(--finance-navy-soft);
   transform: translateY(-1px);
 }
 
-.tutor-finance-container .finance-text-action.ant-btn-link {
+.tutor-finance-container .finance-text-action.ant-btn-link,
+.finance-modal .finance-text-action.ant-btn-link {
   height: auto;
   padding: 4px 0;
   color: var(--finance-navy);
   font-weight: 650;
 }
 
-.tutor-finance-container .finance-text-action.ant-btn-link:hover {
+.tutor-finance-container .finance-text-action.ant-btn-link:hover,
+.finance-modal .finance-text-action.ant-btn-link:hover {
   color: var(--finance-green);
 }
 
@@ -977,27 +989,30 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 245px;
-  padding: 26px;
+  min-height: 252px;
+  padding: 24px 26px;
   overflow: hidden;
   color: #fff;
+  /* Màu mặt thẻ do JS truyền vào theo ngân hàng đang chọn (xem utils/bankTheme.ts +
+     BankAccountCard). Giá trị fallback trong var() là bản navy mặc định — dùng khi chưa có
+     tài khoản, hoặc tên ngân hàng không nằm trong bảng thương hiệu. */
   background:
-    radial-gradient(circle at 86% 15%, rgba(212, 180, 131, 0.34), transparent 28%),
-    linear-gradient(135deg, #1a2238, #303d5d);
+    radial-gradient(circle at 86% 15%, var(--bank-glow, rgba(212, 180, 131, 0.34)), transparent 28%),
+    linear-gradient(135deg, var(--bank-from, #1a2238), var(--bank-to, #303d5d));
   border-radius: 18px;
-  box-shadow: 0 18px 36px rgba(26, 34, 56, 0.18);
+  box-shadow: 0 18px 36px var(--bank-shadow, rgba(26, 34, 56, 0.18));
 }
 
-.finance-bank-visual::after {
+/* Hoạ tiết nền theo ngân hàng (BankCardArtwork). Nằm dưới mọi nội dung: các khối chữ đều đã
+   có position:relative + z-index:1 sẵn. Không còn vòng tròn trang trí ::after như trước —
+   hoạ tiết này thay thế hẳn, để mặt thẻ không bị hai lớp trang trí chồng nhau. */
+.finance-bank-visual__artwork {
   position: absolute;
-  right: -70px;
-  bottom: -105px;
-  width: 250px;
-  height: 250px;
-  content: '';
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 50%;
-  box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.025);
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
 .finance-bank-visual__top,
@@ -1011,30 +1026,84 @@
   position: relative;
   z-index: 1;
   justify-content: space-between;
-  color: rgba(255, 255, 255, 0.62);
+  /* Nhãn "TUTORA PAYOUT" ăn theo màu nhấn của ngân hàng (mặc định là vàng đồng của hệ màu
+     trang tài chính). Logo/wordmark bên phải tự đặt màu riêng nên không bị ảnh hưởng. */
+  color: var(--bank-accent, var(--finance-gold));
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.14em;
 }
 
-.finance-bank-visual__top .anticon {
-  color: var(--finance-gold);
-  font-size: 22px;
+/* Nhãn cố định bên trái hàng trên. nowrap vì khi thẻ hẹp (ví phụ huynh/học sinh, mobile) mà
+   để wrap thì "TUTORA / PAYOUT" xuống hai dòng, đẩy lệch cả hàng. */
+.finance-bank-visual__label {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
-.finance-bank-visual__name {
+/* Logo thật của ngân hàng: đặt trên nền trắng bo góc như ô logo dập trên thẻ. Cần nền trắng
+   vì logo các ngân hàng là ảnh nhiều màu (đỏ/xanh/đen) — đặt trực tiếp lên mặt thẻ tối thì
+   phần chữ sẫm của logo sẽ mất hút. */
+.finance-bank-visual__logo {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 62px;
+  padding: 5px 9px;
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 7px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.16);
+}
+
+.finance-bank-visual__logo img {
+  display: block;
+  width: auto;
+  max-width: 84px;
+  height: 20px;
+  object-fit: contain;
+}
+
+/* Thiếu logo (CDN lỗi, hoặc ngân hàng không có trong danh sách) → tên ngân hàng dạng chữ,
+   vẫn nằm đúng vị trí nhận diện ở góc trên-phải. */
+.finance-bank-visual__wordmark {
+  /* Tên đầy đủ có thể rất dài ("Ngân hàng TMCP Đầu tư và Phát triển Việt Nam") — giới hạn bề
+     ngang và cho xuống dòng, thay vì đẩy nhãn bên trái co lại. */
+  max-width: 54%;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  text-align: right;
+  text-transform: none;
+}
+
+.finance-bank-visual__emv {
   position: relative;
   z-index: 1;
-  margin-top: 26px;
-  color: rgba(255, 255, 255, 0.76);
-  font-size: 15px;
-  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-top: 20px;
+}
+
+.finance-bank-chip {
+  width: 43px;
+  height: 33px;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.28));
+}
+
+.finance-bank-contactless {
+  width: 21px;
+  height: 21px;
+  color: rgba(255, 255, 255, 0.68);
 }
 
 .finance-bank-visual__number {
   position: relative;
   z-index: 1;
-  margin-top: 9px;
+  margin-top: 18px;
   font-family: 'IBM Plex Mono', monospace;
   font-size: clamp(24px, 2.2vw, 31px);
   font-weight: 600;
@@ -1042,13 +1111,33 @@
   white-space: nowrap;
 }
 
-.finance-bank-visual__holder {
+.finance-bank-visual__bottom {
   position: relative;
   z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+/* Tên ngân hàng dạng chữ ở góc dưới-phải — chỉ hiện khi góc trên đã là logo ảnh, để tên ngân
+   hàng luôn có mặt dưới dạng text (đọc được bằng screen reader, copy được) mà không lặp lại. */
+.finance-bank-visual__brand {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.finance-bank-visual__holder {
   flex-direction: column;
   align-items: flex-start;
   gap: 3px;
-  margin-top: 28px;
+  min-width: 0;
 }
 
 .finance-bank-visual__holder span {
@@ -1057,6 +1146,7 @@
   font-weight: 700;
   letter-spacing: 0.11em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .finance-bank-visual__holder strong {
@@ -2093,13 +2183,40 @@
   }
 
   .finance-bank-visual {
-    min-height: 220px;
+    min-height: 228px;
     padding: 20px;
   }
 
   .finance-bank-visual__number {
     font-size: 21px;
     letter-spacing: 0.055em;
+  }
+
+  .finance-bank-visual__emv {
+    gap: 9px;
+    margin-top: 16px;
+  }
+
+  .finance-bank-chip {
+    width: 37px;
+    height: 28px;
+  }
+
+  .finance-bank-visual__logo img {
+    max-width: 70px;
+    height: 17px;
+  }
+
+  /* Thẻ hẹp + tên ngân hàng dạng đầy đủ ("Ngân hàng TMCP Đầu tư và Phát triển Việt Nam") thì
+     cỡ 13px xuống tới 3 dòng, chèn ép hàng trên. Thu nhỏ để gọn trong 2 dòng. */
+  .finance-bank-visual__wordmark {
+    font-size: 11px;
+    line-height: 1.25;
+  }
+
+  .finance-bank-visual__bottom,
+  .finance-bank-visual__number {
+    margin-top: 15px;
   }
 
   .finance-form-actions {

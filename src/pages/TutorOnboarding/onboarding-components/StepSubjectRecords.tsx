@@ -26,9 +26,22 @@ interface StepSubjectRecordsProps {
   saving?: boolean;
 }
 
-// Ngưỡng cảnh báo giá: tutor thường không cao quá 1tr/giờ. > 2tr coi như nhập nhầm.
-const PRICE_WARN_HIGH = 2_000_000;
-const MIN_PRICE = 1000;
+/**
+ * Khoảng giá hợp lệ — sao đúng luật của backend.
+ *
+ * Nguồn sự thật: `TutorService.ValidateSubjectGradePricesAsync`
+ *   `p.PricePerHour < 50000 || p.PricePerHour > 2000000` → ném ArgumentException.
+ * Hai đầu đều BAO GỒM: 50.000 và 2.000.000 là hợp lệ.
+ *
+ * Trước đây FE chỉ CẢNH BÁO khi vượt 2tr và để `min` ở 1.000, nên gia sư nhập 5tr (hoặc
+ * 1.000) vẫn bấm lưu được rồi mới bị server từ chối — mất cả một vòng gọi API để biết một
+ * điều mà FE đã biết sẵn. Giờ chặn ngay tại ô nhập.
+ *
+ * Nếu backend đổi ngưỡng thì phải sửa cả hai chỗ; chưa có endpoint nào trả cấu hình này về
+ * cho FE đọc.
+ */
+const PRICE_MIN = 50_000;
+const PRICE_MAX = 2_000_000;
 
 // Số giờ/buổi gia sư có thể chọn cho môn.
 const PRICE_PRESETS = [50_000, 100_000, 150_000, 200_000, 250_000];
@@ -168,7 +181,8 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
     sessionsPerWeek != null &&
     sessionsPerWeek > 0 &&
     !isSessionsTooHigh;
-  const isPriceTooHigh = hourlyRate != null && hourlyRate > PRICE_WARN_HIGH;
+  // `isPriceTooHigh` đã bỏ: ô nhập kẹp trần ở PRICE_MAX nên giá trị không thể vượt, cờ đó
+  // vĩnh viễn false. Khoảng giá hợp lệ nói bằng dòng gợi ý ngay dưới ô nhập.
   const isEditMode = editingRecordId != null;
 
   const resetForm = () => {
@@ -218,9 +232,8 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
       return;
     }
 
-    // `onSaveSubjectRecords` (savePricing) đã tự hiện toast đúng với message thật của BE — kể cả
-    // khi hồ sơ đã active và thay đổi chỉ được đưa vào hàng chờ Admin duyệt (không toast cố định
-    // ở đây nữa để tránh báo "đã lưu" nhầm trong trường hợp đó).
+    // `onSaveSubjectRecords` (savePricing) đã tự hiện toast với message thật của BE nên không
+    // toast cố định ở đây nữa. Môn & giá lưu là áp dụng ngay, không qua hàng chờ Admin duyệt.
     if (editingRecordId) {
       const nextRecords = state.subjectRecords.map((record) =>
         record.id === editingRecordId ? { ...record, ...input } : record,
@@ -335,26 +348,38 @@ const StepSubjectRecords: React.FC<StepSubjectRecordsProps> = ({
                 <label className={styles.recordManualInput}>
                   <span>Nhập khác</span>
                   <InputNumber<number>
-                    min={MIN_PRICE}
+                    min={PRICE_MIN}
+                    max={PRICE_MAX}
                     step={10_000}
                     value={hourlyRate ?? undefined}
                     onChange={(value) => setHourlyRate(value ?? null)}
                     formatter={(value) => (value ? formatPrice(Number(value)) : '')}
-                    parser={(value) => (value ? Number(value.replace(/\D/g, '')) : 0)}
+                    /**
+                     * Kẹp trần NGAY TRONG parser, không chỉ dựa vào prop `max`.
+                     *
+                     * Đo trên chính antd v6 của dự án: với `max` đơn thuần, gõ "3000000" thì
+                     * `onChange` KHÔNG bắn (rc-input-number chặn giá trị ngoài khoảng khi
+                     * người dùng đang gõ), nên state kẹt ở giá trị cũ và chỉ được kéo về
+                     * 2.000.000 lúc rời ô. Kẹp ở parser thì state luôn là một số hợp lệ ngay
+                     * từ ký tự đầu tiên vượt trần.
+                     *
+                     * Chỉ kẹp ĐẦU TRÊN. Kẹp cả đầu dưới sẽ phá việc gõ: vừa bấm "5" đã nhảy
+                     * thành 50.000 rồi ký tự sau nối vào thành 500.000. Đầu dưới để prop `min`
+                     * lo — antd tự nâng lên 50.000 khi rời ô (đã kiểm chứng).
+                     */
+                    parser={(value) => (value ? Math.min(Number(value.replace(/\D/g, '')), PRICE_MAX) : 0)}
                     addonAfter="VND"
                     placeholder="Nhập số tiền"
                     style={{ width: '100%' }}
                   />
                 </label>
-                {isPriceTooHigh && (
-                  <div className={styles.recordPriceWarn}>
-                    <WarningOutlined />
-                    <span>
-                      Mức giá <strong>{formatPrice(hourlyRate ?? 0)}đ/giờ</strong> khá cao so với mặt bằng chung. Hãy
-                      kiểm tra lại trước khi lưu.
-                    </span>
-                  </div>
-                )}
+                {/* Ô nhập tự kéo số về trong khoảng, nên PHẢI nói trước khoảng đó là bao nhiêu:
+                    gõ 5tr rồi thấy nó lặng lẽ thành 2tr mà không có dòng này thì trông như ứng
+                    dụng nuốt mất số vừa nhập. Thay cho cảnh báo "giá khá cao" cũ — cảnh báo đó
+                    giờ không bao giờ hiện được nữa vì giá trị không thể vượt trần. */}
+                <p className={styles.recordPricingHint}>
+                  Giá hợp lệ từ {formatPrice(PRICE_MIN)}đ đến {formatPrice(PRICE_MAX)}đ mỗi giờ.
+                </p>
               </div>
 
               <div className={styles.recordSetupCard}>

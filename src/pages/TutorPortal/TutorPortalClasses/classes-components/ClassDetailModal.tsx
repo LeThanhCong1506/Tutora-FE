@@ -6,7 +6,7 @@ import { useClassDetail } from './hooks/useClassDetail';
 import MaterialsTab from './MaterialsTab';
 import OverviewTab from './OverviewTab';
 import type { ClassItem } from './types';
-import { classStatusMeta, coverFor, formatDateTime, initialsOf } from './utils';
+import { classStatusMeta, coverFor, initialsOf, nextSessionLabel, totalSessionsWithReserved } from './utils';
 
 interface ClassDetailModalProps {
     item: ClassItem | null;
@@ -97,7 +97,7 @@ export default function ClassDetailModal({ item, onClose }: ClassDetailModalProp
                                 <InfoRow
                                     icon={<BookOpen size={15} />}
                                     label="Số buổi"
-                                    value={`${item.completedSessions}/${item.totalSessions} buổi đã học`}
+                                    value={`${item.completedSessions}/${totalSessionsWithReserved(item)} buổi đã học`}
                                 />
                                 <InfoRow
                                     icon={<CalendarDays size={15} />}
@@ -107,12 +107,9 @@ export default function ClassDetailModal({ item, onClose }: ClassDetailModalProp
                                 <InfoRow
                                     icon={<GraduationCap size={15} />}
                                     label="Buổi kế tiếp"
-                                    // Cột trái là phần mô tả lớp, dùng chữ rõ nghĩa thay cho dấu "—".
-                                    value={
-                                        item.nextSessionStart
-                                            ? formatDateTime(item.nextSessionStart)
-                                            : 'Không có'
-                                    }
+                                    // Không còn buổi đã mở thì nói rõ lý do (còn buổi chờ mở /
+                                    // đã dạy xong khoá / khoá đã huỷ) thay vì "Không có".
+                                    value={nextSessionLabel(item)}
                                 />
                             </div>
                         </div>
