@@ -3,6 +3,7 @@ import { X, Loader2, FileText, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { toast } from 'react-toastify';
 import { uploadMaterial } from '../../../../services/materials.service';
+import { getApiErrorMessage } from '../../../../utils/apiError';
 import styles from '../../styles.module.css';
 
 interface UploadMaterialModalProps {
@@ -70,8 +71,8 @@ const UploadMaterialModal = ({ bookingId, onClose, onUploaded }: UploadMaterialM
         // Tiêu đề mặc định = tên file bỏ đuôi; gia sư đổi sau ở trang tài liệu.
         await uploadMaterial(bookingId, file, file.name.replace(/\.[^.]+$/, ''));
         ok += 1;
-      } catch {
-        toast.error(`Không tải lên được "${file.name}".`);
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, `Không tải lên được "${file.name}".`));
       }
     }
 
