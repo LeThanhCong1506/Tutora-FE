@@ -103,14 +103,10 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
   const [mockCamOn, setMockCamOn] = useState(initialCamOn);
   const [mockScreenSharing, setMockScreenSharing] = useState(false);
   const [mockMessages, setMockMessages] = useState<ChatMessage[]>([]);
-  // Panel bên phải: mở ĐÚNG MỘT cái, chọn từ thanh công cụ (mẫu Preply). Mặc định
-  // mở Trò chuyện như trước để không đổi thói quen người dùng.
   const [activePanel, setActivePanel] = useState<SidePanelKind>('chat');
-  // Mốc "đã đọc": số tin đã thấy lúc rời khỏi panel Trò chuyện.
   const [seenMessageCount, setSeenMessageCount] = useState(0);
-  // Đặt Ở ĐÂY (không phải trong panel) để tiến trình "Đang tạo câu hỏi" và prompt
-  // đang gõ sống sót khi gia sư đóng panel hoặc chuyển sang Ghi chú/Theo dõi.
   const practiceGeneration = usePracticeGeneration();
+
   const [whiteboardOpen, setWhiteboardOpen] = useState(false);
   // Modal "Kết thúc"/"Rời đi" gộp chung 2 lựa chọn: kết thúc bình thường hoặc báo ngắt giữa chừng
   // do sự cố đột xuất — trước đây là 2 nút/2 modal tách rời (1 ở ControlBar, 1 icon riêng ở header).
@@ -254,6 +250,10 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
     broadcastTracking,
     broadcastPracticeSent,
     practiceSignal,
+    materialSignal,
+    broadcastMaterialReady,
+    broadcastAnswer,
+    latestAnswer,
     toggleMic,
     toggleCam,
     toggleScreenShare,
@@ -264,6 +264,24 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
     identity,
   });
   const sessionReplaced = guardSessionReplaced || heartbeatSessionReplaced;
+
+  // Học sinh vừa trả lời -> gia sư thấy ngay đúng/sai, không phải hỏi miệng từng câu.
+  const lastAnswerAt = latestAnswer?.at;
+  useEffect(() => {
+    if (!isTutor || !latestAnswer) return;
+
+    const { questionPreview, format, answer, isCorrect } = latestAnswer;
+    const head = questionPreview ? `"${questionPreview}"` : 'Một câu hỏi';
+
+    if (format === 'essay') {
+      toast.info(`Học sinh đã làm ${head}: ${answer}`, { autoClose: 8000 });
+    } else if (isCorrect) {
+      toast.success(`Học sinh chọn ${answer} — đúng. ${head}`, { autoClose: 6000 });
+    } else {
+      toast.warning(`Học sinh chọn ${answer} — chưa đúng. ${head}`, { autoClose: 8000 });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastAnswerAt, isTutor]);
 
   useEffect(() => {
     if (!scheduleConflictMessage || sessionIdNum == null) return;
@@ -329,6 +347,7 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
   useEffect(() => {
     const autoEndAt = isMock ? undefined : presenceStatus?.autoEndAt;
     if (!autoEndAt || sessionEnded) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAutoEndCountdownSec(null);
       return;
     }
@@ -347,6 +366,7 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
   // dùng overlapRatio thay Realstart→now ở RequestInterruptionAsync).
   useEffect(() => {
     if (isMock || !joined || !presenceStatus?.isCheckedIn || sessionIdNum == null) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setInterruptionEligibility(null);
       return;
     }
@@ -694,6 +714,9 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
           generation={practiceGeneration}
           onPracticeSent={broadcastPracticeSent}
           practiceSignal={practiceSignal}
+          materialSignal={materialSignal}
+          onMaterialReady={broadcastMaterialReady}
+          onAnswered={broadcastAnswer}
           onClose={() => {
             if (activePanel === 'chat') setSeenMessageCount(chatMessages.length);
             setActivePanel(null);
@@ -803,9 +826,8 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
               >
                 <div style={{ fontWeight: 600, fontSize: 13.5 }}>Báo ngắt giữa chừng do sự cố</div>
                 <div style={{ fontSize: 12.5, color: '#6b7280', marginTop: 2 }}>
-                  Chỉ dùng khi có sự cố kỹ thuật ngoài ý muốn (mất điện, mất mạng...) khiến buổi học đang diễn ra bị
-                  gián đoạn. Buổi hiện tại dừng lại, hệ thống tạo ngay 1 buổi phụ để học nốt trong hôm nay. Nếu bạn có
-                  việc bận/gấp cần dừng sớm, hãy dùng chức năng "Dời lịch học" thay vì báo ngắt ở đây.
+                  Chỉ dùng khi có sự cố kỹ thuật ngoài ý muốn khiến buổi học đang diễn ra bị
+                  gián đoạn. Hệ thống tạo ngay 1 buổi phụ để học nốt trong hôm nay.
                   {!interruptEligibleNow && interruptionEligibility && (
                     <>
                       {' '}
