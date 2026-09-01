@@ -16,6 +16,54 @@
   box-shadow: 0 14px 35px rgba(26, 34, 56, 0.05);
 }
 
+/* ── Thanh nhóm cấp 1 ────────────────────────────────────────────────────────
+   Hai công việc tách bạch (trả lời yêu cầu mới vs theo dõi lớp đã chốt) nên
+   nằm ở cấp cao hơn tab trạng thái: khối lớn, có mô tả phụ, để phân biệt rõ
+   với hàng tab lọc bên dưới thay vì trông như hai hàng tab ngang hàng. */
+.sectionBar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+  padding: 18px 22px 0;
+}
+
+.sectionButton {
+  display: grid;
+  gap: 3px;
+  padding: 12px 16px;
+  border: 1px solid #eaecf0;
+  border-radius: 12px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.sectionButton:hover {
+  border-color: #d6d9e0;
+}
+
+.sectionButtonActive {
+  border-color: #631b1b;
+  background: rgba(99, 27, 27, 0.05);
+}
+
+.sectionLabel {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a2238;
+}
+
+.sectionButtonActive .sectionLabel {
+  color: #631b1b;
+}
+
+.sectionHint {
+  font-size: 12px;
+  line-height: 1.45;
+  color: #586174;
+}
+
 .tabBar {
   display: flex;
   gap: 5px;
@@ -244,6 +292,23 @@
   border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
+  line-height: 1.4;
+}
+
+/* Mã booking — cố tình trung tính và dùng font đều chữ số để dễ đối chiếu với mã trong thông báo
+   hoặc tin nhắn hỗ trợ, đồng thời không tranh sự chú ý với badge trạng thái ngay bên cạnh. */
+.bookingIdBadge {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border: 1px solid #eaecf0;
+  border-radius: 999px;
+  background: #f7f8fa;
+  color: #586174;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
   line-height: 1.4;
 }
 

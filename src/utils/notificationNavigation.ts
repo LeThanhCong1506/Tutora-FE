@@ -120,9 +120,11 @@ export function getNotificationTargetPath(notification: NotificationDTO): string
         || type === NOTIFICATION_TYPE.BookingCancelled
         || type === NOTIFICATION_TYPE.PaymentRemainingRequired
         || type === NOTIFICATION_TYPE.BookingPaymentDueSoon) && refId) {
-        // Tutor portal hiện xử lý yêu cầu trực tiếp trên trang danh sách và không có
-        // route `bookings/:id`, nên không tạo deep-link dẫn tới trang 404.
-        if (prefix === '/tutor-portal') return `${prefix}/bookings`;
+        // Tutor portal CÓ route `bookings/:id` (TutorPortalBookingDetail) — comment cũ ở đây nói
+        // ngược lại và đã lỗi thời. Hệ quả của việc đổ về trang danh sách: nó mở tab mặc định
+        // "Chờ xác nhận", nên gia sư bấm vào thông báo "đặt lịch đã bị hủy" lại thấy một danh sách
+        // không chứa booking vừa được báo — trông y như chưa từng nhận được thông báo.
+        if (prefix === '/tutor-portal') return `${prefix}/bookings/${refId}`;
         return `${prefix}/booking/${refId}`;
     }
     // Đánh giá khóa học nằm trên trang chi tiết booking, cho cả parent lẫn student portal.
@@ -131,11 +133,11 @@ export function getNotificationTargetPath(notification: NotificationDTO): string
         || type === NOTIFICATION_TYPE.FeedbackReply) && refId) {
         return `${prefix}/booking/${refId}`;
     }
-    // Đánh giá mới / bị ẩn / hiện lại: gia sư về danh sách booking vì tutor portal không có
-    // route `booking/:id`; phụ huynh và học sinh vào thẳng chi tiết booking để đọc lý do.
+    // Đánh giá mới / bị ẩn / hiện lại: gia sư đi thẳng chi tiết booking qua `bookings/:id`
+    // (đường dẫn của tutor portal là số nhiều), phụ huynh và học sinh qua `booking/:id`.
     if (type === NOTIFICATION_TYPE.FeedbackReceived
         || type === NOTIFICATION_TYPE.FeedbackModerated) {
-        if (prefix === '/tutor-portal') return `${prefix}/bookings`;
+        if (prefix === '/tutor-portal') return refId ? `${prefix}/bookings/${refId}` : `${prefix}/bookings`;
         return refId ? `${prefix}/booking/${refId}` : lessonListPath;
     }
     // Khiếu nại: mọi portal đều có route `disputes/:classSessionId`, nên refId là classSessionId.

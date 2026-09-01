@@ -98,6 +98,7 @@ const StudentDisputeDetail = lazy(() => import('./pages/StudentLessons/StudentDi
 const ParentDisputeDetail = lazy(() => import('./pages/ParentDisputes/ParentDisputeDetail'));
 const StudentAccount = lazy(() => import('./pages/StudentAccount'));
 const StudentProfile = lazy(() => import('./pages/StudentProfile'));
+const StudentProgress = lazy(() => import('./pages/StudentProgress'));
 
 // Payment callback
 const PaymentCallback = lazy(() => import('./pages/PaymentCallback/PaymentCallback'));
@@ -409,6 +410,7 @@ function App() {
                 </Route>
                 <Route path="favorites" element={<FavoritesPage />} />
                 <Route path="calendar" element={<StudentLessons />} />
+                <Route path="progress" element={<StudentProgress />} />
                 <Route path="calendar/:lessonId" element={<StudentLessonDetail />} />
                 <Route path="lessons" element={<LegacyStudentLessonsRedirect />} />
                 <Route path="lessons/:lessonId" element={<LegacyStudentLessonsRedirect />} />

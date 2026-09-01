@@ -65,6 +65,8 @@ export interface BookingScheduleApi {
     isWeekFull: boolean;
     /** Còn thiếu bao nhiêu buổi nữa mới đủ tuần mẫu. */
     remainingWeekPicks: number;
+    /** Tuần đang xem còn ô nào chọn được không — dùng để gợi ý chuyển tuần khi mẫu chưa đủ. */
+    hasSelectableSlotInVisibleWeek: boolean;
     /** Ngưỡng báo trước đang áp dụng (giờ) — khác nhau giữa luồng phụ huynh và luồng học sinh. */
     minLeadHours: number;
     isBookedCell: (dateKey: string, time: string) => boolean;

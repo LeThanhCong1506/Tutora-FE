@@ -4,7 +4,7 @@ import type { ClassSessionResponse } from '../../../../services/classSession.ser
 import { groupSessions } from './groupSessions';
 import SessionRow from './SessionRow';
 import type { ClassItem } from './types';
-import { progressOf } from './utils';
+import { progressOf, totalSessionsWithReserved } from './utils';
 
 interface OverviewTabProps {
     item: ClassItem;
@@ -28,7 +28,8 @@ function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; va
 }
 
 export default function OverviewTab({ item, sessions, loading }: OverviewTabProps) {
-    const percent = progressOf(item.completedSessions, item.totalSessions);
+    const totalSessions = totalSessionsWithReserved(item);
+    const percent = progressOf(item.completedSessions, totalSessions);
     // Buổi phụ / học lại được gom vào buổi gốc, mặc định thu gọn.
     const groups = useMemo(() => groupSessions(sessions), [sessions]);
     const [expandedIds, setExpandedIds] = useState<number[]>([]);
@@ -43,7 +44,7 @@ export default function OverviewTab({ item, sessions, loading }: OverviewTabProp
                     <p className="text-[13px] font-medium text-[#3e2f28]">Tiến độ khoá học</p>
                     <p className="text-[13px] text-[#7a6a60]">
                         <span className="font-semibold text-[#3e2f28]">{item.completedSessions}</span>
-                        /{item.totalSessions} buổi · {percent}%
+                        /{totalSessions} buổi · {percent}%
                     </p>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-[#f2f0e4]">
@@ -63,7 +64,7 @@ export default function OverviewTab({ item, sessions, loading }: OverviewTabProp
                 <Stat
                     icon={<CheckCircle2 size={17} />}
                     label="Còn lại"
-                    value={`${Math.max(item.totalSessions - item.completedSessions, 0)} buổi`}
+                    value={`${Math.max(totalSessions - item.completedSessions, 0)} buổi`}
                 />
             </div>
 

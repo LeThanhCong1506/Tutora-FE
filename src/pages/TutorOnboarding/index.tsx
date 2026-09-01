@@ -80,7 +80,7 @@ const TutorOnboarding: React.FC = () => {
       return;
     }
     if (currentStep === 2) {
-      // savePricing tự hiện toast đúng (kể cả trường hợp hồ sơ active → chờ Admin duyệt).
+      // savePricing tự hiện toast theo message thật của BE (lưu là áp dụng ngay, không chờ duyệt).
       if (await sync.savePricing(state.subjectRecords)) {
         goNext();
       }

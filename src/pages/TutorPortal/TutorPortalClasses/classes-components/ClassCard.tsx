@@ -1,6 +1,13 @@
 import { StatusBadge } from '../../../../components/shared';
 import type { ClassItem } from './types';
-import { classStatusMeta, coverFor, formatDateTime, initialsOf, progressOf } from './utils';
+import {
+    classStatusMeta,
+    coverFor,
+    initialsOf,
+    nextSessionLabel,
+    progressOf,
+    totalSessionsWithReserved,
+} from './utils';
 
 interface ClassCardProps {
     item: ClassItem;
@@ -13,7 +20,8 @@ interface ClassCardProps {
  */
 export default function ClassCard({ item, onOpen }: ClassCardProps) {
     const status = classStatusMeta(item.status);
-    const percent = progressOf(item.completedSessions, item.totalSessions);
+    const totalSessions = totalSessionsWithReserved(item);
+    const percent = progressOf(item.completedSessions, totalSessions);
 
     return (
         <button
@@ -57,7 +65,7 @@ export default function ClassCard({ item, onOpen }: ClassCardProps) {
                 <div className="mt-auto">
                     <div className="mb-1.5 flex items-center justify-between text-[12px] text-[#7a6a60]">
                         <span>
-                            Tiến độ {item.completedSessions}/{item.totalSessions} buổi
+                            Tiến độ {item.completedSessions}/{totalSessions} buổi
                         </span>
                         <span className="font-semibold text-[#3e2f28]">{percent}%</span>
                     </div>
@@ -68,7 +76,7 @@ export default function ClassCard({ item, onOpen }: ClassCardProps) {
                         />
                     </div>
                     <p className="mt-2 text-[12px] text-[#7a6a60]">
-                        Buổi kế tiếp: {formatDateTime(item.nextSessionStart)}
+                        Buổi kế tiếp: {nextSessionLabel(item)}
                     </p>
                 </div>
             </div>

@@ -121,8 +121,7 @@
 .ghostBtn:focus-visible,
 .iconBtn:focus-visible,
 .account:focus-visible,
-.pendingAlert:focus-visible,
-.linkBtn:focus-visible {
+.pendingAlert:focus-visible {
   outline: 3px solid rgba(23, 33, 58, 0.18);
   outline-offset: 2px;
 }
@@ -146,18 +145,290 @@
   line-height: 1.45;
 }
 
+/* ===== KHỐI THEO TỪNG CON =====
+   MỖI CON = MỘT THẺ: dải header có nền xám nhạt, thân thẻ trắng, một đường viền bao ngoài.
+
+   ─── Vì sao đổi khỏi bản trước ───────────────────────────────────────────────
+   Bản trước để hàng danh tính trần trên nền kem, gạch một đường kẻ DƯỚI nó, rồi tới dải nội
+   dung trắng. Đường kẻ đó đặt sai chỗ: nó tách đứa con khỏi CHÍNH nội dung của nó, trong khi
+   giữa con này và con kế tiếp thì chỉ có khoảng trắng. Mắt đọc theo nguyên tắc gần-nhau nên
+   gom "nội dung con A + tên con B" thành một cụm — đúng chỗ gây rối.
+
+   Bây giờ đường kẻ nằm giữa header và thân của cùng một thẻ (đúng ngữ nghĩa card-header), và
+   ranh giới giữa hai con là viền ngoài + nền header khác màu — không thể đọc lẫn được.
+
+   Vẫn giữ nguyên tắc chống hộp-lồng-hộp: chế độ Tổng quát dùng thẳng thân thẻ làm nội dung
+   (không có hộp trắng thứ hai); chế độ Chi tiết mới đổi thân thẻ sang nền kem để các thẻ khoá
+   học trắng nổi lên trên đó — trắng trên kem, giống đúng cách trang này vẫn đặt thẻ. */
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.studentSection {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(62, 47, 40, 0.13);
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(23, 33, 58, 0.04);
+  animation: cardIn 280ms cubic-bezier(0.22, 0.8, 0.3, 1) both;
+}
+
+.studentHead {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px 16px;
+  background: #f6f7f9;
+  border-bottom: 1px solid rgba(62, 47, 40, 0.12);
+}
+
+/* Thân thẻ. Tổng quát giữ nền trắng của thẻ; Chi tiết chuyển sang nền kem của trang để lưới thẻ
+   khoá học trắng có nền tương phản mà đứng lên. */
+.sectionBody {
+  padding: 16px 18px;
+}
+
+.sectionBodyGrid {
+  padding: 16px;
+  background: #faf7f2;
+}
+
+.studentAvatar {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #f2f4f7;
+  color: #17213a;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.studentAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* `min-width: 0` để ellipsis của tên/meta hoạt động trong flex — thiếu nó thì tên dài đẩy nút
+   tài khoản và menu ⋯ tràn ra ngoài. */
+.studentIdentity {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.studentIdentity h2 {
+  overflow: hidden;
+  margin: 0;
+  color: #17213a;
+  font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.studentIdentity p {
+  overflow: hidden;
+  margin: 2px 0 0;
+  color: #6b7385;
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Nút chuyển chế độ xem: Tổng quát | Chi tiết ── */
+/* Segmented control nhỏ, đặt trong hàng danh tính của từng con nên mỗi con tự chọn chế độ. */
+.viewToggle {
+  display: inline-flex;
+  flex: 0 0 auto;
+  padding: 2px;
+  gap: 2px;
+  border: 1px solid #dfe3e9;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.viewToggle button {
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #6b7385;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.viewToggle button:hover {
+  color: #17213a;
+}
+
+.viewToggleActive {
+  background: #17213a !important;
+  color: #fff !important;
+}
+
+.viewToggle button:focus-visible {
+  outline: 3px solid rgba(23, 33, 58, 0.18);
+  outline-offset: 1px;
+}
+
+/* ── Chế độ Tổng quát ── */
+/* KHÔNG có hộp riêng: nội dung nằm trực tiếp trong thân thẻ của con (.sectionBody), nên không
+   sinh thêm một viền trắng bên trong một viền trắng. Cũng KHÔNG ảnh cover: cover là thứ để phân
+   biệt các thẻ trong một lưới, ở đây chỉ có một khối nên nó chỉ tốn chiều cao. */
+.overview {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.overviewProgress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.overviewProgressHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #6b7385;
+  font-size: 12.5px;
+}
+
+.overviewProgressHead strong {
+  color: #17213a;
+  font-weight: 650;
+}
+
+.overviewBar {
+  overflow: hidden;
+  height: 6px;
+  border-radius: 999px;
+  background: #f2f4f7;
+}
+
+.overviewBarFill {
+  height: 100%;
+  border-radius: 999px;
+  background: #17213a;
+  transition: width 200ms ease;
+}
+
+.overviewChips {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.overviewNext {
+  margin: 0;
+  color: #6b7385;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.overviewNext span {
+  color: #17213a;
+  font-weight: 600;
+}
+
+/* Hàng hành động: nút nhắc xác nhận (nếu có) chiếm phần trống bên trái, hai nút còn lại dồn phải. */
+.overviewActions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid rgba(62, 47, 40, 0.1);
+}
+
+.overviewActions .pendingAlert {
+  margin-right: auto;
+}
+
+/* Con chưa đặt khoá nào: một dòng nhẹ ngay trong thân thẻ, KHÔNG dùng khối empty-state to như khi
+   chưa có hồ sơ nào — ở đây hồ sơ vẫn tồn tại và vẫn cần thấy được để sửa/xoá. */
+.noBooking {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: #6b7385;
+  font-size: 12.5px;
+}
+
+.inlineLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: none;
+  color: #17213a;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-underline-offset: 2px;
+}
+
+.inlineLink:hover {
+  text-decoration: underline;
+}
+
+.inlineLink:focus-visible {
+  outline: 3px solid rgba(23, 33, 58, 0.18);
+  outline-offset: 2px;
+}
+
+/* Chân thẻ khoá học chỉ còn một nút ("Xem lịch học") — ô sao chép tài khoản đã chuyển lên hàng
+   danh tính của con. Đẩy nút sang phải thay vì để dính mép trái. */
+.cardFootSingle {
+  justify-content: flex-end;
+}
+
+/* Cùng bậc chia cột với lưới card lớp (1 / 2 / 3) thay vì auto-fill theo bề rộng tối thiểu,
+   để hai trang cho ra cùng một nhịp thẻ trên cùng một màn hình. */
 .grid {
   display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 16px;
+  grid-template-columns: 1fr;
   align-items: stretch;
 }
 
-.skeletonCard {
-  height: 208px;
-  border: 1px solid rgba(23, 33, 58, 0.08);
-  border-radius: 16px;
-  background: linear-gradient(100deg, #fff 30%, #f4f5f7 50%, #fff 70%) #fff;
+@media (min-width: 640px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Một mảnh xám nhấp nháy. Dùng cho TỪNG ô trong khung xương thẻ chứ không phải cả thẻ:
+   khung xương phải có đúng hình dáng của thẻ thật (dải cover, avatar tròn, thanh tiến độ,
+   chân thẻ) thì lúc dữ liệu về mới không có cú nhảy layout. */
+.shimmer {
+  background: linear-gradient(100deg, #eef0f3 30%, #f7f8fa 50%, #eef0f3 70%) #eef0f3;
   background-size: 300% 100%;
   animation: shimmer 1.3s ease-in-out infinite;
 }
@@ -183,84 +454,31 @@
 }
 
 /* ===== CARD ===== */
+/* Khung thẻ khớp card lớp ở portal gia sư: viền mảnh, góc gần vuông, hover chỉ đậm viền chứ
+   không nhấc thẻ lên. Padding chuyển hết vào thân thẻ vì dải cover phải chạm sát mép.
+
+   CỐ Ý không đặt `overflow: hidden` ở đây dù dải cover cần bị cắt: menu ⋯ neo theo chính thẻ
+   này và bung xuống quá mép dải cover, `overflow: hidden` ở cấp thẻ sẽ cắt cụt nó. Việc cắt
+   ảnh giao cho chính dải cover (`overflow-hidden` trên div đó). */
 .card {
+  position: relative;
   display: flex;
-  padding: 16px 18px 14px;
   flex-direction: column;
-  gap: 14px;
-  border: 1px solid rgba(23, 33, 58, 0.1);
-  border-radius: 16px;
+  border: 1px solid rgba(62, 47, 40, 0.1);
+  border-radius: 2px;
   background: #fff;
   animation: cardIn 280ms cubic-bezier(0.22, 0.8, 0.3, 1) both;
-  transition:
-    border-color 180ms ease,
-    box-shadow 180ms ease,
-    transform 180ms ease;
+  transition: border-color 180ms ease;
 }
 
 .card:hover {
-  border-color: rgba(23, 33, 58, 0.2);
-  box-shadow: 0 10px 26px rgba(23, 33, 58, 0.09);
-  transform: translateY(-2px);
+  border-color: rgba(62, 47, 40, 0.28);
 }
 
-/* ── Vùng 1: danh tính ── */
-.cardHead {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.avatar {
-  display: grid;
-  width: 44px;
-  height: 44px;
-  place-items: center;
-  flex: 0 0 auto;
-  overflow: hidden;
-  border-radius: 13px;
-  background: #eef0f4;
-  color: #17213a;
-  font-family: 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.identity {
-  display: flex;
-  min-width: 0;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.studentName {
-  margin: 0;
-  overflow: hidden;
-  color: #17213a;
-  font-size: 16px;
-  font-weight: 650;
-  line-height: 1.3;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.studentMeta {
-  margin: 0;
-  overflow: hidden;
-  color: #6b7385;
-  font-size: 12px;
-  line-height: 1.4;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
+/* ── Menu ⋯ của một CON ── */
+/* Trước đây menu này nổi trên dải cover của thẻ (absolute trong .card) nên cần nền trắng mờ để
+   icon đọc được trên ảnh. Giờ nó là phần tử cuối của hàng danh tính, đứng trên nền kem của
+   trang: chỉ cần `position: relative` để `.menu` bung xuống neo theo nó. */
 .menuWrap {
   position: relative;
   flex: 0 0 auto;
@@ -268,13 +486,13 @@
 
 .iconBtn {
   display: grid;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   place-items: center;
   border: 0;
-  border-radius: 10px;
+  border-radius: 999px;
   background: transparent;
-  color: #98a0af;
+  color: #8b93a3;
   cursor: pointer;
   transition:
     background 150ms ease,
@@ -283,10 +501,11 @@
 
 .iconBtn:hover,
 .iconBtn[aria-expanded='true'] {
-  background: #f2f4f7;
+  background: #e3e7ec;
   color: #17213a;
 }
 
+/* Bung sang TRÁI (`right: 0`) vì menu nằm sát mép phải khối — `left: 0` sẽ tràn khỏi màn hình. */
 .menu {
   position: absolute;
   top: calc(100% + 5px);
@@ -369,95 +588,17 @@
 }
 
 /* ── Vùng 2: buổi học tiếp theo ── */
-.schedule {
-  display: flex;
-  min-height: 62px;
-  padding-top: 14px;
-  flex-direction: column;
-  gap: 2px;
-  border-top: 1px solid #eef0f3;
-}
-
-.blockLabel {
-  margin-bottom: 1px;
-  color: #6b7385;
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.nextTime {
-  overflow: hidden;
-  color: #17213a;
-  font-size: 15px;
-  font-weight: 650;
-  line-height: 1.35;
-  letter-spacing: -0.005em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.nextTimeMuted {
-  color: #6b7385;
-  font-weight: 600;
-}
-
-.nextDetail {
-  overflow: hidden;
-  color: #6b7385;
-  font-size: 12.5px;
-  line-height: 1.45;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 /* Dòng số liệu — cố tình nhỏ và nhạt hơn mọi thứ khác, chỉ để liếc qua. */
-.summary {
-  margin-top: 5px;
-  color: #6b7385;
-  font-size: 11.5px;
-  line-height: 1.4;
-  font-variant-numeric: tabular-nums;
-}
-
-.linkBtn {
-  display: inline-flex;
-  padding: 0;
-  align-items: center;
-  gap: 4px;
-  align-self: flex-start;
-  border: 0;
-  background: none;
-  color: #2f4a7d;
-  font: inherit;
-  font-size: 12.5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: color 150ms ease;
-}
-
-.linkBtn:hover {
-  color: #17213a;
-}
-
-.linkBtn svg {
-  transition: transform 180ms ease;
-}
-
-.linkBtn:hover svg {
-  transform: translateX(2px);
-}
-
 /* ── Vùng 3: tài khoản + hành động ── */
+/* Padding ngang khớp `p-4` của thân thẻ để hai vùng thẳng hàng mép trái/phải. */
 .cardFoot {
   display: flex;
   margin-top: auto;
-  padding-top: 13px;
+  padding: 11px 16px;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  border-top: 1px solid #eef0f3;
+  border-top: 1px solid rgba(62, 47, 40, 0.1);
 }
 
 .account {
@@ -479,7 +620,7 @@
 }
 
 .account:hover {
-  background: #f5f6f8;
+  background: #e8ebef;
   color: #17213a;
 }
 
@@ -556,19 +697,50 @@
     width: 100%;
   }
 
-  .card {
-    padding: 14px 15px 12px;
+  /* Dải header của từng con có tới 5 món (avatar, danh tính, nút chuyển chế độ, tài khoản, menu ⋯).
+     Trên màn hẹp — portal phụ huynh cũng chạy trong Zalo Mini App — chúng bóp nhau tới mức tên con
+     bị cắt còn vài chữ. Xếp lại thành 2 hàng:
+       hàng 1: avatar + tên/lớp + menu ⋯
+       hàng 2: tài khoản đăng nhập + nút chuyển chế độ (chiếm phần còn lại)
+
+     `flex: 1 1 0` cho phần danh tính là chỗ then chốt: để `auto` thì flex-basis = bề rộng nội
+     dung, tên dài đẩy chính nó xuống hàng dưới và bỏ avatar đứng trơ một mình cả một hàng. */
+  .studentHead {
+    flex-wrap: wrap;
+    padding: 11px 13px;
+  }
+
+  .studentIdentity {
+    flex: 1 1 0;
+  }
+
+  .account {
+    order: 8;
+    flex: 0 0 auto;
+  }
+
+  .viewToggle {
+    order: 9;
+    flex: 1 1 auto;
+  }
+
+  .viewToggle button {
+    flex: 1 1 0;
+  }
+
+  .sectionBody {
+    padding: 14px;
+  }
+
+  .sectionBodyGrid {
+    padding: 13px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .card,
   .menu,
-  .skeletonCard {
+  .shimmer {
     animation: none;
-  }
-
-  .card:hover {
-    transform: none;
   }
 }

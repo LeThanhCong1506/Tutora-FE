@@ -22,6 +22,7 @@ import {
   WalletIcon,
   DisputeIcon,
   FavoriteIcon,
+  ProgressIcon,
 } from '../shared/icons';
 
 const MESSAGES_PATH = '/student-portal/messages';
@@ -61,6 +62,7 @@ const baseStudentNavItems: NavItem[] = [
   { path: '/student-portal/dashboard', label: 'Tổng quan', icon: DashboardIcon, dataTour: 'nav-dashboard' },
   { path: '/student-portal/booking', label: 'Đặt lịch', icon: BookingIcon, dataTour: 'nav-booking' },
   { path: '/student-portal/calendar', label: 'Thời khóa biểu', icon: CalendarIcon, dataTour: 'nav-calendar' },
+  { path: '/student-portal/progress', label: 'Tiến trình học', icon: ProgressIcon, dataTour: 'nav-progress' },
   { path: '/student-portal/favorites', label: 'Yêu thích', icon: FavoriteIcon, dataTour: 'nav-favorites' },
   { path: MESSAGES_PATH, label: 'Tin nhắn', icon: MessagesIcon, dataTour: 'nav-messages' },
   { path: '/student-portal/wallet', label: 'Tài chính', icon: WalletIcon, dataTour: 'nav-wallet' },

@@ -57,3 +57,14 @@ export function isWithinJoinWindow(scheduledStart?: string | null, toleranceMinu
     if (Number.isNaN(start)) return false;
     return Date.now() >= start - toleranceMinutes * 60_000;
 }
+
+/** Must match BE `ClassSessionService.NoShowReportEarliestMinutes`. */
+export const NO_SHOW_REPORT_EARLIEST_MINUTES = 15;
+
+/** True khi buổi đã trễ đủ lâu so với giờ bắt đầu để nút "Báo gia sư vắng mặt" mở ra. */
+export function canReportTutorNoShow(scheduledStart?: string | null): boolean {
+    if (!scheduledStart) return false;
+    const start = new Date(scheduledStart).getTime();
+    if (Number.isNaN(start)) return false;
+    return Date.now() - start >= NO_SHOW_REPORT_EARLIEST_MINUTES * 60_000;
+}

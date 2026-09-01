@@ -82,6 +82,7 @@ const fixedPackageMatchesCombo = (pkg: TutorPackageResponse, combo: FixedCombo) 
  * - Mount: load pricing + availability + packages → hydrate state.
  * - saveAvailability(): diff availability (Bước 1 → "Tiếp tục").
  * - savePricing(): PUT thay toàn bộ giá theo môn/lớp (Bước 2 → "Tiếp tục").
+ * KHÔNG mục nào ở trang này phải chờ Admin duyệt — mọi thay đổi áp dụng ngay khi lưu.
  * - createFixedPackage(): tạo ngay gói fixed khi tutor bấm "Tạo gói".
  * - updateFixedPackage(): PUT sửa gói tại chỗ (giữ packageId) khi tutor bấm "Cập nhật gói".
  * - savePackages(): reconcile gói fixed + đảm bảo 1 gói flexible (Bước 3 → "Hoàn tất").
@@ -215,10 +216,10 @@ export function useOnboardingSync(hydrate: HydrateFn) {
   );
 
   // ── Bước 2: Môn học & giá ──────────────────────────────────────
-  // Tự hiện toast dựa trên message thật của BE (không phải toast cố định ở nơi gọi) — vì khi hồ
-  // sơ đã active, BE không lưu thẳng vào DB mà chỉ đưa vào hàng chờ Admin duyệt (vẫn trả 200).
-  // Nếu nơi gọi tự hiện "Đã lưu thành công" mà không nhìn vào response, gia sư sẽ tưởng đã lưu
-  // xong trong khi thực ra đang chờ duyệt — đúng bug đã gặp phải.
+  // Lưu là áp dụng NGAY, không qua hàng chờ Admin duyệt — kể cả khi hồ sơ đã active. Mọi mục
+  // trong trang "Thiết lập giảng dạy" (lịch rảnh, môn & giá, gói) đều do gia sư tự chủ; chỉ các
+  // mục ở trang "Hồ sơ gia sư" (thông tin cơ bản, giới thiệu, video) mới cần duyệt lại.
+  // Xem UpdateTutorPricingAsync ở BE.
   const savePricing = useCallback(async (subjectRecords: SubjectRecord[]): Promise<boolean> => {
     const userId = userIdRef.current;
     if (!userId) {
@@ -228,12 +229,7 @@ export function useOnboardingSync(hydrate: HydrateFn) {
     setSaving(true);
     try {
       const response = await updatePricing(userId, recordsToPricingPayload(subjectRecords));
-      const pendingApproval = (response.content as { pendingApproval?: boolean } | null)?.pendingApproval === true;
-      if (pendingApproval) {
-        toast.info(response.message || 'Hồ sơ của bạn đã được duyệt trước đó nên thay đổi này cần Admin xác nhận lại.');
-      } else {
-        toast.success(response.message || 'Đã lưu môn học & giá');
-      }
+      toast.success(response.message || 'Đã lưu môn học & giá');
       return true;
     } catch (err) {
       console.error('[Onboarding] savePricing:', err);
