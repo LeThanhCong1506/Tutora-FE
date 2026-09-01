@@ -69,7 +69,7 @@ const WithdrawForm: React.FC<Props> = ({ balance, bankInfo, onSubmit, loading, m
           {[500000, 1000000, 2000000, 5000000].map((value) => (
             <Button
               key={value}
-              disabled={value > balance}
+              disabled={value > balance || value < minWithdraw}
               className={amount === value ? 'finance-quick-amount--active' : ''}
               onClick={() => chooseAmount(value)}
             >
