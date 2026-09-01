@@ -47,6 +47,13 @@ export interface ClassSessionResponse {
     meetingLink?: string;
     classSessionPrice?: number;
     status: ClassSessionStatus;
+    /**
+     * Trạng thái của BOOKING chứa buổi này (`completed`, `pending_remaining_payment`,
+     * `deposit_paid`, `pending_tutor`...) — khác `status` là trạng thái của riêng buổi.
+     * Một khoá học chỉ thực sự hoàn thành khi booking `completed`, không phải khi tình cờ
+     * hết buổi đã mở (buổi 2..N có thể đang `reserved` chờ trả nốt tiền).
+     */
+    bookingStatus?: string;
     checkInTime?: string;
     checkOutTime?: string;
     isTutorPresent?: boolean;
@@ -338,6 +345,15 @@ export interface TutorClassSummary {
     schedule?: string;
     /** ISO start of the next upcoming session, or null. */
     nextSessionStart?: string | null;
+    /**
+     * Số buổi đã tạo sẵn nhưng CHƯA mở (`reserved`) — chờ phụ huynh trả nốt tiền. Không nằm
+     * trong `totalSessions`. Dùng để giải thích vì sao lớp không có buổi kế tiếp.
+     */
+    reservedSessions?: number;
+    /** Giờ dự kiến của buổi giữ chỗ sớm nhất — chỉ để hiển thị lý do, chưa phải lịch chắc chắn. */
+    nextReservedStart?: string | null;
+    /** Trạng thái booking (`completed`, `pending_remaining_payment`, `deposit_paid`...). */
+    bookingStatus?: string;
     status: TutorClassStatus;
 }
 
