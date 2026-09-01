@@ -44,8 +44,17 @@ import { NOTIFICATION_TYPE } from '../../utils/notificationNavigation';
 import { message as antMessage, Spin, Modal } from 'antd';
 import { ClassSessionRecording, RescheduleProposalModal, SkipContinuationCard } from '../../components/shared';
 import CreateDisputeForm from '../ParentLessons/components/CreateDisputeForm';
-import ReportNoShowModal from '../ParentLessons/components/ReportNoShowModal';
 import NoShowActionModal from '../ParentLessons/components/NoShowActionModal';
+import { getDisputeStatusMeta } from '../../components/disputes';
+
+/** Màu cho từng variant của getDisputeStatusMeta — giữ đúng bảng màu badge đang dùng ở trang này. */
+const DISPUTE_STATUS_TONES: Record<string, { color: string; background: string }> = {
+    success: { color: '#166534', background: '#dcfce7' },
+    info: { color: '#1e40af', background: '#dbeafe' },
+    warning: { color: '#92400e', background: '#fef3c7' },
+    error: { color: '#991b1b', background: '#fee2e2' },
+    neutral: { color: '#475467', background: '#f2f4f7' },
+};
 import { useStudentProfile } from '../../contexts/StudentProfileContext';
 import { getUserInfoFromToken } from '../../services/auth.service';
 import s from '../StudentPages.module.css';
@@ -173,8 +182,14 @@ const StudentLessonDetail = () => {
     const [confirming, setConfirming] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [showDisputeForm, setShowDisputeForm] = useState(false);
-    const [showNoShowModal, setShowNoShowModal] = useState(false);
     const [showNoShowActionModal, setShowNoShowActionModal] = useState(false);
+    // Nhịp đồng hồ để nút Khiếu nại tự hiện đúng lúc buổi học bắt đầu — người đang mở sẵn trang chờ
+    // gia sư sẽ không phải tải lại mới thấy nút.
+    const [nowTs, setNowTs] = useState(() => Date.now());
+    useEffect(() => {
+        const timer = setInterval(() => setNowTs(Date.now()), 30_000);
+        return () => clearInterval(timer);
+    }, []);
     const [dispute, setDispute] = useState<DisputeDetailResponse | null>(null);
     const [thread, setThread] = useState<DisputeMessage[]>([]);
     const [threadInput, setThreadInput] = useState('');
@@ -409,7 +424,6 @@ const StudentLessonDetail = () => {
     const handleActionSuccess = () => {
         setShowConfirmModal(false);
         setShowDisputeForm(false);
-        setShowNoShowModal(false);
         setShowNoShowActionModal(false);
         fetchDetail();
         fetchDispute();
@@ -563,6 +577,32 @@ const StudentLessonDetail = () => {
     // ParentService.CreateDisputeAsync + ClassSessionRescheduleProposalService.IsLearnerSideActor
     // đã nới guard chặn thẳng trước đây) — phụ huynh được báo qua thông báo khi con thực hiện.
     const canCreateDispute = !TERMINAL_BOOKING_STATUSES.includes(String(lesson.bookingStatus || '').toLowerCase());
+
+    // Khiếu nại mở từ ĐÚNG GIỜ BẮT ĐẦU — cùng luật với trang phụ huynh (ParentLessonDetail) và với
+    // BE (DisputeSettlementPolicy.IsEligibleClassSession). Nút "Báo gia sư vắng mặt" riêng đã bỏ:
+    // form khiếu nại có sẵn loại "Gia sư vắng mặt" và tự chuyển buổi sang no_show.
+    //
+    // CỜ TEST — xem ghi chú ở DisputeSettlementPolicy.AllowDisputeBeforeSessionStart (BE). Ba cờ
+    // (BE, trang phụ huynh, trang này) phải bật/tắt cùng nhau.
+    // Khiếu nại đã kết thúc — 'resolved' (admin ra phán quyết) và 'closed' (admin đóng do hai bên
+    // hoà giải) đều là trạng thái cuối, không còn gì để trao đổi thêm.
+    const isDisputeSettled = dispute?.status === 'resolved' || dispute?.status === 'closed';
+
+    // Chỉ khiếu nại đang MỞ mới chặn tạo cái mới — khớp với guard ở BE (d.Status != 'closed').
+    const hasOpenDispute = !!dispute && dispute.status !== 'closed';
+
+    const ALLOW_DISPUTE_BEFORE_START = true;
+    const hasSessionStarted = ALLOW_DISPUTE_BEFORE_START || new Date(lesson.scheduledStart).getTime() <= nowTs;
+    // `!dispute` là sai: bản ghi khiếu nại KHÔNG biến mất khi admin đóng, nó chỉ chuyển sang
+    // 'closed'. Dùng nó làm điều kiện thì một buổi từng bị khiếu nại nhầm sẽ mất nút vĩnh viễn,
+    // kể cả sau khi admin đã hoà giải và trả buổi về trạng thái bình thường.
+    //
+    // Bỏ luôn ràng buộc !isParentManaged: BE (ParentService.CreateDisputeAsync) đã cho phép học
+    // sinh do phụ huynh quản lý tự tạo khiếu nại — phụ huynh vẫn được báo qua thông báo và vẫn giữ
+    // quyền tài chính. Giữ chặn ở FE chỉ khiến các em không có đường nào phản ánh.
+    const showDisputeAction =
+        canCreateDispute && !hasOpenDispute && hasSessionStarted && lesson.status === 'scheduled';
+
     const pendingReschedule = lesson.pendingRescheduleProposal;
     const canProposeReschedule =
         lesson.status === 'scheduled' && !pendingReschedule && !lesson.skipConfirmedByBothSides;
@@ -835,8 +875,8 @@ const StudentLessonDetail = () => {
                                 Nếu gia sư không có mặt, bạn có thể báo cáo vắng mặt ngay.
                             </div>
                         </div>
-                        <button style={actionBtnDispute} onClick={() => setShowNoShowModal(true)}>
-                            Báo gia sư vắng mặt
+                        <button style={actionBtnDispute} onClick={() => setShowDisputeForm(true)}>
+                            Khiếu nại
                         </button>
                     </div>
                 )}
@@ -864,7 +904,7 @@ const StudentLessonDetail = () => {
                     </div>
                 )}
 
-                {renderLegacyTopActions && lesson.status === 'completed' && !dispute && canCreateDispute && (
+                {renderLegacyTopActions && lesson.status === 'completed' && !hasOpenDispute && canCreateDispute && (
                     <div style={actionCardFeedback}>
                         <div style={{ ...actionCardIconWrap, background: 'rgba(26,34,56,0.08)' }}>
                             <Star size={20} style={{ color: '#1a2238' }} />
@@ -1075,11 +1115,11 @@ const StudentLessonDetail = () => {
                                 </SidebarSection>
                             )}
 
-                            {lesson.status === 'scheduled' && !isParentManaged && canReportTutorNoShow(lesson.scheduledStart) && (
-                                <SidebarSection label="Gia sư chưa vào lớp">
+                            {showDisputeAction && (
+                                <SidebarSection label="Buổi học có vấn đề?">
                                     <div style={sidebarActionBlock}>
-                                        <div style={sidebarActionText}>Nếu gia sư vắng mặt, bạn có thể báo cáo ngay.</div>
-                                        <button style={sidebarDangerAction} onClick={() => setShowNoShowModal(true)}><AlertCircle size={15} /> Báo gia sư vắng mặt</button>
+                                        <div style={sidebarActionText}>Gia sư vắng mặt hoặc buổi học không như thỏa thuận, bạn có thể khiếu nại.</div>
+                                        <button style={sidebarDangerAction} onClick={() => setShowDisputeForm(true)}><AlertCircle size={15} /> Khiếu nại</button>
                                     </div>
                                 </SidebarSection>
                             )}
@@ -1096,7 +1136,7 @@ const StudentLessonDetail = () => {
                                 </SidebarSection>
                             )}
 
-                            {lesson.status === 'completed' && !dispute && canCreateDispute && (
+                            {lesson.status === 'completed' && !hasOpenDispute && canCreateDispute && (
                                 <SidebarSection label="Hỗ trợ buổi học">
                                     <div style={sidebarActionBlock}>
                                         <div style={sidebarActionText}>Báo cáo nếu có vấn đề với buổi học đã hoàn thành.</div>
@@ -1110,23 +1150,27 @@ const StudentLessonDetail = () => {
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                                             <span style={{ fontSize: 12, color: '#667085' }}>Trạng thái xử lý</span>
-                                            <span style={{
-                                                flexShrink: 0,
-                                                fontSize: 11,
-                                                fontWeight: 700,
-                                                padding: '4px 8px',
-                                                borderRadius: 999,
-                                                color: dispute.status === 'resolved' || dispute.status === 'confirmed_no_show' ? '#166534' : dispute.status === 'investigating' ? '#1e40af' : '#92400e',
-                                                background: dispute.status === 'resolved' || dispute.status === 'confirmed_no_show' ? '#dcfce7' : dispute.status === 'investigating' ? '#dbeafe' : '#fef3c7',
-                                            }}>
-                                                {dispute.status === 'resolved'
-                                                    ? 'Đã giải quyết'
-                                                    : dispute.status === 'confirmed_no_show'
-                                                        ? 'Đã xác nhận vắng mặt'
-                                                        : dispute.status === 'investigating'
-                                                            ? 'Đang xem xét'
-                                                            : 'Chờ xử lý'}
-                                            </span>
+                                            {/* Dùng getDisputeStatusMeta thay vì tự viết chuỗi ternary: chuỗi cũ chỉ biết
+                                                resolved/confirmed_no_show/investigating, nên mọi trạng thái khác — kể cả
+                                                'closed' — rơi vào nhánh cuối và bị gán nhãn "Chờ xử lý". Khiếu nại đã được
+                                                admin đóng vẫn hiện như đang chờ, đúng thứ người dùng vừa gặp. */}
+                                            {(() => {
+                                                const meta = getDisputeStatusMeta(dispute.status, (dispute as any).statusDisplay);
+                                                const tone = DISPUTE_STATUS_TONES[meta.variant] ?? DISPUTE_STATUS_TONES.neutral;
+                                                return (
+                                                    <span style={{
+                                                        flexShrink: 0,
+                                                        fontSize: 11,
+                                                        fontWeight: 700,
+                                                        padding: '4px 8px',
+                                                        borderRadius: 999,
+                                                        color: tone.color,
+                                                        background: tone.background,
+                                                    }}>
+                                                        {meta.label}
+                                                    </span>
+                                                );
+                                            })()}
                                         </div>
 
                                         <div style={{ ...sidebarActionText, color: '#475467' }}>
@@ -1159,17 +1203,25 @@ const StudentLessonDetail = () => {
                                             </div>
                                         )}
 
-                                        {dispute.status === 'resolved' && (
+                                        {/* 'closed' (admin đóng do hai bên hoà giải) cũng là trạng thái KẾT THÚC như
+                                            'resolved'. Trước đây chỉ kiểm 'resolved', nên khiếu nại đã đóng vừa không hiện
+                                            kết quả, vừa để ngỏ ô chat với admin cho một vụ đã xong. */}
+                                        {isDisputeSettled && (
                                             <div style={{ padding: '10px 12px', background: '#f7f4ed', borderRadius: 10 }}>
-                                                <div style={reportLabelStyle}>Kết quả xử lý</div>
+                                                <div style={reportLabelStyle}>
+                                                    {dispute.status === 'closed' ? 'Kết quả hoà giải' : 'Kết quả xử lý'}
+                                                </div>
                                                 <div style={{ marginTop: 4, fontSize: 13, color: TUTORA_MIDNIGHT }}>{dispute.resolutionNote || 'Không có ghi chú.'}</div>
-                                                {typeof dispute.refundPercentage === 'number' && (
+                                                {/* Hoà giải KHÔNG phải phán quyết — BE cố ý set refundPercentage = 0 cho khớp
+                                                    báo cáo tài chính (DisputeService.CloseDisputeAsync). Hiện "Tỷ lệ hoàn tiền:
+                                                    0%" ở đây sẽ bị đọc thành "admin xử thua", nên chỉ hiện với 'resolved'. */}
+                                                {dispute.status === 'resolved' && typeof dispute.refundPercentage === 'number' && (
                                                     <div style={{ marginTop: 4, fontSize: 13, color: TUTORA_MIDNIGHT }}>Tỷ lệ hoàn tiền: {dispute.refundPercentage}%</div>
                                                 )}
                                             </div>
                                         )}
 
-                                        {dispute.status !== 'resolved' && (
+                                        {!isDisputeSettled && (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                                 <span style={reportLabelStyle}>Trao đổi với admin</span>
                                                 {thread.length > 0 && (
@@ -1707,13 +1759,6 @@ const StudentLessonDetail = () => {
                     lessonId={lesson.lessonId}
                     onSuccess={handleActionSuccess}
                     onCancel={() => setShowDisputeForm(false)}
-                />
-
-                <ReportNoShowModal
-                    open={showNoShowModal}
-                    lessonId={lesson.lessonId}
-                    onSuccess={handleActionSuccess}
-                    onCancel={() => setShowNoShowModal(false)}
                 />
 
                 <NoShowActionModal

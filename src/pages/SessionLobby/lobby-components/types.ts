@@ -43,6 +43,12 @@ export interface ScheduleChangeState {
    * dù `requiresConfirmation` là false.
    */
   rescheduleProposalPending?: boolean;
+  /**
+   * True khi đang vào lớp TRƯỚC giờ hẹn. Tính ở server (đồng hồ máy người dùng có thể lệch, mà
+   * đây là thứ so với giờ hẹn), kèm `minutesEarly` là số phút còn lại tới giờ.
+   */
+  isEarlyEntry?: boolean;
+  minutesEarly?: number;
   status: 'pending' | 'approved' | 'applied' | 'rejected' | 'expired' | null;
   tutorUserId: string | null;
   learnerApproverUserId: string | null;

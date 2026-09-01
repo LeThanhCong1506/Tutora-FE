@@ -108,6 +108,12 @@ const ZaloCallbackPage: React.FC = () => {
               socialRegistrationToken,
               email: data?.email ?? (data as any)?.content?.email,
               phone: data?.phone ?? (data as any)?.content?.phone,
+              // TẠM GỠ — mặc định false chỉ an toàn khi BE hỏi lại vai trò ở bước sau.
+              //  // Mặc định FALSE. Trước đây mặc định true, nghĩa là mọi phản hồi thiếu trường này
+              //  // đều bắt người dùng chọn vai trò — kể cả người đã có tài khoản. Người mới thật sự
+              //  // vẫn được hỏi, chỉ là ở bước sau, khi SĐT đã xác nhận họ là người mới.
+              //  requiresRoleSelection:
+              //    data?.requiresRoleSelection ?? (data as any)?.content?.requiresRoleSelection ?? false,
               requiresRoleSelection:
                 data?.requiresRoleSelection ?? (data as any)?.content?.requiresRoleSelection ?? true,
             },

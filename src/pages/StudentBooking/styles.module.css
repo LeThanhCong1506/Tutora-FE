@@ -291,6 +291,55 @@
   line-height: 1.4;
 }
 
+/* Mã booking + trạng thái xếp cạnh nhau ở góc card; xuống dòng khi hẹp thay vì tràn. */
+.cardBadges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Font đều chữ số để dễ đối chiếu với mã trong thông báo hoặc tin nhắn hỗ trợ, màu trung tính
+   để không tranh sự chú ý với badge trạng thái ngay bên cạnh. */
+.bookingIdBadge {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border: 1px solid #eaecf0;
+  border-radius: 999px;
+  background: #f7f8fa;
+  color: #586174;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* Bộ lọc lý do hủy — chỉ hiện trong tab "Đã hủy". */
+.cancelReasonFilter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #586174;
+}
+
+.cancelReasonFilter select {
+  padding: 6px 10px;
+  border: 1px solid #d6d9e0;
+  border-radius: 8px;
+  background: #fff;
+  color: #1a2238;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 .status_pending {
   background: #eaf2ff;
   color: #315d9f;

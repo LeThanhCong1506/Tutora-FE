@@ -858,6 +858,38 @@
   font-size: 12px;
   line-height: 1.45;
 }
+
+/* ── Cờ vào lớp sớm ──────────────────────────────────────────────────────────
+   Dùng bộ token "wait" (hổ phách) chứ không phải "danger": vào sớm là hợp lệ,
+   chỉ cần cho hai bên biết mình đang ở trước giờ hẹn để không trách nhầm nhau. */
+.earlyEntryBanner {
+  display: grid;
+  gap: 5px;
+  width: min(620px, 100%);
+  margin: 16px auto 0;
+  padding: 14px 16px;
+  border: 1px solid var(--lb-wait-line);
+  border-radius: 14px;
+  color: var(--lb-wait);
+  text-align: left;
+  background: var(--lb-wait-soft);
+}
+
+.earlyEntryBanner strong {
+  color: var(--lb-wait);
+  font-size: 14px;
+}
+
+.earlyEntryBanner span {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.earlyEntryBanner small {
+  color: var(--lb-text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
 /* ── Đồng hồ ghi nhận có mặt (chỉ hiện khi chờ một mình) ─────────────────────
    Không phải rào chặn vào lớp — đủ hai phía thì server bắn sessionReady ngay.
    Mục đích là cho người đang chờ biết ở lại thì có bằng chứng, thay vì đóng tab
