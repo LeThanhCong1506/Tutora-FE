@@ -145,14 +145,7 @@ const TransactionTable = <T extends FinanceTransactionRow>({
       loading={loading}
       size="middle"
       scroll={{ x: 900, ...(scrollY ? { y: scrollY } : {}) }}
-      onRow={
-        onRowClick
-          ? (record) => {
-              if (record.source === 'Payment') return {};
-              return { onClick: () => onRowClick(record), style: { cursor: 'pointer' } };
-            }
-          : undefined
-      }
+      onRow={onRowClick ? (record) => ({ onClick: () => onRowClick(record), style: { cursor: 'pointer' } }) : undefined}
       locale={{
         emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Không có giao dịch phù hợp" />,
       }}

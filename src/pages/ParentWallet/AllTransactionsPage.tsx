@@ -10,6 +10,7 @@ import '../../styles/pages/tutor-finance.css';
 import { getApiErrorMessage } from '../../utils/apiError';
 
 const TransactionDetailModal = lazy(() => import('./TransactionDetailModal'));
+import { toBankPayoutProps } from './bankPayoutSelection';
 
 const { RangePicker } = DatePicker;
 
@@ -19,7 +20,7 @@ const AllTransactionsPage = () => {
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [selectedTxId, setSelectedTxId] = useState<number | null>(null);
+  const [selectedTx, setSelectedTx] = useState<TransactionHistory | null>(null);
 
   const [filters, setFilters] = useState<{
     type?: string;
@@ -152,13 +153,17 @@ const AllTransactionsPage = () => {
           pageSize={pageSize}
           scrollY="clamp(240px, calc(100dvh - 500px), 560px)"
           onPageChange={handlePageChange}
-          onRowClick={(tx) => setSelectedTxId(tx.transactionId)}
+          onRowClick={setSelectedTx}
         />
       </section>
 
-      {selectedTxId != null && (
+      {selectedTx && (
         <Suspense fallback={null}>
-          <TransactionDetailModal transactionId={selectedTxId} onClose={() => setSelectedTxId(null)} />
+          <TransactionDetailModal
+            transactionId={selectedTx.transactionId}
+            bankPayout={toBankPayoutProps(selectedTx)}
+            onClose={() => setSelectedTx(null)}
+          />
         </Suspense>
       )}
     </FinanceShell>

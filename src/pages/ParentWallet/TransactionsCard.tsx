@@ -70,16 +70,22 @@ const TransactionsCard = ({ transactions, loading, onSelect, onViewAll, total = 
           </div>
           <ul className={styles.txList}>
             {transactions.map((tx) => {
-              const positive = tx.amount >= 0;
-              const tag = referenceLabel(tx.referenceTable);
+              const positive = tx.amount >= 0 && !tx.isInformational;
+              const tag = tx.channel === 'Bank' ? 'Ngân hàng' : referenceLabel(tx.referenceTable);
               return (
-                <li key={tx.transactionId}>
+                <li key={`${tx.source ?? 'Wallet'}-${tx.transactionId}`}>
                   <button className={styles.txRow} type="button" onClick={() => onSelect(tx)}>
                     <span
-                      className={`${styles.txIcon} ${positive ? styles.txIconIn : styles.txIconOut}`}
+                      className={`${styles.txIcon} ${
+                        tx.isInformational
+                          ? styles.txIconBank
+                          : positive
+                            ? styles.txIconIn
+                            : styles.txIconOut
+                      }`}
                       aria-hidden="true"
                     >
-                      {positive ? '+' : '−'}
+                      {tx.isInformational ? '→' : positive ? '+' : '−'}
                     </span>
                     <div className={styles.txInfo}>
                       <span className={styles.txTitle}>
@@ -89,7 +95,15 @@ const TransactionsCard = ({ transactions, loading, onSelect, onViewAll, total = 
                       <span className={styles.txMeta}>{tx.description || '—'}</span>
                     </div>
                     <span className={styles.txDate}>{formatDateTime(tx.createdAt)}</span>
-                    <span className={`${styles.txAmount} ${positive ? styles.valueGreen : styles.valueRed}`}>
+                    <span
+                      className={`${styles.txAmount} ${
+                        tx.isInformational
+                          ? styles.valueBlue
+                          : positive
+                            ? styles.valueGreen
+                            : styles.valueRed
+                      }`}
+                    >
                       {positive ? '+' : ''}
                       {formatCurrency(tx.amount)}
                     </span>
