@@ -811,7 +811,9 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
                 disabled={!interruptEligibleNow}
                 title={
                   !interruptEligibleNow && interruptionEligibility
-                    ? `Cần học đủ ${Math.round(interruptionEligibility.requiredRatio * 100)}% mới báo ngắt được (hiện ${Math.round(interruptionEligibility.currentRatio * 100)}%)`
+                    ? interruptionEligibility.hasRemainingTime
+                      ? `Cần học đủ ${Math.round(interruptionEligibility.requiredRatio * 100)}% mới báo ngắt được (hiện ${Math.round(interruptionEligibility.currentRatio * 100)}%)`
+                      : 'Buổi đã học đủ hoặc vượt thời lượng đăng ký, không còn phần thiếu để tạo buổi phụ'
                     : undefined
                 }
                 style={{
@@ -831,8 +833,14 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
                   {!interruptEligibleNow && interruptionEligibility && (
                     <>
                       {' '}
-                      Cần học đủ {Math.round(interruptionEligibility.requiredRatio * 100)}% (hiện{' '}
-                      {Math.round(interruptionEligibility.currentRatio * 100)}%).
+                      {interruptionEligibility.hasRemainingTime ? (
+                        <>
+                          Cần học đủ {Math.round(interruptionEligibility.requiredRatio * 100)}% (hiện{' '}
+                          {Math.round(interruptionEligibility.currentRatio * 100)}%).
+                        </>
+                      ) : (
+                        'Buổi đã học đủ hoặc vượt thời lượng đăng ký, không còn phần thiếu để tạo buổi phụ.'
+                      )}
                     </>
                   )}
                 </div>
