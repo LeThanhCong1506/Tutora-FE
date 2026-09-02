@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -140,6 +140,8 @@ const TutorPortalClassSessionDetail = () => {
   const [error, setError] = useState<string | null>(null);
   const [checkingOut, setCheckingOut] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<ReportAttachment[]>([]);
+  const reportSectionRef = useRef<HTMLElement | null>(null);
+  const [scrollToReportPending, setScrollToReportPending] = useState(false);
   // Chỉ giữ đủ để vẽ dải tóm tắt khiếu nại — phản hồi, bằng chứng và trao đổi với quản trị viên
   // đã chuyển hết sang /tutor-portal/disputes/:classSessionId.
   const [dispute, setDispute] = useState<DisputeDetailResponse | null>(null);
@@ -214,6 +216,17 @@ const TutorPortalClassSessionDetail = () => {
 
   const applySessionUpdate = (updatedSession: ClassSessionDetailResponse) => {
     setSession(updatedSession);
+  };
+
+  useEffect(() => {
+    if (!scrollToReportPending || activeTab !== 'overview') return;
+    reportSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setScrollToReportPending(false);
+  }, [scrollToReportPending, activeTab]);
+
+  const handleGoToReport = () => {
+    setActiveTab('overview');
+    setScrollToReportPending(true);
   };
 
   const handleCheckOut = async () => {
@@ -472,7 +485,7 @@ const TutorPortalClassSessionDetail = () => {
                   <button
                     type="button"
                     className={styles.primaryButton}
-                    onClick={() => setActiveTab('overview')}
+                    onClick={handleGoToReport}
                   >
                     <FileText size={16} />
                     Gửi báo cáo
@@ -784,7 +797,7 @@ const TutorPortalClassSessionDetail = () => {
                     </section>
                   )}
 
-                  <section className={styles.card}>
+                  <section className={styles.card} ref={reportSectionRef}>
                     <div className={styles.cardHeader}>
                       <div>
                         <h2>Báo cáo buổi học</h2>
