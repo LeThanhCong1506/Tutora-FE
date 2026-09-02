@@ -235,7 +235,7 @@ export function nextSessionLabel(course: CourseProgress): string {
 
   if (course.reserved > 0) {
     const reason = reservedSessionsReason(course.bookingStatus);
-    return `${course.reserved} buổi chờ mở${reason ? ` — ${reason}` : ''}`;
+    return `${course.reserved} buổi chờ mở${reason ? `, ${reason}` : ''}`;
   }
 
   if (isBookingCompleted(course.bookingStatus)) return 'Đã học xong toàn bộ khoá';

@@ -244,7 +244,7 @@ export function bookingNextSessionLabel(booking: BookingProgress): string {
 
   if (booking.reserved > 0) {
     const reason = reservedSessionsReason(booking.bookingStatus);
-    return `${booking.reserved} buổi chờ mở${reason ? ` — ${reason}` : ''}`;
+    return `${booking.reserved} buổi chờ mở${reason ? `, ${reason}` : ''}`;
   }
 
   if (isBookingCompleted(booking.bookingStatus)) return 'Đã học xong toàn bộ khoá';
@@ -380,7 +380,7 @@ export function summaryNextSessionLabel(summary: StudentSummary): string {
 
   if (summary.reservedCourses > 0) {
     const courses = summary.reservedCourses > 1 ? ` ở ${summary.reservedCourses} khoá` : '';
-    return `${summary.reservedSessions} buổi chờ mở${courses} — chờ thanh toán phần còn lại`;
+    return `${summary.reservedSessions} buổi chờ mở${courses}, đang chờ thanh toán phần còn lại`;
   }
 
   if (summary.allCancelled) return 'Mọi khoá học đều đã huỷ';
