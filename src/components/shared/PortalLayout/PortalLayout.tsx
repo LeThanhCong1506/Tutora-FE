@@ -8,6 +8,10 @@ import { ConfirmDialog } from '../ConfirmDialog';
 import Header from '../../Header/Header';
 import { clearUserFromStorage, getUserInfoFromToken, getUserProfile } from '../../../services/auth.service';
 import { isZaloMiniApp } from '../../../services/zalo-env';
+import { useIsMobile } from '../../../hooks/useIsMobile';
+import { getRoleLabel } from '../../../utils/roleLabel';
+
+const HEADER_PROFILE_HIDDEN_BREAKPOINT = 1024;
 
 // ─── Shared Icons (Logo, Menu, Close, Logout, Notification) ───
 
@@ -97,6 +101,8 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
     const navigate = useNavigate();
     const location = useLocation();
     const inMiniApp = isZaloMiniApp();
+    // Desktop: user card chỉ hiển thị tên — menu tài khoản đã có ở header.
+    const userCardOpensMenu = useIsMobile(HEADER_PROFILE_HIDDEN_BREAKPOINT);
 
     // ── Sidebar state ──
     const [sidebarOpenInternal, setSidebarOpenInternal] = useState(false);
@@ -123,7 +129,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
     const [userData, setUserData] = useState({
         name: 'User',
         initials: 'U',
-        role: userRole || 'USER',
+        role: getRoleLabel(userRole),
         email: '',
         avatar: generateAvatarUrl('User'),
     });
@@ -141,7 +147,7 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
         setUserData({
             name: displayName,
             initials,
-            role: userRole || user.role || 'USER',
+            role: getRoleLabel(userRole || user.role),
             email: user.email || '',
             avatar: generateAvatarUrl(displayName),
         });
@@ -203,6 +209,37 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
             onSelect: () => setShowLogoutConfirm(true),
         },
     ], [profileMenuItems]);
+
+    // Phần nhìn của user card — dùng chung cho cả bản tĩnh (desktop) lẫn bản trigger (mobile).
+    const userCardBody = (
+        <>
+            <div className={styles.userAvatar}>
+                {showAvatarImage ? (
+                    <>
+                        <img
+                            src={userData.avatar}
+                            alt={userData.name}
+                            className={styles.userAvatarImg}
+                            onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                const span = e.currentTarget.parentElement?.querySelector('span');
+                                if (span) (span as HTMLElement).style.display = 'flex';
+                            }}
+                        />
+                        <span className={styles.userInitials} style={{ display: 'none' }}>
+                            {userData.initials}
+                        </span>
+                    </>
+                ) : (
+                    <span className={styles.userInitials}>{userData.initials}</span>
+                )}
+            </div>
+            <div className={styles.userInfo}>
+                <span className={styles.userName}>{userData.name}</span>
+                <span className={styles.userRoleText}>{userData.role}</span>
+            </div>
+        </>
+    );
 
     // ── Active path check ──
     const checkActive = (path: string) => {
@@ -271,65 +308,45 @@ const PortalLayout: React.FC<PortalLayoutProps> = ({
                     {sidebarNavFooter}
                 </nav>
 
-                {/* User Card at bottom of sidebar — cũng là trigger của menu tài khoản.
-                    Trên mobile, ProfileDropdown ở header bị ẩn nên đây là lối vào duy nhất. */}
+                {/* User Card ở đáy sidebar. Desktop chỉ hiển thị tên/role — menu tài khoản
+                    đã nằm ở header. Dưới 1024px header ẩn dropdown nên card thành trigger. */}
                 {showSidebarUserCard && (
                     <div className={styles.sidebarUser}>
-                        <ProfileDropdown
-                            variant="sidebar"
-                            name={userData.name}
-                            role={userData.role}
-                            initials={userData.initials}
-                            avatarUrl={userData.avatar}
-                            subtitle={userData.email}
-                            showAvatarImage={showAvatarImage}
-                            items={dropdownItems}
-                            onNavigate={(path) => navigate(path)}
-                            renderTrigger={({ open, toggle, setTriggerNode }) => (
-                                <button
-                                    type="button"
-                                    ref={setTriggerNode}
-                                    className={`${styles.userCard} ${open ? styles.userCardOpen : ''}`}
-                                    onClick={toggle}
-                                    aria-haspopup="menu"
-                                    aria-expanded={open}
-                                    aria-label="Mở menu tài khoản"
-                                >
-                                    <div className={styles.userAvatar}>
-                                        {showAvatarImage ? (
-                                            <>
-                                                <img
-                                                    src={userData.avatar}
-                                                    alt={userData.name}
-                                                    className={styles.userAvatarImg}
-                                                    onError={(e) => {
-                                                        e.currentTarget.style.display = 'none';
-                                                        const span =
-                                                            e.currentTarget.parentElement?.querySelector('span');
-                                                        if (span) (span as HTMLElement).style.display = 'flex';
-                                                    }}
-                                                />
-                                                <span className={styles.userInitials} style={{ display: 'none' }}>
-                                                    {userData.initials}
-                                                </span>
-                                            </>
-                                        ) : (
-                                            <span className={styles.userInitials}>{userData.initials}</span>
-                                        )}
-                                    </div>
-                                    <div className={styles.userInfo}>
-                                        <span className={styles.userName}>{userData.name}</span>
-                                        <span className={styles.userRoleText}>{userData.role}</span>
-                                    </div>
-                                    <span
-                                        className={`material-symbols-outlined ${styles.userCardChevron}`}
-                                        aria-hidden="true"
+                        {userCardOpensMenu ? (
+                            <ProfileDropdown
+                                variant="sidebar"
+                                name={userData.name}
+                                role={userData.role}
+                                initials={userData.initials}
+                                avatarUrl={userData.avatar}
+                                showAvatarImage={showAvatarImage}
+                                items={dropdownItems}
+                                onNavigate={(path) => navigate(path)}
+                                renderTrigger={({ open, toggle, setTriggerNode }) => (
+                                    <button
+                                        type="button"
+                                        ref={setTriggerNode}
+                                        className={`${styles.userCard} ${open ? styles.userCardOpen : ''}`}
+                                        onClick={toggle}
+                                        aria-haspopup="menu"
+                                        aria-expanded={open}
+                                        aria-label="Mở menu tài khoản"
                                     >
-                                        unfold_more
-                                    </span>
-                                </button>
-                            )}
-                        />
+                                        {userCardBody}
+                                        <span
+                                            className={`material-symbols-outlined ${styles.userCardChevron}`}
+                                            aria-hidden="true"
+                                        >
+                                            unfold_more
+                                        </span>
+                                    </button>
+                                )}
+                            />
+                        ) : (
+                            <div className={`${styles.userCard} ${styles.userCardStatic}`}>
+                                {userCardBody}
+                            </div>
+                        )}
                     </div>
                 )}
             </aside>}
