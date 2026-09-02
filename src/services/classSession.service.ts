@@ -875,6 +875,10 @@ export interface ClassSessionInterruptionEligibilityResponse {
      * hẳn nút thay vì hiện nút khoá vĩnh viễn. Khác `eligible`: `eligible` có thể đổi thành true khi
      * đạt đủ %, còn cờ này thì cố định suốt buổi. */
     canEverBeInterrupted: boolean;
+    /** False nếu đã dạy thật bằng/vượt thời lượng đăng ký (phần "còn thiếu" đã về 0) — tạo buổi phụ
+     * lúc này vô nghĩa nên BE từ chối báo ngắt dù đã đạt ngưỡng %. Khác `canEverBeInterrupted`: cờ
+     * này dựa trên thời gian đã trôi qua của buổi hiện tại, không phải loại buổi. */
+    hasRemainingTime: boolean;
 }
 
 export const getClassSessionInterruptionEligibility = async (
