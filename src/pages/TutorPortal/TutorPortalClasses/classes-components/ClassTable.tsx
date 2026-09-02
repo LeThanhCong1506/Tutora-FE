@@ -22,7 +22,6 @@ export default function ClassTable({ items, onOpen }: ClassTableProps) {
                     <tr className="border-b border-[rgba(62,47,40,0.1)] bg-[#faf9f2]">
                         <th className={TH}>Lớp học</th>
                         <th className={TH}>Học sinh</th>
-                        <th className={TH}>Lịch cố định</th>
                         <th className={TH}>Tiến độ</th>
                         <th className={TH}>Buổi kế tiếp</th>
                         <th className={TH}>Trạng thái</th>
@@ -54,9 +53,6 @@ export default function ClassTable({ items, onOpen }: ClassTableProps) {
                                             {item.studentName || 'Học sinh'}
                                         </span>
                                     </div>
-                                </td>
-                                <td className="px-4 py-3 text-[13px] text-[#7a6a60]">
-                                    {item.schedule || '—'}
                                 </td>
                                 <td className="px-4 py-3">
                                     <div className="flex items-center gap-2">

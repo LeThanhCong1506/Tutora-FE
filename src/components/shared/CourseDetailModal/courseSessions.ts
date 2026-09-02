@@ -99,25 +99,3 @@ export function extraSessionLabel(session: CourseSessionLike): string | null {
   if (session.isDisputeRelearn) return 'Học lại';
   return null;
 }
-
-/**
- * "Lịch cố định" suy từ chính các buổi đã tải: các khung (thứ + giờ) khác nhau, tối đa 3.
- *
- * Portal gia sư nhận sẵn chuỗi này từ `GET /tutor/classes`; phía người học không có endpoint
- * tương đương nên dựng tại chỗ theo đúng quy tắc của BE (`ClassSessionRepository`), để hai bên
- * đọc ra cùng một câu về cùng một lớp.
- */
-export function deriveSchedule(sessions: CourseSessionLike[]): string {
-  const slots: string[] = [];
-
-  for (const session of [...sessions].sort(byStart)) {
-    const start = parseUtc(session.scheduledStart);
-    if (!start) continue;
-
-    const slot = `${WEEKDAYS[start.getDay()]} ${pad(start.getHours())}:${pad(start.getMinutes())}`;
-    if (!slots.includes(slot)) slots.push(slot);
-    if (slots.length === 3) break;
-  }
-
-  return slots.join(', ');
-}
