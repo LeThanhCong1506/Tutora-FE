@@ -365,7 +365,8 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
   // từ elapsed time (đồng hồ tường không phản ánh có đang học thật hay không, giống lý do BE
   // dùng overlapRatio thay Realstart→now ở RequestInterruptionAsync).
   useEffect(() => {
-    if (isMock || !joined || !presenceStatus?.isCheckedIn || sessionIdNum == null) {
+    // Endpoint giờ chỉ Tutor gọi được (BE đã khoá role) — học sinh/phụ huynh không cần poll nữa.
+    if (!isTutor || isMock || !joined || !presenceStatus?.isCheckedIn || sessionIdNum == null) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setInterruptionEligibility(null);
       return;
@@ -388,7 +389,7 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [isMock, joined, presenceStatus?.isCheckedIn, sessionIdNum]);
+  }, [isTutor, isMock, joined, presenceStatus?.isCheckedIn, sessionIdNum]);
 
   const participantLabel = useMemo(() => {
     if (isMock) return 'Gia sư Demo, Học sinh Demo';
@@ -396,12 +397,16 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
     return [room.tutorName, room.studentName].filter(Boolean).join(', ');
   }, [isMock, room]);
 
-  // Chỉ cho chọn "Báo ngắt giữa chừng" trong modal gộp khi đã điểm danh (đang in_progress — báo ngắt
-  // trước đó không có ý nghĩa) và buổi này còn được phép báo ngắt (buổi phụ/buổi học lại do hoà giải
-  // thì không — canEverBeInterrupted=false cố định suốt buổi). Chưa tải xong (undefined) vẫn cho hiện,
-  // cùng triết lý fail-open với interruptionEligible bên dưới (BE vẫn là lưới an toàn thật).
+  // Chỉ gia sư được chọn "Báo ngắt giữa chừng" (học sinh/phụ huynh không còn thấy tuỳ chọn này —
+  // BE cũng đã khoá endpoint request-interruption/interruption-eligibility về Tutor-only tương ứng).
+  // Trong phạm vi gia sư: chỉ cho chọn khi đã điểm danh (đang in_progress — báo ngắt trước đó không
+  // có ý nghĩa) và buổi này còn được phép báo ngắt (buổi phụ/buổi học lại do hoà giải thì không —
+  // canEverBeInterrupted=false cố định suốt buổi). Chưa tải xong (undefined) vẫn cho hiện, cùng triết
+  // lý fail-open với interruptionEligible bên dưới (BE vẫn là lưới an toàn thật).
   const showInterruptOption =
-    (isMock || presenceStatus?.isCheckedIn) && interruptionEligibility?.canEverBeInterrupted !== false;
+    isTutor &&
+    (isMock || presenceStatus?.isCheckedIn) &&
+    interruptionEligibility?.canEverBeInterrupted !== false;
   const interruptEligibleNow = isMock || !interruptionEligibility ? true : interruptionEligibility.eligible;
 
   const localName = useMemo(() => {
