@@ -233,7 +233,7 @@
 .secondaryButton,
 .joinButton,
 .profileButton {
-  display: inline-flex;
+  display: none;  
   min-height: 42px;
   padding: 0 15px;
   align-items: center;
