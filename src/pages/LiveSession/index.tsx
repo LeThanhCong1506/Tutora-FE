@@ -276,9 +276,9 @@ const LiveSessionRoom = ({ onAdmissionReady }: LiveSessionRoomProps) => {
     if (format === 'essay') {
       toast.info(`Học sinh đã làm ${head}: ${answer}`, { autoClose: 8000 });
     } else if (isCorrect) {
-      toast.success(`Học sinh chọn ${answer} — đúng. ${head}`, { autoClose: 6000 });
+      toast.success(`Học sinh chọn ${answer}, đúng. ${head}`, { autoClose: 6000 });
     } else {
-      toast.warning(`Học sinh chọn ${answer} — chưa đúng. ${head}`, { autoClose: 8000 });
+      toast.warning(`Học sinh chọn ${answer}, chưa đúng. ${head}`, { autoClose: 8000 });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastAnswerAt, isTutor]);
