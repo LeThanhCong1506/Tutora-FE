@@ -12,7 +12,7 @@ export { default as EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
 
 export { useParentStudents } from './hooks/useParentStudents';
-export type { UseParentStudentsResult } from './hooks/useParentStudents';
+export type { SessionsByBooking, UseParentStudentsResult } from './hooks/useParentStudents';
 
 export {
   bookingNextSessionLabel,

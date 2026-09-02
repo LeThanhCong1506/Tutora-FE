@@ -9,7 +9,8 @@ export interface BookingCardProps {
   booking: BookingProgress;
   /** Thứ tự trong lưới — chỉ dùng để lệch nhẹ hiệu ứng xuất hiện. */
   index: number;
-  onViewSchedule: () => void;
+  /** Mở modal chi tiết khoá học. Bấm vào bất cứ đâu trên thẻ đều rơi vào đây. */
+  onOpen: () => void;
   /** Nhận id buổi chờ xác nhận để mở đúng trang chi tiết buổi đó — nơi DUY NHẤT có nút Xác nhận. */
   onReviewPending: (classSessionId: number) => void;
 }
@@ -25,13 +26,24 @@ export interface BookingCardProps {
  * Danh tính + hành động cấp CON (sửa hồ sơ, đặt lại mật khẩu, xoá, sao chép tài khoản) không nằm
  * ở đây mà ở `StudentSection` — nếu để trong thẻ thì một con 10 khoá sẽ có 10 nút "Xoá hồ sơ".
  */
-const BookingCard = ({ booking, index, onViewSchedule, onReviewPending }: BookingCardProps) => {
+const BookingCard = ({ booking, index, onOpen, onReviewPending }: BookingCardProps) => {
   const status = bookingStatusMeta(booking);
   const progress = bookingProgress(booking);
   const isCancelled = isBookingCancelled(booking.bookingStatus);
 
   return (
     <article className={styles.card} style={{ animationDelay: `${Math.min(index, 5) * 45}ms` }}>
+      {/* Cả thẻ là một nút mở modal — giống thẻ lớp bên portal gia sư.
+          Cách làm: một nút PHỦ KÍN thẻ nằm dưới, các phần tử bấm được bên trong (nhắc xác nhận,
+          nút ở chân thẻ) nổi lên trên bằng z-index. Không bọc cả thẻ trong <button> vì bên trong
+          đã có sẵn button — button lồng button là HTML không hợp lệ và Firefox bỏ luôn nút con. */}
+      <button
+        type="button"
+        className={styles.cardOpen}
+        onClick={onOpen}
+        aria-label={`Xem chi tiết khoá ${booking.subjectName} — mã lớp #${booking.bookingId}`}
+      />
+
       {/* Dải cover + nhãn trạng thái, cùng chiều cao 96px với thẻ lớp ở portal gia sư. */}
       <div className="relative h-24 shrink-0 overflow-hidden">
         <img
@@ -109,9 +121,11 @@ const BookingCard = ({ booking, index, onViewSchedule, onReviewPending }: Bookin
         </div>
       </div>
 
+      {/* Nút này trước đây điều hướng thẳng sang thời khoá biểu. Giờ nó mở modal chi tiết khoá —
+          nơi có đủ danh sách buổi, tài liệu, VÀ nút "Xem lịch học" cho đường đi cũ. */}
       <footer className={`${styles.cardFoot} ${styles.cardFootSingle}`}>
-        <button type="button" className={styles.primaryBtn} onClick={onViewSchedule}>
-          Xem lịch học
+        <button type="button" className={styles.primaryBtn} onClick={onOpen}>
+          Xem chi tiết
         </button>
       </footer>
     </article>

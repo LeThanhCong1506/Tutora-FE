@@ -1,13 +1,18 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search } from 'lucide-react';
-import { ConfirmDialog, PageContainer } from '../../components/shared';
+import { ConfirmDialog, CourseDetailModal, PageContainer } from '../../components/shared';
+import type { CourseDetailSummary } from '../../components/shared';
 import type { StudentType } from '../../types/student.type';
+import { isBookingCancelled } from '../../utils/bookingStatus';
 import AddStudentModal from './components/AddStudentModal';
 import CredentialsModal from './components/CredentialsModal';
 import EditStudentModal from './components/EditStudentModal';
 import {
+  bookingNextSessionLabel,
+  bookingProgress,
   bookingScheduleAnchor,
+  bookingStatusMeta,
   EmptyState,
   StudentSection,
   StudentSectionSkeleton,
@@ -41,6 +46,7 @@ const ParentStudent = () => {
   const navigate = useNavigate();
   const {
     rows,
+    sessionsByBooking,
     loading,
     insightsLoading,
     insightsFailed,
@@ -58,6 +64,11 @@ const ParentStudent = () => {
   const [editing, setEditing] = useState<StudentType | null>(null);
   const [deleting, setDeleting] = useState<StudentType | null>(null);
   const [resetting, setResetting] = useState<StudentType | null>(null);
+  /**
+   * Khoá đang mở trong modal chi tiết. Giữ kèm CON sở hữu khoá đó: cùng một trang có nhiều con,
+   * và modal cần in tên con để phụ huynh biết mình đang xem khoá của đứa nào.
+   */
+  const [openBooking, setOpenBooking] = useState<{ student: StudentType; booking: BookingProgress } | null>(null);
 
   const filtered = useMemo(() => {
     const keyword = query.trim().toLowerCase();
@@ -125,6 +136,37 @@ const ParentStudent = () => {
    * (`ParentLessonDetail` + `ConfirmLessonModal`), nên phụ huynh vẫn phải bấm thêm một nhịp.
    */
   const reviewPending = (classSessionId: number) => navigate(`${LESSONS_PATH}/${classSessionId}`);
+
+  /**
+   * Số liệu cho modal — lấy lại đúng những hàm mà thẻ đang dùng, không tính lại theo cách khác.
+   * Nếu modal tự đếm thì thẻ và modal sẽ có ngày nói hai con số khác nhau về cùng một khoá.
+   */
+  const modalCourse = useMemo<CourseDetailSummary | null>(() => {
+    if (!openBooking) return null;
+
+    const { student, booking } = openBooking;
+    const status = bookingStatusMeta(booking);
+    const progress = bookingProgress(booking);
+
+    return {
+      bookingId: booking.bookingId,
+      subjectName: booking.subjectName,
+      tutorName: booking.tutorName,
+      statusLabel: status.label,
+      statusVariant: status.variant,
+      completed: progress.done,
+      total: progress.total,
+      percent: progress.percent,
+      pending: booking.pending,
+      reserved: booking.reserved,
+      onHold: booking.onHold,
+      nextSessionLabel: bookingNextSessionLabel(booking),
+      studentName: student.fullName,
+      cancelled: isBookingCancelled(booking.bookingStatus),
+    };
+  }, [openBooking]);
+
+  const modalSessions = openBooking ? (sessionsByBooking[openBooking.booking.bookingId] ?? []) : [];
 
   return (
     <PageContainer
@@ -195,6 +237,7 @@ const ParentStudent = () => {
                   onResetPassword={() => setResetting(student)}
                   onDelete={() => setDeleting(student)}
                   onViewSchedule={(booking) => viewSchedule(student, booking)}
+                  onOpenBooking={(booking) => setOpenBooking({ student, booking })}
                   onReviewPending={reviewPending}
                   onBookTutor={() => navigate('/tutor-search')}
                 />
@@ -253,6 +296,17 @@ const ParentStudent = () => {
       />
 
       <CredentialsModal credentials={credentials} onClose={dismissCredentials} title={credentialsTitle} />
+
+      {/* Danh sách buổi lấy từ chính dữ liệu trang đã tải — mở modal KHÔNG gọi lại API buổi học. */}
+      <CourseDetailModal
+        course={modalCourse}
+        sessions={modalSessions}
+        sessionHref={(classSessionId) => `${LESSONS_PATH}/${classSessionId}`}
+        onClose={() => setOpenBooking(null)}
+        onViewSchedule={() => {
+          if (openBooking) viewSchedule(openBooking.student, openBooking.booking);
+        }}
+      />
     </PageContainer>
   );
 };
