@@ -17,6 +17,7 @@ import {
   type ShownTutor,
 } from '../../services/assistant.service';
 import TutorCardView from './TutorCardView';
+import ActiveFilters from './ActiveFilters';
 import styles from './ChatAssistant.module.css';
 
 interface ChatTurn {
@@ -58,6 +59,11 @@ const ChatAssistant: React.FC = () => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   // Filter tích luỹ qua các lượt (AI stateless — FE giữ & gửi lại mỗi lượt).
   const filtersRef = useRef<AssistantFilters | null>(persisted?.filters ?? null);
+  // Bản sao để RENDER chip. Vẫn giữ ref vì send() đọc filters trong closure — dùng mỗi
+  // state thì lượt gửi ngay sau khi bấm ✕ có thể còn đọc giá trị cũ.
+  const [filtersView, setFiltersView] = useState<AssistantFilters | null>(
+    persisted?.filters ?? null,
+  );
   // Phiên DB khi authed (.NET trả về) — null nếu anonymous.
   const sessionIdRef = useRef<string | null>(persisted?.sessionId ?? null);
   const shownTutorsRef = useRef<ShownTutor[]>(persisted?.shownTutors ?? []);
@@ -86,6 +92,18 @@ const ChatAssistant: React.FC = () => {
     }
   }, [turns]);
 
+  // Bấm ✕ trên chip: bỏ tiêu chí NGAY, không cần nhắn thêm câu nào. Chỉ đổi state local
+  // — lượt chat sau tự gửi filter đã gỡ, nên không tốn thêm 1 lượt gọi AI.
+  const clearFilterFields = useCallback((fields: (keyof AssistantFilters)[]) => {
+    const next: AssistantFilters = { ...(filtersRef.current ?? {}) };
+    fields.forEach((f) => {
+      delete next[f];
+    });
+    const empty = Object.values(next).every((v) => v == null || (Array.isArray(v) && !v.length));
+    filtersRef.current = empty ? null : next;
+    setFiltersView(filtersRef.current);
+  }, []);
+
   // Xoá hội thoại + bắt đầu lại (cho cả authed lẫn guest): xoá cache local, reset state
   // + filters + sessionId → lần chat sau .NET tạo phiên mới. Quay về màn intro.
   const resetChat = useCallback(() => {
@@ -95,6 +113,7 @@ const ChatAssistant: React.FC = () => {
       /* ignore */
     }
     filtersRef.current = null;
+    setFiltersView(null);
     sessionIdRef.current = null;
     shownTutorsRef.current = [];
     setSuggestions([]);
@@ -124,6 +143,7 @@ const ChatAssistant: React.FC = () => {
           shownTutors: shownTutorsRef.current,
         });
         filtersRef.current = res.filters;
+        setFiltersView(res.filters);
         shownTutorsRef.current = res.shownTutors ?? [];
         if (res.sessionId) sessionIdRef.current = res.sessionId;
         setTurns((prev) => [...prev, { role: 'assistant', content: res.reply, cards: res.cards }]);
@@ -257,6 +277,8 @@ const ChatAssistant: React.FC = () => {
               )}
             </div>
           )}
+
+          {started && <ActiveFilters filters={filtersView} onClear={clearFilterFields} />}
 
           {/* Ô nhập — pill: input + nút gửi tròn trong 1 khối */}
           <form className={styles.form} onSubmit={onSubmit}>
