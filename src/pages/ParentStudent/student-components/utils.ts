@@ -47,11 +47,13 @@ const startMsOfInfo = (info: { scheduledStart: string } | null): number | null =
  *  - `pending_confirmation` → chờ phụ huynh xác nhận (có hạn chót, ưu tiên hiển thị)
  *  - `scheduled`/`in_progress` mà giờ kết thúc còn ở tương lai → buổi đã mở, sắp tới
  *  - `reserved`             → buổi giữ chỗ, chưa mở (đếm riêng, xem BookingProgress.reserved)
+ *  - phần còn lại           → buổi đang treo (xem BookingProgress.onHold)
  *  - `cancelled*`           → bỏ hẳn
  *
  * Buổi `scheduled` đã trôi qua (gia sư chưa gửi báo cáo) cố ý KHÔNG tính là "sắp tới", để thẻ
- * không hứa với phụ huynh một buổi không còn xảy ra. Các trạng thái còn lại (`no_show`,
- * `disputed`, `interrupted`) không vào con số nào — chúng thuộc luồng khiếu nại, có trang riêng.
+ * không hứa với phụ huynh một buổi không còn xảy ra — nhưng nó vào `onHold` chứ không bị bỏ rơi.
+ * Tương tự với `no_show`/`disputed`/`interrupted`: chúng thuộc luồng khiếu nại và có trang riêng,
+ * nhưng vẫn là buổi của gói đã mua nên vẫn phải nằm trong mẫu số tiến độ.
  *
  * Thứ tự trả về trong từng con: khoá còn buổi đã mở sắp tới lên đầu (xếp theo buổi gần nhất), rồi
  * khoá còn buổi chờ mở, cuối cùng là khoá đã xong/đã huỷ — phụ huynh mở trang này để biết việc
@@ -81,6 +83,7 @@ export function buildStudentBookings(sessions: ClassSessionResponse[], nowMs: nu
         upcoming: 0,
         pending: 0,
         reserved: 0,
+        onHold: 0,
         next: null,
         nextReserved: null,
         nextPending: null,
@@ -101,8 +104,12 @@ export function buildStudentBookings(sessions: ClassSessionResponse[], nowMs: nu
       if (bookingStatus) booking.bookingStatus = bookingStatus;
     }
 
-    if (status === 'completed') booking.completed += 1;
-    else if (status === 'pending_confirmation') {
+    if (status === 'completed') {
+      booking.completed += 1;
+      continue;
+    }
+
+    if (status === 'pending_confirmation') {
       booking.pending += 1;
       // Giữ buổi CŨ NHẤT: hạn xác nhận tính từ lúc gia sư gửi báo cáo, nên buổi cũ nhất là buổi
       // sắp hết hạn trước tiên — cũng là buổi phụ huynh cần xử lý trước.
@@ -111,6 +118,7 @@ export function buildStudentBookings(sessions: ClassSessionResponse[], nowMs: nu
       if (pendingStartMs !== null && (currentPendingMs === null || pendingStartMs < currentPendingMs)) {
         booking.nextPending = toSessionInfo(session);
       }
+      continue;
     }
 
     if (status === 'reserved') {
@@ -123,8 +131,14 @@ export function buildStudentBookings(sessions: ClassSessionResponse[], nowMs: nu
       continue;
     }
 
+    // Buổi đã mở và còn ở phía trước → "sắp tới". Mọi trường hợp còn lại (khiếu nại, vắng mặt,
+    // bị ngắt, hoặc đã qua giờ mà chưa có báo cáo) rơi vào `onHold` — không hứa hẹn gì trên thẻ,
+    // nhưng vẫn được đếm để mẫu số bằng số buổi thật của gói.
     const endMs = endMsOf(session);
-    if (!ACTIVE_STATUSES.has(status) || endMs === null || endMs < nowMs) continue;
+    if (!ACTIVE_STATUSES.has(status) || endMs === null || endMs < nowMs) {
+      booking.onHold += 1;
+      continue;
+    }
 
     booking.upcoming += 1;
     const startMs = startMsOf(session);
@@ -172,18 +186,25 @@ export const coverForBooking = (bookingId: number): string => COVERS[Math.abs(bo
 /**
  * Tiến độ của MỘT khoá học.
  *
- * Mẫu số = số buổi còn hiệu lực của chính khoá đó: đã học + chờ xác nhận + đã mở sắp tới + chờ mở.
- * Cố ý KHÔNG lấy `total_sessions` của booking làm mẫu số — buổi đã trôi qua mà gia sư chưa gửi báo
- * cáo sẽ nằm im trong mẫu số và kéo tỉ lệ xuống, khiến thẻ báo con học chậm trong khi thực tế là
- * gia sư chậm chốt sổ.
+ * Mẫu số = MỌI buổi chưa huỷ của khoá đó: đã học + chờ xác nhận + đã mở sắp tới + chờ mở + đang
+ * treo. Nói cách khác là số buổi thật của gói đã mua, đúng bằng mẫu số mà portal gia sư hiển thị
+ * (`totalSessions + reservedSessions`).
  *
- * Buổi `pending_confirmation` và `reserved` nằm trong MẪU SỐ nhưng chưa vào tử số:
+ * TRƯỚC ĐÂY mẫu số bỏ nhóm `onHold` (khiếu nại, vắng mặt, bị ngắt, buổi đã qua giờ mà chưa có báo
+ * cáo) với lý do "không để cái chậm của gia sư kéo tỉ lệ của con xuống". Cái giá của nó là cùng
+ * một lớp cho ra hai con số ở hai portal: một buổi khiếu nại trong gói 10 buổi khiến gia sư đọc
+ * "0/10 buổi" còn phụ huynh/học sinh đọc "0/9 buổi" — và không ai giải thích được buổi thứ 10 đi
+ * đâu. Mẫu số giờ là số buổi đã mua, còn phần chênh giữa tử và mẫu được nói rõ ngay trong modal
+ * chi tiết khoá học (ô "Đang chờ xử lý").
+ *
+ * Buổi `pending_confirmation`, `reserved`, `onHold` nằm trong MẪU SỐ nhưng chưa vào tử số:
  *  - `pending_confirmation`: đã dạy xong, chờ phụ huynh bấm xác nhận → có nút riêng ngay trên thanh.
  *  - `reserved`: chưa mở, chờ trả nốt tiền. Nếu loại khỏi mẫu số thì thanh đạt 100% trong khi thẻ
  *    vẫn ghi "còn N buổi chờ mở" — hai câu tự phủ nhận nhau trong cùng một thẻ.
+ *  - `onHold`: chưa chốt được là đã học hay chưa, nên không vào tử số.
  */
 export function bookingProgress(booking: BookingProgress): { done: number; total: number; percent: number } {
-  const total = booking.completed + booking.pending + booking.upcoming + booking.reserved;
+  const total = booking.completed + booking.pending + booking.upcoming + booking.reserved + booking.onHold;
   return {
     done: booking.completed,
     total,

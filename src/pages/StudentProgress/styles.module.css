@@ -118,8 +118,11 @@
   background: #f5f6f8;
 }
 
-/* Liên kết chữ trong thân thẻ ("Tìm gia sư cho môn này"). */
+/* Liên kết chữ trong thân thẻ ("Tìm gia sư cho môn này").
+   `position/z-index` để nó nổi trên nút phủ kín thẻ (`.cardOpen`) và vẫn bấm được. */
 .inlineLink {
+  position: relative;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -241,8 +244,29 @@
   border-color: rgba(62, 47, 40, 0.28);
 }
 
+/* ── Nút phủ kín thẻ: bấm vào bất cứ chỗ trống nào của thẻ là mở modal chi tiết khoá ──
+   Nằm dưới cùng (z-index 1) nên các phần tử bấm được bên trong chỉ cần z-index 2 là nổi lên trên
+   và giữ nguyên hành vi riêng. Cách này thay cho việc bọc cả thẻ trong <button>: bên trong thẻ đã
+   có sẵn button (nhắc xác nhận, nút chân thẻ), mà button lồng button là HTML không hợp lệ. */
+.cardOpen {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.cardOpen:focus-visible {
+  outline: 3px solid rgba(23, 33, 58, 0.18);
+  outline-offset: -3px;
+}
+
 /* ── Nhắc xác nhận buổi học — chỉ hiện khi thật sự có việc cần làm ── */
 .pendingAlert {
+  position: relative;
+  z-index: 2;
   display: flex;
   min-height: 34px;
   padding: 0 10px 0 12px;
@@ -275,6 +299,8 @@
 /* ── Chân thẻ ── */
 /* Padding ngang khớp `p-4` của thân thẻ để hai vùng thẳng hàng mép trái/phải. */
 .cardFoot {
+  position: relative;
+  z-index: 2;
   display: flex;
   margin-top: auto;
   padding: 11px 16px;

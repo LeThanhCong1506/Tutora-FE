@@ -36,8 +36,30 @@ const readSessionList = (content: unknown): ClassSessionResponse[] | null => {
   return Array.isArray(items) ? (items as ClassSessionResponse[]) : null;
 };
 
+/** Buổi học của từng khoá, khoá theo `bookingId`. */
+export type SessionsByBooking = Record<number, ClassSessionResponse[]>;
+
+/**
+ * Chia danh sách buổi học đã tải theo từng khoá, GIỮ NGUYÊN cả buổi đã huỷ.
+ *
+ * Modal chi tiết khoá học đọc map này thay vì gọi thêm API: `GET /parent/class-sessions` không
+ * lọc được theo `bookingId` (khác endpoint của gia sư), mà trang thì đã tải trọn danh sách rồi.
+ * Buổi đã huỷ không vào con số nào của thẻ nhưng vẫn phải hiện trong danh sách buổi của modal —
+ * phụ huynh cần thấy buổi đã huỷ, kèm nhãn "Đã hủy".
+ */
+const groupSessionsByBooking = (sessions: ClassSessionResponse[]): SessionsByBooking => {
+  const map: SessionsByBooking = {};
+  for (const session of sessions) {
+    const bookingId = session.bookingId ?? 0;
+    (map[bookingId] ??= []).push(session);
+  }
+  return map;
+};
+
 export interface UseParentStudentsResult {
   rows: StudentWithBookings[];
+  /** Buổi học thô theo từng khoá — nguồn cho danh sách buổi trong modal chi tiết. */
+  sessionsByBooking: SessionsByBooking;
   /** Đang tải danh sách con — khung trang chưa dựng được. */
   loading: boolean;
   /** Danh sách con đã có nhưng số liệu buổi học còn đang về. */
@@ -56,6 +78,7 @@ export interface UseParentStudentsResult {
 export function useParentStudents(): UseParentStudentsResult {
   const { students, loading, refreshStudents } = useStudentContext();
   const [bookings, setBookings] = useState<ReturnType<typeof buildStudentBookings>>({});
+  const [sessionsByBooking, setSessionsByBooking] = useState<SessionsByBooking>({});
   const [insightsLoading, setInsightsLoading] = useState(true);
   const [insightsFailed, setInsightsFailed] = useState(false);
   const [credentials, setCredentials] = useState<StudentCredentials | null>(null);
@@ -96,11 +119,13 @@ export function useParentStudents(): UseParentStudentsResult {
         }
 
         setBookings(map);
+        setSessionsByBooking(groupSessionsByBooking(sessions));
         setInsightsFailed(false);
       } catch (err) {
         if (!active) return;
         console.error('ParentStudent: không lấy được danh sách buổi học', err);
         setBookings({});
+        setSessionsByBooking({});
         setInsightsFailed(true);
       } finally {
         if (active) setInsightsLoading(false);
@@ -191,6 +216,7 @@ export function useParentStudents(): UseParentStudentsResult {
 
   return {
     rows,
+    sessionsByBooking,
     loading,
     insightsLoading,
     insightsFailed,
