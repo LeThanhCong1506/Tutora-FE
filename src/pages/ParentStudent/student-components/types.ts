@@ -35,6 +35,16 @@ export interface BookingProgress {
    * "20 buổi chờ mở"). Xem utils/bookingStatus.ts.
    */
   reserved: number;
+  /**
+   * Buổi ĐANG TREO: `disputed`, `no_show`, `interrupted`, và buổi `scheduled`/`in_progress` đã
+   * qua giờ mà gia sư chưa gửi báo cáo.
+   *
+   * Không vào tử số (chưa chốt được là đã học xong), nhưng BẮT BUỘC có trong mẫu số: chúng vẫn là
+   * buổi của gói đã mua. Bỏ chúng ra thì mẫu số của phụ huynh nhỏ hơn của gia sư đúng bằng số buổi
+   * đang treo — cùng một lớp mà gia sư đọc "0/10 buổi" còn phụ huynh đọc "0/9 buổi".
+   * Xem `TutorPortal/TutorPortalClasses/classes-components/utils.ts` (`totalSessionsWithReserved`).
+   */
+  onHold: number;
   /** Buổi đã mở, sắp tới gần nhất — nội dung chính của thẻ. */
   next: NextSessionInfo | null;
   /** Buổi giữ chỗ sớm nhất — chỉ để nói lý do, chưa phải lịch chắc chắn. */
