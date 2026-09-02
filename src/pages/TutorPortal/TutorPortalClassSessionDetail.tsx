@@ -409,6 +409,9 @@ const TutorPortalClassSessionDetail = () => {
   const canCreateDispute =
     !dispute &&
     (status === 'pending_confirmation' || status === 'completed' || (status === 'scheduled' && hasSessionStarted));
+  // Tạm ẩn nút "Báo cáo vấn đề" ở trang chi tiết buổi học của gia sư theo yêu cầu — logic
+  // canCreateDispute/modal vẫn giữ nguyên, chỉ không render nút trigger. Đổi lại `true` để hiện lại.
+  const SHOW_DISPUTE_BUTTON = false;
   return (
     <div className={styles.page}>
       <main className={styles.main}>
@@ -516,7 +519,7 @@ const TutorPortalClassSessionDetail = () => {
                     Đề xuất đổi lịch
                   </button>
                 )}
-                {canCreateDispute && (
+                {SHOW_DISPUTE_BUTTON && canCreateDispute && (
                   <button
                     type="button"
                     className={styles.secondaryButton}
