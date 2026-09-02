@@ -403,9 +403,11 @@ function App() {
               <Route element={<StudentProfileGate />}>
                 <Route index element={<Navigate to="/student-portal/dashboard" replace />} />
                 <Route path="dashboard" element={<StudentDashboard />} />
-                <Route path="booking" element={<StudentBooking />} />
-                <Route path="booking/:id" element={<BookingDetail />} />
-                <Route path="booking/:id/payment" element={<PaymentPage />} />
+                <Route element={<StudentSelfRegisteredGate />}>
+                  <Route path="booking" element={<StudentBooking />} />
+                  <Route path="booking/:id" element={<BookingDetail />} />
+                  <Route path="booking/:id/payment" element={<PaymentPage />} />
+                </Route>
                 <Route path="favorites" element={<FavoritesPage />} />
                 <Route path="calendar" element={<StudentLessons />} />
                 <Route path="progress" element={<StudentProgress />} />

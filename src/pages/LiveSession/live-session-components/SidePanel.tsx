@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X, MessageCircle, FileText, ListChecks } from 'lucide-react';
 import type { ChatMessage } from './types';
-import type { LiveEmotionAlert } from './hooks/useAgoraCall';
+import type { LiveEmotionAlert, PracticeAnswerSignal } from './hooks/useAgoraCall';
 import ChatPanel from './ChatPanel';
 import NotesPanel from './NotesPanel';
 import BehaviorPanel from './BehaviorPanel';
@@ -22,16 +22,19 @@ interface SidePanelProps {
   messages: ChatMessage[];
   onSendMessage: (text: string) => void;
   notesStorageKey: string;
-  /** Booking chứa buổi học — tài liệu và bài tập đều gắn theo booking. */
   bookingId: number | null;
   classSessionId: number | null;
   isTutor: boolean;
-  /** Tiến trình sinh đề — sở hữu bởi LiveSession để sống qua việc đóng/mở panel. */
+  /** Tiến trình sinh đề */
   generation: PracticeGeneration;
   /** Gia sư gửi câu hỏi -> báo cho học sinh qua RTM. */
   onPracticeSent: () => void;
-  /** Tăng lên khi NHẬN được tín hiệu có bài tập mới (phía học sinh). */
   practiceSignal: number;
+  /** Tăng lên khi tài liệu xử lý xong */
+  materialSignal: number;
+  /** Gọi sau khi tải tài liệu lên xong. */
+  onMaterialReady: () => void;
+  onAnswered: (payload: PracticeAnswerSignal) => void;
   /** Chỉ dựng cho GIA SƯ — truyền props này thì panel "Theo dõi" mới hoạt động. */
   behavior?: {
     trackingOn: boolean;
@@ -67,6 +70,9 @@ const SidePanel = ({
   generation,
   onPracticeSent,
   practiceSignal,
+  materialSignal,
+  onMaterialReady,
+  onAnswered,
   behavior,
 }: SidePanelProps) => {
   const [chatTab, setChatTab] = useState<ChatTabKey>('chat');
@@ -143,7 +149,12 @@ const SidePanel = ({
             minHeight: 0,
           }}
         >
-          <MaterialsTab bookingId={bookingId} canUpload={isTutor} />
+          <MaterialsTab
+            bookingId={bookingId}
+            canUpload={isTutor}
+            refreshToken={materialSignal}
+            onUploaded={onMaterialReady}
+          />
         </div>
         <div
           style={{
@@ -156,7 +167,9 @@ const SidePanel = ({
             bookingId={bookingId}
             classSessionId={classSessionId}
             isTutor={isTutor}
-            refreshToken={refreshToken + practiceSignal}
+            // Cộng cả materialSignal: tải tài liệu lên xong thì tab AI phải thấy ngay
+            // trong danh sách "Tài liệu nguồn", không bắt gia sư F5 giữa buổi dạy.
+            refreshToken={refreshToken + practiceSignal + materialSignal}
             generation={generation}
             onOpenQuestion={(set, question) => setOpenQuestion({ set, question })}
           />
@@ -185,6 +198,7 @@ const SidePanel = ({
           onClose={() => setOpenQuestion(null)}
           onChanged={() => setRefreshToken((v) => v + 1)}
           onSent={onPracticeSent}
+          onAnswered={onAnswered}
         />
       )}
     </aside>

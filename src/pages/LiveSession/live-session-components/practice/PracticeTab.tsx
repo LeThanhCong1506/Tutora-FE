@@ -9,6 +9,11 @@ import {
 import { getMaterials, type LearningMaterialResponse } from '../../../../services/materials.service';
 import MathText from './MathText';
 import type { PracticeGeneration } from './usePracticeGeneration';
+
+/**
+ * Hạn mức câu hỏi mỗi BUỔI HỌC
+ */
+const MAX_QUESTIONS_PER_SESSION = 10;
 import styles from '../../styles.module.css';
 
 interface PracticeTabProps {
@@ -85,6 +90,17 @@ const PracticeTab = ({
         : [...effectiveSelectedIds, id],
     );
 
+  // Số câu đã tạo trong ĐÚNG buổi học này — buổi phụ có hạn mức riêng nên không
+  // đếm gộp cả khoá.
+  const usedCount = useMemo(
+    () =>
+      sets
+        .filter((s) => classSessionId == null || s.classSessionId === classSessionId)
+        .reduce((total, s) => total + s.questions.length, 0),
+    [sets, classSessionId],
+  );
+  const quotaReached = usedCount >= MAX_QUESTIONS_PER_SESSION;
+
   // Danh sách phẳng: gia sư thấy cả nháp, học sinh chỉ nhận bộ đã gửi từ BE.
   const questions = useMemo(
     () => sets.flatMap((set) => set.questions.map((q) => ({ set, q }))),
@@ -121,6 +137,11 @@ const PracticeTab = ({
     <div className={styles.practiceScroll}>
       {isTutor && (
         <section className={styles.practiceCompose}>
+          <p className={styles.practiceQuotaNote}>
+            <span>
+              Đã tạo {usedCount}/{MAX_QUESTIONS_PER_SESSION} câu cho buổi này
+            </span>
+          </p>
           <div className={styles.materialPickerRow}>
             <span className={styles.materialPickerInfo}>
               <span className={styles.materialPickerLabel}>Tài liệu nguồn</span>
@@ -180,7 +201,9 @@ const PracticeTab = ({
           <button
             type="button"
             className={styles.practicePrimaryBtn}
-            disabled={generating || effectiveSelectedIds.length === 0 || !prompt.trim()}
+            disabled={
+              generating || quotaReached || effectiveSelectedIds.length === 0 || !prompt.trim()
+            }
             onClick={handleGenerate}
           >
             {generating ? (
