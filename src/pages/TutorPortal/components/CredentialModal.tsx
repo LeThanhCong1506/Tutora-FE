@@ -5,7 +5,7 @@ import EditModal from './EditModal';
 import FormField from './FormField';
 import { validateCredentialName, validateInstitution, validateCertificateFile } from '../utils/validation';
 import { CERTIFICATE_TYPES, getCertificateLabel } from '../data/certificateTypes';
-import { uploadCertificate } from '../../../services/certificate.service';
+import { uploadCertificate, deleteCertificate } from '../../../services/certificate.service';
 import { getUserIdFromToken } from '../../../services/auth.service';
 import { useFormDraft } from '../../../hooks/useFormDraft';
 import { getApiErrorMessage } from '../../../utils/apiError';
@@ -259,6 +259,21 @@ const CredentialModal: React.FC<CredentialModalProps> = ({
     setIsLoading(true);
 
     try {
+      // Sửa chứng chỉ = xoá bản cũ rồi thêm bản mới thay thế — BE không có endpoint "update tại
+      // chỗ" cho 1 chứng chỉ (mọi chứng chỉ sửa xong đều phải quay lại "chờ duyệt" từ đầu, đúng quy
+      // tắc admin xét duyệt thủ công, không tự OCR nữa). TRƯỚC ĐÂY isEditing chỉ đổi tiêu đề/nhãn nút
+      // ("Cập nhật") chứ code luôn gọi thẳng uploadCertificate (tạo mới) mà không xoá bản cũ — kết
+      // quả là bấm "Cập nhật" thực chất chỉ TẠO THÊM 1 chứng chỉ mới, bản cũ vẫn còn nguyên, khiến
+      // gia sư có 2 chứng chỉ trùng nhau cho cùng 1 nội dung. Xoá trước khi thêm để tránh trùng lặp;
+      // nếu xoá thất bại thì dừng hẳn, không tạo bản mới (tránh vừa dư vừa thiếu).
+      if (isEditing && formData.id) {
+        const deleteResult = await deleteCertificate(userId, formData.id);
+        if (!deleteResult.success) {
+          toast.error(deleteResult.message || 'Không thể cập nhật chứng chỉ (xoá bản cũ thất bại).');
+          return;
+        }
+      }
+
       const response = await uploadCertificate(userId, {
         CertificateName: formData.name,
         CertificateType: formData.certificateType,
@@ -274,7 +289,11 @@ const CredentialModal: React.FC<CredentialModalProps> = ({
 
         // BE đã bỏ auto-OCR — chứng chỉ luôn được gửi thẳng cho admin xét duyệt,
         // ở trạng thái "đang chờ duyệt".
-        toast.success('Đã gửi chứng chỉ. Chứng chỉ đang chờ admin xét duyệt.');
+        toast.success(
+          isEditing
+            ? 'Đã cập nhật chứng chỉ. Chứng chỉ đang chờ admin xét duyệt lại.'
+            : 'Đã gửi chứng chỉ. Chứng chỉ đang chờ admin xét duyệt.',
+        );
         clearDraft();
 
         onSave({
@@ -286,11 +305,25 @@ const CredentialModal: React.FC<CredentialModalProps> = ({
         });
         onClose();
       } else {
-        toast.error(response.message || 'Có lỗi xảy ra khi tải lên chứng chỉ');
+        // Nếu đang sửa mà tới đây thì bản cũ đã bị xoá rồi nhưng bản mới lại không tạo được —
+        // báo rõ để gia sư biết cần thêm lại từ đầu, tránh tưởng nhầm là chứng chỉ vẫn còn.
+        toast.error(
+          response.message ||
+            (isEditing
+              ? 'Đã xoá chứng chỉ cũ nhưng tải lên bản mới thất bại — vui lòng thêm lại chứng chỉ.'
+              : 'Có lỗi xảy ra khi tải lên chứng chỉ'),
+        );
       }
     } catch (error) {
       console.error('Upload certificate error:', error);
-      toast.error(getApiErrorMessage(error, 'Không thể kết nối với server. Vui lòng thử lại.'));
+      toast.error(
+        getApiErrorMessage(
+          error,
+          isEditing
+            ? 'Đã xoá chứng chỉ cũ nhưng tải lên bản mới thất bại — vui lòng thêm lại chứng chỉ.'
+            : 'Không thể kết nối với server. Vui lòng thử lại.',
+        ),
+      );
     } finally {
       setIsLoading(false);
     }
