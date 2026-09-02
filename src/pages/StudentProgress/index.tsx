@@ -1,11 +1,16 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
-import { PageContainer } from '../../components/shared';
+import { CourseDetailModal, PageContainer } from '../../components/shared';
+import type { CourseDetailSummary } from '../../components/shared';
 import {
   CourseCard,
   CourseCardSkeleton,
+  courseProgressBar,
+  courseStatusMeta,
   EmptyState,
+  isCourseCancelled,
+  nextSessionLabel,
   scheduleAnchorDate,
   useStudentProgress,
 } from './progress-components';
@@ -31,8 +36,10 @@ const CALENDAR_PATH = '/student-portal/calendar';
  */
 const StudentProgress = () => {
   const navigate = useNavigate();
-  const { courses, loading, failed, reload } = useStudentProgress();
+  const { courses, sessionsByBooking, loading, failed, reload } = useStudentProgress();
   const [query, setQuery] = useState('');
+  /** Khoá đang mở trong modal chi tiết. `null` = modal đóng. */
+  const [openCourse, setOpenCourse] = useState<CourseProgress | null>(null);
 
   const filtered = useMemo(() => {
     const keyword = query.trim().toLowerCase();
@@ -76,6 +83,35 @@ const StudentProgress = () => {
    */
   const goToPending = (classSessionId: number) => navigate(`${CALENDAR_PATH}/${classSessionId}`);
   const goToTutorSearch = () => navigate('/tutor-search');
+
+  /**
+   * Số liệu cho modal — lấy lại đúng những hàm mà thẻ đang dùng, không tính lại theo cách khác.
+   * Nếu modal tự đếm thì thẻ và modal sẽ có ngày nói hai con số khác nhau về cùng một khoá.
+   */
+  const modalCourse = useMemo<CourseDetailSummary | null>(() => {
+    if (!openCourse) return null;
+
+    const status = courseStatusMeta(openCourse);
+    const progress = courseProgressBar(openCourse);
+
+    return {
+      bookingId: openCourse.bookingId,
+      subjectName: openCourse.subjectName,
+      tutorName: openCourse.tutorName,
+      statusLabel: status.label,
+      statusVariant: status.variant,
+      completed: progress.done,
+      total: progress.total,
+      percent: progress.percent,
+      pending: openCourse.pending,
+      reserved: openCourse.reserved,
+      onHold: openCourse.onHold,
+      nextSessionLabel: nextSessionLabel(openCourse),
+      cancelled: isCourseCancelled(openCourse),
+    };
+  }, [openCourse]);
+
+  const modalSessions = openCourse ? (sessionsByBooking[openCourse.bookingId] ?? []) : [];
 
   return (
     <PageContainer
@@ -137,7 +173,7 @@ const StudentProgress = () => {
                 key={course.bookingId}
                 course={course}
                 index={index}
-                onViewSchedule={() => goToSchedule(course)}
+                onOpen={() => setOpenCourse(course)}
                 onReviewPending={goToPending}
                 onFindTutor={goToTutorSearch}
               />
@@ -145,6 +181,17 @@ const StudentProgress = () => {
           </div>
         )}
       </div>
+
+      {/* Danh sách buổi lấy từ chính dữ liệu trang đã tải — mở modal KHÔNG gọi lại API buổi học. */}
+      <CourseDetailModal
+        course={modalCourse}
+        sessions={modalSessions}
+        sessionHref={(classSessionId) => `${CALENDAR_PATH}/${classSessionId}`}
+        onClose={() => setOpenCourse(null)}
+        onViewSchedule={() => {
+          if (openCourse) goToSchedule(openCourse);
+        }}
+      />
     </PageContainer>
   );
 };

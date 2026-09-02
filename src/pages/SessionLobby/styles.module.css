@@ -52,6 +52,7 @@
   z-index: 1000;
   font-family: 'IBM Plex Sans', sans-serif;
   padding: 24px;
+  overflow-y: auto;
 }
 
 /* Lớp nền động (Grainient): phủ kín trang, nằm DƯỚI thẻ nội dung, không nhận chuột. */
@@ -91,6 +92,62 @@
   align-items: center;
   text-align: center;
   color: var(--lb-text);
+}
+
+.cardLobby {
+  max-width: 1080px;
+  padding: 32px;
+  align-items: stretch;
+  text-align: left;
+}
+
+.lobbyLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(420px, 1.1fr);
+  gap: clamp(28px, 4vw, 56px);
+  width: 100%;
+  align-items: center;
+}
+
+.lobbyInfo,
+.lobbyMedia {
+  min-width: 0;
+}
+
+.lobbyInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  grid-column: 2;
+  gap: 18px;
+}
+
+.lobbyInfo .title,
+.lobbyInfo .subtitle {
+  text-align: left;
+}
+
+.lobbyInfo .subtitle,
+.lobbyInfo .sessionMeta,
+.lobbyInfo .attendanceTimer,
+.lobbyInfo .scheduleConflictBanner,
+.lobbyInfo .earlyEntryBanner,
+.lobbyInfo .presenceRow {
+  margin: 0;
+}
+
+.lobbyInfo .sessionMeta,
+.lobbyInfo .attendanceTimer,
+.lobbyInfo .scheduleConflictBanner,
+.lobbyInfo .earlyEntryBanner {
+  width: 100%;
+}
+
+.lobbyMedia {
+  display: flex;
+  align-items: center;
+  grid-column: 1;
+  grid-row: 1;
 }
 
 /* ── Quỹ đạo chờ ── */
@@ -306,6 +363,12 @@
   justify-content: center;
 }
 
+.lobbyInfo .presenceRow,
+.lobbyInfo .actions {
+  width: 100%;
+  justify-content: center;
+}
+
 .presenceChip {
   display: inline-flex;
   align-items: center;
@@ -414,6 +477,10 @@
   margin-bottom: 22px;
 }
 
+.lobbyMedia .previewWrap {
+  margin-bottom: 0;
+}
+
 .previewBox {
   position: relative;
   width: 100%;
@@ -473,7 +540,7 @@
   display: grid;
   place-items: center;
   background: var(--lb-danger);
-  color: var(--lb-text);
+  color: var(--lb-bg);
 }
 
 /* Banner lỗi camera/micro — cùng ngôn ngữ với .scheduleConflictBanner: khung đỏ nhạt,
@@ -591,7 +658,7 @@
 .deviceBtnOff {
   background: var(--lb-danger);
   border-color: transparent;
-  color: var(--lb-text);
+  color: var(--lb-bg);
 }
 
 .deviceBtnOff:hover {
@@ -621,6 +688,59 @@
   .waitingDots::after {
     width: auto;
     content: '…';
+  }
+}
+
+@media (max-width: 900px) {
+  .cardLobby {
+    padding: 28px;
+  }
+
+  .lobbyLayout {
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 1.05fr);
+    gap: 28px;
+  }
+}
+
+@media (max-width: 760px) {
+  .page {
+    align-items: flex-start;
+    padding: 16px;
+  }
+
+  .cardLobby {
+    padding: 22px 18px;
+  }
+
+  .lobbyLayout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .lobbyMedia {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .lobbyInfo {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .lobbyInfo .presenceRow,
+  .lobbyInfo .actions {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 420px) {
+  .cardLobby {
+    border-radius: 16px;
+    padding: 18px 14px;
+  }
+
+  .lobbyInfo .actions > button {
+    flex: 1 1 140px;
   }
 }
 /* ── Xác nhận học ngoài lịch ── */
@@ -676,7 +796,10 @@
 
 .scheduleModalTitle {
   margin: 0 44px 8px 0;
-  font: 700 24px/1.25 'Bricolage Grotesque', 'IBM Plex Sans', sans-serif;
+  font:
+    700 24px/1.25 'Bricolage Grotesque',
+    'IBM Plex Sans',
+    sans-serif;
 }
 
 .scheduleModalDescription {
@@ -729,18 +852,42 @@
   border: 1px solid var(--lb-line);
 }
 
-.confirmationPending { background: var(--lb-wait-soft); }
-.confirmationDone { background: var(--lb-ok-soft); border-color: var(--lb-ok-line); }
-.confirmationRejected { background: var(--lb-danger-soft); border-color: var(--lb-danger-line); }
-.confirmationStatusIcon { display: grid; place-items: center; color: var(--lb-wait); }
-.confirmationDone .confirmationStatusIcon { color: var(--lb-ok); }
-.confirmationRejected .confirmationStatusIcon { color: var(--lb-danger); }
+.confirmationPending {
+  background: var(--lb-wait-soft);
+}
+.confirmationDone {
+  background: var(--lb-ok-soft);
+  border-color: var(--lb-ok-line);
+}
+.confirmationRejected {
+  background: var(--lb-danger-soft);
+  border-color: var(--lb-danger-line);
+}
+.confirmationStatusIcon {
+  display: grid;
+  place-items: center;
+  color: var(--lb-wait);
+}
+.confirmationDone .confirmationStatusIcon {
+  color: var(--lb-ok);
+}
+.confirmationRejected .confirmationStatusIcon {
+  color: var(--lb-danger);
+}
 .confirmationPending strong,
 .confirmationDone strong,
-.confirmationRejected strong { display: block; font-size: 14px; }
+.confirmationRejected strong {
+  display: block;
+  font-size: 14px;
+}
 .confirmationPending small,
 .confirmationDone small,
-.confirmationRejected small { display: block; margin-top: 3px; color: var(--lb-text-faint); font-size: 12px; }
+.confirmationRejected small {
+  display: block;
+  margin-top: 3px;
+  color: var(--lb-text-faint);
+  font-size: 12px;
+}
 
 .scheduleAuditNote {
   display: flex;
@@ -752,7 +899,10 @@
   font-size: 12.5px;
   line-height: 1.5;
 }
-.scheduleAuditNote svg { flex: 0 0 auto; margin-top: 1px; }
+.scheduleAuditNote svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
 
 /* Đếm ngược tới hạn xác nhận — pill nổi ngay dưới mô tả để không phải đọc hết đoạn văn mới biết còn bao lâu. */
 .scheduleExpiryPill {
@@ -765,10 +915,14 @@
   border: 1px solid rgba(244, 199, 127, 0.35);
   background: var(--lb-wait-soft);
   color: var(--lb-wait);
-  font: 700 12px 'IBM Plex Sans', sans-serif;
+  font:
+    700 12px 'IBM Plex Sans',
+    sans-serif;
   letter-spacing: 0.1px;
 }
-.scheduleExpiryPill svg { flex: 0 0 auto; }
+.scheduleExpiryPill svg {
+  flex: 0 0 auto;
+}
 .scheduleExpiryPillUrgent {
   border-color: var(--lb-danger-line);
   background: var(--lb-danger-soft);
@@ -776,8 +930,15 @@
 }
 
 .scheduleWaiting,
-.scheduleRejected { margin: 16px 0 0; color: var(--lb-wait); font-size: 13px; line-height: 1.5; }
-.scheduleRejected { color: var(--lb-danger); }
+.scheduleRejected {
+  margin: 16px 0 0;
+  color: var(--lb-wait);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.scheduleRejected {
+  color: var(--lb-danger);
+}
 
 /* Khối cảnh báo hết hạn — cùng bố cục icon-trái/chữ-phải với .scheduleAuditNote để nhất quán,
    đổi sang tông đỏ vì đây là trạng thái cần hành động lại, không chỉ là thông tin tham khảo. */
@@ -793,14 +954,31 @@
   font-size: 13px;
   line-height: 1.5;
 }
-.scheduleExpiredNote svg { flex: 0 0 auto; margin-top: 1px; }
-.scheduleApproved { display: flex; gap: 8px; align-items: center; margin-top: 16px; color: var(--lb-ok); font-size: 13px; }
-.scheduleModalActions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+.scheduleExpiredNote svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+.scheduleApproved {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 16px;
+  color: var(--lb-ok);
+  font-size: 13px;
+}
+.scheduleModalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
 .scheduleRejectButton,
 .scheduleConfirmButton {
   padding: 10px 18px;
   border-radius: 10px;
-  font: 700 14px 'IBM Plex Sans', sans-serif;
+  font:
+    700 14px 'IBM Plex Sans',
+    sans-serif;
   cursor: pointer;
   transition:
     background 0.15s ease,
@@ -808,8 +986,16 @@
     color 0.15s ease;
 }
 
-.scheduleRejectButton { border: 1px solid var(--lb-danger-line); color: var(--lb-danger); background: transparent; }
-.scheduleConfirmButton { border: 0; color: var(--lb-on-accent); background: var(--lb-accent); }
+.scheduleRejectButton {
+  border: 1px solid var(--lb-danger-line);
+  color: var(--lb-danger);
+  background: transparent;
+}
+.scheduleConfirmButton {
+  border: 0;
+  color: var(--lb-on-accent);
+  background: var(--lb-accent);
+}
 
 /* Hover NHẸ: chỉ đổi nền/viền, không phóng to hay nhấc lên — hai nút này quyết định
    việc đổi lịch buổi học, hiệu ứng mạnh dễ khiến bấm nhầm. */
@@ -823,12 +1009,22 @@
 }
 
 .scheduleRejectButton:disabled,
-.scheduleConfirmButton:disabled { opacity: 0.55; cursor: wait; }
+.scheduleConfirmButton:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
 
 @media (max-width: 560px) {
-  .scheduleModal { padding: 24px 18px; }
-  .scheduleSummary > div { flex-direction: column; gap: 4px; }
-  .scheduleSummary strong { text-align: left; }
+  .scheduleModal {
+    padding: 24px 18px;
+  }
+  .scheduleSummary > div {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .scheduleSummary strong {
+    text-align: left;
+  }
 }
 .scheduleConflictBanner {
   display: grid;
@@ -908,8 +1104,8 @@
 }
 
 .attendanceTimerDone {
-  border-color: rgba(74, 222, 128, 0.42);
-  background: rgba(20, 83, 45, 0.28);
+  border-color: var(--lb-ok-line);
+  background: var(--lb-ok-soft);
 }
 
 .attendanceTimerClock {
@@ -923,7 +1119,7 @@
 }
 
 .attendanceTimerDone .attendanceTimerClock {
-  color: #86efac;
+  color: var(--lb-ok);
 }
 
 .attendanceTimerText {
@@ -934,6 +1130,11 @@
 
 .attendanceTimerText strong {
   color: #f1f5f9;
+}
+
+.attendanceTimerDone .attendanceTimerText,
+.attendanceTimerDone .attendanceTimerText strong {
+  color: var(--lb-ok);
 }
 
 @media (max-width: 520px) {

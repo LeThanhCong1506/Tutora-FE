@@ -61,3 +61,23 @@ export type {
 
 export { ImageLightbox } from './ImageLightbox';
 export type { ImageLightboxProps } from './ImageLightbox';
+
+export {
+    CourseDetailModal,
+    CourseMaterialsTab,
+    CourseSessionRow,
+    deriveSchedule,
+    extraSessionLabel,
+    formatSessionTime,
+    groupCourseSessions,
+    useCourseMaterials,
+} from './CourseDetailModal';
+export type {
+    CourseDetailModalProps,
+    CourseDetailSummary,
+    CourseMaterialsTabProps,
+    CourseSessionGroup,
+    CourseSessionLike,
+    CourseSessionRowProps,
+    UseCourseMaterialsResult,
+} from './CourseDetailModal';

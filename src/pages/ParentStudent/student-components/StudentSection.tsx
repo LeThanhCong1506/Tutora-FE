@@ -14,6 +14,8 @@ export interface StudentSectionProps extends StudentWithBookings {
   onDelete: () => void;
   /** `null` = xem lịch của cả con (chế độ tổng quát, không có buổi đã mở nào để neo ngày). */
   onViewSchedule: (booking: BookingProgress | null) => void;
+  /** Mở modal chi tiết một khoá — điểm đến khi bấm vào thẻ khoá học ở chế độ Chi tiết. */
+  onOpenBooking: (booking: BookingProgress) => void;
   /** Nhận id buổi chờ xác nhận để mở trang chi tiết buổi đó. */
   onReviewPending: (classSessionId: number) => void;
   onBookTutor: () => void;
@@ -38,6 +40,7 @@ const StudentSection = ({
   onResetPassword,
   onDelete,
   onViewSchedule,
+  onOpenBooking,
   onReviewPending,
   onBookTutor,
 }: StudentSectionProps) => {
@@ -224,7 +227,7 @@ const StudentSection = ({
                   key={booking.bookingId}
                   booking={booking}
                   index={index}
-                  onViewSchedule={() => onViewSchedule(booking)}
+                  onOpen={() => onOpenBooking(booking)}
                   onReviewPending={onReviewPending}
                 />
               ))}

@@ -15,7 +15,8 @@ export interface CourseCardProps {
   course: CourseProgress;
   /** Thứ tự trong lưới — chỉ dùng để lệch nhẹ hiệu ứng xuất hiện. */
   index: number;
-  onViewSchedule: () => void;
+  /** Mở modal chi tiết khoá học. Bấm vào bất cứ đâu trên thẻ đều rơi vào đây. */
+  onOpen: () => void;
   /** Nhận id buổi chờ xác nhận để mở đúng trang chi tiết buổi đó — nơi DUY NHẤT có nút Xác nhận. */
   onReviewPending: (classSessionId: number) => void;
   onFindTutor: () => void;
@@ -42,13 +43,24 @@ export interface CourseCardProps {
  *  4. Nhãn "N buổi chờ bạn xác nhận" giữ nguyên nhưng đổi người chịu trách nhiệm: học sinh tự
  *     xác nhận buổi của mình (`POST /student/class-sessions/{id}/confirm`).
  */
-const CourseCard = ({ course, index, onViewSchedule, onReviewPending, onFindTutor }: CourseCardProps) => {
+const CourseCard = ({ course, index, onOpen, onReviewPending, onFindTutor }: CourseCardProps) => {
   const status = courseStatusMeta(course);
   const progress = courseProgressBar(course);
   const isCancelled = isCourseCancelled(course);
 
   return (
     <article className={styles.card} style={{ animationDelay: `${Math.min(index, 5) * 45}ms` }}>
+      {/* Cả thẻ là một nút mở modal — giống thẻ lớp bên portal gia sư.
+          Cách làm: một nút PHỦ KÍN thẻ nằm dưới, các phần tử bấm được bên trong (nhắc xác nhận,
+          nút ở chân thẻ) nổi lên trên bằng z-index. Không bọc cả thẻ trong <button> vì bên trong
+          đã có sẵn button — button lồng button là HTML không hợp lệ và Firefox bỏ luôn nút con. */}
+      <button
+        type="button"
+        className={styles.cardOpen}
+        onClick={onOpen}
+        aria-label={`Xem chi tiết khoá ${course.subjectName} — mã lớp #${course.bookingId}`}
+      />
+
       {/* Dải cover + nhãn trạng thái, cùng chiều cao 96px với thẻ bên phụ huynh. */}
       <div className="relative h-24 shrink-0 overflow-hidden">
         <img src={coverForCourse(course.bookingId)} alt="" aria-hidden="true" className="h-full w-full object-cover" />
@@ -118,8 +130,9 @@ const CourseCard = ({ course, index, onViewSchedule, onReviewPending, onFindTuto
               </div>
             </>
           ) : (
-            /* Lớp không còn buổi nào tính được (chỉ còn buổi no-show/khiếu nại) — thanh 0% sẽ bị
-               đọc nhầm thành "chưa học buổi nào", nên thay bằng một đường đi tiếp. */
+            /* Lớp không còn buổi nào tính được — sau khi buổi khiếu nại/vắng mặt được đưa vào mẫu
+               số, chỗ này chỉ còn xảy ra khi mọi buổi của khoá đều đã huỷ. Thanh 0% sẽ bị đọc
+               nhầm thành "chưa học buổi nào", nên thay bằng một đường đi tiếp. */
             <button type="button" className={styles.inlineLink} onClick={onFindTutor}>
               Tìm gia sư cho môn này <ArrowRight size={13} aria-hidden="true" />
             </button>
@@ -133,9 +146,11 @@ const CourseCard = ({ course, index, onViewSchedule, onReviewPending, onFindTuto
         </div>
       </div>
 
+      {/* Nút này trước đây điều hướng thẳng sang thời khoá biểu. Giờ nó mở modal chi tiết khoá —
+          nơi có đủ danh sách buổi, tài liệu, VÀ nút "Xem lịch học" cho đường đi cũ. */}
       <footer className={`${styles.cardFoot} ${styles.cardFootSingle}`}>
-        <button type="button" className={styles.primaryBtn} onClick={onViewSchedule}>
-          Xem lịch học
+        <button type="button" className={styles.primaryBtn} onClick={onOpen}>
+          Xem chi tiết
         </button>
       </footer>
     </article>
