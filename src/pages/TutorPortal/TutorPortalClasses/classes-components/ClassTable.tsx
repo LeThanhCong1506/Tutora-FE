@@ -5,7 +5,6 @@ import {
     initialsOf,
     nextSessionLabel,
     progressOf,
-    totalSessionsWithReserved,
 } from './utils';
 
 interface ClassTableProps {
@@ -32,8 +31,7 @@ export default function ClassTable({ items, onOpen }: ClassTableProps) {
                 <tbody>
                     {items.map((item) => {
                         const status = classStatusMeta(item.status);
-                        const totalSessions = totalSessionsWithReserved(item);
-                        const percent = progressOf(item.completedSessions, totalSessions);
+                        const percent = progressOf(item.completedSessions, item.totalSessions);
 
                         return (
                             <tr
@@ -69,7 +67,7 @@ export default function ClassTable({ items, onOpen }: ClassTableProps) {
                                             />
                                         </div>
                                         <span className="whitespace-nowrap text-[12px] text-[#7a6a60]">
-                                            {item.completedSessions}/{totalSessions}
+                                            {item.completedSessions}/{item.totalSessions}
                                         </span>
                                     </div>
                                 </td>

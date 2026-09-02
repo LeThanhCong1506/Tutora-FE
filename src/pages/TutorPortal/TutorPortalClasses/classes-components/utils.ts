@@ -38,19 +38,6 @@ export const classStatusMeta = (
 export const progressOf = (completed: number, total: number) =>
     total <= 0 ? 0 : Math.round((completed / total) * 100);
 
-/**
- * Mẫu số của thanh tiến độ = buổi đã mở + buổi còn giữ chỗ.
- *
- * `totalSessions` từ BE cố ý KHÔNG tính buổi `reserved` (một lớp vừa được nhận phải báo 1 buổi,
- * không phải cả gói) — nhưng lấy nguyên nó làm mẫu số thì thẻ tự mâu thuẫn: "Tiến độ 1/1 buổi ·
- * 100%" đứng cạnh nhãn "Đang giữ chỗ" và dòng "4 buổi chờ mở". Cộng buổi giữ chỗ vào MẪU SỐ (chỉ
- * ở đây, không đổi ý nghĩa của `totalSessions`) thì thanh chỉ đầy khi thật sự không còn gì.
- */
-export const totalSessionsWithReserved = (item: {
-    totalSessions: number;
-    reservedSessions?: number;
-}) => item.totalSessions + (item.reservedSessions ?? 0);
-
 export const initialsOf = (name?: string) => {
     const parts = (name || '').trim().split(/\s+/).filter(Boolean);
     if (!parts.length) return 'HS';
