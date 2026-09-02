@@ -475,6 +475,25 @@
   border-color: rgba(62, 47, 40, 0.28);
 }
 
+/* ── Nút phủ kín thẻ khoá học: bấm vào bất cứ chỗ trống nào của thẻ là mở modal chi tiết ──
+   Nằm dưới cùng (z-index 1) nên các phần tử bấm được bên trong chỉ cần z-index 2 là nổi lên trên
+   và giữ nguyên hành vi riêng. Cách này thay cho việc bọc cả thẻ trong <button>: bên trong thẻ đã
+   có sẵn button (nhắc xác nhận, nút chân thẻ), mà button lồng button là HTML không hợp lệ. */
+.cardOpen {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.cardOpen:focus-visible {
+  outline: 3px solid rgba(23, 33, 58, 0.18);
+  outline-offset: -3px;
+}
+
 /* ── Menu ⋯ của một CON ── */
 /* Trước đây menu này nổi trên dải cover của thẻ (absolute trong .card) nên cần nền trắng mờ để
    icon đọc được trên ảnh. Giờ nó là phần tử cuối của hàng danh tính, đứng trên nền kem của
@@ -558,6 +577,8 @@
 
 /* ── Nhắc xác nhận buổi học — chỉ hiện khi thật sự có việc cần làm ── */
 .pendingAlert {
+  position: relative;
+  z-index: 2;
   display: flex;
   min-height: 34px;
   padding: 0 10px 0 12px;
@@ -592,6 +613,8 @@
 /* ── Vùng 3: tài khoản + hành động ── */
 /* Padding ngang khớp `p-4` của thân thẻ để hai vùng thẳng hàng mép trái/phải. */
 .cardFoot {
+  position: relative;
+  z-index: 2;
   display: flex;
   margin-top: auto;
   padding: 11px 16px;

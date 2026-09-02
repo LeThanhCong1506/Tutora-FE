@@ -7,7 +7,7 @@ export { default as EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
 
 export { useStudentProgress } from './hooks/useStudentProgress';
-export type { UseStudentProgressResult } from './hooks/useStudentProgress';
+export type { SessionsByBooking, UseStudentProgressResult } from './hooks/useStudentProgress';
 
 export {
   buildCourseProgress,
