@@ -815,30 +815,6 @@ export const reportClassSessionNoShow = async (
     return response.data;
 };
 
-export interface NoShowActionRequest {
-    actionType: 'free_session' | 'makeup' | 'change_tutor';
-    newScheduledStart?: string;
-    note?: string;
-}
-
-export interface NoShowActionResultResponse {
-    classSessionId: number;
-    actionType: string;
-    success: boolean;
-    message?: string;
-    amountRefunded?: number;
-    makeupClassSessionId?: number;
-    warningCreated: boolean;
-}
-
-export const processClassSessionNoShowAction = async (
-    id: number,
-    request: NoShowActionRequest,
-): Promise<ApiResponse<NoShowActionResultResponse>> => {
-    const response = await api.post(`/class-sessions/${id}/no-show-action`, request, { headers: getAuthHeaders() });
-    return response.data;
-};
-
 // ── Generic (any authenticated role with access) ──
 
 export const getClassSessionById = async (id: number): Promise<ApiResponse<ClassSessionResponse>> => {

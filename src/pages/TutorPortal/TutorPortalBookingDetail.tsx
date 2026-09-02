@@ -101,9 +101,27 @@ const TutorPortalBookingDetail = () => {
       (booking.schedule ?? []).map((slot) => [`${slot.dayOfWeek}-${slot.startTime}-${slot.endTime}`, slot]),
     ).values(),
   );
-  const sessions = [...(booking.lessons ?? [])].sort(
+  const allSessions = [...(booking.lessons ?? [])].sort(
     (a, b) => new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime(),
   );
+
+  /**
+   * Buổi phụ (isContinuation) KHÔNG phải một buổi của khóa: nó có học phí 0đ, sinh ra tự động khi
+   * buổi gốc bị ngắt giữa chừng để học nốt phần thời lượng còn thiếu. Trộn chung vào danh sách làm
+   * "Danh sách buổi học (12)" đá nhau với "Số buổi học: 10" ngay bên cạnh, và gia sư thấy hai buổi
+   * "Đã hủy" mà mình không hề hủy — dễ tưởng bị mất buổi dạy.
+   *
+   * Nên gom xuống dưới đúng buổi cha, không đánh số thứ tự, thay vì gỡ hẳn: buổi phụ là bằng chứng
+   * gia sư đã cố học bù, xoá đi thì mất dấu vết đó.
+   */
+  const mainSessions = allSessions.filter((s) => !s.isContinuation);
+  const continuationsByOriginal = new Map<number, typeof allSessions>();
+  for (const session of allSessions) {
+    if (!session.isContinuation || session.originalClassSessionId == null) continue;
+    const list = continuationsByOriginal.get(session.originalClassSessionId) ?? [];
+    list.push(session);
+    continuationsByOriginal.set(session.originalClassSessionId, list);
+  }
 
   return (
     <PageContainer
@@ -137,19 +155,36 @@ const TutorPortalBookingDetail = () => {
 
         <div className={styles.contentGrid}>
           <div className={styles.primaryColumn}>
-            {sessions.length > 0 && (
-              <SectionCard title={`Danh sách buổi học (${sessions.length})`}>
+            {mainSessions.length > 0 && (
+              <SectionCard title={`Danh sách buổi học (${mainSessions.length})`}>
                 <div className={styles.sectionBody}>
                   <div className={styles.sessionList}>
-                    {sessions.map((session) => {
+                    {mainSessions.map((session) => {
                       const meta = getClassSessionStatusMeta(session.status);
+                      const continuations = continuationsByOriginal.get(session.lessonId) ?? [];
                       return (
-                        <div key={session.lessonId} className={styles.sessionRow}>
-                          <span className={styles.sessionIndex}>#{session.sessionIndex}</span>
-                          <span className={styles.sessionDate}>{formatDateTime(session.scheduledStart)}</span>
-                          <StatusBadge variant={meta.variant} shape="tag">
-                            {meta.label}
-                          </StatusBadge>
+                        <div key={session.lessonId}>
+                          <div className={styles.sessionRow}>
+                            <span className={styles.sessionIndex}>#{session.sessionIndex}</span>
+                            <span className={styles.sessionDate}>{formatDateTime(session.scheduledStart)}</span>
+                            <StatusBadge variant={meta.variant} shape="tag">
+                              {meta.label}
+                            </StatusBadge>
+                          </div>
+                          {continuations.map((extra) => {
+                            const extraMeta = getClassSessionStatusMeta(extra.status);
+                            return (
+                              <div key={extra.lessonId} className={styles.continuationRow}>
+                                <span className={styles.continuationLabel}>Buổi phụ</span>
+                                <span className={styles.sessionDate}>
+                                  {formatDateTime(extra.scheduledStart)}
+                                </span>
+                                <StatusBadge variant={extraMeta.variant} shape="tag">
+                                  {extraMeta.label}
+                                </StatusBadge>
+                              </div>
+                            );
+                          })}
                         </div>
                       );
                     })}

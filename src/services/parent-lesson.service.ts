@@ -6,7 +6,6 @@ import {
   confirmParentClassSession,
   createClassSessionDispute,
   reportClassSessionNoShow,
-  processClassSessionNoShowAction,
   getParentCalendar as getParentCalendarReal,
   getParentDisputesList,
   type PendingClassSessionResponse,
@@ -15,7 +14,6 @@ import {
   type ClassSessionTutor,
   type SettlementResultResponse,
   type DisputeDetailResponse,
-  type NoShowActionResultResponse,
   type DisputeListResponse,
   type ReportNoShowRequest,
   type ScheduleChangeAuditDto,
@@ -97,21 +95,6 @@ export interface CreateDisputeRequest {
   reason: string;
 }
 
-export interface NoShowActionRequest {
-  actionType: 'free_session' | 'makeup' | 'change_tutor';
-  newScheduledStart?: string;
-  note?: string;
-}
-
-export interface NoShowActionResultDto {
-  success: boolean;
-  action: string;
-  message: string;
-  newLessonId?: number;
-  refundAmount?: number;
-  noShowConfirmedAt?: string;
-  noShowConfirmedBy?: string;
-}
 
 export interface CalendarLessonDto {
   lessonId: number;
@@ -253,14 +236,6 @@ const mapDispute = (r: DisputeDetailResponse): DisputeDetailDto => ({
   noShowConfirmedBy: r.noShowConfirmedBy,
 });
 
-const mapNoShowAction = (r: NoShowActionResultResponse): NoShowActionResultDto => ({
-  success: r.success,
-  action: r.actionType,
-  message: r.message ?? '',
-  newLessonId: r.makeupClassSessionId,
-  refundAmount: r.amountRefunded,
-});
-
 // ============================================
 // API Functions (tên giữ nguyên — chỉ đổi phần gọi bên trong)
 // ============================================
@@ -337,14 +312,6 @@ export const reportNoShow = async (
 ): Promise<ApiResponse<ParentLessonDetailDto>> => {
   const response = await reportClassSessionNoShow(lessonId, request, files);
   return { ...response, content: mapDetail(response.content) };
-};
-
-export const processNoShowAction = async (
-  lessonId: number,
-  request: NoShowActionRequest,
-): Promise<ApiResponse<NoShowActionResultDto>> => {
-  const response = await processClassSessionNoShowAction(lessonId, request);
-  return { ...response, content: mapNoShowAction(response.content) };
 };
 
 export const getParentCalendar = async (

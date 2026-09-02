@@ -294,6 +294,47 @@
   background: rgba(26, 34, 56, 0.05);
 }
 
+/* Chip "đang lọc theo…" — nằm ngay trên ô nhập, cùng nền với form để đọc như một khối
+   với vùng nhập, không lẫn vào bong bóng hội thoại. */
+.activeFilters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px 0;
+  background: var(--color-cream);
+}
+.activeFiltersLabel {
+  font-size: 0.72rem;
+  color: rgba(26, 34, 56, 0.55);
+}
+.filterChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  padding: 4px 8px;
+  border: 1px solid rgba(26, 34, 56, 0.16);
+  border-radius: var(--radius-full);
+  background: rgba(26, 34, 56, 0.04);
+  font-size: 0.74rem;
+  color: var(--color-navy);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.filterChip:hover {
+  border-color: rgba(26, 34, 56, 0.34);
+  background: rgba(26, 34, 56, 0.09);
+}
+.filterChipText {
+  /* Tiêu chí mềm ("ưu tiên con mất gốc, cần cô kiên nhẫn") có thể rất dài — cắt gọn
+     để hàng chip không đẩy vỡ layout; nội dung đầy đủ vẫn có ở title/aria-label. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 190px;
+}
+
 /* Ô nhập */
 /* Kiểu Kodee: KHÔNG khung bao, chỉ 1 vạch ngang phân cách phía trên; input trần,
    nút gửi tròn bên phải. */

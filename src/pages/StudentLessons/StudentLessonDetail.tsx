@@ -44,7 +44,6 @@ import { NOTIFICATION_TYPE } from '../../utils/notificationNavigation';
 import { message as antMessage, Spin, Modal } from 'antd';
 import { ClassSessionRecording, RescheduleProposalModal, SkipContinuationCard } from '../../components/shared';
 import CreateDisputeForm from '../ParentLessons/components/CreateDisputeForm';
-import NoShowActionModal from '../ParentLessons/components/NoShowActionModal';
 import { getDisputeStatusMeta } from '../../components/disputes';
 
 /** Màu cho từng variant của getDisputeStatusMeta — giữ đúng bảng màu badge đang dùng ở trang này. */
@@ -184,7 +183,6 @@ const StudentLessonDetail = () => {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [openingChat, setOpeningChat] = useState(false);
     const [showDisputeForm, setShowDisputeForm] = useState(false);
-    const [showNoShowActionModal, setShowNoShowActionModal] = useState(false);
     // Nhịp đồng hồ để nút Khiếu nại tự hiện đúng lúc buổi học bắt đầu — người đang mở sẵn trang chờ
     // gia sư sẽ không phải tải lại mới thấy nút.
     const [nowTs, setNowTs] = useState(() => Date.now());
@@ -426,7 +424,6 @@ const StudentLessonDetail = () => {
     const handleActionSuccess = () => {
         setShowConfirmModal(false);
         setShowDisputeForm(false);
-        setShowNoShowActionModal(false);
         fetchDetail();
         fetchDispute();
     };
@@ -928,16 +925,9 @@ const StudentLessonDetail = () => {
                                 {dispute?.status === 'confirmed_no_show' ? 'Admin đã xác nhận gia sư vắng mặt' : 'Báo cáo đang chờ xác nhận'}
                             </div>
                             <div style={actionCardDesc}>
-                                {dispute?.status === 'confirmed_no_show'
-                                    ? 'Bạn có thể chọn hướng xử lý cho buổi học này.'
-                                    : 'Chưa có hoàn tiền hoặc cảnh báo nào được áp dụng.'}
+                                Chưa có hoàn tiền hoặc cảnh báo nào được áp dụng.
                             </div>
                         </div>
-                        {dispute?.status === 'confirmed_no_show' && (
-                            <button style={actionBtnDispute} onClick={() => setShowNoShowActionModal(true)}>
-                                Chọn hành động xử lý
-                            </button>
-                        )}
                     </div>
                 )}
 
@@ -1808,12 +1798,6 @@ const StudentLessonDetail = () => {
                     onCancel={() => setShowDisputeForm(false)}
                 />
 
-                <NoShowActionModal
-                    open={showNoShowActionModal}
-                    lessonId={lesson.lessonId}
-                    onSuccess={handleActionSuccess}
-                    onCancel={() => setShowNoShowActionModal(false)}
-                />
             </div>
         </div>
     );
