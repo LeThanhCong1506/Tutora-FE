@@ -424,7 +424,6 @@ const TutorPortalProfile: React.FC = () => {
     saveAvatar,
     saveBasicInfo,
     addCredential,
-    updateCredential,
     removeCredential,
     updateIdentityVerification,
     applyConfirmedCccdProfile,
@@ -554,9 +553,15 @@ const TutorPortalProfile: React.FC = () => {
   // Handle save credential - called when modal saves new/updated credential
   const handleSaveCredential = (data: ModalCredentialData) => {
     if (editingCredential) {
-      // Update existing credential
+      // CredentialModal giờ xoá chứng chỉ cũ rồi tạo chứng chỉ mới thay thế (xem CredentialModal.
+      // handleSave) — data.id ở đây LUÔN LÀ ID MỚI, khác hẳn editingCredential.id (bản cũ vừa bị
+      // xoá). updateCredential(data.id, ...) trước đây không khớp được bản ghi nào trong state cục
+      // bộ (chỉ có ID CŨ), nên chỉ có fetchProgress() bên dưới mới thực sự đồng bộ lại danh sách —
+      // gỡ thẳng bản cũ + thêm bản mới ở đây để UI không bị "đứng hình" trong lúc chờ fetchProgress.
+      removeCredential(editingCredential.id ?? '');
       if (data.id) {
-        updateCredential(data.id, {
+        addCredential({
+          id: data.id,
           name: data.name,
           certificateType: data.certificateType,
           institution: data.institution,
