@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react';
-import { CalendarDays, CheckCircle2 } from 'lucide-react';
 import type { ClassSessionResponse } from '../../../../services/classSession.service';
 import { groupSessions } from './groupSessions';
 import SessionRow from './SessionRow';
 import type { ClassItem } from './types';
-import { progressOf, totalSessionsWithReserved } from './utils';
+import { progressOf } from './utils';
 
 interface OverviewTabProps {
     item: ClassItem;
@@ -12,24 +11,8 @@ interface OverviewTabProps {
     loading: boolean;
 }
 
-/** Ô số liệu nhỏ ở đầu tab — dùng nền kem + viền mảnh, không đổ bóng. */
-function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-    return (
-        <div className="flex items-center gap-3 rounded-sm border border-[rgba(62,47,40,0.1)] bg-[#faf9f2] px-4 py-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-white text-[#3e2f28]">
-                {icon}
-            </span>
-            <div className="min-w-0">
-                <p className="text-[12px] text-[#7a6a60]">{label}</p>
-                <p className="truncate text-[14px] font-semibold text-[#3e2f28]">{value}</p>
-            </div>
-        </div>
-    );
-}
-
 export default function OverviewTab({ item, sessions, loading }: OverviewTabProps) {
-    const totalSessions = totalSessionsWithReserved(item);
-    const percent = progressOf(item.completedSessions, totalSessions);
+    const percent = progressOf(item.completedSessions, item.totalSessions);
     // Buổi phụ / học lại được gom vào buổi gốc, mặc định thu gọn.
     const groups = useMemo(() => groupSessions(sessions), [sessions]);
     const [expandedIds, setExpandedIds] = useState<number[]>([]);
@@ -44,7 +27,7 @@ export default function OverviewTab({ item, sessions, loading }: OverviewTabProp
                     <p className="text-[13px] font-medium text-[#3e2f28]">Tiến độ khoá học</p>
                     <p className="text-[13px] text-[#7a6a60]">
                         <span className="font-semibold text-[#3e2f28]">{item.completedSessions}</span>
-                        /{totalSessions} buổi · {percent}%
+                        /{item.totalSessions} buổi · {percent}%
                     </p>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-[#f2f0e4]">
@@ -53,19 +36,6 @@ export default function OverviewTab({ item, sessions, loading }: OverviewTabProp
                         style={{ width: `${percent}%` }}
                     />
                 </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Stat
-                    icon={<CalendarDays size={17} />}
-                    label="Lịch cố định"
-                    value={item.schedule || 'Chưa có'}
-                />
-                <Stat
-                    icon={<CheckCircle2 size={17} />}
-                    label="Còn lại"
-                    value={`${Math.max(totalSessions - item.completedSessions, 0)} buổi`}
-                />
             </div>
 
             <div>

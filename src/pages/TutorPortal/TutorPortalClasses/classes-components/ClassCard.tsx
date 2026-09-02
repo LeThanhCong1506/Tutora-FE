@@ -6,7 +6,6 @@ import {
     initialsOf,
     nextSessionLabel,
     progressOf,
-    totalSessionsWithReserved,
 } from './utils';
 
 interface ClassCardProps {
@@ -20,8 +19,7 @@ interface ClassCardProps {
  */
 export default function ClassCard({ item, onOpen }: ClassCardProps) {
     const status = classStatusMeta(item.status);
-    const totalSessions = totalSessionsWithReserved(item);
-    const percent = progressOf(item.completedSessions, totalSessions);
+    const percent = progressOf(item.completedSessions, item.totalSessions);
 
     return (
         <button
@@ -63,9 +61,9 @@ export default function ClassCard({ item, onOpen }: ClassCardProps) {
                 </div>
 
                 <div className="mt-auto">
-                    <div className="mb-1.5 flex items-center justify-between text-[12px] text-[#7a6a60]">
+                    <div className="mb-1.5 flex items-center justify-between text-[12px] text-black">
                         <span>
-                            Tiến độ {item.completedSessions}/{totalSessions} buổi
+                            Tiến độ {item.completedSessions}/{item.totalSessions} buổi
                         </span>
                         <span className="font-semibold text-[#3e2f28]">{percent}%</span>
                     </div>

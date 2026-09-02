@@ -6,7 +6,7 @@ import { useClassDetail } from './hooks/useClassDetail';
 import MaterialsTab from './MaterialsTab';
 import OverviewTab from './OverviewTab';
 import type { ClassItem } from './types';
-import { classStatusMeta, coverFor, initialsOf, nextSessionLabel, totalSessionsWithReserved } from './utils';
+import { classStatusMeta, coverFor, initialsOf, nextSessionLabel } from './utils';
 
 interface ClassDetailModalProps {
     item: ClassItem | null;
@@ -97,7 +97,7 @@ export default function ClassDetailModal({ item, onClose }: ClassDetailModalProp
                                 <InfoRow
                                     icon={<BookOpen size={15} />}
                                     label="Số buổi"
-                                    value={`${item.completedSessions}/${totalSessionsWithReserved(item)} buổi đã học`}
+                                    value={`${item.completedSessions}/${item.totalSessions} buổi đã học`}
                                 />
                                 <InfoRow
                                     icon={<CalendarDays size={15} />}

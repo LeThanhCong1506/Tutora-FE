@@ -50,13 +50,12 @@ export default function SessionRow({
                 >
                     {expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
                 </button>
+            ) : nested ? (
+                /* Dòng con chỉ cần một gạch dọc mảnh làm dấu nối với buổi cha. */
+                <span aria-hidden="true" className="h-7 w-1 shrink-0 rounded-full bg-[#5b9a6b]" />
             ) : (
-                <span
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold ${
-                        nested ? 'bg-white text-[#7a6a60]' : 'bg-[#f2f0e4] text-[#3e2f28]'
-                    }`}
-                >
-                    {nested ? '↳' : index}
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#f2f0e4] text-[12px] font-semibold text-[#3e2f28]">
+                    {index}
                 </span>
             )}
 
@@ -74,7 +73,7 @@ export default function SessionRow({
             <StatusBadge variant={meta.variant} shape="tag">
                 {meta.label}
             </StatusBadge>
-            {/* Dòng con đã thụt lề + có ký hiệu ↳ nên bỏ mũi tên cho đỡ rối. */}
+            {/* Dòng con đã thụt lề + có gạch nối nên bỏ mũi tên cho đỡ rối. */}
             {!nested && <ChevronRight size={16} className="shrink-0 text-[#b5a99f]" />}
         </Link>
     );
