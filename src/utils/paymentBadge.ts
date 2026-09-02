@@ -10,9 +10,9 @@
  *      cancelled booking is what BUG-010 reported.
  *
  *   2. Never render a raw English BE value in the UI. A page that maps
- *      only "Paid" and "DepositPaid" and lets everything else fall through
- *      will leak "Pending", "Refunded", etc. to the screen. We map every
- *      status we know about, and return null for unknown values so callers
+ *      only some statuses and lets the rest fall through will leak
+ *      "DepositEscrowed" etc. to the screen. We map every status BE
+ *      actually assigns, and return null for anything else so callers
  *      hide the badge rather than printing the raw string.
  */
 
@@ -37,24 +37,21 @@ const TERMINAL_BOOKING_STATUSES = new Set([
 
 /**
  * Map of every payment status BE may return to its Vietnamese label + tone.
- * Keys are case-sensitive — match the exact BE value (PascalCase).
+ *
+ * Chỉ 3 giá trị này tồn tại: PaymentStatus.cs khai báo thêm Holding/Paid nhưng
+ * không code nào gán chúng, còn "DepositPaid" là BookingStatus ("deposit_paid")
+ * chứ không phải payment status — bản trước map nhầm cả hai nhóm.
+ * Tra cứu `.toLowerCase()` vì BE trộn PascalCase với lowercase.
  */
 const PAYMENT_STATUS_MAP: Record<string, PaymentBadgeDisplay> = {
-    // Terminal-success: money has fully landed in escrow / been disbursed.
-    Paid: { label: 'Đã thanh toán', tone: 'success' },
-    Escrowed: { label: 'Đã thanh toán', tone: 'success' },
+    // Chưa trả đồng nào — gán lúc tạo booking.
+    pending: { label: 'Chưa thanh toán', tone: 'warning' },
 
-    // Half-paid: deposit done, remainder still owed.
-    DepositPaid: { label: 'Đã cọc', tone: 'success' },
-    DepositEscrowed: { label: 'Đã cọc', tone: 'success' },
+    // Trả xong buổi 1, còn nợ phần còn lại.
+    depositescrowed: { label: 'Đã thanh toán buổi 1', tone: 'success' },
 
-    // Awaiting action.
-    Pending: { label: 'Chờ thanh toán', tone: 'warning' },
-    PendingRemaining: { label: 'Chờ thanh toán nốt', tone: 'warning' },
-
-    // Resolved-but-not-positive.
-    Refunded: { label: 'Đã hoàn tiền', tone: 'neutral' },
-    Failed: { label: 'Thanh toán thất bại', tone: 'danger' },
+    // Đã trả đủ 100%.
+    escrowed: { label: 'Đã thanh toán đủ', tone: 'success' },
 };
 
 /**
@@ -62,7 +59,7 @@ const PAYMENT_STATUS_MAP: Record<string, PaymentBadgeDisplay> = {
  * no badge should be shown.
  *
  * @param bookingStatus  Top-level booking status (lowercase snake_case from BE)
- * @param paymentStatus  Payment status (PascalCase from BE)
+ * @param paymentStatus  Payment status (Booking.Paymentstatus, PascalCase from BE)
  * @returns Display info, or `null` if the badge must be hidden
  */
 export function getPaymentBadge(
@@ -76,5 +73,35 @@ export function getPaymentBadge(
     if (bookingStatus && TERMINAL_BOOKING_STATUSES.has(bookingStatus)) return null;
 
     // Unknown status → hide rather than leaking raw BE strings to UX.
-    return PAYMENT_STATUS_MAP[paymentStatus] ?? null;
+    return PAYMENT_STATUS_MAP[paymentStatus.toLowerCase()] ?? null;
+}
+
+/**
+ * Nhãn tiếng Việt cho trạng thái thanh toán
+ */
+const PAYMENT_STATUS_LABELS: Record<string, string> = {
+    pending: 'Chưa thanh toán',
+    depositescrowed: 'Đã thanh toán buổi 1',
+    escrowed: 'Đã thanh toán đủ',
+};
+
+/**
+ * Nhãn tiếng Việt cho vòng đời escrow của booking
+ */
+const ESCROW_STATUS_LABELS: Record<string, string> = {
+    holding: 'Đang giữ',
+    released: 'Đã giải ngân',
+    refunded: 'Đã hoàn tiền',
+};
+
+/** Nhãn thanh toán dạng text; `fallback` khi không có giá trị hoặc chưa map. */
+export function getPaymentStatusLabel(status?: string | null, fallback = '—'): string {
+    if (!status) return fallback;
+    return PAYMENT_STATUS_LABELS[status.toLowerCase()] ?? fallback;
+}
+
+/** Nhãn escrow dạng text; `fallback` khi không có giá trị hoặc chưa map. */
+export function getEscrowStatusLabel(status?: string | null, fallback = '—'): string {
+    if (!status) return fallback;
+    return ESCROW_STATUS_LABELS[status.toLowerCase()] ?? fallback;
 }

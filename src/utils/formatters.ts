@@ -273,9 +273,17 @@ export const formatTransactionType = (type: string): string => {
     RemainingPayment: 'Tiền học còn lại',
     Payment: 'Thanh toán',
     Fee: 'Phí',
+    BankTransfer: 'Chuyển tiền ngân hàng',
   };
 
   return typeMap[type] || type;
+};
+
+/** Nhãn cột "Hình thức" trong lịch sử giao dịch. Chỉ có hai kênh: ví và ngân hàng. */
+export const formatTransactionChannel = (channel?: string | null): string => {
+  if (channel === 'Bank') return 'Ngân hàng';
+  if (channel === 'Wallet') return 'Ví';
+  return '—';
 };
 
 /**

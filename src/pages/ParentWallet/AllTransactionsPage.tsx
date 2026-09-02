@@ -110,6 +110,7 @@ const AllTransactionsPage = () => {
                   { label: 'Giữ tiền', value: 'EscrowCredit' },
                   { label: 'Giải phóng', value: 'EscrowRelease' },
                   { label: 'Hoàn tiền', value: 'Refund' },
+                  { label: 'Chuyển tiền ngân hàng', value: 'BankTransfer' },
                 ]}
               />
             </label>

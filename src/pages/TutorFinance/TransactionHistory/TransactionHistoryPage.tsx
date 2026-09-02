@@ -116,6 +116,11 @@ const TransactionHistoryPage: React.FC = () => {
                     ],
                   },
                   {
+                    label: 'Ngân hàng',
+                    title: 'Ngân hàng',
+                    options: [{ label: 'Chuyển tiền ngân hàng', value: 'BankTransfer' }],
+                  },
+                  {
                     label: 'Escrow (chưa ảnh hưởng số dư ví)',
                     title: 'Escrow (chưa ảnh hưởng số dư ví)',
                     options: [
