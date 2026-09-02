@@ -203,93 +203,104 @@ const SessionLobby = () => {
       case 'ready': {
         const isReady = phase === 'ready';
         return (
-          <>
-            <DevicePreview
-              videoRef={preview.videoRef}
-              camOn={preview.camOn}
-              micOn={preview.micOn}
-              streaming={preview.streaming}
-              error={preview.error}
-              myInitial={myInitial}
-              onToggleCam={preview.toggleCam}
-              onToggleMic={preview.toggleMic}
-              onRetry={preview.retry}
-            />
+          <div className={styles.lobbyLayout}>
+            <section className={styles.lobbyInfo} aria-labelledby="lobby-title">
+              <div>
+                <h1 id="lobby-title" className={styles.title}>
+                  Chuẩn bị vào lớp
+                </h1>
+                <p className={styles.subtitle}>
+                  {isReady
+                    ? `${capitalize(waitingForLabel)} đã có mặt. Kiểm tra camera/micro rồi vào lớp nhé.`
+                    : `Kiểm tra camera và micro trong lúc chờ ${waitingForLabel} vào lớp.`}
+                </p>
+              </div>
 
-            <h1 className={styles.title}>Chuẩn bị vào lớp</h1>
-            <p className={styles.subtitle}>
-              {isReady
-                ? `${capitalize(waitingForLabel)} đã có mặt. Kiểm tra camera/micro rồi vào lớp nhé.`
-                : `Kiểm tra camera và micro trong lúc chờ ${waitingForLabel} vào lớp.`}
-            </p>
+              {/* Chỉ hiện khi đang chờ một mình — khi đủ hai phía thì vào lớp ngay, không đếm gì. */}
+              {!isReady && <AttendanceTimer waitingForLabel={waitingForLabel} />}
 
-            {/* Chỉ hiện khi đang chờ một mình — khi đủ hai phía thì vào lớp ngay, không đếm gì. */}
-            {!isReady && <AttendanceTimer waitingForLabel={waitingForLabel} />}
-
-            {info && (
-              <div className={styles.sessionMeta}>
-                <div className={styles.metaRow}>
-                  <span className={styles.metaLabel}>Thời gian</span>
-                  <span className={styles.metaValue}>{formatSchedule(info.scheduledStart, info.scheduledEnd)}</span>
+              {info && (
+                <div className={styles.sessionMeta}>
+                  <div className={styles.metaRow}>
+                    <span className={styles.metaLabel}>Thời gian</span>
+                    <span className={styles.metaValue}>{formatSchedule(info.scheduledStart, info.scheduledEnd)}</span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {scheduleConflict && (
-              <div className={styles.scheduleConflictBanner} role="alert">
-                <strong>Chưa thể bắt đầu vì trùng lịch</strong>
-                <span>{scheduleConflict.message}</span>
-                <small>Hệ thống sẽ tự kiểm tra lại. Hai bên không cần xác nhận đổi lịch lại.</small>
-              </div>
-            )}
+              {scheduleConflict && (
+                <div className={styles.scheduleConflictBanner} role="alert">
+                  <strong>Chưa thể bắt đầu vì trùng lịch</strong>
+                  <span>{scheduleConflict.message}</span>
+                  <small>Hệ thống sẽ tự kiểm tra lại. Hai bên không cần xác nhận đổi lịch lại.</small>
+                </div>
+              )}
 
-            {scheduleChangeState?.isEarlyEntry && (
-              <div className={styles.earlyEntryBanner} role="status">
-                <strong>Đang vào lớp sớm hơn giờ hẹn</strong>
-                <span>
-                  Buổi học dự kiến bắt đầu sau {scheduleChangeState.minutesEarly ?? 0} phút.
+              {scheduleChangeState?.isEarlyEntry && (
+                <div className={styles.earlyEntryBanner} role="status">
+                  <strong>Đang vào lớp sớm hơn giờ hẹn</strong>
+                  <span>
+                    Buổi học dự kiến bắt đầu lúc{' '}
+                    {formatLocalDateTime(info?.scheduledStart ?? scheduleChangeState.originalScheduledStart)}.
+                  </span>
+                  <small>Hai bên có mặt đủ là học được ngay, không cần chờ tới giờ. Buổi vẫn tính đủ thời lượng.</small>
+                </div>
+              )}
+
+              {scheduleChangeState?.rescheduleProposalPending && (
+                <div className={styles.scheduleConflictBanner} role="alert">
+                  <strong>Chưa thể vào học ngoài giờ lúc này</strong>
+                  <span>Buổi học đang có đề xuất đổi lịch chờ phản hồi.</span>
+                  <small>
+                    Vui lòng vào trang chi tiết buổi học để đồng ý/từ chối đề xuất trước khi vào học ngoài giờ đã đặt.
+                  </small>
+                </div>
+              )}
+
+              <div className={styles.presenceRow}>
+                <span
+                  className={`${styles.presenceChip} ${waitingState?.tutorWaiting ? styles.presenceChipActive : ''}`}
+                >
+                  <span className={styles.presenceDot} />
+                  <span className={styles.chipName}>Gia sư · {info?.tutorName ?? 'Gia sư'}</span>
                 </span>
-                <small>
-                  Hai bên có mặt đủ là học được ngay, không cần chờ tới giờ. Buổi vẫn tính đủ thời lượng.
-                </small>
+                <span
+                  className={`${styles.presenceChip} ${waitingState?.studentWaiting ? styles.presenceChipActive : ''}`}
+                >
+                  <span className={styles.presenceDot} />
+                  <span className={styles.chipName}>Học sinh · {info?.studentName ?? 'Học sinh'}</span>
+                </span>
               </div>
-            )}
 
-            {scheduleChangeState?.rescheduleProposalPending && (
-              <div className={styles.scheduleConflictBanner} role="alert">
-                <strong>Chưa thể vào học ngoài giờ lúc này</strong>
-                <span>Buổi học đang có đề xuất đổi lịch chờ phản hồi.</span>
-                <small>Vui lòng vào trang chi tiết buổi học để đồng ý/từ chối đề xuất trước khi vào học ngoài giờ đã đặt.</small>
+              <div className={styles.actions}>
+                <button type="button" className={styles.btnSecondary} onClick={handleBack}>
+                  Quay lại
+                </button>
+                <button
+                  type="button"
+                  className={styles.btnPrimary}
+                  onClick={() => void handleEnter()}
+                  disabled={!canEnter || admission.pendingAction !== null}
+                >
+                  {admission.joining ? 'Đang vào lớp…' : canEnter ? 'Vào lớp học' : `Đang chờ ${waitingForLabel}…`}
+                </button>
               </div>
-            )}
+            </section>
 
-            <div className={styles.presenceRow}>
-              <span className={`${styles.presenceChip} ${waitingState?.tutorWaiting ? styles.presenceChipActive : ''}`}>
-                <span className={styles.presenceDot} />
-                <span className={styles.chipName}>Gia sư · {info?.tutorName ?? 'Gia sư'}</span>
-              </span>
-              <span
-                className={`${styles.presenceChip} ${waitingState?.studentWaiting ? styles.presenceChipActive : ''}`}
-              >
-                <span className={styles.presenceDot} />
-                <span className={styles.chipName}>Học sinh · {info?.studentName ?? 'Học sinh'}</span>
-              </span>
-            </div>
-
-            <div className={styles.actions}>
-              <button type="button" className={styles.btnSecondary} onClick={handleBack}>
-                Quay lại
-              </button>
-              <button
-                type="button"
-                className={styles.btnPrimary}
-                onClick={() => void handleEnter()}
-                disabled={!canEnter || admission.pendingAction !== null}
-              >
-                {admission.joining ? 'Đang vào lớp…' : canEnter ? 'Vào lớp học' : `Đang chờ ${waitingForLabel}…`}
-              </button>
-            </div>
-          </>
+            <section className={styles.lobbyMedia} aria-label="Xem trước camera và thiết bị">
+              <DevicePreview
+                videoRef={preview.videoRef}
+                camOn={preview.camOn}
+                micOn={preview.micOn}
+                streaming={preview.streaming}
+                error={preview.error}
+                myInitial={myInitial}
+                onToggleCam={preview.toggleCam}
+                onToggleMic={preview.toggleMic}
+                onRetry={preview.retry}
+              />
+            </section>
+          </div>
         );
       }
 
@@ -386,7 +397,9 @@ const SessionLobby = () => {
         />
       </div>
 
-      <div className={styles.card}>{renderBody()}</div>
+      <div className={`${styles.card} ${phase === 'waiting' || phase === 'ready' ? styles.cardLobby : ''}`}>
+        {renderBody()}
+      </div>
       {scheduleChangeState && (
         <ScheduleChangeModal
           open={showScheduleChange}
