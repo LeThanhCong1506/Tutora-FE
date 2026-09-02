@@ -106,6 +106,7 @@ const getErrorMessage = (error: unknown) =>
 const getDisputeStatusMeta = (status?: string) => {
   if (status === 'resolved') return { label: 'Đã giải quyết', tone: styles.badgeResolved };
   if (status === 'investigating') return { label: 'Đang xem xét', tone: styles.badgeInvestigating };
+  if (status === 'closed') return { label: 'Đã đóng', tone: styles.badgeClosed };
   return { label: 'Chờ xử lý', tone: styles.badgePending };
 };
 
