@@ -4,6 +4,7 @@ import "./Header.css";
 import { clearUserFromStorage, getCurrentUser, getUserInfoFromToken, getUserProfile } from "../../services/auth.service";
 import { ConfirmDialog } from "../shared/ConfirmDialog";
 import ProfileDropdown from "../shared/PortalLayout/ProfileDropdown";
+import { getRoleLabel } from "../../utils/roleLabel";
 import type { ProfileMenuItem } from "../shared/PortalLayout/ProfileDropdown";
 import NotificationDropdown from '../NotificationDropdown/NotificationDropdown';
 import { getProfileMenuItemsByRole } from "../../layouts/shared/profileMenus";
@@ -33,7 +34,6 @@ const Header = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userDisplayName, setUserDisplayName] = useState<string>("User");
-  const [userEmail, setUserEmail] = useState<string>("");
   const [userRole, setUserRole] = useState<string>("");
   const [userAvatar, setUserAvatar] = useState<string>("");
   const [studentSelfRegistered, setStudentSelfRegistered] = useState(false);
@@ -61,7 +61,6 @@ const Header = ({
         userInfo?.email?.split('@')[0] ||
         "User";
       setUserDisplayName(displayName);
-      setUserEmail(userInfo?.email || "");
       setUserRole(userInfo?.role || "");
       setUserAvatar(generateAvatarUrl(displayName));
 
@@ -186,10 +185,9 @@ const Header = ({
               )}
               <ProfileDropdown
               name={userDisplayName}
-              role={userRole || "TÀI KHOẢN"}
+              role={getRoleLabel(userRole)}
               initials={getInitials(userDisplayName)}
               avatarUrl={userAvatar}
-              subtitle={userEmail}
               items={profileMenuItems}
               onNavigate={(path) => navigate(path)}
               />
@@ -300,19 +298,6 @@ const Header = ({
                     <span style={{ fontWeight: 600, fontSize: '14px' }}>
                       {userDisplayName}
                     </span>
-                    {userEmail && (
-                      <span
-                        style={{
-                          fontSize: '12px',
-                          color: 'rgba(62, 47, 40, 0.5)',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {userEmail}
-                      </span>
-                    )}
                   </div>
                 </div>
 

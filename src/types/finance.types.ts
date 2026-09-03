@@ -1,4 +1,12 @@
 /**
+ * Lịch sử giao dịch là hợp nhất của hai sổ ở BE — wallet_transactions và payment_transactions
+ */
+export type TransactionSource = 'Wallet' | 'Payment';
+
+/** Cột "Hình thức": tiền biến động trong ví, hay đã thật sự ra/vào tài khoản ngân hàng. */
+export type TransactionChannel = 'Wallet' | 'Bank';
+
+/**
  * Financial summary for tutor dashboard
  */
 export interface FinanceSummary {
@@ -35,6 +43,14 @@ export interface TutorTransaction {
     referenceId: number | null;
     referenceTable: string | null;
     createdAt: string;
+    source?: TransactionSource;
+    channel?: TransactionChannel;
+    isInformational?: boolean;
+    bankName?: string | null;
+    accountNumber?: string | null;
+    bankTransactionCode?: string | null;
+    paidAt?: string | null;
+    proofImageUrl?: string | null;
 }
 
 /**

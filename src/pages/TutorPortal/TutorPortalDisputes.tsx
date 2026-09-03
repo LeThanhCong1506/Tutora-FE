@@ -302,23 +302,9 @@ const TutorPortalDisputes = () => {
         <SectionCard className={styles.tableCard}>
           <div className={styles.cardHeader}>
             <div className={styles.cardHeading}>
-              <div className={styles.cardMeta}>
-                <p className={styles.cardSubtitle} aria-live="polite">
-                  {loading ? 'Đang cập nhật dữ liệu...' : `${totalItems.toLocaleString('vi-VN')} hồ sơ`}
-                </p>
-                {totalItems > DISPUTES_PER_PAGE && (
-                  <Pagination
-                    className={styles.headerPagination}
-                    size="small"
-                    current={currentPage}
-                    pageSize={DISPUTES_PER_PAGE}
-                    total={totalItems}
-                    showSizeChanger={false}
-                    showLessItems
-                    onChange={setCurrentPage}
-                  />
-                )}
-              </div>
+              <p className={styles.cardSubtitle} aria-live="polite">
+                {loading ? 'Đang cập nhật dữ liệu...' : `${totalItems.toLocaleString('vi-VN')} hồ sơ`}
+              </p>
             </div>
 
             <div className={styles.toolbar}>

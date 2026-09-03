@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getAuthHeaders, type ApiResponse } from './tutorProfile.service';
 import { setupAuthInterceptor } from './apiClient';
+import type { TransactionChannel, TransactionSource } from '../types/finance.types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -132,6 +133,14 @@ export interface TransactionHistory {
   referenceId: number | null;
   referenceTable: string | null;
   createdAt: string;
+  source?: TransactionSource;
+  channel?: TransactionChannel;
+  isInformational?: boolean;
+  bankName?: string | null;
+  accountNumber?: string | null;
+  bankTransactionCode?: string | null;
+  paidAt?: string | null;
+  proofImageUrl?: string | null;
 }
 
 export interface TransactionHistoryPagedResponse {

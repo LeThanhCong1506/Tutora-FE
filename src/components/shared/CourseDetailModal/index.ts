@@ -10,7 +10,7 @@ export type { CourseMaterialsTabProps } from './CourseMaterialsTab';
 export { useCourseMaterials } from './useCourseMaterials';
 export type { UseCourseMaterialsResult } from './useCourseMaterials';
 
-export { deriveSchedule, extraSessionLabel, formatSessionTime, groupCourseSessions } from './courseSessions';
+export { extraSessionLabel, formatSessionTime, groupCourseSessions } from './courseSessions';
 export type { CourseSessionGroup } from './courseSessions';
 
 export type { CourseDetailSummary, CourseSessionLike } from './types';

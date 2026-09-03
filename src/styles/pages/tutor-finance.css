@@ -894,6 +894,16 @@
   color: var(--finance-navy);
 }
 
+.finance-table-amount--informational {
+  color: rgba(48, 43, 40, 0.62);
+  font-weight: 600;
+}
+
+.finance-table-channel {
+  color: rgba(48, 43, 40, 0.72);
+  font-size: 12px;
+}
+
 .finance-table-reference {
   color: rgba(48, 43, 40, 0.48);
   font-family: 'IBM Plex Mono', monospace;
@@ -935,6 +945,13 @@
 .finance-status-tag--processing {
   color: #355d78;
   background: rgba(64, 122, 160, 0.11);
+}
+
+/* "Chuyển tiền ngân hàng" — trung tính có viền, tách khỏi nhóm tag mang nghĩa tăng/giảm số dư. */
+.finance-type-tag--bank {
+  color: rgba(48, 43, 40, 0.7);
+  background: rgba(48, 43, 40, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(48, 43, 40, 0.12);
 }
 
 .finance-status-tag--cancelled,

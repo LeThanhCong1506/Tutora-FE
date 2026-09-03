@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Drawer } from 'antd';
-import { BookOpen, CalendarDays, GraduationCap, Hash, User, X } from 'lucide-react';
+import { BookOpen, GraduationCap, Hash, User, X } from 'lucide-react';
 import { StatusBadge } from '../StatusBadge';
 import CourseMaterialsTab from './CourseMaterialsTab';
 import CourseSessionRow from './CourseSessionRow';
-import { deriveSchedule, groupCourseSessions } from './courseSessions';
+import { groupCourseSessions } from './courseSessions';
 import { useCourseMaterials } from './useCourseMaterials';
 import type { CourseDetailSummary, CourseSessionLike } from './types';
 
@@ -94,7 +94,6 @@ function CourseDetailModal<T extends CourseSessionLike>({
 
   // Buổi phụ / học lại gom vào buổi gốc, mặc định thu gọn — giống danh sách bên gia sư.
   const groups = useMemo(() => groupCourseSessions(sessions), [sessions]);
-  const schedule = useMemo(() => deriveSchedule(sessions), [sessions]);
 
   const toggle = (id: number) =>
     setExpandedIds((prev) => (prev.includes(id) ? prev.filter((value) => value !== id) : [...prev, id]));
@@ -159,7 +158,6 @@ function CourseDetailModal<T extends CourseSessionLike>({
                   label="Số buổi"
                   value={`${course.completed}/${course.total} buổi đã học`}
                 />
-                <InfoRow icon={<CalendarDays size={15} />} label="Lịch cố định" value={schedule || 'Chưa có'} />
                 <InfoRow
                   icon={<GraduationCap size={15} />}
                   label="Buổi kế tiếp"

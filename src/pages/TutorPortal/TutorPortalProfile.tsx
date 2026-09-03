@@ -699,15 +699,15 @@ const TutorPortalProfile: React.FC = () => {
             </span>
             <div className={styles.pendingReviewText}>
               <div className={styles.pendingReviewTitleRow}>
-                <h2 className={styles.pendingReviewTitle}>Bạn có thay đổi hồ sơ đang chờ Admin duyệt</h2>
+                <h2 className={styles.pendingReviewTitle}>Bạn có thay đổi hồ sơ đang chờ Nhân viên duyệt</h2>
                 <span className={styles.pendingReviewBadge}>
                   <span className={styles.pendingReviewDot} />
                   Đang chờ duyệt
                 </span>
               </div>
               <p className={styles.pendingReviewDescription}>
-                Thông tin công khai trên Marketplace vẫn giữ nguyên như trước cho đến khi Admin duyệt
-                thay đổi này. Bạn vẫn có thể tiếp tục chỉnh sửa — lần nộp mới nhất sẽ thay thế bản đang chờ.
+                Thông tin công khai trên Nền tảng vẫn giữ nguyên như trước cho đến khi Nhân viên duyệt
+                thay đổi này. Anh/chị vẫn có thể tiếp tục chỉnh sửa và lần nộp mới nhất sẽ thay thế bản đang chờ.
               </p>
             </div>
           </div>

@@ -17,6 +17,7 @@ import styles from './styles.module.css';
 import { getApiErrorMessage } from '../../utils/apiError';
 
 const TransactionDetailModal = lazy(() => import('./TransactionDetailModal'));
+import { toBankPayoutProps } from './bankPayoutSelection';
 const WithdrawModal = lazy(() => import('./WithdrawModal'));
 const WithdrawalDetailModal = lazy(() => import('./WithdrawalDetailModal'));
 
@@ -47,7 +48,7 @@ const ParentWallet = () => {
   const [withdrawals, setWithdrawals] = useState<WithdrawalItem[]>([]);
   const [withdrawalsLoading, setWithdrawalsLoading] = useState(true);
 
-  const [selectedTxId, setSelectedTxId] = useState<number | null>(null);
+  const [selectedTx, setSelectedTx] = useState<TransactionHistory | null>(null);
   const [selectedWithdrawalId, setSelectedWithdrawalId] = useState<number | null>(null);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
 
@@ -189,13 +190,17 @@ const ParentWallet = () => {
         transactions={transactions}
         loading={txLoading}
         total={transactionsTotal}
-        onSelect={(tx) => setSelectedTxId(tx.transactionId)}
+        onSelect={setSelectedTx}
         onViewAll={() => navigate(`${portalBase}/wallet/transactions`)}
       />
 
-      {selectedTxId != null && (
+      {selectedTx && (
         <Suspense fallback={null}>
-          <TransactionDetailModal transactionId={selectedTxId} onClose={() => setSelectedTxId(null)} />
+          <TransactionDetailModal
+            transactionId={selectedTx.transactionId}
+            bankPayout={toBankPayoutProps(selectedTx)}
+            onClose={() => setSelectedTx(null)}
+          />
         </Suspense>
       )}
 

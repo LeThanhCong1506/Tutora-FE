@@ -4,6 +4,7 @@ import { ArrowLeft, User } from 'lucide-react';
 import { getBookingById, type BookingResponseDTO } from '../../services/booking.service';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 import { formatVNDNumber } from '../../utils/formatters';
+import { getEscrowStatusLabel, getPaymentStatusLabel } from '../../utils/paymentBadge';
 import { PageContainer, SectionCard, StatusBadge, type StatusVariant } from '../../components/shared';
 import styles from '../../styles/pages/tutor-portal-booking-detail.module.css';
 
@@ -286,11 +287,11 @@ const TutorPortalBookingDetail = () => {
                   </div>
                   <div className={styles.infoRow}>
                     <span className={styles.infoRowLabel}>Trạng thái thanh toán</span>
-                    <span className={styles.infoRowValue}>{booking.paymentStatus || '—'}</span>
+                    <span className={styles.infoRowValue}>{getPaymentStatusLabel(booking.paymentStatus)}</span>
                   </div>
                   <div className={styles.infoRow}>
                     <span className={styles.infoRowLabel}>Trạng thái escrow</span>
-                    <span className={styles.infoRowValue}>{booking.escrowStatus || '—'}</span>
+                    <span className={styles.infoRowValue}>{getEscrowStatusLabel(booking.escrowStatus)}</span>
                   </div>
                 </div>
               </div>

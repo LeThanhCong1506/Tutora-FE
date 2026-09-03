@@ -21,6 +21,12 @@ import { getApiErrorMessage } from '../../utils/apiError';
 
 interface Props {
   transactionId: number;
+  bankPayout?: {
+    withdrawalId: number;
+    amount: number;
+    createdAt: string;
+    description: string;
+  };
   onClose: () => void;
 }
 
@@ -31,7 +37,11 @@ const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
   </div>
 );
 
-const TransactionDetailModal = ({ transactionId, onClose }: Props) => {
+const TransactionDetailModal = ({ transactionId, bankPayout, onClose }: Props) => {
+  const bankPayoutWithdrawalId = bankPayout?.withdrawalId ?? null;
+  const bankPayoutAmount = bankPayout?.amount ?? null;
+  const bankPayoutCreatedAt = bankPayout?.createdAt ?? null;
+  const bankPayoutDescription = bankPayout?.description ?? null;
   const navigate = useNavigate();
   const location = useLocation();
   const portalBase = location.pathname.startsWith('/student-portal') ? '/student-portal' : '/parent-portal';
@@ -44,9 +54,42 @@ const TransactionDetailModal = ({ transactionId, onClose }: Props) => {
 
   useEffect(() => {
     let cancelled = false;
+
+    const loadWithdrawal = async (withdrawalId: number) => {
+      try {
+        const withdrawalRes = await getWithdrawalDetail(withdrawalId);
+        if (!cancelled) setWithdrawalDetail(withdrawalRes.content);
+      } catch (err) {
+        console.error('Failed to load withdrawal detail for transaction:', err);
+      }
+    };
+
     const load = async () => {
       setLoading(true);
       try {
+        if (bankPayoutWithdrawalId != null) {
+          // Không tra sổ ví: dòng này không nằm ở đó. Phần tóm tắt lấy từ chính hàng người dùng
+          // vừa bấm, phần chi tiết + biên lai lấy theo yêu cầu rút mà nó chi trả.
+          setDetail({
+            transactionId,
+            amount: bankPayoutAmount ?? 0,
+            transactionType: 'BankTransfer',
+            description: bankPayoutDescription ?? '',
+            referenceId: bankPayoutWithdrawalId,
+            referenceTable: 'withdrawal',
+            createdAt: bankPayoutCreatedAt ?? new Date().toISOString(),
+            // Mã tham chiếu / thời điểm chuyển / biên lai
+            providerTransactionId: null,
+            paidAt: null,
+            proofImageUrl: null,
+            booking: null,
+            dispute: null,
+            withdrawal: null,
+          });
+          await loadWithdrawal(bankPayoutWithdrawalId);
+          return;
+        }
+
         const res = await getTransactionDetail(transactionId);
         if (cancelled) return;
         setDetail(res.content);
@@ -55,12 +98,7 @@ const TransactionDetailModal = ({ transactionId, onClose }: Props) => {
         // withdrawal-referencing transaction, fetch the full withdrawal record
         // (bank info, status, payout reference, proof) separately.
         if (res.content.referenceTable === 'withdrawal' && res.content.referenceId) {
-          try {
-            const withdrawalRes = await getWithdrawalDetail(res.content.referenceId);
-            if (!cancelled) setWithdrawalDetail(withdrawalRes.content);
-          } catch (err) {
-            console.error('Failed to load withdrawal detail for transaction:', err);
-          }
+          await loadWithdrawal(res.content.referenceId);
         }
       } catch (error) {
         if (!cancelled) {
@@ -75,7 +113,14 @@ const TransactionDetailModal = ({ transactionId, onClose }: Props) => {
     return () => {
       cancelled = true;
     };
-  }, [transactionId, onClose]);
+  }, [
+    transactionId,
+    bankPayoutWithdrawalId,
+    bankPayoutAmount,
+    bankPayoutCreatedAt,
+    bankPayoutDescription,
+    onClose,
+  ]);
 
   const positive = (detail?.amount ?? 0) >= 0;
 
