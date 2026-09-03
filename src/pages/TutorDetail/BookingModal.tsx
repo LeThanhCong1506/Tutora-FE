@@ -19,6 +19,7 @@ import {
     useBookingSchedule,
     MIN_BOOKING_LEAD_HOURS,
 } from "./booking-components";
+import { getBookingFeeRates, DEFAULT_BOOKING_FEE_RATES } from "../../services/booking.service";
 import type { BookingModalProps, StepProps, Subject } from "./booking-components";
 import styles from "./booking-components/bookingModal.module.css";
 
@@ -219,6 +220,26 @@ const BookingModal: React.FC<BookingModalProps> = ({
         };
     }, [isOpen]);
 
+    // Tỷ lệ phí do Admin cấu hình, hỏi server mỗi lần mở modal. Hardcode ở đây từng khiến modal
+    // báo 525.000đ trong khi backend thu 550.000đ sau khi Admin đổi 5% → 10%.
+    const [parentFeePercent, setParentFeePercent] = useState(DEFAULT_BOOKING_FEE_RATES.parentFeePercent);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        let cancelled = false;
+        getBookingFeeRates()
+            .then((rates) => {
+                if (!cancelled) setParentFeePercent(rates.parentFeePercent);
+            })
+            .catch((err) => {
+                // Giữ mặc định và báo rõ: thà hiện giá cũ còn hơn chặn người dùng đặt lịch.
+                console.error('Không lấy được tỷ lệ phí nền tảng:', err);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     // Sau khi tạo booking, mở bước thanh toán buổi học đầu tiên. PaymentModal tự dựng
@@ -335,6 +356,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         formData,
         setFormData,
         hourlyRate: effectiveHourlyRate,
+        parentFeePercent,
         students,
         loadingStudents,
         availableSubjects,

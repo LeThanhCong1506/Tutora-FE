@@ -518,3 +518,26 @@ export const isFirstLessonFinished = (booking: BookingResponseDTO): boolean => {
     if (first.status === 'completed' || first.status === 'pending_confirmation') return true;
     return new Date(first.scheduledEnd).getTime() < Date.now();
 };
+
+/**
+ * Tỷ lệ phí nền tảng đang áp dụng, dạng phân số (0.1 = 10%).
+ *
+ * Màn hình đặt lịch PHẢI hỏi server thay vì tự nhân một hằng số: khi Admin đổi phí từ 5% lên 10%,
+ * modal vẫn báo 525.000đ trong khi hệ thống thu 550.000đ — phụ huynh đồng ý một giá rồi bị trừ một
+ * giá khác. Backend: GET /api/booking-fees/current
+ */
+export interface BookingFeeRates {
+    parentFeePercent: number;
+    tutorFeePercent: number;
+}
+
+/** Dùng khi chưa gọi được API — khớp với mặc định của backend (CommissionConfigService). */
+export const DEFAULT_BOOKING_FEE_RATES: BookingFeeRates = {
+    parentFeePercent: 0.05,
+    tutorFeePercent: 0.05,
+};
+
+export const getBookingFeeRates = async (): Promise<BookingFeeRates> => {
+    const response = await api.get('/booking-fees/current');
+    return response.data?.content ?? DEFAULT_BOOKING_FEE_RATES;
+};
