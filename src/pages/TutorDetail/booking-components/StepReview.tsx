@@ -9,6 +9,7 @@ const StepReview: React.FC<StepProps> = ({
     students,
     availableSubjects,
     hourlyRate,
+    parentFeePercent,
     scheduling,
     sessionHours,
     tutorName,
@@ -21,14 +22,14 @@ const StepReview: React.FC<StepProps> = ({
     const { selectedSlots, bookingWindowStart, bookingWindowEnd, today } = scheduling;
     const chosenHours = selectedSlots.reduce((sum, slot) => sum + slot.durationHours, 0);
     const subtotal = chosenHours * hourlyRate;
-    const serviceFee = Math.round(subtotal * 0.05);
+    const serviceFee = Math.round(subtotal * parentFeePercent);
     const total = subtotal + serviceFee;
 
     // Số tiền phải trả NGAY khi bấm Gửi yêu cầu. Phải khớp tuyệt đối với BE, nếu không
     // người dùng đọc một số ở đây rồi PaymentModal lại thu một số khác.
     // Công thức lấy từ BookingFeeCalculator.CalculatePaymentPhases:
     //   deposit = floor(finalPrice / totalSessions), riêng booking 1 buổi thì trả trọn.
-    // `total` ở trên chính là finalPrice (baseAmount + phí dịch vụ 5%), còn totalSessions
+    // `total` ở trên chính là finalPrice (baseAmount + phí dịch vụ), còn totalSessions
     // là số slot đã chọn — đúng giá trị FE gửi lên trong payload createBooking.
     const sessionCount = selectedSlots.length;
     const firstSessionAmount = sessionCount > 1 ? Math.floor(total / sessionCount) : total;
@@ -92,7 +93,7 @@ const StepReview: React.FC<StepProps> = ({
                             <strong>{formatPrice(subtotal)}</strong>
                         </div>
                         <div className={styles.priceLine}>
-                            <span>Phí dịch vụ (5%)</span>
+                            <span>Phí dịch vụ ({Math.round(parentFeePercent * 100)}%)</span>
                             <strong>{formatPrice(serviceFee)}</strong>
                         </div>
                         <div className={`${styles.priceLine} ${styles.priceLineNow}`}>

@@ -114,6 +114,12 @@ export interface StepProps {
     formData: BookingFormData;
     setFormData: React.Dispatch<React.SetStateAction<BookingFormData>>;
     hourlyRate: number;
+    /**
+     * Phần phụ huynh trả thêm, dạng phân số (0.1 = 10%). Lấy từ server chứ KHÔNG hardcode: Admin
+     * đổi được tỷ lệ này bất cứ lúc nào, và nếu màn hình đặt lịch tự nhân một hằng số thì phụ
+     * huynh đồng ý một giá rồi bị trừ một giá khác.
+     */
+    parentFeePercent: number;
     students: StudentType[];
     loadingStudents: boolean;
     availableSubjects: Subject[];
