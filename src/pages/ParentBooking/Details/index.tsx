@@ -447,8 +447,7 @@ const BookingDetailPage = () => {
       ),
     );
   const canCancel =
-    ['pending_tutor', 'accepted', 'pending_payment', 'deposit_paid', 'ongoing', 'paid'].includes(booking.status) &&
-    !hasStartedLesson;
+    ['pending_tutor', 'accepted', 'pending_payment'].includes(booking.status) && !hasStartedLesson;
   // Khớp với TrialCancelWindowHours ở BookingService.cs (BE) — trong vòng 2h trước buổi học đầu
   // tiên, BE từ chối yêu cầu hủy tự do của phụ huynh/học sinh (dù nút vẫn hiện phía FE trước đây),
   // buộc phải chờ hoặc báo cáo gia sư không vào lớp qua luồng no-show có sẵn. Nếu BE đổi mốc này thì
