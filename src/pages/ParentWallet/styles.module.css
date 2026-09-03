@@ -101,6 +101,10 @@
     color: #ff4d4f;
 }
 
+.valueBlue {
+    color: #2f6fa8;
+}
+
 .summaryFoot {
     font-size: 13px;
     color: var(--color-navy-60);
@@ -394,6 +398,12 @@
 .txIconOut {
     background: rgba(99, 27, 27, 0.1);
     color: var(--color-burgundy);
+}
+
+/* Chuyển tiền ngân hàng — xem .valueBlue. */
+.txIconBank {
+    background: rgba(47, 111, 168, 0.1);
+    color: #2f6fa8;
 }
 
 .txInfo {

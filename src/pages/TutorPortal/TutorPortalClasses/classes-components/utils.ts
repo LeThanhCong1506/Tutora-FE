@@ -76,7 +76,7 @@ export const nextSessionLabel = (item: {
     if (reserved > 0) {
         const reason = reservedSessionsReason(item.bookingStatus);
         const when = item.nextReservedStart ? ` (dự kiến ${formatDateTime(item.nextReservedStart)})` : '';
-        return `${reserved} buổi chờ mở${when}${reason ? ` — ${reason}` : ''}`;
+        return `${reserved} buổi chờ mở${when}${reason ? `, ${reason}` : ''}`;
     }
 
     if (isBookingCompleted(item.bookingStatus)) return 'Đã dạy xong toàn bộ khoá';

@@ -66,7 +66,6 @@ export {
     CourseDetailModal,
     CourseMaterialsTab,
     CourseSessionRow,
-    deriveSchedule,
     extraSessionLabel,
     formatSessionTime,
     groupCourseSessions,

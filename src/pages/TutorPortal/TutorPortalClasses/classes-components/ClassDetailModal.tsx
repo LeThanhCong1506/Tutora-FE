@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Drawer } from 'antd';
-import { BookOpen, CalendarDays, GraduationCap, Hash, X } from 'lucide-react';
+import { BookOpen, GraduationCap, Hash, X } from 'lucide-react';
 import { StatusBadge } from '../../../../components/shared';
 import { useClassDetail } from './hooks/useClassDetail';
 import MaterialsTab from './MaterialsTab';
@@ -98,11 +98,6 @@ export default function ClassDetailModal({ item, onClose }: ClassDetailModalProp
                                     icon={<BookOpen size={15} />}
                                     label="Số buổi"
                                     value={`${item.completedSessions}/${item.totalSessions} buổi đã học`}
-                                />
-                                <InfoRow
-                                    icon={<CalendarDays size={15} />}
-                                    label="Lịch cố định"
-                                    value={item.schedule || 'Chưa có'}
                                 />
                                 <InfoRow
                                     icon={<GraduationCap size={15} />}

@@ -44,11 +44,6 @@ const TutorPortalDisputeDetail = () => {
         name: session.student?.fullName,
         subtitle: [session.student?.school, session.student?.gradeLevel].filter(Boolean).join(' · ') || undefined,
         avatarUrl: session.student?.avatarUrl,
-        // Trang hồ sơ học tập cần cả bookingId lẫn classSessionId để mở đúng lớp đang xét.
-        profilePath:
-          session.student?.studentId && session.bookingId
-            ? `/tutor-portal/students/${encodeURIComponent(session.student.studentId)}?bookingId=${session.bookingId}&classSessionId=${session.classSessionId}`
-            : null,
       },
     };
   }, []);
