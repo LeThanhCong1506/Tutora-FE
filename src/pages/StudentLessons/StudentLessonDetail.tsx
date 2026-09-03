@@ -58,7 +58,7 @@ import { useStudentProfile } from '../../contexts/StudentProfileContext';
 import { getUserInfoFromToken } from '../../services/auth.service';
 import s from '../StudentPages.module.css';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
-import { canJoinLiveSession, canReportTutorNoShow, isWithinJoinWindow } from '../../utils/liveSession';
+import { canJoinLiveSession, isWithinJoinWindow } from '../../utils/liveSession';
 import { isAwaitingReport } from './lesson-components';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { getChats, getOrCreateBookingChannel, type ChatChannel } from '../../services/chat.service';
@@ -183,13 +183,6 @@ const StudentLessonDetail = () => {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [openingChat, setOpeningChat] = useState(false);
     const [showDisputeForm, setShowDisputeForm] = useState(false);
-    // Nhịp đồng hồ để nút Khiếu nại tự hiện đúng lúc buổi học bắt đầu — người đang mở sẵn trang chờ
-    // gia sư sẽ không phải tải lại mới thấy nút.
-    const [nowTs, setNowTs] = useState(() => Date.now());
-    useEffect(() => {
-        const timer = setInterval(() => setNowTs(Date.now()), 30_000);
-        return () => clearInterval(timer);
-    }, []);
     const [dispute, setDispute] = useState<DisputeDetailResponse | null>(null);
     const [thread, setThread] = useState<DisputeMessage[]>([]);
     const [threadInput, setThreadInput] = useState('');
@@ -612,30 +605,12 @@ const StudentLessonDetail = () => {
     // đã nới guard chặn thẳng trước đây) — phụ huynh được báo qua thông báo khi con thực hiện.
     const canCreateDispute = !TERMINAL_BOOKING_STATUSES.includes(String(lesson.bookingStatus || '').toLowerCase());
 
-    // Khiếu nại mở từ ĐÚNG GIỜ BẮT ĐẦU — cùng luật với trang phụ huynh (ParentLessonDetail) và với
-    // BE (DisputeSettlementPolicy.IsEligibleClassSession). Nút "Báo gia sư vắng mặt" riêng đã bỏ:
-    // form khiếu nại có sẵn loại "Gia sư vắng mặt" và tự chuyển buổi sang no_show.
-    //
-    // CỜ TEST — xem ghi chú ở DisputeSettlementPolicy.AllowDisputeBeforeSessionStart (BE). Ba cờ
-    // (BE, trang phụ huynh, trang này) phải bật/tắt cùng nhau.
     // Khiếu nại đã kết thúc — 'resolved' (admin ra phán quyết) và 'closed' (admin đóng do hai bên
     // hoà giải) đều là trạng thái cuối, không còn gì để trao đổi thêm.
     const isDisputeSettled = dispute?.status === 'resolved' || dispute?.status === 'closed';
 
     // Chỉ khiếu nại đang MỞ mới chặn tạo cái mới — khớp với guard ở BE (d.Status != 'closed').
     const hasOpenDispute = !!dispute && dispute.status !== 'closed';
-
-    const ALLOW_DISPUTE_BEFORE_START = true;
-    const hasSessionStarted = ALLOW_DISPUTE_BEFORE_START || new Date(lesson.scheduledStart).getTime() <= nowTs;
-    // `!dispute` là sai: bản ghi khiếu nại KHÔNG biến mất khi admin đóng, nó chỉ chuyển sang
-    // 'closed'. Dùng nó làm điều kiện thì một buổi từng bị khiếu nại nhầm sẽ mất nút vĩnh viễn,
-    // kể cả sau khi admin đã hoà giải và trả buổi về trạng thái bình thường.
-    //
-    // Bỏ luôn ràng buộc !isParentManaged: BE (ParentService.CreateDisputeAsync) đã cho phép học
-    // sinh do phụ huynh quản lý tự tạo khiếu nại — phụ huynh vẫn được báo qua thông báo và vẫn giữ
-    // quyền tài chính. Giữ chặn ở FE chỉ khiến các em không có đường nào phản ánh.
-    const showDisputeAction =
-        canCreateDispute && !hasOpenDispute && hasSessionStarted && lesson.status === 'scheduled';
 
     const pendingReschedule = lesson.pendingRescheduleProposal;
     const canProposeReschedule =
@@ -898,23 +873,6 @@ const StudentLessonDetail = () => {
                     </div>
                 )}
 
-                {renderLegacyTopActions && lesson.status === 'scheduled' && !isParentManaged && canReportTutorNoShow(lesson.scheduledStart) && (
-                    <div style={actionCardConfirm}>
-                        <div style={actionCardIconWrap}>
-                            <AlertCircle size={20} style={{ color: '#d97706' }} />
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={actionCardTitle}>Gia sư chưa vào lớp</div>
-                            <div style={actionCardDesc}>
-                                Nếu gia sư không có mặt, bạn có thể báo cáo vắng mặt ngay.
-                            </div>
-                        </div>
-                        <button style={actionBtnDispute} onClick={() => setShowDisputeForm(true)}>
-                            Khiếu nại
-                        </button>
-                    </div>
-                )}
-
                 {renderLegacyTopActions && lesson.status === 'no_show' && !isParentManaged && (
                     <div style={actionCardConfirm}>
                         <div style={actionCardIconWrap}>
@@ -1139,15 +1097,6 @@ const StudentLessonDetail = () => {
                                             ) : <div style={sidebarActionNote}>{scheduleChange.currentUserConfirmed ? 'Bạn đã xác nhận, đang chờ gia sư.' : 'Yêu cầu đang được xử lý.'}</div>}
                                         </div>
                                     )}
-                                </SidebarSection>
-                            )}
-
-                            {showDisputeAction && (
-                                <SidebarSection label="Buổi học có vấn đề?">
-                                    <div style={sidebarActionBlock}>
-                                        <div style={sidebarActionText}>Gia sư vắng mặt hoặc buổi học không như thỏa thuận, bạn có thể khiếu nại.</div>
-                                        <button style={sidebarDangerAction} onClick={() => setShowDisputeForm(true)}><AlertCircle size={15} /> Khiếu nại</button>
-                                    </div>
                                 </SidebarSection>
                             )}
 
@@ -2676,11 +2625,6 @@ const sidebarSecondaryAction: React.CSSProperties = {
     color: TUTORA_MIDNIGHT,
     background: '#fff',
     border: '1px solid #d0d5dd',
-};
-
-const sidebarDangerAction: React.CSSProperties = {
-    ...sidebarPrimaryAction,
-    background: TUTORA_BURGUNDY,
 };
 
 const middleVideoSection: React.CSSProperties = {
