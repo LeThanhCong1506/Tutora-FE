@@ -1,6 +1,6 @@
-import { Empty, Table, Tag } from 'antd';
+import { Empty, Table, Tag, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { formatCurrency, formatDateTime, formatTransactionType } from '../../utils/formatters';
+import { formatCurrency, formatDateTime, formatTransactionChannel, formatTransactionType } from '../../utils/formatters';
 
 /** Dùng chung cho Tutor (`TutorTransaction`) và Parent/Student (`TransactionHistory`) — cùng field shape. */
 export interface FinanceTransactionRow {
@@ -11,6 +11,11 @@ export interface FinanceTransactionRow {
   referenceId: number | null;
   referenceTable: string | null;
   createdAt: string;
+  source?: string;
+  channel?: string;
+  isInformational?: boolean;
+  bankName?: string | null;
+  accountNumber?: string | null;
 }
 
 interface Props<T extends FinanceTransactionRow> {
@@ -40,8 +45,11 @@ const TransactionTable = <T extends FinanceTransactionRow>({
     if (type === 'Refund') return 'refund';
     if (type === 'Escrow' || type === 'EscrowCredit') return 'pending';
     if (type === 'Release' || type === 'EscrowRelease') return 'release';
+    if (type === 'BankTransfer') return 'bank';
     return 'credit';
   };
+
+  const getRowKey = (row: T) => `${row.source ?? 'Wallet'}-${row.transactionId}`;
 
   const columns: ColumnsType<T> = [
     {
@@ -70,16 +78,32 @@ const TransactionTable = <T extends FinanceTransactionRow>({
       ),
     },
     {
+      title: 'Hình thức',
+      dataIndex: 'channel',
+      key: 'channel',
+      width: 130,
+      render: (_, record) => (
+        <span className="finance-table-channel">{formatTransactionChannel(record.channel)}</span>
+      ),
+    },
+    {
       title: 'Số tiền',
       dataIndex: 'amount',
       key: 'amount',
       width: 170,
-      render: (amount) => (
-        <span className={`finance-table-amount finance-table-amount--${amount < 0 ? 'debit' : 'credit'}`}>
-          {amount > 0 ? '+' : ''}
-          {formatCurrency(amount)}
-        </span>
-      ),
+      render: (amount, record) =>
+        record.isInformational ? (
+          <Tooltip title="Số tiền đã được chuyển về tài khoản ngân hàng của bạn. Số dư ví đã trừ từ lúc tạo yêu cầu rút nên dòng này không làm thay đổi số dư.">
+            <span className="finance-table-amount finance-table-amount--informational">
+              {formatCurrency(amount)}
+            </span>
+          </Tooltip>
+        ) : (
+          <span className={`finance-table-amount finance-table-amount--${amount < 0 ? 'debit' : 'credit'}`}>
+            {amount > 0 ? '+' : ''}
+            {formatCurrency(amount)}
+          </span>
+        ),
     },
     {
       title: 'Nội dung',
@@ -93,11 +117,22 @@ const TransactionTable = <T extends FinanceTransactionRow>({
       key: 'reference',
       width: 170,
       responsive: ['lg'],
-      render: (_, record) => (
-        <span className="finance-table-reference">
-          {record.referenceTable ? `${record.referenceTable} #${record.referenceId}` : 'Hệ thống'}
-        </span>
-      ),
+      render: (_, record) => {
+        if (record.channel === 'Bank' && record.bankName) {
+          return (
+            <span className="finance-table-reference">
+              {record.bankName}
+              {record.accountNumber ? ` · ${record.accountNumber}` : ''}
+            </span>
+          );
+        }
+
+        return (
+          <span className="finance-table-reference">
+            {record.referenceTable ? `${record.referenceTable} #${record.referenceId}` : 'Hệ thống'}
+          </span>
+        );
+      },
     },
   ];
 
@@ -106,7 +141,7 @@ const TransactionTable = <T extends FinanceTransactionRow>({
       className="finance-data-table"
       columns={columns}
       dataSource={transactions}
-      rowKey="transactionId"
+      rowKey={getRowKey}
       loading={loading}
       size="middle"
       scroll={{ x: 900, ...(scrollY ? { y: scrollY } : {}) }}

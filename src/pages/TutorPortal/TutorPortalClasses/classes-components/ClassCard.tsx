@@ -47,7 +47,7 @@ export default function ClassCard({ item, onOpen }: ClassCardProps) {
                         {item.subjectName || 'Lớp học'}
                     </h3>
                     <p className="mt-0.5 truncate text-[13px] text-[#7a6a60]">
-                        Mã lớp #{item.bookingId} · {item.schedule || 'Chưa có lịch cố định'}
+                        Mã lớp #{item.bookingId}
                     </p>
                 </div>
 

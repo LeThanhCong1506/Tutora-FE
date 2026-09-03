@@ -48,7 +48,7 @@ export interface ProfileDropdownProps {
     role: string;
     initials: string;
     avatarUrl?: string;
-    /** Secondary line under the name inside the menu header (usually email) */
+    /** Dòng phụ dưới tên trong menu header. Bỏ trống thì chỉ hiện tên. */
     subtitle?: string;
     /** Whether to render the avatar image; falls back to initials when false */
     showAvatarImage?: boolean;
@@ -196,7 +196,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
                 </span>
                 <div className={styles.menuIdentity}>
                     <span className={styles.menuName}>{name}</span>
-                    <span className={styles.menuSubtitle}>{subtitle || role}</span>
+                    {subtitle && <span className={styles.menuSubtitle}>{subtitle}</span>}
                 </div>
             </div>
 
