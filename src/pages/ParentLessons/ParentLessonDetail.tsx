@@ -23,7 +23,6 @@ import { toast } from 'react-toastify';
 import CountdownTimer from './components/CountdownTimer';
 import ConfirmLessonModal from './components/ConfirmLessonModal';
 import CreateDisputeForm from './components/CreateDisputeForm';
-import NoShowActionModal from './components/NoShowActionModal';
 import { getClassSessionStatusMeta } from '../../utils/classSessionStatus';
 import {
   AttachmentGallery,
@@ -92,7 +91,6 @@ const ParentLessonDetail: React.FC = () => {
   // Modal states
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showDisputeForm, setShowDisputeForm] = useState(false);
-  const [showNoShowActionModal, setShowNoShowActionModal] = useState(false);
   // Nhịp đồng hồ để nút Khiếu nại tự hiện đúng lúc buổi học bắt đầu — người đang mở sẵn trang chờ
   // gia sư sẽ không phải tải lại mới thấy nút.
   const [nowTs, setNowTs] = useState(() => Date.now());
@@ -212,7 +210,6 @@ const ParentLessonDetail: React.FC = () => {
   const handleActionSuccess = () => {
     setShowConfirmModal(false);
     setShowDisputeForm(false);
-    setShowNoShowActionModal(false);
     fetchLesson();
     fetchDispute();
   };
@@ -290,7 +287,6 @@ const ParentLessonDetail: React.FC = () => {
   const hasOpenDispute = !!dispute && dispute.status !== 'closed';
   const showDisputeAction =
     canCreateDispute && !hasOpenDispute && hasSessionStarted && lesson.status === 'scheduled';
-  const showNoShowResolution = lesson.status === 'no_show' && dispute?.status === 'confirmed_no_show';
   const showReportTutorAction = lesson.status === 'completed' && !hasOpenDispute && canCreateDispute;
   const pendingReschedule = lesson.pendingRescheduleProposal;
   const canProposeReschedule = lesson.status === 'scheduled' && !pendingReschedule;
@@ -358,11 +354,6 @@ const ParentLessonDetail: React.FC = () => {
           {showDisputeAction && (
             <Button danger onClick={() => setShowDisputeForm(true)}>
               Khiếu nại
-            </Button>
-          )}
-          {showNoShowResolution && (
-            <Button type="primary" className={styles.primaryAction} onClick={() => setShowNoShowActionModal(true)}>
-              Chọn hành động xử lý
             </Button>
           )}
           {showReportTutorAction && (
@@ -849,12 +840,6 @@ const ParentLessonDetail: React.FC = () => {
         onCancel={() => setShowDisputeForm(false)}
       />
 
-      <NoShowActionModal
-        open={showNoShowActionModal}
-        lessonId={id}
-        onSuccess={handleActionSuccess}
-        onCancel={() => setShowNoShowActionModal(false)}
-      />
     </PageContainer>
   );
 };
