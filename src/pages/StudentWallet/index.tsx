@@ -111,6 +111,7 @@ const StudentWallet = () => {
 
   return (
     <PageContainer
+      className={parentStyles.page}
       title="Tài chính"
       titleInfo="Theo dõi số dư hoàn tiền, yêu cầu rút tiền và lịch sử giao dịch của bạn."
       maxWidth="wide"
